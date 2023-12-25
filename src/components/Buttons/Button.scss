@@ -1,0 +1,23 @@
+a, button {
+    font-size: 1.2rem;
+    background-color: transparent;
+    color: #309bff;
+}
+
+button {
+    border: none;
+}
+
+a {
+    text-decoration: none;
+}
+
+.wrong {
+    color: white;
+    background-color: rgb(194, 4, 4);
+}
+
+.correct {
+    color: white;
+    background-color: green;
+}

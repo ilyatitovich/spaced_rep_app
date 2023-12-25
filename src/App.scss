@@ -1,0 +1,25 @@
+#root {
+    max-width: 1280px;
+    margin: 0 auto;
+    height: 100vh;
+    text-align: center;
+    overflow: hidden;
+}
+
+#descktop-message {
+    width: 100%;
+    height: 100%;
+    display: none;
+}
+
+@media screen and (min-width: 30em) {
+    #root {
+        display: none;
+    }
+
+    #descktop-message {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+}
