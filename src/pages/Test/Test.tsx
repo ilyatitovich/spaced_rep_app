@@ -38,12 +38,12 @@ export default function Test() {
             <div className="btns-container">
                 <Button
                     title="Not correct"
-                    type="wrong"
+                    testBtn="wrong"
                     handleClick={() => handleAnswerClick("not-correct")}
                 />
                 <Button
                     title="Correct"
-                    type="correct"
+                    testBtn="correct"
                     handleClick={() => handleAnswerClick("correct")}
                 />
             </div>
