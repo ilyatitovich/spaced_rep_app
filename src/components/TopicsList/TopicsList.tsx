@@ -10,7 +10,7 @@ export default function TopicsList({topics}: {topics: { id: string; title: strin
         content = (
             <ul>
                 {topics.map((item) => (
-                    <a key={item.title} href={item.id} className="item">{item.title}</a>
+                    <a key={item.title} href={`topic/${item.id}`} className="item">{item.title}</a>
                 ))}
             </ul>
         );

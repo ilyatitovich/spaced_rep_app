@@ -17,7 +17,7 @@ export default function Button({
     handleClick,
 }: ButtonProps) {
     if (asLink) {
-        return <Link to={to}>{title}</Link>;
+        return <Link to={to} onClick={handleClick}>{title} </Link>;
     }
 
     return (

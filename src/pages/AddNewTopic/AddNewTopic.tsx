@@ -2,13 +2,13 @@ import "./AddNewTopic.scss";
 import NavBar from "../../components/NavBar/NavBar";
 import Button from "../../components/Buttons/Button";
 import { useState } from "react";
-import { Topic } from "../../lib/definitions";
+import { TopicModel } from "../../lib/models";
 
 export default function AddNewTopic() {
     const [topicTitle, setTopicTitle] = useState<string>("");
 
     function handleSave() {
-        const topic = new Topic(topicTitle);
+        const topic = new TopicModel(topicTitle);
         topic.setStartWeek();
         try {
             localStorage.setItem(topic.id, JSON.stringify(topic));
