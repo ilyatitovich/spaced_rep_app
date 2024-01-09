@@ -1,24 +1,28 @@
 import "./Topic.scss";
-import { useLoaderData } from "react-router-dom";
+import { LoaderFunctionArgs, useLoaderData } from "react-router-dom";
 import NavBar from "../../components/NavBar/NavBar";
 import Button from "../../components/Buttons/Button";
 import DayOfWeek from "../../components/DayOfWeek/DayOfWeek";
 import LevelRow from "../../components/LevelRow/LevelRow";
-import { type Level } from "../../lib/definitions";
+import { Topic, type Level } from "../../lib/definitions";
 
-interface LoaderParams {
-    params: {
-        topicId: string;
-    };
-}
+// interface LoaderParams {
+//     params: {
+//         topicId: string;
+//     };
+// }
 
-export async function loader({ params }: LoaderParams) {
-    const topic = await JSON.parse(localStorage.getItem(params.topicId)!);
+// eslint-disable-next-line react-refresh/only-export-components
+export async function loader(
+    args: LoaderFunctionArgs<string>
+): Promise<{ topic: Topic }> {
+    const { params } = args;
+    const topic = await JSON.parse(localStorage.getItem(params.topicId!)!);
     return { topic };
 }
 
 export default function TopicScreen() {
-    const { topic } = useLoaderData();
+    const { topic } = useLoaderData() as { topic: Topic };
 
     const { id, title, week, levels } = topic;
 
