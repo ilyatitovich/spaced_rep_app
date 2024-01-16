@@ -1,70 +1,83 @@
 import "./Topic.scss";
-import { LoaderFunctionArgs, useLoaderData } from "react-router-dom";
-import NavBar from "../../components/NavBar/NavBar";
+import { Link, LoaderFunctionArgs, useLoaderData } from "react-router-dom";
+import { getTopic, letters, levelColors } from "../../lib/utils";
 import Button from "../../components/Buttons/Button";
-import DayOfWeek from "../../components/DayOfWeek/DayOfWeek";
 import LevelRow from "../../components/LevelRow/LevelRow";
-import { Topic, type Level } from "../../lib/definitions";
-
-// interface LoaderParams {
-//     params: {
-//         topicId: string;
-//     };
-// }
+import { type Topic, type Level } from "../../lib/definitions";
 
 // eslint-disable-next-line react-refresh/only-export-components
-export async function loader(
-    args: LoaderFunctionArgs<string>
-): Promise<{ topic: Topic }> {
-    const { params } = args;
-    const topic = await JSON.parse(localStorage.getItem(params.topicId!)!);
+export async function loader({ params }: LoaderFunctionArgs) {
+    const topic = await getTopic(params.topicId as string);
     return { topic };
 }
 
-export default function TopicScreen() {
+export default function Topic() {
     const { topic } = useLoaderData() as { topic: Topic };
 
     const { id, title, week, levels } = topic;
+
+    console.log(week);
 
     function handleDelete(id: string) {
         localStorage.removeItem(id);
     }
 
     return (
-        <div className="topic">
-            <header>
-                <NavBar justifyContent="space-between">
-                    <Button asLink to="/" title="Back" />
-                    <h4 className="title">{title}</h4>
-                    <Button
-                        asLink
-                        to="/"
-                        title="Delete"
-                        handleClick={() => handleDelete(id)}
-                    />
-                </NavBar>
-                <div className="week">
-                    {week.map(() => (
-                        <DayOfWeek />
-                    ))}
-                </div>
-            </header>
-            <main className="content">
+        <div className="screen topic">
+            <nav>
+                <Button asLink to="/">
+                    Back
+                </Button>
+                <h4 className="title">{title}</h4>
+                <Button asLink to="/" handleClick={() => handleDelete(id)}>
+                    Delete
+                </Button>
+            </nav>
+
+            <div className="week">
+                {week.map((day, index) => (
+                    <div className="day">
+                        <small className="letter">{letters[index]}</small>
+                        <div className="state-container">
+                            <div className="state"></div>
+                        </div>
+                        {day &&
+                            levelColors.map((bgColor, index) => (
+                                <div
+                                    key={bgColor}
+                                    className="level-color"
+                                    style={{
+                                        backgroundColor:
+                                            day.todayLevels.indexOf(index) !==
+                                            -1
+                                                ? bgColor
+                                                : "transparent",
+                                    }}
+                                ></div>
+                            ))}
+                    </div>
+                ))}
+            </div>
+
+            <div className="content">
                 <div className="add-card-wrapper">
                     <h3>Levels</h3>
-                    <Button
-                        title="Add Card"
-                        handleClick={() => alert("add card")}
-                    />
+                    <Button asLink to={`/new-card`}>
+                        Add Card
+                    </Button>
                 </div>
                 <div className="levels">
                     <ul>
                         {levels.map((level: Level) => (
-                            <LevelRow level={level} />
+                            <LevelRow key={level.id} level={level} />
                         ))}
                     </ul>
                 </div>
-            </main>
+
+                <Link to="/test" className="today-test-btn">
+                    Today Test
+                </Link>
+            </div>
         </div>
     );
 }

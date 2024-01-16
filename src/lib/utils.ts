@@ -1,18 +1,25 @@
-import { type levelColor } from "./definitions";
+import { type levelColor, type Topic } from "./definitions";
 
-export function getAllTopics() {
+export async function getAllTopics() {
     const topics = [];
 
     for (const key of Object.keys(localStorage)) {
-        const value = JSON.parse(localStorage.getItem(key) as string);
+        const topic: Topic = JSON.parse(localStorage.getItem(key) as string);
 
-        const { id, title } = value;
+        const { id, title } = topic;
 
         topics.push({ id, title });
     }
 
     return topics;
 }
+
+export async function getTopic(id: string) {
+    const topic: Topic = await JSON.parse(localStorage.getItem(id) as string);
+    return topic;
+}
+
+export const letters = ["S", "M", "T", "W", "T", "F", "S"];
 
 export const levelColors: levelColor[] = [
     "red",

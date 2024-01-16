@@ -1,31 +1,48 @@
 import "./Home.scss";
-import { useState, useEffect } from "react";
-import NavBar from "../../components/NavBar/NavBar";
-import TopicsList from "../../components/TopicsList/TopicsList";
+import { Link, useLoaderData } from "react-router-dom";
 import Button from "../../components/Buttons/Button";
-
 import { getAllTopics } from "../../lib/utils";
 
+interface TopicItem {
+    id: string;
+    title: string;
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export async function loader() {
+    const topics = await getAllTopics();
+    return { topics };
+}
+
 export default function Home() {
-    const [topics, setTopics] = useState<{ id: string; title: string }[]>([]);
-
-    useEffect(() => {
-        const topicsFromLocalStorage = getAllTopics();
-        setTopics(topicsFromLocalStorage);
-    }, []);
-
-    console.log(topics);
+    const { topics } = useLoaderData() as { topics: TopicItem[] };
 
     return (
-        <div id="start-screen-container">
-            <NavBar justifyContent="center">
+        <div className="screen home">
+            <nav>
                 <p>Your Topics</p>
-            </NavBar>
-
-            <TopicsList topics={topics} />
-
+            </nav>
+            <div className="topics-list">
+                {topics.length > 0 ? (
+                    <ul>
+                        {topics.map((item) => (
+                            <Link
+                                key={item.title}
+                                to={`topic/${item.id}`}
+                                className="topic-item"
+                            >
+                                {item.title}
+                            </Link>
+                        ))}
+                    </ul>
+                ) : (
+                    <p className="message">No topics to study yet</p>
+                )}
+            </div>
             <footer>
-                <Button asLink to="new-topic" title="Add Topic" />
+                <Button asLink to="new-topic">
+                    Add Topic
+                </Button>
             </footer>
         </div>
     );

@@ -1,23 +1,29 @@
-import "./index.css";
+import "./index.scss";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import Home from "./pages/Home/Home";
-import AddNewTopic from "./pages/AddNewTopic/AddNewTopic";
-import TopicScreen, { loader as topicLoader } from "./pages/Topic/Topic";
+import Home, { loader as homeLoader } from "./pages/Home/Home";
+import NewTopic from "./pages/NewTopic/NewTopic";
+// import NewCard from "./pages/NewCard/NewCard";
+import Topic, { loader as topicLoader } from "./pages/Topic/Topic";
 
 const router = createBrowserRouter([
     {
         path: "/",
         element: <Home />,
+        loader: homeLoader,
     },
     {
         path: "new-topic",
-        element: <AddNewTopic />,
+        element: <NewTopic />,
     },
+    // {
+    //     path: "new-card",
+    //     element: <NewCard />,
+    // },
     {
         path: "topic/:topicId",
-        element: <TopicScreen />,
+        element: <Topic />,
         loader: topicLoader,
     },
 ]);

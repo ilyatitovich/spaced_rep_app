@@ -1,10 +1,9 @@
-import "./AddNewTopic.scss";
-import NavBar from "../../components/NavBar/NavBar";
+import "./NewTopic.scss";
 import Button from "../../components/Buttons/Button";
 import { useState } from "react";
 import { TopicModel } from "../../lib/models";
 
-export default function AddNewTopic() {
+export default function NewTopic() {
     const [topicTitle, setTopicTitle] = useState<string>("");
 
     function handleSave() {
@@ -19,12 +18,12 @@ export default function AddNewTopic() {
     }
 
     return (
-        <div className="add-new-topic">
-            <NavBar justifyContent="space-between">
-                <Button asLink to="/" title="Cancel" />
-                <Button title="Save" handleClick={handleSave} />
-            </NavBar>
-            <form>
+        <div className="screen new-topic">
+            <nav>
+                <Button asLink to="/">Back</Button>
+                <Button asLink to="/" handleClick={handleSave}>Save</Button>
+            </nav>
+            <div className="input-container">
                 <label htmlFor="topic-title">
                     What are you going to learn?
                 </label>
@@ -32,11 +31,12 @@ export default function AddNewTopic() {
                     name="title"
                     type="text"
                     value={topicTitle}
+                    maxLength={10}
                     onChange={(event) =>
                         setTopicTitle(event.currentTarget.value)
                     }
                 />
-            </form>
+            </div>
         </div>
     );
 }
