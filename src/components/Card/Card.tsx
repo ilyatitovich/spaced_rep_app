@@ -1,28 +1,48 @@
 import "./Card.scss";
-import { useState } from "react";
+import { type ChangeEvent } from "react";
 import { motion } from "framer-motion";
 
 interface CardProps {
-    front: string;
-    back: string;
+    data: { front: string; back: string };
+    isFlipped: boolean;
+    isEditable?: boolean;
+    handleClick?: () => void;
+    handleChange?: (
+        event: ChangeEvent<HTMLTextAreaElement>,
+        side: "front" | "back"
+    ) => void;
 }
 
-export default function Card({ front, back }: CardProps) {
-    const [isFlipped, setIsFlipped] = useState<boolean>(false);
-
+export default function Card({
+    data,
+    isFlipped,
+    isEditable = false,
+    handleClick,
+    handleChange = () => {},
+}: CardProps) {
     return (
         <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            exit={{ x: 1000, rotate: 45 }}
-            transition={{ duration: 0.35 }}
             className="card-wrapper"
-            onClick={() => setIsFlipped(!isFlipped)}
+            onClick={handleClick}
         >
             <div className="card">
-                <div className={`card-inner ${isFlipped ? "flipped" : ""}`}>
-                    <div className="card-front">{front}</div>
-                    <div className="card-back">{back}</div>
+                <div className={`inner ${isFlipped ? "flipped" : ""}`}>
+                    <textarea
+                        className="front"
+                        value={data.front}
+                        onChange={(event) => handleChange(event, "front")}
+                        disabled={!isEditable}
+                        maxLength={70}
+                    />
+                    <textarea
+                        className="back"
+                        value={data.back}
+                        onChange={(event) => handleChange(event, "back")}
+                        disabled={!isEditable}
+                        maxLength={70}
+                    />
                 </div>
             </div>
         </motion.div>

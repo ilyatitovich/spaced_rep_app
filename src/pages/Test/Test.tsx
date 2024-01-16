@@ -26,8 +26,8 @@ export default function Test() {
                     <AnimatePresence>
                         <Card
                             key={cards[0].id}
-                            front={cards[0].front}
-                            back={cards[0].back}
+                            data={cards[0]}
+                            isFlipped={true}
                         />
                     </AnimatePresence>
                 ) : (
@@ -37,15 +37,17 @@ export default function Test() {
 
             <div className="btns-container">
                 <Button
-                    title="Not correct"
                     testBtn="wrong"
                     handleClick={() => handleAnswerClick("not-correct")}
-                />
+                >
+                    Wrong
+                </Button>
                 <Button
-                    title="Correct"
                     testBtn="correct"
                     handleClick={() => handleAnswerClick("correct")}
-                />
+                >
+                    Correct
+                </Button>
             </div>
         </>
     );

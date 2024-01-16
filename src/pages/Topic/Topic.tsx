@@ -16,7 +16,7 @@ export default function Topic() {
 
     const { id, title, week, levels } = topic;
 
-    console.log(week);
+    const today: number = new Date().getDay();
 
     function handleDelete(id: string) {
         localStorage.removeItem(id);
@@ -62,7 +62,7 @@ export default function Topic() {
             <div className="content">
                 <div className="add-card-wrapper">
                     <h3>Levels</h3>
-                    <Button asLink to={`/new-card`}>
+                    <Button asLink to="new-card">
                         Add Card
                     </Button>
                 </div>
@@ -74,9 +74,11 @@ export default function Topic() {
                     </ul>
                 </div>
 
-                <Link to="/test" className="today-test-btn">
-                    Today Test
-                </Link>
+                {!week[today]?.isDone && (
+                    <Link to="/test" className="today-test-btn">
+                        Today Test
+                    </Link>
+                )}
             </div>
         </div>
     );

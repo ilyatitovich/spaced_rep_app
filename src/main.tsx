@@ -4,8 +4,8 @@ import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Home, { loader as homeLoader } from "./pages/Home/Home";
 import NewTopic from "./pages/NewTopic/NewTopic";
-// import NewCard from "./pages/NewCard/NewCard";
 import Topic, { loader as topicLoader } from "./pages/Topic/Topic";
+import NewCard, { loader as newCardLoader } from "./pages/NewCard/NewCard";
 
 const router = createBrowserRouter([
     {
@@ -17,14 +17,15 @@ const router = createBrowserRouter([
         path: "new-topic",
         element: <NewTopic />,
     },
-    // {
-    //     path: "new-card",
-    //     element: <NewCard />,
-    // },
     {
         path: "topic/:topicId",
         element: <Topic />,
         loader: topicLoader,
+    },
+    {
+        path: "topic/:topicId/new-card",
+        element: <NewCard />,
+        loader: newCardLoader,
     },
 ]);
 
