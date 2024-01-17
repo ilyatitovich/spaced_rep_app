@@ -60,7 +60,7 @@ export class TopicModel implements Topic {
     setStartWeek() {
         const dayOfTheWeek = new Date().getDay();
 
-        for (let d = 1; d < 8; d++) {
+        for (let d = 0; d < 7; d++) {
             if (dayOfTheWeek > d) {
                 this.week.push(null);
             } else {

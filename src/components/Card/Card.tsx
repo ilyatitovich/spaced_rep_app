@@ -20,6 +20,34 @@ export default function Card({
     handleClick,
     handleChange = () => {},
 }: CardProps) {
+    let content;
+
+    if (isEditable) {
+        content = (
+            <>
+                <textarea
+                    className="front"
+                    value={data.front}
+                    onChange={(event) => handleChange(event, "front")}
+                    maxLength={70}
+                />
+                <textarea
+                    className="back"
+                    value={data.back}
+                    onChange={(event) => handleChange(event, "back")}
+                    maxLength={70}
+                />
+            </>
+        );
+    } else {
+        content = (
+            <>
+                <div className="front">{data.front}</div>
+                <div className="back">{data.back}</div>
+            </>
+        );
+    }
+
     return (
         <motion.div
             initial={{ scale: 0 }}
@@ -29,20 +57,7 @@ export default function Card({
         >
             <div className="card">
                 <div className={`inner ${isFlipped ? "flipped" : ""}`}>
-                    <textarea
-                        className="front"
-                        value={data.front}
-                        onChange={(event) => handleChange(event, "front")}
-                        disabled={!isEditable}
-                        maxLength={70}
-                    />
-                    <textarea
-                        className="back"
-                        value={data.back}
-                        onChange={(event) => handleChange(event, "back")}
-                        disabled={!isEditable}
-                        maxLength={70}
-                    />
+                    {content}
                 </div>
             </div>
         </motion.div>

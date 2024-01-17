@@ -67,6 +67,7 @@ export default function NewCard() {
     function saveCard() {
         const newCard = {
             id: firstLevelCards.length,
+            level: 0,
             ...cardData,
         };
         firstLevelCards.push(newCard);

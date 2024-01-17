@@ -8,6 +8,7 @@ export type levelColor =
 
 export interface Card {
     id: number;
+    level:number;
     front: string;
     back: string;
 }

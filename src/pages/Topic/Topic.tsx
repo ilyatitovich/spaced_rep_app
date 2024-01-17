@@ -36,7 +36,7 @@ export default function Topic() {
 
             <div className="week">
                 {week.map((day, index) => (
-                    <div className="day">
+                    <div key={day?.date} className="day">
                         <small className="letter">{letters[index]}</small>
                         <div className="state-container">
                             <div className="state"></div>
@@ -75,7 +75,7 @@ export default function Topic() {
                 </div>
 
                 {!week[today]?.isDone && (
-                    <Link to="/test" className="today-test-btn">
+                    <Link to="test" className="today-test-btn">
                         Today Test
                     </Link>
                 )}
