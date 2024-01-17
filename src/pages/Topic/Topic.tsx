@@ -8,15 +8,14 @@ import { type Topic, type Level } from "../../lib/definitions";
 // eslint-disable-next-line react-refresh/only-export-components
 export async function loader({ params }: LoaderFunctionArgs) {
     const topic = await getTopic(params.topicId as string);
-    return { topic };
+    const today: number = new Date().getDay();
+    return { topic, today };
 }
 
 export default function Topic() {
-    const { topic } = useLoaderData() as { topic: Topic };
+    const { topic, today } = useLoaderData() as { topic: Topic; today: number };
 
     const { id, title, week, levels } = topic;
-
-    const today: number = new Date().getDay();
 
     function handleDelete(id: string) {
         localStorage.removeItem(id);
@@ -36,10 +35,19 @@ export default function Topic() {
 
             <div className="week">
                 {week.map((day, index) => (
-                    <div key={day?.date} className="day">
+                    <div key={index + 10} className="day">
                         <small className="letter">{letters[index]}</small>
                         <div className="state-container">
-                            <div className="state"></div>
+                            <div
+                                style={{
+                                    backgroundColor: day
+                                        ? today === index
+                                            ? "purple"
+                                            : "transparent"
+                                        : "grey",
+                                }}
+                                className="state"
+                            ></div>
                         </div>
                         {day &&
                             levelColors.map((bgColor, index) => (
