@@ -69,6 +69,7 @@ footer {
 .card-container {
     width: 100%;
     height: 84vh;
+    height: calc(var(--vh, 1vh) * 84);
 
     display: flex;
     justify-content: center;
