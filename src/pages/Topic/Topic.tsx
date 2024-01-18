@@ -27,7 +27,7 @@ export default function Topic() {
                 <Button asLink to="/">
                     Back
                 </Button>
-                <h4 className="title">{title}</h4>
+                <p className="title">{title}</p>
                 <Button asLink to="/" handleClick={() => handleDelete(id)}>
                     Delete
                 </Button>

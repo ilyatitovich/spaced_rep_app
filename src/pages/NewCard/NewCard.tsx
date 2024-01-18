@@ -86,7 +86,7 @@ export default function NewCard() {
                 >
                     Back
                 </Button>
-                <h3>{isFlipped ? "Back" : "Front"}</h3>
+                <p>{isFlipped ? "Back" : "Front"}</p>
                 <Button handleClick={saveCard}>Save</Button>
             </nav>
             <div className="card-container">

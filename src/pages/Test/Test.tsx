@@ -67,7 +67,7 @@ export default function Test() {
                 >
                     Back
                 </Button>
-                <h3>{isFlipped ? "Back" : "Front"}</h3>
+                <p>{isFlipped ? "Back" : "Front"}</p>
                 <small className="cards-num">{cards.length}</small>
             </nav>
             <div className="card-container">

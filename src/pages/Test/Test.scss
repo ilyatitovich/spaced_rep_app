@@ -4,18 +4,9 @@
 
         .cards-num {
             background-color: rgb(218, 218, 218);
-            padding: .2em .7em;
+            padding: 0.2em 0.7em;
             border-radius: 50%;
         }
-    }
-
-    .card-container {
-        width: 100%;
-        height: 100%;
-
-        display: flex;
-        justify-content: center;
-        align-items: center;
     }
 
     .btns-container {
@@ -29,8 +20,8 @@
         gap: 0.5em;
 
         button {
-            padding: .6em 2em;
-            border-radius: .25em;
+            padding: 0.6em 2em;
+            border-radius: 0.25em;
         }
 
         small {
