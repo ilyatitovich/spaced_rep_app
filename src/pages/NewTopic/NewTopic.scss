@@ -1,32 +1,30 @@
 .new-topic {
-
     nav {
         justify-content: space-between;
     }
 
     .input-container {
-        width: 100%;
-        height: 100vh;
+        height: 92vh;
+        height: calc(var(--vh, 1vh) * 92);
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
 
         label {
-            margin: 0.5rem;
-            font-size: 1.2rem;
+            margin: 0.5em;
         }
 
         input {
-            margin: 0.5rem;
-            padding: 0 0.5rem;
+            margin: 0.5em;
+            padding: 0 0.5em;
             height: 3rem;
             width: 70%;
             font-size: 1.2rem;
             text-align: center;
             outline: none;
             border: 1px solid black;
-            border-radius: 10px;
+            border-radius: .5em;
         }
     }
 }
