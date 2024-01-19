@@ -25,6 +25,11 @@ export async function getLevelCards(topicId:string, levelId:LevelId) {
     return levelCards;
 }
 
+export async function getCard(topic:Topic, levelId:LevelId, cardIndx:number) {
+    const card: Card = topic.levels[Number(levelId)].cards[cardIndx];
+    return card;
+}
+
 export const letters = ["S", "M", "T", "W", "T", "F", "S"];
 
 export const levelColors: levelColor[] = [

@@ -8,7 +8,7 @@
         height: 84vh;
         height: calc(var(--vh, 1vh) * 84);
         padding: 1em 1em;
-        overflow: scroll;
+        overflow-y: scroll;
         text-align: center;
 
         .topic-item {

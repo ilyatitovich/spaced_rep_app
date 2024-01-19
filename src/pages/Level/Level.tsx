@@ -3,6 +3,7 @@ import {
     type LoaderFunctionArgs,
     useLoaderData,
     useNavigate,
+    Link,
 } from "react-router-dom";
 import { type LevelId, type Card } from "../../lib/definitions";
 import { getLevelCards } from "../../lib/utils";
@@ -31,9 +32,13 @@ export default function Level() {
             <div className="cards-list">
                 {levelCards.length > 0 ? (
                     levelCards.map((card) => (
-                        <div key={card.id * Math.random()} className="card">
+                        <Link
+                            key={card.id * Math.random()}
+                            to={`${card.id}`}
+                            className="card"
+                        >
                             <small>{card.front}</small>
-                        </div>
+                        </Link>
                     ))
                 ) : (
                     <div className="message">No cards</div>

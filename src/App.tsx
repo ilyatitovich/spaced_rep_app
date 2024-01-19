@@ -6,6 +6,7 @@ import Topic, { loader as topicLoader } from "./pages/Topic/Topic";
 import NewCard, { loader as newCardLoader } from "./pages/NewCard/NewCard";
 import Test, { loader as testLoader } from "./pages/Test/Test";
 import Level, { loader as levelLoader } from "./pages/Level/Level";
+import CardDetails, {loader as cardDetailsLoader} from "./pages/CardDetails/CardDetails";
 
 const router = createBrowserRouter([
     {
@@ -36,6 +37,11 @@ const router = createBrowserRouter([
         path: "topic/:topicId/:levelId",
         element: <Level />,
         loader: levelLoader,
+    },
+    {
+        path: "topic/:topicId/:levelId/:cardIndx",
+        element: <CardDetails />,
+        loader: cardDetailsLoader,
     },
 ]);
 

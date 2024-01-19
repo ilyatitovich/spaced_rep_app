@@ -34,61 +34,63 @@ export default function Topic() {
                     Delete
                 </Button>
             </nav>
-
-            <div className="week">
-                {week.map((day, index) => (
-                    <div key={index + 10} className="day">
-                        <small className="letter">{letters[index]}</small>
-                        <div className="state-container">
-                            <div
-                                style={{
-                                    backgroundColor: day
-                                        ? today === index
-                                            ? "purple"
-                                            : "transparent"
-                                        : "grey",
-                                }}
-                                className="state"
-                            ></div>
-                        </div>
-                        {day &&
-                            levelColors.map((bgColor, index) => (
+            <div className="wrapper">
+                <div className="week">
+                    {week.map((day, index) => (
+                        <div key={index + 10} className="day">
+                            <small className="letter">{letters[index]}</small>
+                            <div className="state-container">
                                 <div
-                                    key={bgColor}
-                                    className="level-color"
                                     style={{
-                                        backgroundColor:
-                                            day.todayLevels.indexOf(index) !==
-                                            -1
-                                                ? bgColor
-                                                : "transparent",
+                                        backgroundColor: day
+                                            ? today === index
+                                                ? "purple"
+                                                : "transparent"
+                                            : "grey",
                                     }}
+                                    className="state"
                                 ></div>
-                            ))}
+                            </div>
+                            {day &&
+                                levelColors.map((bgColor, index) => (
+                                    <div
+                                        key={bgColor}
+                                        className="level-color"
+                                        style={{
+                                            backgroundColor:
+                                                day.todayLevels.indexOf(
+                                                    index
+                                                ) !== -1
+                                                    ? bgColor
+                                                    : "transparent",
+                                        }}
+                                    ></div>
+                                ))}
+                        </div>
+                    ))}
+                </div>
+
+                <div className="content">
+                    <div className="add-card-wrapper">
+                        <h3>Levels</h3>
+                        <Button asLink to="new-card">
+                            Add Card
+                        </Button>
                     </div>
-                ))}
-            </div>
+                    <div className="levels">
+                        <ul>
+                            {levels.map((level: Level) => (
+                                <LevelRow key={level.id} level={level} />
+                            ))}
+                        </ul>
+                    </div>
 
-            <div className="content">
-                <div className="add-card-wrapper">
-                    <h3>Levels</h3>
-                    <Button asLink to="new-card">
-                        Add Card
-                    </Button>
+                    {!week[today]?.isDone && (
+                        <Link to="test" className="today-test-btn">
+                            Today Test
+                        </Link>
+                    )}
                 </div>
-                <div className="levels">
-                    <ul>
-                        {levels.map((level: Level) => (
-                            <LevelRow key={level.id} level={level} />
-                        ))}
-                    </ul>
-                </div>
-
-                {!week[today]?.isDone && (
-                    <Link to="test" className="today-test-btn">
-                        Today Test
-                    </Link>
-                )}
             </div>
         </div>
     );
