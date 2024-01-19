@@ -1,5 +1,5 @@
 import "./Topic.scss";
-import { Link, LoaderFunctionArgs, useLoaderData } from "react-router-dom";
+import { Link, type LoaderFunctionArgs, useLoaderData } from "react-router-dom";
 import { getTopic, letters, levelColors } from "../../lib/utils";
 import Button from "../../components/Buttons/Button";
 import LevelRow from "../../components/LevelRow/LevelRow";
@@ -16,6 +16,8 @@ export default function Topic() {
     const { topic, today } = useLoaderData() as { topic: Topic; today: number };
 
     const { id, title, week, levels } = topic;
+
+    // week[today]!.isDone = false;  // for test
 
     function handleDelete(id: string) {
         localStorage.removeItem(id);

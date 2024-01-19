@@ -6,9 +6,11 @@ export type levelColor =
     | "rgb(0, 89, 255)"
     | "rgb(183, 0, 255)";
 
+export type LevelId = "0" | "1" | "2" | "3" | "4" | "5" | "6";
+
 export interface Card {
     id: number;
-    level:number;
+    level: number;
     front: string;
     back: string;
 }

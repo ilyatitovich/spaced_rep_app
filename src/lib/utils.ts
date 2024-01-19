@@ -1,4 +1,4 @@
-import { type levelColor, type Topic } from "./definitions";
+import { type levelColor, type Topic, type LevelId, type Card } from "./definitions";
 
 export async function getAllTopics() {
     const topics = [];
@@ -17,6 +17,12 @@ export async function getAllTopics() {
 export async function getTopic(id: string) {
     const topic: Topic = await JSON.parse(localStorage.getItem(id) as string);
     return topic;
+}
+
+export async function getLevelCards(topicId:string, levelId:LevelId) {
+    const topic: Topic = await JSON.parse(localStorage.getItem(topicId) as string);
+    const levelCards: Card[] = topic.levels[Number(levelId)].cards;
+    return levelCards;
 }
 
 export const letters = ["S", "M", "T", "W", "T", "F", "S"];

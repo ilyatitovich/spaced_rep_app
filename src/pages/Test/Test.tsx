@@ -6,7 +6,7 @@ import {
     useLoaderData,
     type LoaderFunctionArgs,
 } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
 import Card from "../../components/Card/Card";
 import Button from "../../components/Buttons/Button";
@@ -29,22 +29,37 @@ export default function Test() {
         (el) => levels[el].cards
     );
     const [cards, setCards] = useState(cardsForTest);
+    const [isMoved, setIsMoved] = useState<boolean>(false);
+
+    let timer: number;
+
+    useEffect(() => {
+        if (isMoved) {
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+            timer = setTimeout(() => {
+                setIsMoved(false);
+            }, 100);
+        }
+
+        return () => {
+            clearTimeout(timer);
+        };
+    }, [isMoved]);
 
     if (cards.length === 0) {
         week[today]!.isDone = true;
         localStorage.setItem(id, JSON.stringify(topic));
     }
 
-    // must be correct
-    function handleAnswerClick(answer: "correct" | "not-correct") {
+    function handleAnswer(answer: "correct" | "wrong") {
         const updatedCards = [...cards];
         const currentCard = updatedCards.shift();
         const indexToDelete = levels[currentCard!.level].cards.indexOf(
             currentCard!
         );
+        levels[currentCard!.level].cards.splice(indexToDelete, 1);
 
         if (answer === "correct") {
-            levels[currentCard!.level].cards.splice(indexToDelete, 1);
             currentCard!.level += 1;
             levels[currentCard!.level].cards.push(currentCard!);
         } else {
@@ -54,7 +69,10 @@ export default function Test() {
         }
 
         localStorage.setItem(id, JSON.stringify(topic));
+
+        setIsMoved(true);
         setCards(updatedCards);
+        setIsFlipped(false);
     }
 
     return (
@@ -71,17 +89,18 @@ export default function Test() {
                 <small className="cards-num">{cards.length}</small>
             </nav>
             <div className="card-container">
-                {cards.length > 0 ? (
-                    <AnimatePresence>
-                        <Card
-                            data={cards[0]}
-                            isFlipped={isFlipped}
-                            handleClick={() => setIsFlipped(!isFlipped)}
-                        />
-                    </AnimatePresence>
-                ) : (
-                    <div>No cards</div>
-                )}
+                {!isMoved &&
+                    (cards.length > 0 ? (
+                        <AnimatePresence>
+                            <Card
+                                data={cards[0]}
+                                isFlipped={isFlipped}
+                                handleClick={() => setIsFlipped(!isFlipped)}
+                            />
+                        </AnimatePresence>
+                    ) : (
+                        <div>No cards</div>
+                    ))}
             </div>
 
             <div className="btns-container">
@@ -89,13 +108,13 @@ export default function Test() {
                     <>
                         <Button
                             testBtn="wrong"
-                            handleClick={() => handleAnswerClick("not-correct")}
+                            handleClick={() => handleAnswer("wrong")}
                         >
                             Wrong
                         </Button>
                         <Button
                             testBtn="correct"
-                            handleClick={() => handleAnswerClick("correct")}
+                            handleClick={() => handleAnswer("correct")}
                         >
                             Correct
                         </Button>
