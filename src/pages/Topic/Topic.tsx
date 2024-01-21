@@ -85,7 +85,13 @@ export default function Topic() {
 
                     {!week[today]?.isDone && (
                         <Link to="test" className="today-test-btn">
-                            Today Test
+                            <h4>Today's Test</h4>
+                            <small>
+                                Levels:{" "}
+                                {week[today]?.todayLevels.map(
+                                    (level) => level + 1
+                                )}
+                            </small>
                         </Link>
                     )}
                 </div>
