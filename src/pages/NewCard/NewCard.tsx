@@ -76,6 +76,8 @@ export default function NewCard() {
         setIsSaving(true);
         setCardData({ front: "", back: "" });
         setIsFlipped(false);
+
+        console.log("run");
     }
 
     return (
@@ -90,9 +92,13 @@ export default function NewCard() {
                 </Button>
                 <p>{isFlipped ? "Back" : "Front"}</p>
                 {isEdited ? (
-                    <Button handleClick={() => setIsEdited(false)}>Done</Button>
+                    <Button key="done" handleClick={() => setIsEdited(false)}>
+                        Done
+                    </Button>
                 ) : (
-                    <Button handleClick={saveCard}>Save</Button>
+                    <Button key="save" handleClick={saveCard}>
+                        Save
+                    </Button>
                 )}
             </nav>
             <div className="card-container">
