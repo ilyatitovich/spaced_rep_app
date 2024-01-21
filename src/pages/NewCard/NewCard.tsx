@@ -75,6 +75,7 @@ export default function NewCard() {
         localStorage.setItem(id, JSON.stringify(topic));
         setIsSaving(true);
         setCardData({ front: "", back: "" });
+        setIsFlipped(false);
     }
 
     return (

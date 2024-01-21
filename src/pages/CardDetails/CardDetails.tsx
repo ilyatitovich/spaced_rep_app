@@ -36,7 +36,7 @@ export default function CardDetails() {
     const [isFlipped, setIsFlipped] = useState<boolean>(false);
 
     function deleteCard() {
-        topic.levels[levelId].cards.splice(Number(cardIndx), 1);
+        topic.levels[Number(levelId)-1].cards.splice(Number(cardIndx), 1);
         localStorage.setItem(topic.id, JSON.stringify(topic));
         navigate(-1);
     }

@@ -27,7 +27,7 @@ export default function Level() {
         <div className="screen level">
             <nav>
                 <Button handleClick={() => navigate(-1)}>Back</Button>
-                <p className="title">Level {Number(levelId) + 1}</p>
+                <p className="title">Level {levelId}</p>
             </nav>
             <div className="cards-list">
                 {levelCards.length > 0 ? (

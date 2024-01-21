@@ -26,7 +26,7 @@ export async function getLevelCards(topicId:string, levelId:LevelId) {
 }
 
 export async function getCard(topic:Topic, levelId:LevelId, cardIndx:number) {
-    const card: Card = topic.levels[Number(levelId)].cards[cardIndx];
+    const card: Card = topic.levels[Number(levelId)-1].cards[cardIndx];
     return card;
 }
 
