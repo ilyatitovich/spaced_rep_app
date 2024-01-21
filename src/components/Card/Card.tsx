@@ -6,6 +6,7 @@ interface CardProps {
     data: { front: string; back: string };
     isFlipped: boolean;
     isEditable?: boolean;
+    handleFocus?: () => void;
     handleClick?: () => void;
     handleChange?: (
         event: ChangeEvent<HTMLTextAreaElement>,
@@ -17,10 +18,16 @@ export default function Card({
     data,
     isFlipped,
     isEditable = false,
+    handleFocus,
     handleClick,
     handleChange = () => {},
 }: CardProps) {
-    let content;
+    let content = (
+        <>
+            <div className="front">{data.front}</div>
+            <div className="back">{data.back}</div>
+        </>
+    );
 
     if (isEditable) {
         content = (
@@ -30,20 +37,15 @@ export default function Card({
                     value={data.front}
                     onChange={(event) => handleChange(event, "front")}
                     maxLength={70}
+                    onFocus={handleFocus}
                 />
                 <textarea
                     className="back"
                     value={data.back}
                     onChange={(event) => handleChange(event, "back")}
                     maxLength={70}
+                    onFocus={handleFocus}
                 />
-            </>
-        );
-    } else {
-        content = (
-            <>
-                <div className="front">{data.front}</div>
-                <div className="back">{data.back}</div>
             </>
         );
     }

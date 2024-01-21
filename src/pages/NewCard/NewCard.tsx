@@ -23,6 +23,7 @@ export default function NewCard() {
     const [isFlipped, setIsFlipped] = useState<boolean>(false);
     const [cardData, setCardData] = useState({ front: "", back: "" });
     const [isSaving, setIsSaving] = useState<boolean>(false);
+    const [isEdited, setIsEdited] = useState<boolean>(false);
 
     let timer: number;
 
@@ -87,7 +88,11 @@ export default function NewCard() {
                     Back
                 </Button>
                 <p>{isFlipped ? "Back" : "Front"}</p>
-                <Button handleClick={saveCard}>Save</Button>
+                {isEdited ? (
+                    <Button handleClick={() => setIsEdited(false)}>Done</Button>
+                ) : (
+                    <Button handleClick={saveCard}>Save</Button>
+                )}
             </nav>
             <div className="card-container">
                 {!isSaving && (
@@ -95,6 +100,7 @@ export default function NewCard() {
                         data={cardData}
                         isFlipped={isFlipped}
                         isEditable={true}
+                        handleFocus={() => setIsEdited(true)}
                         handleChange={handleChange}
                     />
                 )}

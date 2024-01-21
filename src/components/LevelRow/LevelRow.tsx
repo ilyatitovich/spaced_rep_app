@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronRight } from "@fortawesome/free-solid-svg-icons";
 
 export default function LevelRow({ level }: { level: Level }) {
-    const { id, color } = level;
+    const { id, color, cards } = level;
 
     let leftContent = (
         <>
@@ -31,10 +31,10 @@ export default function LevelRow({ level }: { level: Level }) {
 
     return (
         <li className="level-row">
-            <Link to={`${id - 1}`}>
+            <Link to={`${id}`}>
                 <div className="left">{leftContent}</div>
                 <div className="right">
-                    <span>{`${level.cards.length} cards`}</span>
+                    <span>{`${cards.length} cards`}</span>
                     <span className="icon">
                         <FontAwesomeIcon icon={faChevronRight} />
                     </span>

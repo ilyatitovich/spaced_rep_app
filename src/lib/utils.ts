@@ -21,7 +21,7 @@ export async function getTopic(id: string) {
 
 export async function getLevelCards(topicId:string, levelId:LevelId) {
     const topic: Topic = await JSON.parse(localStorage.getItem(topicId) as string);
-    const levelCards: Card[] = topic.levels[Number(levelId)].cards;
+    const levelCards: Card[] = topic.levels[Number(levelId)-1].cards;
     return levelCards;
 }
 
