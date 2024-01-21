@@ -7,6 +7,7 @@ interface CardProps {
     isFlipped: boolean;
     isEditable?: boolean;
     handleFocus?: () => void;
+    handleBlur?: () => void;
     handleClick?: () => void;
     handleChange?: (
         event: ChangeEvent<HTMLTextAreaElement>,
@@ -19,6 +20,7 @@ export default function Card({
     isFlipped,
     isEditable = false,
     handleFocus,
+    handleBlur,
     handleClick,
     handleChange = () => {},
 }: CardProps) {
@@ -38,6 +40,7 @@ export default function Card({
                     onChange={(event) => handleChange(event, "front")}
                     maxLength={70}
                     onFocus={handleFocus}
+                    onBlur={handleBlur}
                 />
                 <textarea
                     className="back"
@@ -45,6 +48,7 @@ export default function Card({
                     onChange={(event) => handleChange(event, "back")}
                     maxLength={70}
                     onFocus={handleFocus}
+                    onBlur={handleBlur}
                 />
             </>
         );

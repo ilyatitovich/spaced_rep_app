@@ -101,6 +101,7 @@ export default function NewCard() {
                         isFlipped={isFlipped}
                         isEditable={true}
                         handleFocus={() => setIsEdited(true)}
+                        handleBlur={() => setIsEdited(false)}
                         handleChange={handleChange}
                     />
                 )}
