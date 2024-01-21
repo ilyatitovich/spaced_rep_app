@@ -47,14 +47,18 @@ export class TopicModel implements Topic {
     title: string;
     pivot: number;
     week: Array<DayOfWeek | null>;
-    levels: LevelModel[];
+    draft: Card[];
+    levels: Level[];
+    isUpdated: boolean;
 
     constructor(title: string) {
         this.id = uuidv4();
         this.title = title;
         this.pivot = Date.now();
         this.week = [];
-        this.levels = this.createBoxesList();
+        this.draft = [];
+        this.levels = this.createLevelsList();
+        this.isUpdated = false;
     }
 
     setStartWeek() {
@@ -71,6 +75,7 @@ export class TopicModel implements Topic {
                 this.week.push(day);
             }
         }
+        this.isUpdated = true;
     }
 
     updateWeek() {
@@ -82,11 +87,11 @@ export class TopicModel implements Topic {
         }
     }
 
-    createBoxesList() {
+    createLevelsList() {
         const list: Level[] = [];
 
-        for (let i = 1; i < 8; i++) {
-            list.push(new LevelModel(i, levelColors[i - 1]));
+        for (let i = 0; i < 8; i++) {
+            list.push(new LevelModel(i + 1, levelColors[i]));
         }
 
         return list;

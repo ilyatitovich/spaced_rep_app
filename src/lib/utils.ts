@@ -39,4 +39,5 @@ export const levelColors: levelColor[] = [
     "rgb(0, 255, 242)",
     "rgb(0, 89, 255)",
     "rgb(183, 0, 255)",
+    "rgb(89, 0, 255)",
 ];

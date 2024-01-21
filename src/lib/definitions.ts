@@ -4,7 +4,8 @@ export type levelColor =
     | "rgb(255, 251, 0)"
     | "rgb(0, 255, 242)"
     | "rgb(0, 89, 255)"
-    | "rgb(183, 0, 255)";
+    | "rgb(183, 0, 255)"
+    | "rgb(89, 0, 255)";
 
 export type LevelId = "0" | "1" | "2" | "3" | "4" | "5" | "6";
 
@@ -32,5 +33,7 @@ export interface Topic {
     title: string;
     pivot: number;
     week: Array<DayOfWeek | null>;
+    draft: Card[];
     levels: Level[];
+    isUpdated: boolean;
 }

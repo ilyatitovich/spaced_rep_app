@@ -58,9 +58,7 @@ export default function Topic() {
                                         className="level-color"
                                         style={{
                                             backgroundColor:
-                                                day.todayLevels.indexOf(
-                                                    index
-                                                ) !== -1
+                                                day.todayLevels.includes(index)
                                                     ? bgColor
                                                     : "transparent",
                                         }}
