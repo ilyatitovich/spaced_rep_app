@@ -30,6 +30,12 @@ export async function getCard(topic:Topic, levelId:LevelId, cardIndx:number) {
     return card;
 }
 
+export async function getDraftCards(topicId:string) {
+    const topic: Topic = await JSON.parse(localStorage.getItem(topicId) as string);
+    const draftCards: Card[] = topic.draft;
+    return draftCards;
+}
+
 export const letters = ["S", "M", "T", "W", "T", "F", "S"];
 
 export const levelColors: levelColor[] = [

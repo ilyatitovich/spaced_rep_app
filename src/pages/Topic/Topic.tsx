@@ -4,6 +4,8 @@ import { getTopic, letters, levelColors } from "../../lib/utils";
 import Button from "../../components/Buttons/Button";
 import LevelRow from "../../components/LevelRow/LevelRow";
 import { type Topic, type Level } from "../../lib/definitions";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faChevronRight } from "@fortawesome/free-solid-svg-icons";
 
 // eslint-disable-next-line react-refresh/only-export-components
 export async function loader({ params }: LoaderFunctionArgs) {
@@ -15,7 +17,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
 export default function Topic() {
     const { topic, today } = useLoaderData() as { topic: Topic; today: number };
 
-    const { id, title, week, levels } = topic;
+    const { id, title, week, levels, draft } = topic;
 
     // week[today]!.isDone = false;  // for test
 
@@ -75,6 +77,23 @@ export default function Topic() {
                             Add Card
                         </Button>
                     </div>
+
+                    {draft.length > 0 && (
+                        <div className="draft-row">
+                            <Link to="draft">
+                                <div className="left">Draft</div>
+                                <div className="right">
+                                    <span>{`${draft.length} cards`}</span>
+                                    <span className="icon">
+                                        <FontAwesomeIcon
+                                            icon={faChevronRight}
+                                        />
+                                    </span>
+                                </div>
+                            </Link>
+                        </div>
+                    )}
+
                     <div className="levels">
                         <ul>
                             {levels.map((level: Level) => (
@@ -86,12 +105,6 @@ export default function Topic() {
                     {!week[today]?.isDone && (
                         <Link to="test" className="today-test-btn">
                             <h4>Today's Test</h4>
-                            <small>
-                                Levels:{" "}
-                                {week[today]?.todayLevels.map(
-                                    (level) => level + 1
-                                )}
-                            </small>
                         </Link>
                     )}
                 </div>

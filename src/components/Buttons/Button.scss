@@ -8,6 +8,10 @@ button {
     border: none;
 }
 
+button:disabled {
+    color: rgba(128, 128, 128, 0.5);
+}
+
 a {
     text-decoration: none;
 }

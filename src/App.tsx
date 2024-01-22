@@ -9,6 +9,7 @@ import Level, { loader as levelLoader } from "./pages/Level/Level";
 import CardDetails, {
     loader as cardDetailsLoader,
 } from "./pages/CardDetails/CardDetails";
+import Draft, { loader as draftLoader } from "./pages/Draft/Draft";
 import Error404 from "./pages/Error404/Error404";
 
 const router = createBrowserRouter([
@@ -30,6 +31,11 @@ const router = createBrowserRouter([
                 path: "topic/:topicId",
                 element: <Topic />,
                 loader: topicLoader,
+            },
+            {
+                path: "topic/:topicId/draft",
+                element: <Draft />,
+                loader: draftLoader,
             },
             {
                 path: "topic/:topicId/new-card",

@@ -18,19 +18,53 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
 export default function NewCard() {
     const { topic } = useLoaderData() as { topic: Topic };
-    const navigate = useNavigate();
+    const { id, levels, draft } = topic;
+    const firstLevelCards = levels[0].cards;
 
+    const navigate = useNavigate();
     const [isFlipped, setIsFlipped] = useState<boolean>(false);
     const [cardData, setCardData] = useState({ front: "", back: "" });
     const [isSaving, setIsSaving] = useState<boolean>(false);
     const [isEdited, setIsEdited] = useState<boolean>(false);
+    const [isDraft, setIsDraft] = useState<boolean>(true);
 
-    let timer: number;
+    const cardDataIsExist = cardData.front && cardData.back;
 
-    const { id, levels } = topic;
-    const firstLevelCards = levels[0].cards;
+    const leftBtn = isDraft ? (
+        isEdited ? (
+            <button key="done" onClick={() => setIsEdited(false)}>
+                Done
+            </button>
+        ) : (
+            <button
+                key="save-draft"
+                onClick={() => handleSaveCard("draft")}
+                disabled={!!cardData.front === false}
+            >
+                Save Draft
+            </button>
+        )
+    ) : isEdited ? (
+        <button key="done" onClick={() => setIsEdited(false)}>
+            Done
+        </button>
+    ) : (
+        <button key="save" onClick={() => handleSaveCard("new")}>
+            Save
+        </button>
+    );
 
     useEffect(() => {
+        if (cardDataIsExist) {
+            setIsDraft(false);
+        } else {
+            setIsDraft(true);
+        }
+    }, [cardDataIsExist]);
+
+    useEffect(() => {
+        let timer: number;
+
         if (isSaving) {
             // eslint-disable-next-line react-hooks/exhaustive-deps
             timer = setTimeout(() => {
@@ -65,19 +99,23 @@ export default function NewCard() {
         }
     }
 
-    function saveCard() {
-        const newCard = {
+    function handleSaveCard(cardStatus: "new" | "draft") {
+        const cardForSave = {
             id: firstLevelCards.length,
             level: 0,
             ...cardData,
         };
-        firstLevelCards.push(newCard);
+
+        if (cardStatus === "new") {
+            firstLevelCards.push(cardForSave);
+        } else {
+            draft.push(cardForSave);
+        }
+
         localStorage.setItem(id, JSON.stringify(topic));
         setIsSaving(true);
         setCardData({ front: "", back: "" });
         setIsFlipped(false);
-
-        console.log("run");
     }
 
     return (
@@ -91,7 +129,7 @@ export default function NewCard() {
                     Back
                 </Button>
                 <p>{isFlipped ? "Back" : "Front"}</p>
-                {isEdited ? (
+                {/* {isEdited ? (
                     <Button key="done" handleClick={() => setIsEdited(false)}>
                         Done
                     </Button>
@@ -99,7 +137,8 @@ export default function NewCard() {
                     <Button key="save" handleClick={saveCard}>
                         Save
                     </Button>
-                )}
+                )} */}
+                {leftBtn}
             </nav>
             <div className="card-container">
                 {!isSaving && (

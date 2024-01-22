@@ -5,8 +5,8 @@
 
     .wrapper {
         width: 100%;
-        height: 84vh;
-        height: calc(var(--vh, 1vh) * 84);
+        height: 92vh;
+        height: calc(var(--vh, 1vh) * 92);
         padding-bottom: 8em;
         overflow-y: scroll;
         .week {
@@ -56,6 +56,40 @@
                 justify-content: space-between;
             }
 
+            .draft-row {
+                width: 100%;
+                height: 10vh;
+                height: calc(var(--vh, 1vh) * 10);
+                padding: 0 1.2em;
+                display: flex;
+                border-bottom: 1px solid gray;
+
+                a {
+                    width: 100%;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    color: black;
+
+                    .left {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.7em;
+                    }
+
+                    .right {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.5em;
+                        color: gray;
+
+                        .icon {
+                            font-size: 0.98rem;
+                        }
+                    }
+                }
+            }
+
             .today-test-btn {
                 display: block;
                 position: absolute;
@@ -63,14 +97,14 @@
                 bottom: 1em;
                 transform: translateX(-50%);
                 width: 65%;
-                padding: .5em 0;
+                padding: 0.5em 0;
                 text-align: center;
                 background-color: purple;
                 color: white;
                 border-radius: 1em;
 
                 small {
-                    font-size: .9rem;
+                    font-size: 0.9rem;
                 }
             }
         }
