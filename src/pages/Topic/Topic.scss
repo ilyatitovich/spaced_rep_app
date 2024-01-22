@@ -54,6 +54,7 @@
                 padding: 0.5em 1.2em;
                 display: flex;
                 justify-content: space-between;
+                align-items: center;
             }
 
             .draft-row {
@@ -97,11 +98,11 @@
                 bottom: 1em;
                 transform: translateX(-50%);
                 width: 65%;
-                padding: 0.5em 0;
+                padding: 1.255em 0;
                 text-align: center;
                 background-color: purple;
                 color: white;
-                border-radius: 1em;
+                border-radius: .75em;
 
                 small {
                     font-size: 0.9rem;

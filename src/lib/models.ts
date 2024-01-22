@@ -33,12 +33,21 @@ export class DayOfWeekModel implements DayOfWeek {
 
     setLevelList(pivot: number) {
         const numOfDays = Math.floor((this.date - pivot) / 86400000 + 1);
-        if (numOfDays % 2 === 0) this.todayLevels.push(1);
-        if (numOfDays % 4 === 0) this.todayLevels.push(2);
-        if (numOfDays % 8 === 0) this.todayLevels.push(3);
-        if (numOfDays % 16 === 0) this.todayLevels.push(4);
-        if (numOfDays % 32 === 0) this.todayLevels.push(5);
-        if (numOfDays % 64 === 0) this.todayLevels.push(6);
+        
+        const levelConditions = [
+            { divisor: 2, level: 1 },
+            { divisor: 5, level: 2 },
+            { divisor: 9, level: 3 },
+            { divisor: 17, level: 4 },
+            { divisor: 33, level: 5 },
+            { divisor: 65, level: 6 },
+        ];
+
+        levelConditions.forEach((condition) => {
+            if (numOfDays % condition.divisor === 0) {
+                this.todayLevels.push(condition.level);
+            }
+        });
     }
 }
 
@@ -62,7 +71,7 @@ export class TopicModel implements Topic {
     }
 
     setStartWeek() {
-        const dayOfTheWeek = new Date().getDay();
+        const dayOfTheWeek = new Date(this.pivot).getDay();
 
         for (let d = 0; d < 7; d++) {
             if (dayOfTheWeek > d) {
@@ -74,16 +83,6 @@ export class TopicModel implements Topic {
                 day.setLevelList(this.pivot);
                 this.week.push(day);
             }
-        }
-        this.isUpdated = true;
-    }
-
-    updateWeek() {
-        this.week = [];
-        for (let d = 0; d < 7; d++) {
-            const day = new DayOfWeekModel(Date.now() + 86400000 * d);
-            day.setLevelList(this.pivot);
-            this.week.push(day);
         }
     }
 

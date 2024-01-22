@@ -1,4 +1,10 @@
-import { type levelColor, type Topic, type LevelId, type Card } from "./definitions";
+import {
+    type levelColor,
+    type Topic,
+    type LevelId,
+    type Card,
+} from "./definitions";
+import { DayOfWeekModel } from "./models";
 
 export async function getAllTopics() {
     const topics = [];
@@ -19,21 +25,59 @@ export async function getTopic(id: string) {
     return topic;
 }
 
-export async function getLevelCards(topicId:string, levelId:LevelId) {
-    const topic: Topic = await JSON.parse(localStorage.getItem(topicId) as string);
-    const levelCards: Card[] = topic.levels[Number(levelId)-1].cards;
+export async function getLevelCards(topicId: string, levelId: LevelId) {
+    const topic: Topic = await JSON.parse(
+        localStorage.getItem(topicId) as string
+    );
+    const levelCards: Card[] = topic.levels[Number(levelId) - 1].cards;
     return levelCards;
 }
 
-export async function getCard(topic:Topic, levelId:LevelId, cardIndx:number) {
-    const card: Card = topic.levels[Number(levelId)-1].cards[cardIndx];
+export async function getCard(
+    topic: Topic,
+    levelId: LevelId,
+    cardIndx: number
+) {
+    const card: Card = topic.levels[Number(levelId) - 1].cards[cardIndx];
     return card;
 }
 
-export async function getDraftCards(topicId:string) {
-    const topic: Topic = await JSON.parse(localStorage.getItem(topicId) as string);
+export async function getDraftCards(topicId: string) {
+    const topic: Topic = await JSON.parse(
+        localStorage.getItem(topicId) as string
+    );
     const draftCards: Card[] = topic.draft;
     return draftCards;
+}
+
+export async function updateWeek(topic: Topic): Promise<Topic> {
+    const dayOfTheWeek = new Date().getDay();
+
+    const { id, pivot } = topic;
+
+    topic.week = [];
+
+    for (let d = 0; d < 7; d++) {
+        const day = new DayOfWeekModel(
+            Date.now() + 86400000 * (d - dayOfTheWeek)
+        );
+        day.setLevelList(pivot);
+        topic.week.push(day);
+    }
+
+    topic.isUpdated = true;
+
+    localStorage.setItem(id, JSON.stringify(topic));
+
+    return await getTopic(id);
+}
+
+export async function resetIsUpdated(topic: Topic): Promise<Topic> {
+    const { id } = topic;
+    topic.isUpdated = false;
+
+    localStorage.setItem(id, JSON.stringify(topic));
+    return await getTopic(id);
 }
 
 export const letters = ["S", "M", "T", "W", "T", "F", "S"];

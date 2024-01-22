@@ -31,10 +31,10 @@ export default function Level() {
             </nav>
             <div className="cards-list">
                 {levelCards.length > 0 ? (
-                    levelCards.map((card) => (
+                    levelCards.map((card, index) => (
                         <Link
                             key={card.id * Math.random()}
-                            to={`${card.id}`}
+                            to={`${index}`}
                             className="card"
                         >
                             <small>{card.front}</small>

@@ -1,6 +1,12 @@
 import "./Topic.scss";
 import { Link, type LoaderFunctionArgs, useLoaderData } from "react-router-dom";
-import { getTopic, letters, levelColors } from "../../lib/utils";
+import {
+    getTopic,
+    updateWeek,
+    resetIsUpdated,
+    letters,
+    levelColors,
+} from "../../lib/utils";
 import Button from "../../components/Buttons/Button";
 import LevelRow from "../../components/LevelRow/LevelRow";
 import { type Topic, type Level } from "../../lib/definitions";
@@ -9,8 +15,19 @@ import { faChevronRight } from "@fortawesome/free-solid-svg-icons";
 
 // eslint-disable-next-line react-refresh/only-export-components
 export async function loader({ params }: LoaderFunctionArgs) {
-    const topic = await getTopic(params.topicId as string);
+    let topic = await getTopic(params.topicId as string);
     const today: number = new Date().getDay();
+
+
+    // update is Sunday
+    if (today === 0 && topic.isUpdated === false) { 
+        topic = await updateWeek(topic);
+
+    // reset isUpdated if Monday
+    } else if (today === 1 && topic.isUpdated === true) {
+        topic = await resetIsUpdated(topic);
+    }
+
     return { topic, today };
 }
 
@@ -72,7 +89,7 @@ export default function Topic() {
 
                 <div className="content">
                     <div className="add-card-wrapper">
-                        <h3>Levels</h3>
+                        <h4>Levels</h4>
                         <Button asLink to="new-card">
                             Add Card
                         </Button>

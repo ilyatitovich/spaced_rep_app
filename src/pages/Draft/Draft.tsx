@@ -28,10 +28,10 @@ export default function Draft() {
             </nav>
             <div className="cards-list">
                 {draftCards.length > 0 &&
-                    draftCards.map((card) => (
+                    draftCards.map((card, index) => (
                         <Link
                             key={card.id * Math.random()}
-                            to={`${card.id}/edit`}
+                            to={`${index}/edit`}
                             className="card"
                         >
                             <small>{card.front}</small>
