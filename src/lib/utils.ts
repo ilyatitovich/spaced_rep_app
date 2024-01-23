@@ -50,6 +50,11 @@ export async function getDraftCards(topicId: string) {
     return draftCards;
 }
 
+export async function getDraftCard(topic: Topic, cardIndx: number) {
+    const draftCard: Card = topic.draft[cardIndx];
+    return draftCard;
+}
+
 export async function updateWeek(topic: Topic): Promise<Topic> {
     const dayOfTheWeek = new Date().getDay();
 

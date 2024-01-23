@@ -11,19 +11,22 @@ import Button from "../../components/Buttons/Button";
 import LevelRow from "../../components/LevelRow/LevelRow";
 import { type Topic, type Level } from "../../lib/definitions";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChevronRight } from "@fortawesome/free-solid-svg-icons";
+import {
+    faChevronRight,
+    faXmark,
+    faCheck,
+} from "@fortawesome/free-solid-svg-icons";
 
 // eslint-disable-next-line react-refresh/only-export-components
 export async function loader({ params }: LoaderFunctionArgs) {
     let topic = await getTopic(params.topicId as string);
     const today: number = new Date().getDay();
 
-
     // update is Sunday
-    if (today === 0 && topic.isUpdated === false) { 
+    if (today === 0 && topic.isUpdated === false) {
         topic = await updateWeek(topic);
 
-    // reset isUpdated if Monday
+        // reset isUpdated if Monday
     } else if (today === 1 && topic.isUpdated === true) {
         topic = await resetIsUpdated(topic);
     }
@@ -54,21 +57,41 @@ export default function Topic() {
                 </Button>
             </nav>
             <div className="wrapper">
+
                 <div className="week">
                     {week.map((day, index) => (
                         <div key={index + 10} className="day">
                             <small className="letter">{letters[index]}</small>
                             <div className="state-container">
-                                <div
-                                    style={{
-                                        backgroundColor: day
-                                            ? today === index
-                                                ? "purple"
-                                                : "transparent"
-                                            : "grey",
-                                    }}
-                                    className="state"
-                                ></div>
+                                {day ? (
+                                    index < today ? (
+                                        <FontAwesomeIcon
+                                            icon={
+                                                day.isDone ? faCheck : faXmark
+                                            }
+                                            className={
+                                                day.isDone ? "passed" : "missed"
+                                            }
+                                        />
+                                    ) : (
+                                        <div
+                                            style={{
+                                                backgroundColor:
+                                                    today === index
+                                                        ? "purple"
+                                                        : "transparent",
+                                            }}
+                                            className="state"
+                                        ></div>
+                                    )
+                                ) : (
+                                    <div
+                                        style={{
+                                            backgroundColor: "grey",
+                                        }}
+                                        className="state"
+                                    ></div>
+                                )}
                             </div>
                             {day &&
                                 levelColors.map((bgColor, index) => (

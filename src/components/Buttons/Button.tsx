@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { type ReactNode } from "react";
 import "./Button.scss";
 import { Link } from "react-router-dom";
 
@@ -26,7 +26,7 @@ export default function Button({
     }
 
     return (
-        <button className={testBtn} onClick={handleClick}>
+        <button className={testBtn} onClick={handleClick} >
             {children}
         </button>
     );
