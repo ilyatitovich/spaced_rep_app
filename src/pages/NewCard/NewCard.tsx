@@ -63,7 +63,7 @@ export default function NewCard() {
     }, [cardDataIsExist]);
 
     useEffect(() => {
-        let timer: number;
+        let timer: NodeJS.Timeout;
 
         if (isSaving) {
             // eslint-disable-next-line react-hooks/exhaustive-deps

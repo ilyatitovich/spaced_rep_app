@@ -31,9 +31,9 @@ export default function Test() {
     const [cards, setCards] = useState(cardsForTest);
     const [isMoved, setIsMoved] = useState<boolean>(false);
 
-    let timer: number;
-
     useEffect(() => {
+        let timer: NodeJS.Timeout;
+
         if (isMoved) {
             // eslint-disable-next-line react-hooks/exhaustive-deps
             timer = setTimeout(() => {
