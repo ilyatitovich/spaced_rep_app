@@ -9,6 +9,11 @@ export type levelColor =
 
 export type LevelId = "0" | "1" | "2" | "3" | "4" | "5" | "6";
 
+export interface TopicItem {
+    id: string;
+    title: string;
+}
+
 export interface Card {
     id: number;
     level: number;

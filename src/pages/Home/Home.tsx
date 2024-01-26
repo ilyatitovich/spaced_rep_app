@@ -1,16 +1,11 @@
 import "./Home.scss";
+import { TopicItem } from "../../lib/definitions";
 import { Link, useLoaderData } from "react-router-dom";
-import Button from "../../components/Buttons/Button";
-import { getAllTopics } from "../../lib/utils";
-
-interface TopicItem {
-    id: string;
-    title: string;
-}
+import { getTopicsList } from "../../lib/utils";
 
 // eslint-disable-next-line react-refresh/only-export-components
 export async function loader() {
-    const topics = await getAllTopics();
+    const topics: TopicItem[] = getTopicsList();
     return { topics };
 }
 
@@ -18,31 +13,34 @@ export default function Home() {
     const { topics } = useLoaderData() as { topics: TopicItem[] };
 
     return (
-        <div className="screen home">
+        <div className="home">
             <nav>
-                <p>Your Topics</p>
+                <p>Topics</p>
             </nav>
-            <div className="topics-list">
-                {topics.length > 0 ? (
+            {topics.length > 0 ? (
+                <div className="topics-list">
                     <ul>
                         {topics.map((item) => (
-                            <Link
-                                key={item.title}
-                                to={`topic/${item.id}`}
-                                className="topic-item"
-                            >
-                                {item.title}
-                            </Link>
+                            <li>
+                                <Link
+                                    key={item.title}
+                                    to={`topic/${item.id}`}
+                                    className="topic-item"
+                                >
+                                    {item.title}
+                                </Link>
+                            </li>
                         ))}
                     </ul>
-                ) : (
-                    <p className="message">No topics to study yet</p>
-                )}
-            </div>
+                </div>
+            ) : (
+                <div className="message">
+                    <p>No topics to study yet</p>
+                </div>
+            )}
+
             <footer>
-                <Button asLink to="new-topic">
-                    Add Topic
-                </Button>
+                <Link to="new-topic">Add Topic</Link>
             </footer>
         </div>
     );

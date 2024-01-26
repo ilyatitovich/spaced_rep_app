@@ -9,8 +9,8 @@ const pwaOptions: Partial<VitePWAOptions> = {
     base: "/",
     includeAssets: ["favicon.ico", "apple-touch-icon.png", "mask-icon.svg"],
     manifest: {
-        name: "Memento",
-        short_name: "Memento",
+        name: "Spaced Repetition",
+        short_name: "Spaced Repetition",
         description:
             "An app for memorizing information using spaced repetition techniques",
         theme_color: "#ffffff",

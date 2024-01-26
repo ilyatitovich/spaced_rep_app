@@ -1,19 +1,17 @@
-import {
-    type levelColor,
-    type Topic,
-    type LevelId,
-    type Card,
+import type {
+    TopicItem,
+    levelColor,
+    Topic,
+    LevelId,
+    Card,
 } from "./definitions";
 import { DayOfWeekModel } from "./models";
 
-export async function getAllTopics() {
+export function getTopicsList(): TopicItem[] {
     const topics = [];
 
     for (const key of Object.keys(localStorage)) {
-        const topic: Topic = JSON.parse(localStorage.getItem(key) as string);
-
-        const { id, title } = topic;
-
+        const { id, title } = JSON.parse(localStorage.getItem(key)!) as Topic;
         topics.push({ id, title });
     }
 
