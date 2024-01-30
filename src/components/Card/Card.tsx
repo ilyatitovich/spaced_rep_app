@@ -1,5 +1,5 @@
 import "./Card.scss";
-import { type ChangeEvent } from "react";
+import { ChangeEvent } from "react";
 import { motion } from "framer-motion";
 
 interface CardProps {

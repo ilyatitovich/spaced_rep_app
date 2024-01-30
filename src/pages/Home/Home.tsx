@@ -17,28 +17,28 @@ export default function Home() {
             <nav>
                 <p>Topics</p>
             </nav>
-            {topics.length > 0 ? (
-                <div className="topics-list">
-                    <ul>
-                        {topics.map((item) => (
-                            <li>
-                                <Link
-                                    key={item.title}
-                                    to={`topic/${item.id}`}
-                                    className="topic-item"
-                                >
-                                    {item.title}
-                                </Link>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            ) : (
-                <div className="message">
-                    <p>No topics to study yet</p>
-                </div>
-            )}
-
+            <div className="content">
+                {topics.length > 0 ? (
+                    <div className="topics">
+                        <ul>
+                            {topics.map((topic) => (
+                                <li key={topic.id}>
+                                    <Link
+                                        to={`topic/${topic.id}`}
+                                        className="topic"
+                                    >
+                                        {topic.title}
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                ) : (
+                    <div className="message">
+                        <p>No topics to study yet</p>
+                    </div>
+                )}
+            </div>
             <footer>
                 <Link to="new-topic">Add Topic</Link>
             </footer>

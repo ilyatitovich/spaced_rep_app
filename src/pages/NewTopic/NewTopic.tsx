@@ -1,40 +1,38 @@
 import "./NewTopic.scss";
-import { useNavigate } from "react-router-dom";
-import Button from "../../components/Buttons/Button";
-import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useRef } from "react";
+import { v4 as uuidv4 } from "uuid";
 import { TopicModel } from "../../lib/models";
+import { saveTopic, getNextUpdateDate } from "../../lib/utils";
 
 export default function NewTopic() {
     const navigate = useNavigate();
-    const [topicTitle, setTopicTitle] = useState<string>("");
+    const inputRef = useRef<HTMLInputElement>(null);
 
     function handleSave() {
-        const topic = new TopicModel(topicTitle);
-        topic.setStartWeek();
-        localStorage.setItem(topic.id, JSON.stringify(topic));
+        const id = uuidv4();
+        const title = inputRef.current!.value
+        const nextUpdateDate = getNextUpdateDate();
+        const topic = new TopicModel(id, title, nextUpdateDate);
+        saveTopic(topic);
         navigate(-1);
     }
 
     return (
-        <div className="screen new-topic">
+        <div className="new-topic">
             <nav>
-                <Button asLink to="/">
-                    Back
-                </Button>
-                <Button handleClick={handleSave}>Save</Button>
+                <Link to="/">Back</Link>
+                <button onClick={handleSave}>Save</button>
             </nav>
-            <div className="input-container">
-                <label htmlFor="topic-title">
+            <div className="content">
+                <label htmlFor="title">
                     What are you going to learn?
                 </label>
                 <input
+                    ref={inputRef}
                     name="title"
                     type="text"
-                    value={topicTitle}
                     maxLength={10}
-                    onChange={(event) =>
-                        setTopicTitle(event.currentTarget.value)
-                    }
                     onKeyDown={(event) => event.key === "Enter" && handleSave()}
                 />
             </div>

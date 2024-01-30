@@ -1,5 +1,11 @@
-$black: rgb(36, 36, 36);
-$light-gray: rgb(219, 219, 219);
+$white: #ffffff;
+$black: #242424;
+$gray: #808080;
+$light-gray: #dbdbdb;
+$purple: #800080;
+$blue: #309bff;
+$red: #c20404;
+$green: #008000;
 $blue-gradient: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%);
 
 @mixin height($points: 100) {

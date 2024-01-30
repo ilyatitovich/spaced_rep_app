@@ -7,53 +7,44 @@ import type {
 } from "./definitions";
 import { DayOfWeekModel } from "./models";
 
+export function saveTopic(topic: Topic) {
+    localStorage.setItem(topic.id, JSON.stringify(topic));
+}
+
 export function getTopicsList(): TopicItem[] {
-    const topics = [];
+    return Object.values(localStorage).map((topic) => {
+        const { id, title } = JSON.parse(topic) as Topic;
+        return { id, title };
+    });
+}
 
-    for (const key of Object.keys(localStorage)) {
-        const { id, title } = JSON.parse(localStorage.getItem(key)!) as Topic;
-        topics.push({ id, title });
+export function getTopic(id: string) {
+    return JSON.parse(localStorage.getItem(id)!);
+}
+
+export function getLevelCards(topicId: string, levelId: LevelId): Card[] {
+    const topic: Topic = JSON.parse(localStorage.getItem(topicId)!);
+
+    if (levelId === "draft") {
+        return topic.draft;
+    } else {
+        return topic.levels[Number(levelId) - 1].cards;
     }
-
-    return topics;
 }
 
-export async function getTopic(id: string) {
-    const topic: Topic = await JSON.parse(localStorage.getItem(id) as string);
-    return topic;
-}
-
-export async function getLevelCards(topicId: string, levelId: LevelId) {
-    const topic: Topic = await JSON.parse(
-        localStorage.getItem(topicId) as string
-    );
-    const levelCards: Card[] = topic.levels[Number(levelId) - 1].cards;
-    return levelCards;
-}
-
-export async function getCard(
+export function getCard(
     topic: Topic,
     levelId: LevelId,
     cardIndx: number
-) {
-    const card: Card = topic.levels[Number(levelId) - 1].cards[cardIndx];
-    return card;
+): Card {
+    if (levelId === "draft") {
+        return topic.draft[cardIndx];
+    } else {
+        return topic.levels[Number(levelId) - 1].cards[cardIndx];
+    }
 }
 
-export async function getDraftCards(topicId: string) {
-    const topic: Topic = await JSON.parse(
-        localStorage.getItem(topicId) as string
-    );
-    const draftCards: Card[] = topic.draft;
-    return draftCards;
-}
-
-export async function getDraftCard(topic: Topic, cardIndx: number) {
-    const draftCard: Card = topic.draft[cardIndx];
-    return draftCard;
-}
-
-export async function updateWeek(topic: Topic): Promise<Topic> {
+export function updateWeek(topic: Topic): Topic {
     const dayOfTheWeek = new Date().getDay();
 
     const { id, pivot } = topic;
@@ -68,22 +59,30 @@ export async function updateWeek(topic: Topic): Promise<Topic> {
         topic.week.push(day);
     }
 
-    topic.isUpdated = true;
+    topic.nextUpdateDate = getNextUpdateDate();
 
-    localStorage.setItem(id, JSON.stringify(topic));
+    saveTopic(topic);
 
-    return await getTopic(id);
+    return getTopic(id);
 }
 
-export async function resetIsUpdated(topic: Topic): Promise<Topic> {
-    const { id } = topic;
-    topic.isUpdated = false;
+export function getNextUpdateDate(): number {
+    const today = new Date();
+    const currentDayOfWeek = today.getDay();
 
-    localStorage.setItem(id, JSON.stringify(topic));
-    return await getTopic(id);
+    // Calculate the number of days until the next Sunday
+    const daysUntilSunday = 7 - currentDayOfWeek;
+
+    // Set the date to the next Sunday
+    const nextSunday = new Date(today);
+    nextSunday.setDate(today.getDate() + daysUntilSunday);
+
+    // Set the time to midnight (00:00:00)
+    nextSunday.setHours(0, 0, 0, 0);
+
+    // Return the timestamp for the next Sunday at midnight
+    return nextSunday.getTime();
 }
-
-export const letters = ["S", "M", "T", "W", "T", "F", "S"];
 
 export const levelColors: levelColor[] = [
     "red",

@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from "uuid";
 import {
     type levelColor,
     type Card,
@@ -33,7 +32,7 @@ export class DayOfWeekModel implements DayOfWeek {
 
     setLevelList(pivot: number) {
         const numOfDays = Math.floor((this.date - pivot) / 86400000 + 1);
-        
+
         const levelConditions = [
             { divisor: 2, level: 1 },
             { divisor: 5, level: 2 },
@@ -58,41 +57,38 @@ export class TopicModel implements Topic {
     week: Array<DayOfWeek | null>;
     draft: Card[];
     levels: Level[];
-    isUpdated: boolean;
+    nextUpdateDate: number;
 
-    constructor(title: string) {
-        this.id = uuidv4();
+    constructor(id: string, title: string, nextUpdateDate: number) {
+        this.id = id;
         this.title = title;
         this.pivot = Date.now();
-        this.week = [];
+        this.week = this.setStartWeek(this.pivot);
         this.draft = [];
-        this.levels = this.createLevelsList();
-        this.isUpdated = false;
+        this.levels = this.createLevelsList(levelColors);
+        this.nextUpdateDate = nextUpdateDate;
     }
 
-    setStartWeek() {
-        const dayOfTheWeek = new Date(this.pivot).getDay();
+    setStartWeek(timestamp: number) {
+        const week: Array<DayOfWeek | null> = [];
+        const dayOfTheWeek = new Date(timestamp).getDay();
 
         for (let d = 0; d < 7; d++) {
             if (dayOfTheWeek > d) {
-                this.week.push(null);
+                week.push(null);
             } else {
                 const day = new DayOfWeekModel(
-                    this.pivot + 86400000 * (d - dayOfTheWeek)
+                    timestamp + 86400000 * (d - dayOfTheWeek)
                 );
-                day.setLevelList(this.pivot);
-                this.week.push(day);
+                day.setLevelList(timestamp);
+                week.push(day);
             }
         }
+
+        return week;
     }
 
-    createLevelsList() {
-        const list: Level[] = [];
-
-        for (let i = 0; i < 8; i++) {
-            list.push(new LevelModel(i + 1, levelColors[i]));
-        }
-
-        return list;
+    createLevelsList(colors: levelColor[]) {
+        return colors.map((color, index) => new LevelModel(index + 1, color));
     }
 }

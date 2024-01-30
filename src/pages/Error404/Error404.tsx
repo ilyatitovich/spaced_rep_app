@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 export default function Error404() {
     return (
-        <div className="screen error">
+        <div className="error">
             <div className="content">
                 <div className="code">404 - Page Not Found</div>
                 <small className="message">Oops! It looks like you've taken a wrong turn.</small>

@@ -1,17 +1,16 @@
 import "./CardDetails.scss";
 import {
-    type Topic,
-    type LevelId,
-    type Card as CardType,
+   Topic,
+   LevelId,
+   Card as CardType,
 } from "../../lib/definitions";
 import {
-    type LoaderFunctionArgs,
+   LoaderFunctionArgs,
     useLoaderData,
     useNavigate,
 } from "react-router-dom";
 import { useState } from "react";
 import { getTopic, getCard } from "../../lib/utils";
-import Button from "../../components/Buttons/Button";
 import Card from "../../components/Card/Card";
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -20,8 +19,8 @@ export async function loader({ params }: LoaderFunctionArgs) {
         levelId: LevelId;
         cardIndx: string;
     };
-    const topic: Topic = await getTopic(params.topicId as string);
-    const card = await getCard(topic, levelId, Number(params.cardIndx));
+    const topic: Topic = getTopic(params.topicId!);
+    const card: CardType = getCard(topic, levelId, Number(params.cardIndx));
     return { levelId, cardIndx, topic, card };
 }
 
@@ -44,23 +43,23 @@ export default function CardDetails() {
     return (
         <div className="screen card-details">
             <nav>
-                <Button
-                    handleClick={() => {
+                <button
+                    onClick={() => {
                         navigate(-1);
                     }}
                 >
                     Back
-                </Button>
+                </button>
                 <p>{isFlipped ? "Back" : "Front"}</p>
-                <Button handleClick={deleteCard}>Delete</Button>
+                <button onClick={deleteCard}>Delete</button>
             </nav>
             <div className="card-container">
                 <Card data={card} isFlipped={isFlipped} />
             </div>
             <footer>
-                <Button handleClick={() => setIsFlipped(!isFlipped)}>
+                <button onClick={() => setIsFlipped(!isFlipped)}>
                     Flip
-                </Button>
+                </button>
             </footer>
         </div>
     );

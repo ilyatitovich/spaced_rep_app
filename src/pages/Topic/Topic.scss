@@ -1,122 +1,65 @@
+@import "../../utils";
+
 .topic {
     nav {
         justify-content: space-between;
     }
 
-    .wrapper {
-        width: 100%;
-        height: 92vh;
-        height: calc(var(--vh, 1vh) * 92);
+    .content {
+        @include height(92);
         padding-bottom: 8em;
         overflow-y: scroll;
 
-        .week {
-            width: 100%;
-            padding-top: 1em;
+        .add-card-wrapper {
+            padding: 0.5em 1.2em;
             display: flex;
-            border-bottom: 1px solid var(--border-bottom-color);
+            justify-content: space-between;
+            align-items: center;
+        }
 
-            .day {
-                width: calc(100% / 7);
-                padding: 0.4em 0;
+        .draft-row {
+            @include height(10);
+            padding: 0 1.2em;
+            display: flex;
+            border-bottom: 1px solid $light-gray;
+
+            a {
+                width: 100%;
                 display: flex;
-                flex-direction: column;
+                justify-content: space-between;
                 align-items: center;
+                color: $black;
 
-                .state-container {
-                    width: 1.2em;
-                    height: 1.2em;
-                    margin: 0.4em 0;
+                .left {
                     display: flex;
-                    justify-content: center;
                     align-items: center;
-                    border: 1px solid;
-                    border-radius: 50%;
-
-                    .missed {
-                        color: red;
-                    }
-
-                    .passed {
-                        color: green;
-                    }
-
-                    .state {
-                        width: 0.6em;
-                        height: 0.6em;
-                        border-radius: 50%;
-                    }
+                    gap: 0.7em;
                 }
 
-                .level-color {
-                    width: 0.5rem;
-                    height: 0.5rem;
-                    margin: 0.2rem 0;
-                    border-radius: 50%;
+                .right {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5em;
+                    color: $gray;
+
+                    .icon {
+                        font-size: 0.98rem;
+                    }
                 }
             }
         }
 
-        .content {
-            .add-card-wrapper {
-                width: 100%;
-                padding: 0.5em 1.2em;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }
-
-            .draft-row {
-                width: 100%;
-                height: 10vh;
-                height: calc(var(--vh, 1vh) * 10);
-                padding: 0 1.2em;
-                display: flex;
-                border-bottom: 1px solid gray;
-
-                a {
-                    width: 100%;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    color: black;
-
-                    .left {
-                        display: flex;
-                        align-items: center;
-                        gap: 0.7em;
-                    }
-
-                    .right {
-                        display: flex;
-                        align-items: center;
-                        gap: 0.5em;
-                        color: gray;
-
-                        .icon {
-                            font-size: 0.98rem;
-                        }
-                    }
-                }
-            }
-
-            .today-test-btn {
-                display: block;
-                position: absolute;
-                left: 50%;
-                bottom: 1em;
-                transform: translateX(-50%);
-                width: 65%;
-                padding: 1.255em 0;
-                text-align: center;
-                background-color: purple;
-                color: white;
-                border-radius: .75em;
-
-                small {
-                    font-size: 0.9rem;
-                }
-            }
+        .today-test-btn {
+            position: absolute;
+            left: 50%;
+            bottom: 1em;
+            transform: translateX(-50%);
+            width: 70%;
+            padding: 1.25em 0;
+            text-align: center;
+            background-color: $purple;
+            color: $white;
+            border-radius: 0.75em;
         }
     }
 }

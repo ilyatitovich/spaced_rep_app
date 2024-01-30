@@ -1,0 +1,29 @@
+@import "../../utils";
+
+.cards-list {
+    @include height(92);
+    padding: 1em 1em;
+
+    display: flex;
+    align-content: flex-start;
+    flex-wrap: wrap;
+    gap: 1em;
+    overflow-y: scroll;
+
+    .card {
+        width: calc((100% - 2em) / 3 - 0.5em);
+        height: 20%;
+        @include centered-flex-container;
+        font-size: 0.8rem;
+        border: 1px solid $black;
+        border-radius: 0.7em;
+        color:$black;
+    }
+
+    .message {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+}

@@ -1,49 +1,34 @@
 import "./Level.scss";
 import {
-    type LoaderFunctionArgs,
+    LoaderFunctionArgs,
     useLoaderData,
     useNavigate,
-    Link,
 } from "react-router-dom";
-import { type LevelId, type Card } from "../../lib/definitions";
+import { LevelId, Card } from "../../lib/definitions";
 import { getLevelCards } from "../../lib/utils";
-import Button from "../../components/Buttons/Button";
+import CardsListContainer from "../../components/CardsListContainer/CardsListContainer";
 
 // eslint-disable-next-line react-refresh/only-export-components
 export async function loader({ params }: LoaderFunctionArgs) {
     const levelId = params.levelId as LevelId;
-    const levelCards = await getLevelCards(params.topicId as string, levelId);
+    const levelCards = getLevelCards(params.topicId!, levelId);
     return { levelId, levelCards };
 }
 
 export default function Level() {
+    const navigate = useNavigate();
     const { levelId, levelCards } = useLoaderData() as {
         levelId: LevelId;
         levelCards: Card[];
     };
-    const navigate = useNavigate();
 
     return (
-        <div className="screen level">
+        <div className="level">
             <nav>
-                <Button handleClick={() => navigate(-1)}>Back</Button>
+                <button onClick={() => navigate(-1)}>Back</button>
                 <p className="title">Level {levelId}</p>
             </nav>
-            <div className="cards-list">
-                {levelCards.length > 0 ? (
-                    levelCards.map((card, index) => (
-                        <Link
-                            key={card.id * Math.random()}
-                            to={`${index}`}
-                            className="card"
-                        >
-                            <small>{card.front}</small>
-                        </Link>
-                    ))
-                ) : (
-                    <div className="message">No cards</div>
-                )}
-            </div>
+            <CardsListContainer cardsFrom="level" cardsList={levelCards} />
         </div>
     );
 }

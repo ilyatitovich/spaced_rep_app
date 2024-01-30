@@ -1,36 +1,35 @@
 @import "../../utils";
 
 .home {
-    @include screen;
-    
     nav {
         justify-content: center;
     }
 
-    .topics-list,
-    .message {
+    .content {
         @include height($points: 84);
         padding: 1em 1.2em;
-    }
 
-    .topics-list {
-        overflow-y: scroll;
+        .topics {
+            height: 100%;
+            overflow-y: scroll;
 
-        .topic-item {
-            padding: 1em 4em;
-            margin: 1em auto;
+            .topic {
+                padding: 1em 4em;
+                margin: 1em auto;
 
-            @include centered-flex-container;
+                @include centered-flex-container;
 
-            font-size: 1.2rem;
-            color: $black;
+                font-size: 1.2rem;
+                color: $black;
 
-            background-image: $blue-gradient;
-            border-radius: 0.5em;
+                background-image: $blue-gradient;
+                border-radius: 0.5em;
+            }
         }
-    }
 
-    .message {
-        @include centered-flex-container;
+        .message {
+            height: 100%;
+            @include centered-flex-container;
+        }
     }
 }

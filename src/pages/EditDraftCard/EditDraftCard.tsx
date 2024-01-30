@@ -1,25 +1,27 @@
 import "./EditdraftCard.scss";
-import { type Topic, type Card as CardType } from "../../lib/definitions";
+import { Topic, Card as CardType } from "../../lib/definitions";
 import {
-    type LoaderFunctionArgs,
+    LoaderFunctionArgs,
     useLoaderData,
     useNavigate,
 } from "react-router-dom";
-import { useState, type ChangeEvent } from "react";
-import { getTopic, getDraftCard } from "../../lib/utils";
+import { useState, ChangeEvent } from "react";
+import { getTopic, getCard } from "../../lib/utils";
 import Card from "../../components/Card/Card";
+
 
 // eslint-disable-next-line react-refresh/only-export-components
 export async function loader({ params }: LoaderFunctionArgs) {
     const { cardIndx } = params as {
         cardIndx: string;
     };
-    const topic: Topic = await getTopic(params.topicId as string);
-    const card = await getDraftCard(topic, Number(cardIndx));
+    const topic: Topic = getTopic(params.topicId!);
+    const card: CardType = getCard(topic, "draft", Number(cardIndx));
     return { cardIndx, topic, card };
 }
 
 export default function EditDraftCard() {
+    const navigate = useNavigate();
     const { cardIndx, topic, card } = useLoaderData() as {
         cardIndx: string;
         card: CardType;
@@ -28,7 +30,6 @@ export default function EditDraftCard() {
     const { id, levels, draft } = topic;
     const firstLevelCards = levels[0].cards;
 
-    const navigate = useNavigate();
     const [isFlipped, setIsFlipped] = useState<boolean>(false);
     const [cardData, setCardData] = useState({
         front: card.front,

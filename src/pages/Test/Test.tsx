@@ -1,19 +1,19 @@
 import "./Test.scss";
-import { type Topic } from "../../lib/definitions";
-import { getTopic } from "../../lib/utils";
+import { Topic } from "../../lib/definitions";
+import { getTopic, saveTopic } from "../../lib/utils";
 import {
     useNavigate,
     useLoaderData,
-    type LoaderFunctionArgs,
+    LoaderFunctionArgs,
 } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
 import Card from "../../components/Card/Card";
-import Button from "../../components/Buttons/Button";
+
 
 // eslint-disable-next-line react-refresh/only-export-components
 export async function loader({ params }: LoaderFunctionArgs) {
-    const topic = await getTopic(params.topicId as string);
+    const topic = getTopic(params.topicId as string);
     const today: number = new Date().getDay();
     return { topic, today };
 }
@@ -21,9 +21,9 @@ export async function loader({ params }: LoaderFunctionArgs) {
 export default function Test() {
     const navigate = useNavigate();
     const { topic, today } = useLoaderData() as { topic: Topic; today: number };
-    const [isFlipped, setIsFlipped] = useState<boolean>(false);
+    const { week, levels } = topic;
 
-    const { id, week, levels } = topic;
+    const [isFlipped, setIsFlipped] = useState<boolean>(false);
 
     const cardsForTest = week[today]!.todayLevels.flatMap(
         (el) => levels[el].cards
@@ -48,7 +48,7 @@ export default function Test() {
 
     if (cards.length === 0) {
         week[today]!.isDone = true;
-        localStorage.setItem(id, JSON.stringify(topic));
+        saveTopic(topic);
     }
 
     function handleAnswer(answer: "correct" | "wrong") {
@@ -68,7 +68,7 @@ export default function Test() {
             updatedCards.push(currentCard!);
         }
 
-        localStorage.setItem(id, JSON.stringify(topic));
+        saveTopic(topic);
 
         setIsMoved(true);
         setCards(updatedCards);
@@ -76,15 +76,15 @@ export default function Test() {
     }
 
     return (
-        <div className="screen test">
+        <div className="test">
             <nav>
-                <Button
-                    handleClick={() => {
+                <button
+                    onClick={() => {
                         navigate(-1);
                     }}
                 >
                     Back
-                </Button>
+                </button>
                 <p>{isFlipped ? "Back" : "Front"}</p>
                 <small className="cards-num">{cards.length}</small>
             </nav>
@@ -106,18 +106,18 @@ export default function Test() {
             <div className="btns-container">
                 {isFlipped ? (
                     <>
-                        <Button
-                            testBtn="wrong"
-                            handleClick={() => handleAnswer("wrong")}
+                        <button
+                            className="wrong"
+                            onClick={() => handleAnswer("wrong")}
                         >
                             Wrong
-                        </Button>
-                        <Button
-                            testBtn="correct"
-                            handleClick={() => handleAnswer("correct")}
+                        </button>
+                        <button
+                            className="correct"
+                            onClick={() => handleAnswer("correct")}
                         >
                             Correct
-                        </Button>
+                        </button>
                     </>
                 ) : (
                     <small>tap on card to reweal answer</small>
