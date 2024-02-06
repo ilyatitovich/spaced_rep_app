@@ -13,7 +13,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
     const today: number = new Date().getDay();
 
     // update week if update day has passed
-    if (topic.nextUpdate <= Date.now()) {
+    if (topic.nextUpdateDate <= Date.now()) {
         topic = updateWeek(topic);
     } 
 
