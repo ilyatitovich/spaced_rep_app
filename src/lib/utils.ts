@@ -45,7 +45,7 @@ export function getCard(
 }
 
 export function updateWeek(topic: Topic): Topic {
-    console.log("updated")
+
     const dayOfTheWeek = new Date().getDay();
 
     const { id, pivot } = topic;
