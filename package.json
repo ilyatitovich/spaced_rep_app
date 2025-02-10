@@ -13,7 +13,8 @@
     "format:stylelint": "stylelint --fix **/*.css",
     "format:prettier": "prettier -w **/*.{js,ts,html,md,cjs,json} *.{js,json,md}",
     "preview": "vite preview",
-    "generate-pwa-assets": "pwa-assets-generator --preset minimal public/logo.svg"
+    "generate-pwa-assets": "pwa-assets-generator --preset minimal public/logo.svg",
+    "prepare": "husky"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
@@ -44,6 +45,7 @@
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-react-refresh": "^0.4.18",
     "husky": "^9.1.7",
+    "nano-staged": "^0.8.0",
     "postcss": "^8.5.1",
     "postcss-nested": "^7.0.2",
     "prettier": "^3.4.2",
