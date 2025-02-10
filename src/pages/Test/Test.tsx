@@ -1,11 +1,11 @@
 import './Test.scss'
 
+import { Topic } from '@/types'
 import { AnimatePresence } from 'framer-motion'
 import { useState, useEffect } from 'react'
 import { useNavigate, useLoaderData } from 'react-router'
 
 import Card from '../../components/Card/Card'
-import { Topic } from '../../lib/definitions'
 import { saveTopic } from '../../lib/utils'
 
 export default function Test() {

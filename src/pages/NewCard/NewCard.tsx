@@ -1,10 +1,10 @@
 import './NewCard.scss'
 
+import { Topic } from '@/types'
 import { useState, useEffect, type ChangeEvent } from 'react'
 import { useLoaderData, useNavigate } from 'react-router'
 
 import Card from '../../components/Card/Card'
-import { Topic } from '../../lib/definitions'
 import { saveTopic } from '../../lib/utils'
 
 export default function NewCard() {

@@ -1,10 +1,10 @@
 import './CardDetails.scss'
 
+import { Topic, LevelId, Card as CardType } from '@/types'
 import { useState } from 'react'
 import { useLoaderData, useNavigate } from 'react-router'
 
 import Card from '../../components/Card/Card'
-import { Topic, LevelId, Card as CardType } from '../../lib/definitions'
 
 export default function CardDetails() {
   const { levelId, cardIndx, topic, card } = useLoaderData() as {

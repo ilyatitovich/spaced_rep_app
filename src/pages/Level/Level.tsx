@@ -1,9 +1,9 @@
 import './Level.scss'
 
+import { LevelId, Card } from '@/types'
 import { useLoaderData, useNavigate } from 'react-router'
 
 import CardsListContainer from '../../components/CardsListContainer/CardsListContainer'
-import { LevelId, Card } from '../../lib/definitions'
 
 export default function Level() {
   const navigate = useNavigate()

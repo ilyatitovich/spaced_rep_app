@@ -1,10 +1,10 @@
 import './EditdraftCard.scss'
 
+import { Topic, Card as CardType } from '@/types'
 import { useState, ChangeEvent } from 'react'
 import { useLoaderData, useNavigate } from 'react-router'
 
 import Card from '../../components/Card/Card'
-import { Topic, Card as CardType } from '../../lib/definitions'
 
 export default function EditDraftCard() {
   const navigate = useNavigate()

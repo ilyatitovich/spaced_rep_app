@@ -1,12 +1,12 @@
 import './Topic.scss'
 
+import { Topic as TopicType, Level } from '@/types'
 import { faChevronRight } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Link, useLoaderData } from 'react-router'
 
 import LevelRow from '../../components/LevelRow/LevelRow'
 import Week from '../../components/Week/Week'
-import { Topic as TopicType, Level } from '../../lib/definitions'
 
 export default function Topic() {
   const { topic, today } = useLoaderData() as {
