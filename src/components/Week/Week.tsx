@@ -1,8 +1,10 @@
 import "./Week.scss";
+
+import { faXmark, faCheck } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+
 import { DayOfWeek } from "../../lib/definitions";
 import { levelColors } from "../../lib/utils";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faXmark, faCheck } from "@fortawesome/free-solid-svg-icons";
 
 interface WeekProps {
     week: Array<DayOfWeek | null>;

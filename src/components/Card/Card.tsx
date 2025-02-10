@@ -1,6 +1,7 @@
 import "./Card.scss";
-import { ChangeEvent } from "react";
+
 import { motion } from "framer-motion";
+import { ChangeEvent } from "react";
 
 interface CardProps {
     data: { front: string; back: string };

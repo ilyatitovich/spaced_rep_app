@@ -1,32 +1,29 @@
-import "./Draft.scss";
-import { Card } from "../../lib/definitions";
-import {
-    LoaderFunctionArgs,
-    useLoaderData,
-    useNavigate,
-} from "react-router-dom";
-import { getLevelCards } from "../../lib/utils";
-import CardsListContainer from "../../components/CardsListContainer/CardsListContainer";
+import './Draft.scss'
 
-// eslint-disable-next-line react-refresh/only-export-components
+import { LoaderFunctionArgs, useLoaderData, useNavigate } from 'react-router'
+
+import CardsListContainer from '../../components/CardsListContainer/CardsListContainer'
+import { Card } from '../../lib/definitions'
+import { getLevelCards } from '../../lib/utils'
+
 export async function loader({ params }: LoaderFunctionArgs) {
-    const draftCards = getLevelCards(params.topicId!, "draft");
-    return { draftCards };
+  const draftCards = getLevelCards(params.topicId!, 'draft')
+  return { draftCards }
 }
 
 export default function Draft() {
-    const navigate = useNavigate();
-    const { draftCards } = useLoaderData() as {
-        draftCards: Card[];
-    };
+  const navigate = useNavigate()
+  const { draftCards } = useLoaderData() as {
+    draftCards: Card[]
+  }
 
-    return (
-        <div className="draft">
-            <nav>
-                <button onClick={() => navigate(-1)}>Back</button>
-                <p className="title">Draft</p>
-            </nav>
-            <CardsListContainer cardsFrom="draft" cardsList={draftCards}/>
-        </div>
-    );
+  return (
+    <div className="draft">
+      <nav>
+        <button onClick={() => navigate(-1)}>Back</button>
+        <p className="title">Draft</p>
+      </nav>
+      <CardsListContainer cardsFrom="draft" cardsList={draftCards} />
+    </div>
+  )
 }
