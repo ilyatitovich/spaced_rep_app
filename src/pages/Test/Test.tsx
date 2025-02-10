@@ -2,17 +2,11 @@ import './Test.scss'
 
 import { AnimatePresence } from 'framer-motion'
 import { useState, useEffect } from 'react'
-import { useNavigate, useLoaderData, LoaderFunctionArgs } from 'react-router'
+import { useNavigate, useLoaderData } from 'react-router'
 
 import Card from '../../components/Card/Card'
 import { Topic } from '../../lib/definitions'
-import { getTopic, saveTopic } from '../../lib/utils'
-
-export async function loader({ params }: LoaderFunctionArgs) {
-  const topic = getTopic(params.topicId as string)
-  const today: number = new Date().getDay()
-  return { topic, today }
-}
+import { saveTopic } from '../../lib/utils'
 
 export default function Test() {
   const navigate = useNavigate()

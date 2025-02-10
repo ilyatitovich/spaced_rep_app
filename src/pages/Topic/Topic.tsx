@@ -2,24 +2,11 @@ import './Topic.scss'
 
 import { faChevronRight } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { Link, LoaderFunctionArgs, useLoaderData } from 'react-router'
+import { Link, useLoaderData } from 'react-router'
 
 import LevelRow from '../../components/LevelRow/LevelRow'
 import Week from '../../components/Week/Week'
 import { Topic as TopicType, Level } from '../../lib/definitions'
-import { getTopic, updateWeek } from '../../lib/utils'
-
-export async function loader({ params }: LoaderFunctionArgs) {
-  let topic = getTopic(params.topicId!)
-  const today: number = new Date().getDay()
-
-  // update week if update day has passed
-  if (topic.nextUpdateDate <= Date.now()) {
-    topic = updateWeek(topic)
-  }
-
-  return { topic, today }
-}
 
 export default function Topic() {
   const { topic, today } = useLoaderData() as {

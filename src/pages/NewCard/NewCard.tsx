@@ -1,16 +1,11 @@
 import './NewCard.scss'
 
 import { useState, useEffect, type ChangeEvent } from 'react'
-import { LoaderFunctionArgs, useLoaderData, useNavigate } from 'react-router'
+import { useLoaderData, useNavigate } from 'react-router'
 
 import Card from '../../components/Card/Card'
 import { Topic } from '../../lib/definitions'
-import { getTopic, saveTopic } from '../../lib/utils'
-
-export async function loader({ params }: LoaderFunctionArgs) {
-  const topic = getTopic(params.topicId!)
-  return { topic }
-}
+import { saveTopic } from '../../lib/utils'
 
 export default function NewCard() {
   const navigate = useNavigate()

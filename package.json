@@ -6,7 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "lint": "pnpm run -r --include-workspace-root /^lint:/",
     "lint:js": "eslint .",
+    "lint:css": "stylelint **/*.css",
+    "format": "pnpm run -r --include-workspace-root /^format:/",
+    "format:stylelint": "stylelint --fix **/*.css",
+    "format:prettier": "prettier -w **/*.{js,ts,html,md,cjs,json} *.{js,json,md}",
     "preview": "vite preview",
     "generate-pwa-assets": "pwa-assets-generator --preset minimal public/logo.svg"
   },
@@ -22,6 +27,7 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
+    "@stylistic/stylelint-config": "^2.0.0",
     "@types/node": "^22.13.1",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
@@ -37,10 +43,12 @@
     "eslint-plugin-react": "^7.37.4",
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-react-refresh": "^0.4.18",
-    "parser": "link:@t@typescript-eslint/parser",
+    "husky": "^9.1.7",
     "postcss": "^8.5.1",
     "postcss-nested": "^7.0.2",
     "prettier": "^3.4.2",
+    "stylelint": "^16.14.1",
+    "stylelint-use-logical": "^2.1.2",
     "typescript": "^5.7.3",
     "vite": "^6.1.0",
     "vite-plugin-pwa": "^0.21.1"

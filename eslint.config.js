@@ -56,10 +56,9 @@ export default [
       ],
       '@typescript-eslint/explicit-function-return-type': 'off',
 
-      // React Rules
-      'react/jsx-uses-react': 'off', // Not needed in React 17+
-      'react/react-in-jsx-scope': 'off', // Not needed in React 17+
-      'react/prop-types': 'off', // Using TypeScript, so not needed
+      'react/jsx-uses-react': 'off',
+      'react/react-in-jsx-scope': 'off',
+      'react/prop-types': 'off',
 
       ...reactHooks.configs.recommended.rules,
       ...jsxA11y.configs.recommended.rules

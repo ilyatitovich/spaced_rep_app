@@ -1,13 +1,7 @@
 import './Home.css'
 
-import { TopicItem } from '@/lib/definitions'
-import { getTopicsList } from '@/lib/utils'
+import type { TopicItem } from '@/types'
 import { Link, useLoaderData } from 'react-router'
-
-export async function loader(): Promise<{ topics: TopicItem[] }> {
-  const topics = getTopicsList()
-  return { topics }
-}
 
 export default function Home() {
   const { topics } = useLoaderData<{ topics: TopicItem[] }>()
