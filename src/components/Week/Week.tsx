@@ -23,8 +23,8 @@ export default function Week({ week, today }: WeekProps) {
             {day ? (
               index < today ? (
                 <FontAwesomeIcon
-                  icon={day.isDone ? faCheck : faXmark}
-                  className={day.isDone ? 'passed' : 'missed'}
+                  icon={day.isCompleted ? faCheck : faXmark}
+                  className={day.isCompleted ? 'passed' : 'missed'}
                 />
               ) : (
                 <div
@@ -49,7 +49,7 @@ export default function Week({ week, today }: WeekProps) {
                 key={bgColor}
                 className="level-color"
                 style={{
-                  backgroundColor: day.todayLevels.includes(index)
+                  backgroundColor: day.reviewLevels.includes(index)
                     ? bgColor
                     : 'transparent'
                 }}

@@ -1,5 +1,5 @@
 import { getTopic, getTopicsList } from '@/lib/db'
-import { getCard, getLevelCards, updateWeek } from '@/lib/utils'
+import { getCard, getLevelCards } from '@/lib/utils'
 import type { LevelId, TopicItem } from '@/types'
 import type { LoaderFunctionArgs } from 'react-router'
 
@@ -12,8 +12,8 @@ export async function topicLoader({ params }: LoaderFunctionArgs) {
   const today: number = new Date().getDay()
 
   // update week if update day has passed
-  if (topic && topic.nextUpdateDate <= Date.now()) {
-    topic = updateWeek(topic)
+  if (topic && topic.nextUpdateDate! <= Date.now()) {
+    topic.updateWeek()
   }
 
   return { topic, today }

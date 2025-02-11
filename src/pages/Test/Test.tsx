@@ -1,12 +1,12 @@
 import './Test.scss'
 
-import { Topic } from '@/types'
+import { saveTopic } from '@/lib/db'
+import { Topic } from '@/models'
 import { AnimatePresence } from 'framer-motion'
 import { useState, useEffect } from 'react'
 import { useNavigate, useLoaderData } from 'react-router'
 
 import Card from '../../components/Card/Card'
-import { saveTopic } from '../../lib/utils'
 
 export default function Test() {
   const navigate = useNavigate()
@@ -15,7 +15,7 @@ export default function Test() {
 
   const [isFlipped, setIsFlipped] = useState<boolean>(false)
 
-  const cardsForTest = week[today]!.todayLevels.flatMap(el => levels[el].cards)
+  const cardsForTest = week[today]!.reviewLevels.flatMap(el => levels[el].cards)
   const [cards, setCards] = useState(cardsForTest)
   const [isMoved, setIsMoved] = useState<boolean>(false)
 
@@ -34,7 +34,7 @@ export default function Test() {
   }, [isMoved])
 
   if (cards.length === 0) {
-    week[today]!.isDone = true
+    week[today]!.isCompleted = true
     saveTopic(topic)
   }
 

@@ -1,12 +1,12 @@
 import './Topic.scss'
 
+import LevelRow from '@/components/LevelRow/LevelRow'
+import Week from '@/components/Week/Week'
+import { deleteTopic } from '@/lib/db'
 import { Topic as TopicType, Level } from '@/types'
 import { faChevronRight } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Link, useLoaderData } from 'react-router'
-
-import LevelRow from '../../components/LevelRow/LevelRow'
-import Week from '../../components/Week/Week'
 
 export default function Topic() {
   const { topic, today } = useLoaderData() as {
@@ -16,7 +16,7 @@ export default function Topic() {
   const { id, title, week, levels, draft } = topic
 
   function handleDelete(id: string) {
-    localStorage.removeItem(id)
+    deleteTopic(id)
   }
 
   return (
@@ -58,7 +58,7 @@ export default function Topic() {
           </ul>
         </div>
 
-        {!week[today]?.isDone && (
+        {!week[today]?.isCompleted && (
           <Link to="test" className="today-test-btn">
             <h4>Today's Test</h4>
           </Link>

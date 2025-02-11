@@ -1,11 +1,11 @@
 import './NewCard.scss'
 
-import { Topic } from '@/types'
+import { saveTopic } from '@/lib/db'
+import { Topic } from '@/models'
 import { useState, useEffect, type ChangeEvent } from 'react'
 import { useLoaderData, useNavigate } from 'react-router'
 
 import Card from '../../components/Card/Card'
-import { saveTopic } from '../../lib/utils'
 
 export default function NewCard() {
   const navigate = useNavigate()

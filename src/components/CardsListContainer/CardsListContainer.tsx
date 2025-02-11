@@ -2,7 +2,6 @@ import './CardsListContainer.scss'
 
 import { Card } from '@/types'
 import { Link } from 'react-router'
-import { v4 as uuidv4 } from 'uuid'
 
 interface CardsListContainerProps {
   cardsFrom: 'level' | 'draft'
@@ -18,7 +17,7 @@ export default function CardsListContainer({
       {cardsList.length > 0 ? (
         cardsList.map((card: Card, index: number) => (
           <Link
-            key={uuidv4()}
+            key={card.id}
             to={cardsFrom === 'draft' ? `${index}/edit` : `${index}`}
             className="card"
           >

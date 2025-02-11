@@ -1,4 +1,6 @@
-import type { Topic, TopicItem } from '../types'
+import { Topic } from '@/models'
+
+import type { TopicItem } from '../types'
 
 const DB_NAME = 'spacedRepApp'
 const STORE_NAME = 'topics'
@@ -49,13 +51,31 @@ export async function getTopic(id: string): Promise<Topic | null> {
   const transaction = db.transaction(STORE_NAME, 'readonly')
   const store = transaction.objectStore(STORE_NAME)
 
-  return new Promise((resolve, reject) => {
-    const request = store.get(id)
+  const request = store.get(id)
 
+  return new Promise((resolve, reject) => {
     request.onsuccess = () => {
-      resolve(request.result ?? null)
+      const data = request.result
+      if (!data) return resolve(null)
+
+      // Reconstruct Topic instance
+      const topic = Object.assign(new Topic(data.title), data)
+      resolve(topic)
     }
 
+    request.onerror = () => reject(request.error)
+  })
+}
+
+export async function deleteTopic(id: string): Promise<void> {
+  const db = await openDatabase()
+  const transaction = db.transaction(STORE_NAME, 'readwrite')
+  const store = transaction.objectStore(STORE_NAME)
+
+  return new Promise((resolve, reject) => {
+    const request = store.delete(id)
+
+    request.onsuccess = () => resolve()
     request.onerror = () => reject(request.error)
   })
 }

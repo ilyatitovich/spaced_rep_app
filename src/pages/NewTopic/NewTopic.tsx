@@ -1,24 +1,22 @@
 import './NewTopic.scss'
 
 import { saveTopic } from '@/lib/db'
+import { Topic } from '@/models'
 import { useRef } from 'react'
 import { useNavigate, Link } from 'react-router'
-import { v4 as uuidv4 } from 'uuid'
-
-import { TopicModel } from '../../lib/models'
-import { getNextUpdateDate } from '../../lib/utils'
 
 export default function NewTopic() {
   const navigate = useNavigate()
   const inputRef = useRef<HTMLInputElement>(null)
 
   async function handleSave() {
-    const id = uuidv4()
     const title = inputRef.current!.value
-    const nextUpdateDate = getNextUpdateDate()
-    const topic = new TopicModel(id, title, nextUpdateDate)
-    await saveTopic(topic)
-    navigate(-1)
+
+    if (title) {
+      const topic = new Topic(title)
+      await saveTopic(topic)
+      navigate(-1)
+    }
   }
 
   return (

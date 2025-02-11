@@ -29,8 +29,8 @@ export type Level = {
 
 export type DayOfWeek = {
   date: number
-  todayLevels: number[]
-  isDone: boolean
+  reviewLevels: number[]
+  isCompleted: boolean
 }
 
 export type Topic = {
