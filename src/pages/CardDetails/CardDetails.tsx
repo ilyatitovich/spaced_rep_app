@@ -1,10 +1,11 @@
 import './CardDetails.scss'
 
-import { Topic, LevelId, Card as CardType } from '@/types'
+import Card from '@/components/Card/Card'
+import { saveTopic } from '@/lib/db'
+import { Topic } from '@/models'
+import { LevelId, Card as CardType } from '@/types'
 import { useState } from 'react'
 import { useLoaderData, useNavigate } from 'react-router'
-
-import Card from '../../components/Card/Card'
 
 export default function CardDetails() {
   const { levelId, cardIndx, topic, card } = useLoaderData() as {
@@ -18,7 +19,7 @@ export default function CardDetails() {
 
   function deleteCard() {
     topic.levels[Number(levelId) - 1].cards.splice(Number(cardIndx), 1)
-    localStorage.setItem(topic.id, JSON.stringify(topic))
+    saveTopic(topic)
     navigate(-1)
   }
 

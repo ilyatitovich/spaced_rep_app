@@ -1,8 +1,17 @@
 import { Topic } from '@/models'
 import type { LevelColor, LevelId, Card } from '@/types'
 
-export function getLevelCards(topicId: string, levelId: LevelId): Card[] {
-  const topic: Topic = JSON.parse(localStorage.getItem(topicId)!)
+import { getTopic } from './db'
+
+export async function getLevelCards(
+  topicId: string,
+  levelId: LevelId
+): Promise<Card[]> {
+  const topic = await getTopic(topicId)
+
+  if (!topic) {
+    throw new Error('No topic')
+  }
 
   if (levelId === 'draft') {
     return topic.draft

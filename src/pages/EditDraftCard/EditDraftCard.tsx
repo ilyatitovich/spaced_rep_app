@@ -1,6 +1,8 @@
 import './EditdraftCard.scss'
 
-import { Topic, Card as CardType } from '@/types'
+import { saveTopic } from '@/lib/db'
+import { Topic } from '@/models'
+import { Card as CardType } from '@/types'
 import { useState, ChangeEvent } from 'react'
 import { useLoaderData, useNavigate } from 'react-router'
 
@@ -13,7 +15,7 @@ export default function EditDraftCard() {
     card: CardType
     topic: Topic
   }
-  const { id, levels, draft } = topic
+  const { levels, draft } = topic
   const firstLevelCards = levels[0].cards
 
   const [isFlipped, setIsFlipped] = useState<boolean>(false)
@@ -69,7 +71,7 @@ export default function EditDraftCard() {
     draft.splice(Number(cardIndx), 1)
     firstLevelCards.push(cardForSave)
 
-    localStorage.setItem(id, JSON.stringify(topic))
+    saveTopic(topic)
     navigate(-1)
   }
 

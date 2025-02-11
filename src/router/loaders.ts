@@ -1,5 +1,6 @@
 import { getTopic, getTopicsList } from '@/lib/db'
 import { getCard, getLevelCards } from '@/lib/utils'
+import { Topic } from '@/models'
 import type { LevelId, TopicItem } from '@/types'
 import type { LoaderFunctionArgs } from 'react-router'
 
@@ -7,21 +8,38 @@ export async function homeLoader(): Promise<{ topics: TopicItem[] }> {
   return { topics: await getTopicsList() }
 }
 
-export async function topicLoader({ params }: LoaderFunctionArgs) {
-  let topic = await getTopic(params.topicId!)
-  const today: number = new Date().getDay()
+export async function topicLoader({
+  params
+}: LoaderFunctionArgs): Promise<{ topic: Topic; today: number }> {
+  const topicId = params.topicId
+  if (!topicId) {
+    throw new Error('Topic ID is required')
+  }
 
-  // update week if update day has passed
-  if (topic && topic.nextUpdateDate! <= Date.now()) {
+  const topic = await getTopic(topicId)
+  if (!topic) {
+    throw new Error('No topic to review')
+  }
+
+  const today = new Date().getDay()
+
+  // Update week if the update day has passed
+  if (topic.nextUpdateDate && topic.nextUpdateDate <= Date.now()) {
     topic.updateWeek()
   }
 
   return { topic, today }
 }
 
-export async function testLoader({ params }: LoaderFunctionArgs) {
+export async function testLoader({
+  params
+}: LoaderFunctionArgs): Promise<{ topic: Topic; today: number }> {
   const topic = await getTopic(params.topicId!)
-  const today: number = new Date().getDay()
+  if (!topic) {
+    throw new Error('No topic in DB')
+  }
+
+  const today = new Date().getDay()
   return { topic, today }
 }
 
@@ -31,8 +49,14 @@ export async function newCardLoader({ params }: LoaderFunctionArgs) {
 }
 
 export async function levelLoader({ params }: LoaderFunctionArgs) {
-  const levelId = params.levelId as LevelId
-  const levelCards = getLevelCards(params.topicId!, levelId)
+  const { levelId, topicId } = params
+
+  if (!levelId || !topicId) {
+    throw new Error('Level ID and topic ID are required')
+  }
+
+  const levelCards = await getLevelCards(topicId, levelId as LevelId)
+
   return { levelId, levelCards }
 }
 

@@ -1,65 +1,65 @@
-@import "../../utils";
+@import '../../utils';
 
 .topic {
-    nav {
+  nav {
+    justify-content: space-between;
+  }
+
+  .content {
+    @include height(92);
+    padding-bottom: 8em;
+    overflow-y: scroll;
+
+    .add-card-wrapper {
+      padding: 0.5em 1.2em;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .draft-row {
+      @include height(10);
+      padding: 0 1.2em;
+      display: flex;
+      border-bottom: 1px solid $light-gray;
+
+      a {
+        width: 100%;
+        display: flex;
         justify-content: space-between;
+        align-items: center;
+        color: $black;
+
+        .left {
+          display: flex;
+          align-items: center;
+          gap: 0.7em;
+        }
+
+        .right {
+          display: flex;
+          align-items: center;
+          gap: 0.5em;
+          color: $gray;
+
+          .icon {
+            font-size: 0.98rem;
+          }
+        }
+      }
     }
 
-    .content {
-        @include height(92);
-        padding-bottom: 8em;
-        overflow-y: scroll;
-
-        .add-card-wrapper {
-            padding: 0.5em 1.2em;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .draft-row {
-            @include height(10);
-            padding: 0 1.2em;
-            display: flex;
-            border-bottom: 1px solid $light-gray;
-
-            a {
-                width: 100%;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                color: $black;
-
-                .left {
-                    display: flex;
-                    align-items: center;
-                    gap: 0.7em;
-                }
-
-                .right {
-                    display: flex;
-                    align-items: center;
-                    gap: 0.5em;
-                    color: $gray;
-
-                    .icon {
-                        font-size: 0.98rem;
-                    }
-                }
-            }
-        }
-
-        .today-test-btn {
-            position: absolute;
-            left: 50%;
-            bottom: 1em;
-            transform: translateX(-50%);
-            width: 70%;
-            padding: 1.25em 0;
-            text-align: center;
-            background-color: $purple;
-            color: $white;
-            border-radius: 0.75em;
-        }
+    .today-test-btn {
+      position: absolute;
+      left: 50%;
+      bottom: 1em;
+      transform: translateX(-50%);
+      width: 70%;
+      padding: 1.25em 0;
+      text-align: center;
+      background-color: $purple;
+      color: $white;
+      border-radius: 0.75em;
     }
+  }
 }

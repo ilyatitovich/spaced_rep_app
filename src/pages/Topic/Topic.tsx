@@ -15,7 +15,7 @@ export default function Topic() {
   }
   const { id, title, week, levels, draft } = topic
 
-  function handleDelete(id: string) {
+  function handleDelete(id: string): void {
     deleteTopic(id)
   }
 

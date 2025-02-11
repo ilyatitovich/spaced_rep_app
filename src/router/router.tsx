@@ -29,6 +29,7 @@ export default createBrowserRouter([
     path: '/',
     element: <Root />,
     errorElement: <Error404 />,
+    // hydrateFallbackElement: <div>hi</div>,
     children: [
       {
         index: true,
