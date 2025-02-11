@@ -1,9 +1,8 @@
 import './Draft.scss'
 
-import { Card } from '@/types'
+import { CardsListContainer } from '@/components'
+import type { Card } from '@/types'
 import { useLoaderData, useNavigate } from 'react-router'
-
-import CardsListContainer from '../../components/CardsListContainer/CardsListContainer'
 
 export default function Draft() {
   const navigate = useNavigate()
