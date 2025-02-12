@@ -15,8 +15,6 @@
 
 In progress
 - refactoring
-  - new-topic > add-topic
-    - валидация инпута
   - topic
   - error404
 
@@ -29,3 +27,5 @@ Done
 -refactoring
   - root
   - home
+  - new-topic > add-topic
+    - валидация инпута

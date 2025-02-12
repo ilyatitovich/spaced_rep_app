@@ -1,0 +1,27 @@
+.error404 {
+  padding: 0 1.2em;
+  height: calc(100 * 1vh);
+  height: calc(var(--vh, 1vh) * 100);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.error404__nav {
+  border: none;
+}
+
+.error404__code {
+  font-size: 1.6rem;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.error404__link {
+  margin-top: 12px;
+
+  & a {
+    font-size: unset;
+  }
+}
