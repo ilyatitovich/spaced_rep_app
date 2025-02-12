@@ -41,3 +41,11 @@ export const levelColors: LevelColor[] = [
   'rgb(183, 0, 255)',
   'rgb(89, 0, 255)'
 ]
+
+export function updateVh(prevHeight: number): number {
+  const newHeight = window.innerHeight
+  if (newHeight !== prevHeight) {
+    document.documentElement.style.setProperty('--vh', `${newHeight * 0.01}px`)
+  }
+  return newHeight
+}

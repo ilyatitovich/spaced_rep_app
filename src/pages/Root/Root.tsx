@@ -1,18 +1,20 @@
+import { updateVh } from '@/lib/utils'
 import { useEffect } from 'react'
 import { Outlet } from 'react-router'
 
 export default function Root() {
   useEffect(() => {
-    function setVh() {
-      const vh = window.innerHeight * 0.01
-      document.documentElement.style.setProperty('--vh', `${vh}px`)
+    let prevHeight = window.innerHeight
+    prevHeight = updateVh(prevHeight)
+
+    const handleResize = () => {
+      prevHeight = updateVh(prevHeight)
     }
 
-    setVh()
+    window.addEventListener('resize', handleResize)
 
-    window.addEventListener('resize', setVh)
-
-    return () => window.removeEventListener('resize', setVh)
+    return () => window.removeEventListener('resize', handleResize)
   }, [])
+
   return <Outlet />
 }
