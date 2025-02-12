@@ -1,36 +1,36 @@
-.add-topic {
-  nav {
+.add-topic__header {
+  & nav {
     justify-content: space-between;
   }
+}
 
-  .content {
-    height: calc(92 * 1vh);
-    height: calc(var(--vh, 1vh) * 92);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    gap: 1em;
+.add-topic__content {
+  height: calc(92 * 1vh);
+  height: calc(var(--vh, 1vh) * 92);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 1em;
+}
 
-    form {
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      gap: 1em;
-    }
+.add-topic__form {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 1em;
+}
 
-    input {
-      padding: 0 0.5em;
-      height: 3rem;
-      width: 70%;
-      font-size: 1.2rem;
-      text-align: center;
-      border: 1px solid var(--black);
-      border-radius: 0.5em;
-    }
-  }
+.add-topic__input {
+  padding: 0 0.5em;
+  height: 3rem;
+  width: 70%;
+  font-size: 1.2rem;
+  text-align: center;
+  border: 1px solid var(--black);
+  border-radius: 0.5em;
 }
 
 .input-error {

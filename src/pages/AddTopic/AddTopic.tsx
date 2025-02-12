@@ -64,8 +64,12 @@ export default function AddTopic() {
         </nav>
       </header>
 
-      <section className="content">
-        <form onSubmit={handleSubmit} aria-labelledby="topic-form">
+      <section className="add-topic__content">
+        <form
+          onSubmit={handleSubmit}
+          aria-labelledby="topic-form"
+          className="add-topic__form"
+        >
           <label htmlFor="topicTitle">What are you going to learn?</label>
           <input
             id="topicTitle"
@@ -77,7 +81,7 @@ export default function AddTopic() {
             maxLength={10}
             aria-invalid={!validation.isValid}
             aria-describedby={!validation.isValid ? 'error-message' : undefined}
-            className={`topic-input ${validation.isValid ? '' : 'input-error'}`}
+            className={`add-topic__input ${validation.isValid ? '' : 'input-error'}`}
           />
 
           <span
