@@ -8,30 +8,34 @@ export default function Home() {
 
   return (
     <main className="home">
-      <nav>
-        <p>Topics</p>
-      </nav>
-      <div className="content">
+      <header className="home__header">
+        <h1>Topics</h1>
+      </header>
+
+      <section className="home__content">
         {topics.length > 0 ? (
-          <div className="topics">
-            <ul>
-              {topics.map(topic => (
-                <li key={topic.id}>
-                  <Link to={`topic/${topic.id}`} className="topic">
-                    {topic.title}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <ul className="home__topics-list">
+            {topics.map(topic => (
+              <li key={topic.id}>
+                <Link
+                  to={`topic/${topic.id}`}
+                  className="home__topic-item"
+                  aria-label={`Go to topic: ${topic.title}`}
+                >
+                  {topic.title}
+                </Link>
+              </li>
+            ))}
+          </ul>
         ) : (
-          <div className="message">
-            <p>No topics to study yet</p>
-          </div>
+          <p className="home__message">No topics to study yet</p>
         )}
-      </div>
+      </section>
+
       <footer>
-        <Link to="new-topic">Add Topic</Link>
+        <Link to="new-topic" aria-label="Add a new topic">
+          Add Topic
+        </Link>
       </footer>
     </main>
   )

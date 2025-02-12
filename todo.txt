@@ -16,7 +16,6 @@
 In progress
 - refactoring
   - home
-  - root
   - new-topic > add-topic
   - topic
   - error404
@@ -27,3 +26,5 @@ Done
 - перевести приложение на IndexedDB
 - обновить экспорты
 - добавить тесты vitest
+-refactoring
+  - root

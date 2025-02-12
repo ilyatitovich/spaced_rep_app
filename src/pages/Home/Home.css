@@ -1,40 +1,45 @@
 .home {
   height: 100%;
+}
 
-  nav {
-    justify-content: center;
+.home__header {
+  justify-content: center;
+
+  & h1 {
+    font-size: 1.2rem;
+    font-weight: normal;
   }
+}
 
-  & .content {
-    height: calc(84 * 1vh);
-    height: calc(var(--vh, 1vh) * 84);
-    padding: 1em 1.2em;
+.home__content {
+  height: calc(84 * 1vh);
+  height: calc(var(--vh, 1vh) * 84);
+  padding: 1em 1.2em;
+}
 
-    & .topics {
-      height: 100%;
-      overflow-y: scroll;
+.home__topics-list {
+  height: 100%;
+  overflow-y: scroll;
+}
 
-      & .topic {
-        padding: 1em 4em;
-        margin: 1em auto;
+.home__topic-item {
+  padding: 1em 4em;
+  margin: 1em auto;
 
-        display: flex;
-        justify-content: center;
-        align-items: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 
-        font-size: 1.2rem;
-        color: black;
+  font-size: 1.2rem;
+  color: var(--black);
 
-        background-image: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%);
-        border-radius: 0.5em;
-      }
-    }
+  background-image: var(--blue-gradient);
+  border-radius: 0.5em;
+}
 
-    & .message {
-      height: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-  }
+.home__message {
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
