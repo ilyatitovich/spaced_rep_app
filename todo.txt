@@ -16,7 +16,8 @@
 In progress
 - refactoring
   - topic
-  - error404
+  - test
+
 
 
 Done
@@ -29,3 +30,4 @@ Done
   - home
   - new-topic > add-topic
     - валидация инпута
+  - error404

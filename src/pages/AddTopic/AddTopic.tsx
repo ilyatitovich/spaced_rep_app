@@ -78,7 +78,7 @@ export default function AddTopic() {
             value={title}
             onChange={e => setTitle(e.target.value.trim())}
             onBlur={() => handleValidation(title)}
-            maxLength={10}
+            maxLength={20}
             aria-invalid={!validation.isValid}
             aria-describedby={!validation.isValid ? 'error-message' : undefined}
             className={`add-topic__input ${validation.isValid ? '' : 'input-error'}`}

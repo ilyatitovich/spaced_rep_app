@@ -1,43 +1,41 @@
-import './Topic.scss'
+import './Topic.css'
 
-import LevelRow from '@/components/LevelRow/LevelRow'
-import Week from '@/components/Week/Week'
+import { LevelRow, Week } from '@/components'
 import { deleteTopic } from '@/lib/db'
-import { Topic as TopicType, Level } from '@/types'
+import { Topic as TopicType, Level } from '@/models'
 import { faChevronRight } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Link, useLoaderData } from 'react-router'
 
 export default function Topic() {
-  const { topic, today } = useLoaderData() as {
-    topic: TopicType
-    today: number
-  }
+  const { topic, today } = useLoaderData<{ topic: TopicType; today: number }>()
   const { id, title, week, levels, draft } = topic
 
-  function handleDelete(id: string): void {
-    deleteTopic(id)
+  async function handleDelete(id: string): Promise<void> {
+    await deleteTopic(id)
   }
 
   return (
-    <div className="topic">
-      <nav>
-        <Link to="/">Back</Link>
-        <p className="title">{title}</p>
-        <Link to="/" onClick={() => handleDelete(id)}>
-          Delete
-        </Link>
-      </nav>
-      <div className="content">
+    <main className="topic">
+      <header className="topic__header">
+        <nav>
+          <Link to="/">Back</Link>
+          <h1 className="topic__title">{title}</h1>
+          <Link to="/" onClick={() => handleDelete(id)}>
+            Delete
+          </Link>
+        </nav>
+      </header>
+      <section className="topic__content">
         <Week week={week} today={today} />
 
-        <div className="add-card-wrapper">
-          <h4>Levels</h4>
+        <div className="topic__add-card-wrapper">
+          <h2>Levels</h2>
           <Link to="new-card">Add Card</Link>
         </div>
 
         {draft.length > 0 && (
-          <div className="draft-row">
+          <div className="topic__draft-row">
             <Link to="draft">
               <div className="left">Draft</div>
               <div className="right">
@@ -50,7 +48,7 @@ export default function Topic() {
           </div>
         )}
 
-        <div className="levels">
+        <div className="topic__levels">
           <ul>
             {levels.map((level: Level) => (
               <LevelRow key={level.id} level={level} />
@@ -59,11 +57,11 @@ export default function Topic() {
         </div>
 
         {!week[today]?.isCompleted && (
-          <Link to="test" className="today-test-btn">
-            <h4>Today's Test</h4>
+          <Link to="test" className="topic__today-test-btn">
+            <p>Today's Test</p>
           </Link>
         )}
-      </div>
-    </div>
+      </section>
+    </main>
   )
 }
