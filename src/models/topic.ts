@@ -41,9 +41,11 @@ export class Topic {
 
     // Ensures Sunday is always in the future
     const daysUntilSunday = (7 - today.getDay()) % 7 || 7
+
     const nextSunday = new Date(today)
     nextSunday.setDate(today.getDate() + daysUntilSunday)
     nextSunday.setHours(0, 0, 0, 0)
+
     return nextSunday.getTime()
   }
 

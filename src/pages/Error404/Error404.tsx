@@ -4,7 +4,7 @@ import { Link } from 'react-router'
 
 export default function Error404() {
   return (
-    <div className="error">
+    <main className="error">
       <div className="content">
         <div className="code">404 - Page Not Found</div>
         <small className="message">
@@ -14,6 +14,6 @@ export default function Error404() {
           Go back to <Link to="/">Start screen</Link>
         </div>
       </div>
-    </div>
+    </main>
   )
 }

@@ -14,7 +14,8 @@
     "format:prettier": "prettier -w **/*.{js,ts,html,md,cjs,json} *.{js,json,md}",
     "preview": "vite preview",
     "generate-pwa-assets": "pwa-assets-generator --preset minimal public/logo.svg",
-    "prepare": "husky"
+    "prepare": "husky",
+    "test": "vitest"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
@@ -37,6 +38,7 @@
     "@typescript-eslint/parser": "^8.23.0",
     "@vite-pwa/assets-generator": "^0.2.6",
     "@vitejs/plugin-react": "^4.3.4",
+    "@vitest/ui": "3.0.5",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.19.0",
     "eslint-plugin-jsx-a11y": "^6.10.2",
@@ -45,6 +47,7 @@
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-react-refresh": "^0.4.18",
     "husky": "^9.1.7",
+    "jsdom": "26.0.0",
     "nano-staged": "^0.8.0",
     "postcss": "^8.5.1",
     "postcss-nested": "^7.0.2",
@@ -53,6 +56,7 @@
     "stylelint-use-logical": "^2.1.2",
     "typescript": "^5.7.3",
     "vite": "^6.1.0",
-    "vite-plugin-pwa": "^0.21.1"
+    "vite-plugin-pwa": "^0.21.1",
+    "vitest": "3.0.5"
   }
 }

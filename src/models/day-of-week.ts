@@ -1,11 +1,10 @@
 export class DayOfWeek {
   date: number
   reviewLevels: number[] = [0]
-  isCompleted: boolean
+  isCompleted: boolean = false
 
   constructor(date: number) {
     this.date = date
-    this.isCompleted = false
   }
 
   calculateReviewLevels(
