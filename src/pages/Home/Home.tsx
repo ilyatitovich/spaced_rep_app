@@ -33,7 +33,7 @@ export default function Home() {
       </section>
 
       <footer>
-        <Link to="new-topic" aria-label="Add a new topic">
+        <Link to="add-topic" aria-label="Add a new topic">
           Add Topic
         </Link>
       </footer>

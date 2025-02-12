@@ -15,8 +15,8 @@
 
 In progress
 - refactoring
-  - home
   - new-topic > add-topic
+    - валидация инпута
   - topic
   - error404
 
@@ -28,3 +28,4 @@ Done
 - добавить тесты vitest
 -refactoring
   - root
+  - home

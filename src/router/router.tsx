@@ -1,7 +1,7 @@
 import {
   Root,
   Home,
-  NewTopic,
+  AddTopic,
   Test,
   NewCard,
   Level,
@@ -37,8 +37,8 @@ export default createBrowserRouter([
         loader: homeLoader
       },
       {
-        path: 'new-topic',
-        element: <NewTopic />
+        path: 'add-topic',
+        element: <AddTopic />
       },
       {
         path: 'topic/:topicId',

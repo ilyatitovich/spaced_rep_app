@@ -55,10 +55,14 @@ body {
   height: 100%;
 }
 
+header {
+  padding: 0 1.2em;
+}
+
 header,
 nav,
 footer {
-  padding: 0 1.2em;
+  width: 100%;
   height: calc(8 * 1vh);
   height: calc(var(--vh, 1vh) * 8);
   display: flex;
@@ -104,4 +108,17 @@ a {
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+input:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+input:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.hidden {
+  visibility: hidden;
 }
