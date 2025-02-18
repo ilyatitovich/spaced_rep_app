@@ -2,7 +2,7 @@ import './Test.scss'
 
 import { saveTopic } from '@/lib/db'
 import { Topic } from '@/models'
-import { AnimatePresence } from 'framer-motion'
+import { AnimatePresence } from 'motion/react'
 import { useState, useEffect } from 'react'
 import { useNavigate, useLoaderData } from 'react-router'
 

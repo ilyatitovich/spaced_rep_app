@@ -1,5 +1,6 @@
 import './Home.css'
 
+import { Header, Footer } from '@/components'
 import type { TopicItem } from '@/types'
 import { Link, useLoaderData } from 'react-router'
 
@@ -8,9 +9,9 @@ export default function Home() {
 
   return (
     <main className="home">
-      <header className="home__header">
+      <Header withNav={false}>
         <h1>Topics</h1>
-      </header>
+      </Header>
 
       <section className="home__content">
         {topics.length > 0 ? (
@@ -32,11 +33,11 @@ export default function Home() {
         )}
       </section>
 
-      <footer>
+      <Footer>
         <Link to="add-topic" aria-label="Add a new topic">
           Add Topic
         </Link>
-      </footer>
+      </Footer>
     </main>
   )
 }

@@ -79,3 +79,10 @@ export async function deleteTopic(id: string): Promise<void> {
     request.onerror = () => reject(request.error)
   })
 }
+
+export async function saveImage(id: string, imageData: string): Promise<void> {
+  const db = await openDatabase()
+  const transaction = db.transaction(STORE_NAME, 'readwrite')
+  const store = transaction.objectStore(STORE_NAME)
+  store.put({ id, data: imageData })
+}

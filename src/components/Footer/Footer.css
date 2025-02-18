@@ -1,0 +1,9 @@
+.page-footer {
+  width: 100%;
+  height: calc(8 * 1vh);
+  height: calc(var(--vh, 1vh) * 8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-top: 1px solid var(--light-gray);
+}

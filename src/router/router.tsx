@@ -3,7 +3,7 @@ import {
   Home,
   AddTopic,
   Test,
-  NewCard,
+  AddCard,
   Level,
   Error404,
   EditDraftCard,
@@ -56,8 +56,8 @@ export default createBrowserRouter([
         loader: editDraftCardLoader
       },
       {
-        path: 'topic/:topicId/new-card',
-        element: <NewCard />,
+        path: 'topic/:topicId/add-card',
+        element: <AddCard />,
         loader: newCardLoader
       },
       {

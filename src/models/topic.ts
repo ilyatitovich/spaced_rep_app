@@ -1,7 +1,7 @@
 import { saveTopic } from '@/lib/db'
 import { levelColors } from '@/lib/utils'
-import { DayOfWeek, Level } from '@/models'
-import type { LevelColor, Card } from '@/types'
+import { DayOfWeek, Level, CardModel } from '@/models'
+import type { LevelColor } from '@/types'
 import { nanoid } from 'nanoid'
 
 export class Topic {
@@ -9,7 +9,7 @@ export class Topic {
   title: string
   pivotDate: number
   week: Array<DayOfWeek | null> = []
-  draft: Card[] = []
+  draft: CardModel[] = []
   levels: Level[]
   nextUpdateDate: number
 

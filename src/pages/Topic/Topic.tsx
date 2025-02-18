@@ -31,7 +31,7 @@ export default function Topic() {
 
         <div className="topic__add-card-wrapper">
           <h2>Levels</h2>
-          <Link to="new-card">Add Card</Link>
+          <Link to="add-card">Add Card</Link>
         </div>
 
         {draft.length > 0 && (
