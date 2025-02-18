@@ -2,12 +2,13 @@ import './Card.scss'
 
 import { type CardModelData } from '@/models'
 import { motion } from 'motion/react'
-import { type ChangeEvent } from 'react'
+import { type ChangeEvent, useRef, useEffect } from 'react'
 
 interface CardProps {
   data: CardModelData
   isFlipped: boolean
   isEditable?: boolean
+  isEdited?: boolean
   handleFocus?: () => void
   handleBlur?: () => void
   handleClick?: () => void
@@ -21,11 +22,24 @@ export default function Card({
   data,
   isFlipped,
   isEditable = false,
+  isEdited = false,
   handleFocus,
   handleBlur,
   handleClick,
   handleChange = () => {}
 }: CardProps) {
+  const frontTextRef = useRef<HTMLTextAreaElement>(null)
+  const backTextRef = useRef<HTMLTextAreaElement>(null)
+
+  useEffect(() => {
+    if (!isEdited) {
+      return
+    }
+
+    const ref = isFlipped ? backTextRef.current : frontTextRef.current
+    ref?.focus()
+  }, [isEdited, isFlipped])
+
   let content = (
     <>
       {data.front instanceof File ? (
@@ -55,6 +69,7 @@ export default function Card({
           </div>
         ) : (
           <textarea
+            ref={frontTextRef}
             className="front"
             value={data.front}
             onChange={event => handleChange(event, 'front')}
@@ -69,6 +84,7 @@ export default function Card({
           </div>
         ) : (
           <textarea
+            ref={backTextRef}
             className="back"
             value={data.back}
             onChange={event => handleChange(event, 'back')}

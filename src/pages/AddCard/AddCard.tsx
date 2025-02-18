@@ -90,6 +90,15 @@ export default function AddCard() {
     }))
   }
 
+  function handleText(): void {
+    setCardData(prev => ({
+      ...prev,
+      [isFlipped ? 'back' : 'front']: ''
+    }))
+
+    setIsEdited(true)
+  }
+
   return (
     <>
       <main className="add-card">
@@ -105,6 +114,7 @@ export default function AddCard() {
               data={cardData}
               isFlipped={isFlipped}
               isEditable={true}
+              isEdited={isEdited}
               handleFocus={() => setIsEdited(true)}
               handleBlur={() => setIsEdited(false)}
               handleChange={handleChange}
@@ -115,7 +125,7 @@ export default function AddCard() {
         <section className="add-card__modes">
           <ul>
             <li>
-              <button>text</button>
+              <button onClick={handleText}>text</button>
             </li>
             <li>
               <button onClick={openImageForm}>img</button>
@@ -129,7 +139,7 @@ export default function AddCard() {
         </Footer>
       </main>
       <AnimatePresence>
-        {searchParams.get('imgForm') === 'open' && (
+        {searchParams.get('imgForm') && (
           <ImageForm handleSave={(image: File) => setImage(image)} />
         )}
       </AnimatePresence>
