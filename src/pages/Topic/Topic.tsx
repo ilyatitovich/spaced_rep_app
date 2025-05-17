@@ -1,78 +1,68 @@
-import "./Topic.scss";
-import { Topic as TopicType, Level } from "../../lib/definitions";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChevronRight } from "@fortawesome/free-solid-svg-icons";
-import { Link, LoaderFunctionArgs, useLoaderData } from "react-router-dom";
-import { getTopic, updateWeek } from "../../lib/utils";
-import Week from "../../components/Week/Week";
-import LevelRow from "../../components/LevelRow/LevelRow";
+import './Topic.css'
 
-// eslint-disable-next-line react-refresh/only-export-components
-export async function loader({ params }: LoaderFunctionArgs) {
-    let topic = getTopic(params.topicId!);
-    const today: number = new Date().getDay();
+import { faChevronRight } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { Link, useLoaderData } from 'react-router'
 
-    // update week if update day has passed
-    if (topic.nextUpdateDate <= Date.now()) {
-        topic = updateWeek(topic);
-    } 
-
-    return { topic, today };
-}
+import { LevelRow, Week } from '@/components'
+import { deleteTopic } from '@/lib/db'
+import { Topic as TopicType, Level } from '@/models'
 
 export default function Topic() {
-    const { topic, today } = useLoaderData() as { topic: TopicType; today: number };
-    const { id, title, week, levels, draft } = topic;
+  const { topic, today } = useLoaderData<{ topic: TopicType; today: number }>()
+  const { id, title, week, levels, draft } = topic
 
-    function handleDelete(id: string) {
-        localStorage.removeItem(id);
-    }
+  async function handleDelete(id: string): Promise<void> {
+    await deleteTopic(id)
+  }
 
-    return (
-        <div className="topic">
-            <nav>
-                <Link to="/">Back</Link>
-                <p className="title">{title}</p>
-                <Link to="/" onClick={() => handleDelete(id)}>
-                    Delete
-                </Link>
-            </nav>
-            <div className="content">
-                <Week week={week} today={today} />
+  return (
+    <main className="topic">
+      <header className="topic__header">
+        <nav>
+          <Link to="/">Back</Link>
+          <h1 className="topic__title">{title}</h1>
+          <Link to="/" onClick={() => handleDelete(id)}>
+            Delete
+          </Link>
+        </nav>
+      </header>
+      <section className="topic__content">
+        <Week week={week} today={today} />
 
-                <div className="add-card-wrapper">
-                    <h4>Levels</h4>
-                    <Link to="new-card">Add Card</Link>
-                </div>
-
-                {draft.length > 0 && (
-                    <div className="draft-row">
-                        <Link to="draft">
-                            <div className="left">Draft</div>
-                            <div className="right">
-                                <span>{`${draft.length} cards`}</span>
-                                <span className="icon">
-                                    <FontAwesomeIcon icon={faChevronRight} />
-                                </span>
-                            </div>
-                        </Link>
-                    </div>
-                )}
-
-                <div className="levels">
-                    <ul>
-                        {levels.map((level: Level) => (
-                            <LevelRow key={level.id} level={level} />
-                        ))}
-                    </ul>
-                </div>
-
-                {!week[today]?.isDone && (
-                    <Link to="test" className="today-test-btn">
-                        <h4>Today's Test</h4>
-                    </Link>
-                )}
-            </div>
+        <div className="topic__add-card-wrapper">
+          <h2>Levels</h2>
+          <Link to="add-card">Add Card</Link>
         </div>
-    );
+
+        {draft.length > 0 && (
+          <div className="topic__draft-row">
+            <Link to="draft">
+              <div className="left">Draft</div>
+              <div className="right">
+                <span>{`${draft.length} cards`}</span>
+                <span className="icon">
+                  <FontAwesomeIcon icon={faChevronRight} />
+                </span>
+              </div>
+            </Link>
+          </div>
+        )}
+
+        <div className="topic__levels">
+          <ul>
+            {levels.map((level: Level) => (
+              <LevelRow key={level.id} level={level} />
+            ))}
+          </ul>
+        </div>
+
+        {!week[today]?.isCompleted && (
+          <Link to="test" className="topic__today-test-btn">
+            <p>Today's Test</p>
+          </Link>
+        )}
+      </section>
+    </main>
+  )
 }

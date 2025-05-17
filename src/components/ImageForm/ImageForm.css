@@ -1,0 +1,56 @@
+.image-upload-form {
+  width: 100vw;
+  height: calc(100 * 1vh);
+  height: calc(var(--vh, 1vh) * 100);
+  position: absolute;
+  top: 0;
+  inset-inline-start: 0;
+  background-color: var(--white);
+}
+
+.image-upload-form__content {
+  height: 70%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.image-upload-form__label {
+  color: var(--blue);
+}
+
+.image-upload-form__input {
+  position: absolute;
+  opacity: 0%;
+  width: 0;
+  height: 0;
+}
+
+.image-upload-form__data {
+  margin-top: 1em;
+  height: 12px;
+  align-items: center;
+
+  & p {
+    margin-top: 0.5em;
+    font-size: 1rem;
+    text-align: center;
+  }
+}
+
+.image-upload-form__preview {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  background-color: var(--light-gray);
+  border-radius: 50%;
+  border-color: var(--gray);
+  overflow: hidden;
+
+  & img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}

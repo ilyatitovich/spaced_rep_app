@@ -1,0 +1,45 @@
+.home {
+  height: 100%;
+}
+
+.home__header {
+  justify-content: center;
+
+  & h1 {
+    font-size: 1.2rem;
+    font-weight: normal;
+  }
+}
+
+.home__content {
+  height: calc(84 * 1vh);
+  height: calc(var(--vh, 1vh) * 84);
+  padding: 1em 1.2em;
+}
+
+.home__topics-list {
+  height: 100%;
+  overflow-y: scroll;
+}
+
+.home__topic-item {
+  padding: 1em 4em;
+  margin: 1em auto;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  font-size: 1.2rem;
+  color: var(--black);
+
+  background-image: var(--blue-gradient);
+  border-radius: 0.5em;
+}
+
+.home__message {
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
