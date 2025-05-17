@@ -1,0 +1,21 @@
+.page-header {
+  width: 100%;
+  height: calc(8 * 1vh);
+  height: calc(var(--vh, 1vh) * 8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-bottom: 1px solid var(--light-gray);
+
+  & nav {
+    justify-content: space-between;
+  }
+
+  & h1 {
+    position: absolute;
+    inset-inline-start: 50%;
+    transform: translateX(-50%);
+    font-size: 1.2rem;
+    font-weight: normal;
+  }
+}

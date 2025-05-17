@@ -1,0 +1,15 @@
+.add-card__content {
+  height: calc(78 * 1vh);
+  height: calc(var(--vh, 1vh) * 78);
+  padding: 0 1.2em;
+}
+
+.add-card__modes {
+  height: calc(6 * 1vh);
+  height: calc(var(--vh, 1vh) * 6);
+
+  & ul {
+    display: flex;
+    justify-content: space-around;
+  }
+}

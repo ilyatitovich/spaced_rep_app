@@ -1,47 +1,44 @@
-import "./Home.scss";
-import { TopicItem } from "../../lib/definitions";
-import { Link, useLoaderData } from "react-router-dom";
-import { getTopicsList } from "../../lib/utils";
+import './Home.css'
 
-// eslint-disable-next-line react-refresh/only-export-components
-export async function loader() {
-    const topics: TopicItem[] = getTopicsList();
-    return { topics };
-}
+import { Link, useLoaderData } from 'react-router'
+
+import { Header, Footer } from '@/components'
+import type { TopicItem } from '@/types'
 
 export default function Home() {
-    const { topics } = useLoaderData() as { topics: TopicItem[] };
+  const { topics } = useLoaderData<{ topics: TopicItem[] }>()
 
-    return (
-        <div className="home">
-            <nav>
-                <p>Topics</p>
-            </nav>
-            <div className="content">
-                {topics.length > 0 ? (
-                    <div className="topics">
-                        <ul>
-                            {topics.map((topic) => (
-                                <li key={topic.id}>
-                                    <Link
-                                        to={`topic/${topic.id}`}
-                                        className="topic"
-                                    >
-                                        {topic.title}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                ) : (
-                    <div className="message">
-                        <p>No topics to study yet</p>
-                    </div>
-                )}
-            </div>
-            <footer>
-                <Link to="new-topic">Add Topic</Link>
-            </footer>
-        </div>
-    );
+  return (
+    <main className="home">
+      <Header withNav={false}>
+        <h1>Topics</h1>
+      </Header>
+
+      <section className="home__content">
+        {topics.length > 0 ? (
+          <ul className="home__topics-list">
+            {topics.map(topic => (
+              <li key={topic.id}>
+                <Link
+                  to={`topic/${topic.id}`}
+                  className="home__topic-item"
+                  aria-label={`Go to topic: ${topic.title}`}
+                >
+                  {topic.title}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="home__message">No topics to study yet</p>
+        )}
+      </section>
+
+      <Footer>
+        <Link to="add-topic" aria-label="Add a new topic">
+          Add Topic
+        </Link>
+      </Footer>
+    </main>
+  )
 }

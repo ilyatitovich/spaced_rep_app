@@ -1,18 +1,21 @@
-import { Outlet } from "react-router-dom"
-import { useEffect } from "react";
+import { useEffect } from 'react'
+import { Outlet } from 'react-router'
+
+import { updateVh } from '@/lib/utils'
 
 export default function Root() {
-    useEffect(() => {
-        function setVh() {
-            const vh = window.innerHeight * 0.01;
-            document.documentElement.style.setProperty("--vh", `${vh}px`);
-        }
+  useEffect(() => {
+    let prevHeight = window.innerHeight
+    prevHeight = updateVh(prevHeight)
 
-        setVh();
+    const handleResize = () => {
+      prevHeight = updateVh(prevHeight)
+    }
 
-        window.addEventListener("resize", setVh);
+    window.addEventListener('resize', handleResize)
 
-        return () => window.removeEventListener("resize", setVh);
-    }, []);
-    return <Outlet/>
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  return <Outlet />
 }
