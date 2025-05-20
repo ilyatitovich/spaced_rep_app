@@ -1,12 +1,14 @@
 import "./Draft.scss";
-import { Card } from "../../lib/definitions";
+
 import {
     LoaderFunctionArgs,
     useLoaderData,
     useNavigate,
 } from "react-router-dom";
-import { getLevelCards } from "../../lib/utils";
+
 import CardsListContainer from "../../components/CardsListContainer/CardsListContainer";
+import { Card } from "../../lib/definitions";
+import { getLevelCards } from "../../lib/utils";
 
 // eslint-disable-next-line react-refresh/only-export-components
 export async function loader({ params }: LoaderFunctionArgs) {

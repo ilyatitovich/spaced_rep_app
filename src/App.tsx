@@ -1,11 +1,5 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import Root from "./pages/Root/Root";
-import Home, { loader as homeLoader } from "./pages/Home/Home";
-import NewTopic from "./pages/NewTopic/NewTopic";
-import Topic, { loader as topicLoader } from "./pages/Topic/Topic";
-import NewCard, { loader as newCardLoader } from "./pages/NewCard/NewCard";
-import Test, { loader as testLoader } from "./pages/Test/Test";
-import Level, { loader as levelLoader } from "./pages/Level/Level";
+
 import CardDetails, {
     loader as cardDetailsLoader,
 } from "./pages/CardDetails/CardDetails";
@@ -14,6 +8,13 @@ import EditDraftCard, {
     loader as editDraftCardLoader,
 } from "./pages/EditDraftCard/EditDraftCard";
 import Error404 from "./pages/Error404/Error404";
+import Home, { loader as homeLoader } from "./pages/Home/Home";
+import Level, { loader as levelLoader } from "./pages/Level/Level";
+import NewCard, { loader as newCardLoader } from "./pages/NewCard/NewCard";
+import NewTopic from "./pages/NewTopic/NewTopic";
+import Root from "./pages/Root/Root";
+import Test, { loader as testLoader } from "./pages/Test/Test";
+import Topic, { loader as topicLoader } from "./pages/Topic/Topic";
 
 const router = createBrowserRouter([
     {

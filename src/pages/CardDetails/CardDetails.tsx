@@ -1,17 +1,19 @@
 import "./CardDetails.scss";
-import {
-   Topic,
-   LevelId,
-   Card as CardType,
-} from "../../lib/definitions";
+
+import { useState } from "react";
 import {
    LoaderFunctionArgs,
     useLoaderData,
     useNavigate,
 } from "react-router-dom";
-import { useState } from "react";
-import { getTopic, getCard } from "../../lib/utils";
+
 import Card from "../../components/Card/Card";
+import {
+   Topic,
+   LevelId,
+   Card as CardType,
+} from "../../lib/definitions";
+import { getTopic, getCard } from "../../lib/utils";
 
 // eslint-disable-next-line react-refresh/only-export-components
 export async function loader({ params }: LoaderFunctionArgs) {

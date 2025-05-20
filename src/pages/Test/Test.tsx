@@ -1,14 +1,16 @@
 import "./Test.scss";
-import { Topic } from "../../lib/definitions";
-import { getTopic, saveTopic } from "../../lib/utils";
+
+import { AnimatePresence } from "framer-motion";
+import { useState, useEffect } from "react";
 import {
     useNavigate,
     useLoaderData,
     LoaderFunctionArgs,
 } from "react-router-dom";
-import { useState, useEffect } from "react";
-import { AnimatePresence } from "framer-motion";
+
 import Card from "../../components/Card/Card";
+import { Topic } from "../../lib/definitions";
+import { getTopic, saveTopic } from "../../lib/utils";
 
 
 // eslint-disable-next-line react-refresh/only-export-components

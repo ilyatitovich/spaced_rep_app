@@ -1,6 +1,8 @@
 import "./Home.scss";
-import { TopicItem } from "../../lib/definitions";
+
 import { Link, useLoaderData } from "react-router-dom";
+
+import { TopicItem } from "../../lib/definitions";
 import { getTopicsList } from "../../lib/utils";
 
 // eslint-disable-next-line react-refresh/only-export-components
