@@ -10,9 +10,9 @@ import EditDraftCard, {
 import Error404 from './pages/Error404/Error404'
 import Home, { loader as homeLoader } from './pages/home'
 import Level, { loader as levelLoader } from './pages/Level/Level'
+import NewTopic from './pages/new-topic'
 import NewCard, { loader as newCardLoader } from './pages/NewCard/NewCard'
-import NewTopic from './pages/NewTopic/NewTopic'
-import Root from './pages/Root/Root'
+import Root from './pages/root'
 import Test, { loader as testLoader } from './pages/Test/Test'
 import Topic, { loader as topicLoader } from './pages/Topic/Topic'
 
