@@ -62,24 +62,24 @@ ul {
     list-style: none;
 }
 
-a,
-button {
-    font-size: 1.2rem;
-    background-color: transparent;
-    color: $blue;
-}
+// a,
+// button {
+//     font-size: 1.2rem;
+//     background-color: transparent;
+//     color: $blue;
+// }
 
-button {
-    border: none;
-}
+// button {
+//     border: none;
+// }
 
-button:disabled {
-    color: $light-gray;
-}
+// button:disabled {
+//     color: $light-gray;
+// }
 
-a {
-    text-decoration: none;
-}
+// a {
+//     text-decoration: none;
+// }
 
 .card-container {
     width: 100%;

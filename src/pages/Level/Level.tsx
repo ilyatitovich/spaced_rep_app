@@ -1,36 +1,37 @@
-import "./Level.scss";
+import './Level.scss'
 
 import {
-    LoaderFunctionArgs,
-    useLoaderData,
-    useNavigate,
-} from "react-router-dom";
+  LoaderFunctionArgs,
+  useLoaderData,
+  useNavigate
+} from 'react-router-dom'
 
-import CardsListContainer from "../../components/CardsListContainer/CardsListContainer";
-import { LevelId, Card } from "../../lib/definitions";
-import { getLevelCards } from "../../lib/utils";
+import CardsListContainer from '../../components/CardsListContainer/CardsListContainer'
+import { LevelId, Card } from '../../lib/definitions'
+import { getLevelCards } from '../../lib/utils'
+import { Button } from '../../components/ui'
 
 // eslint-disable-next-line react-refresh/only-export-components
 export async function loader({ params }: LoaderFunctionArgs) {
-    const levelId = params.levelId as LevelId;
-    const levelCards = getLevelCards(params.topicId!, levelId);
-    return { levelId, levelCards };
+  const levelId = params.levelId as LevelId
+  const levelCards = getLevelCards(params.topicId!, levelId)
+  return { levelId, levelCards }
 }
 
 export default function Level() {
-    const navigate = useNavigate();
-    const { levelId, levelCards } = useLoaderData() as {
-        levelId: LevelId;
-        levelCards: Card[];
-    };
+  const navigate = useNavigate()
+  const { levelId, levelCards } = useLoaderData() as {
+    levelId: LevelId
+    levelCards: Card[]
+  }
 
-    return (
-        <div className="level">
-            <nav>
-                <button onClick={() => navigate(-1)}>Back</button>
-                <p className="title">Level {levelId}</p>
-            </nav>
-            <CardsListContainer cardsFrom="level" cardsList={levelCards} />
-        </div>
-    );
+  return (
+    <div className="level">
+      <nav>
+        <Button onClick={() => navigate(-1)}>Back</Button>
+        <p className="title">Level {levelId}</p>
+      </nav>
+      <CardsListContainer cardsFrom="level" cardsList={levelCards} />
+    </div>
+  )
 }
