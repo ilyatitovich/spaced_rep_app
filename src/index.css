@@ -9,6 +9,7 @@
   --color-blue: #309bff;
   --color-red: #c20404;
   --color-green: #008000;
+  --color-blue-gradient: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%);
 }
 
 nav,
@@ -21,4 +22,13 @@ footer {
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.content {
+  height: calc(84 * 1vh);
+  height: calc(var(--vh, 1vh) * 84);
+}
+
+.gradient {
+  background-image: var(--color-blue-gradient);
 }
