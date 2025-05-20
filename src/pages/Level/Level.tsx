@@ -1,12 +1,14 @@
 import "./Level.scss";
+
 import {
     LoaderFunctionArgs,
     useLoaderData,
     useNavigate,
 } from "react-router-dom";
+
+import CardsListContainer from "../../components/CardsListContainer/CardsListContainer";
 import { LevelId, Card } from "../../lib/definitions";
 import { getLevelCards } from "../../lib/utils";
-import CardsListContainer from "../../components/CardsListContainer/CardsListContainer";
 
 // eslint-disable-next-line react-refresh/only-export-components
 export async function loader({ params }: LoaderFunctionArgs) {

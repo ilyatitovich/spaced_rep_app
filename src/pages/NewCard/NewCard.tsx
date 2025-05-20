@@ -1,13 +1,15 @@
 import "./NewCard.scss";
-import { Topic } from "../../lib/definitions";
+
+import { useState, useEffect, type ChangeEvent } from "react";
 import {
     LoaderFunctionArgs,
     useLoaderData,
     useNavigate,
 } from "react-router-dom";
-import { useState, useEffect, type ChangeEvent } from "react";
-import { getTopic, saveTopic } from "../../lib/utils";
+
 import Card from "../../components/Card/Card";
+import { Topic } from "../../lib/definitions";
+import { getTopic, saveTopic } from "../../lib/utils";
 
 // eslint-disable-next-line react-refresh/only-export-components
 export async function loader({ params }: LoaderFunctionArgs) {

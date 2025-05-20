@@ -1,11 +1,13 @@
 import "./Topic.scss";
-import { Topic as TopicType, Level } from "../../lib/definitions";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+
 import { faChevronRight } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Link, LoaderFunctionArgs, useLoaderData } from "react-router-dom";
-import { getTopic, updateWeek } from "../../lib/utils";
-import Week from "../../components/Week/Week";
+
 import LevelRow from "../../components/LevelRow/LevelRow";
+import Week from "../../components/Week/Week";
+import { Topic as TopicType, Level } from "../../lib/definitions";
+import { getTopic, updateWeek } from "../../lib/utils";
 
 // eslint-disable-next-line react-refresh/only-export-components
 export async function loader({ params }: LoaderFunctionArgs) {

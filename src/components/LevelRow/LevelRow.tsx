@@ -1,8 +1,10 @@
 import "./LevelRow.scss";
-import { type Level } from "../../lib/definitions";
-import { Link } from "react-router-dom";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+
 import { faChevronRight } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Link } from "react-router-dom";
+
+import { type Level } from "../../lib/definitions";
 
 export default function LevelRow({ level }: { level: Level }) {
     const { id, color, cards } = level;
