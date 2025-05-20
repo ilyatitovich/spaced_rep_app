@@ -4,13 +4,6 @@
     box-sizing: border-box;
 }
 
-*,
-*::before,
-*::after {
-    margin: 0;
-    padding: 0;
-    box-sizing: inherit;
-}
 
 body {
     @include height;
@@ -43,16 +36,7 @@ body {
     @include height;
 }
 
-nav,
-footer {
-    padding: 0 1.2em;
-    @include height($points: 8);
-    @include centered-flex-container;
-}
 
-nav {
-    border-bottom: 1px solid $light-gray;
-}
 
 footer {
     border-top: 1px solid $light-gray;
@@ -62,24 +46,7 @@ ul {
     list-style: none;
 }
 
-// a,
-// button {
-//     font-size: 1.2rem;
-//     background-color: transparent;
-//     color: $blue;
-// }
 
-// button {
-//     border: none;
-// }
-
-// button:disabled {
-//     color: $light-gray;
-// }
-
-// a {
-//     text-decoration: none;
-// }
 
 .card-container {
     width: 100%;

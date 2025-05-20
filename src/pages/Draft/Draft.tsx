@@ -9,7 +9,7 @@ import {
 import CardsListContainer from '../../components/CardsListContainer/CardsListContainer'
 import { Card } from '../../lib/definitions'
 import { getLevelCards } from '../../lib/utils'
-import { Button } from '../../components/ui'
+import { Button, Navbar } from '../../components/ui'
 
 // eslint-disable-next-line react-refresh/only-export-components
 export async function loader({ params }: LoaderFunctionArgs) {
@@ -25,10 +25,10 @@ export default function Draft() {
 
   return (
     <div className="draft">
-      <nav>
+      <Navbar>
         <Button onClick={() => navigate(-1)}>Back</Button>
         <p className="title">Draft</p>
-      </nav>
+      </Navbar>
       <CardsListContainer cardsFrom="draft" cardsList={draftCards} />
     </div>
   )

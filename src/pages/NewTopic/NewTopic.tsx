@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid'
 
 import { TopicModel } from '../../lib/models'
 import { saveTopic, getNextUpdateDate } from '../../lib/utils'
-import { Button } from '../../components/ui'
+import { Button, Navbar } from '../../components/ui'
 
 export default function NewTopic() {
   const navigate = useNavigate()
@@ -23,10 +23,10 @@ export default function NewTopic() {
 
   return (
     <div className="new-topic">
-      <nav>
+      <Navbar>
         <Button href="/">Back</Button>
         <Button onClick={handleSave}>Save</Button>
-      </nav>
+      </Navbar>
       <div className="content">
         <label htmlFor="title">What are you going to learn?</label>
         <input

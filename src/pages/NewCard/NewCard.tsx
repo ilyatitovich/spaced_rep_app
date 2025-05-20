@@ -10,7 +10,7 @@ import {
 import Card from '../../components/Card/Card'
 import { Topic } from '../../lib/definitions'
 import { getTopic, saveTopic } from '../../lib/utils'
-import { Button } from '../../components/ui'
+import { Button, Navbar } from '../../components/ui'
 
 // eslint-disable-next-line react-refresh/only-export-components
 export async function loader({ params }: LoaderFunctionArgs) {
@@ -121,7 +121,7 @@ export default function NewCard() {
 
   return (
     <div className="new-card">
-      <nav>
+      <Navbar>
         <Button
           onClick={() => {
             navigate(-1)
@@ -131,7 +131,7 @@ export default function NewCard() {
         </Button>
         <p>{isFlipped ? 'Back' : 'Front'}</p>
         {rightBtn}
-      </nav>
+      </Navbar>
       <div className="card-container">
         {!isSaving && (
           <Card

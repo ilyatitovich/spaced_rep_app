@@ -8,7 +8,7 @@ import LevelRow from '../../components/LevelRow/LevelRow'
 import Week from '../../components/Week/Week'
 import { Topic as TopicType, Level } from '../../lib/definitions'
 import { getTopic, updateWeek } from '../../lib/utils'
-import { Button } from '../../components/ui'
+import { Button, Navbar } from '../../components/ui'
 
 // eslint-disable-next-line react-refresh/only-export-components
 export async function loader({ params }: LoaderFunctionArgs) {
@@ -36,13 +36,13 @@ export default function Topic() {
 
   return (
     <div className="topic">
-      <nav>
+      <Navbar>
         <Button href="/">Back</Button>
-        <p className="title">{title}</p>
+        <h1 className="title">{title}</h1>
         <Button href="/" onClick={() => handleDelete(id)}>
           Delete
         </Button>
-      </nav>
+      </Navbar>
       <div className="content">
         <Week week={week} today={today} />
 

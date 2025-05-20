@@ -20,7 +20,7 @@ export default function Button({
   ...props
 }: ButtonProps) {
   const baseClasses = `
-    inline-flex items-center justify-center px-4 py-2
+    inline-flex items-center justify-center
     font-medium focus:outline-blue focus:outline-offset-6
     ${disabled ? 'text-light-gray cursor-not-allowed' : 'hover:bg-opacity-90'}
     bg-transparent text-blue

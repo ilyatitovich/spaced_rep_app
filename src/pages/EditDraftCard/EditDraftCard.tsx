@@ -10,7 +10,7 @@ import {
 import Card from '../../components/Card/Card'
 import { Topic, Card as CardType } from '../../lib/definitions'
 import { getTopic, getCard } from '../../lib/utils'
-import { Button } from '../../components/ui'
+import { Button, Navbar } from '../../components/ui'
 
 // eslint-disable-next-line react-refresh/only-export-components
 export async function loader({ params }: LoaderFunctionArgs) {
@@ -91,7 +91,7 @@ export default function EditDraftCard() {
 
   return (
     <div className="screen new-card">
-      <nav>
+      <Navbar>
         <Button
           onClick={() => {
             navigate(-1)
@@ -99,9 +99,9 @@ export default function EditDraftCard() {
         >
           Back
         </Button>
-        <p>{isFlipped ? 'Back' : 'Front'}</p>
+        <h1>{isFlipped ? 'Back' : 'Front'}</h1>
         {leftBtn}
-      </nav>
+      </Navbar>
       <div className="card-container">
         <Card
           data={cardData}

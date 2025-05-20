@@ -4,7 +4,7 @@ import { Link, useLoaderData } from 'react-router-dom'
 
 import { TopicItem } from '../../lib/definitions'
 import { getTopicsList } from '../../lib/utils'
-import { Button } from '../../components/ui'
+import { Button, Navbar } from '../../components/ui'
 
 // eslint-disable-next-line react-refresh/only-export-components
 export async function loader() {
@@ -17,9 +17,9 @@ export default function Home() {
 
   return (
     <div className="home">
-      <nav>
-        <p>Topics</p>
-      </nav>
+      <Navbar>
+        <h1>Topics</h1>
+      </Navbar>
       <div className="content">
         {topics.length > 0 ? (
           <div className="topics">

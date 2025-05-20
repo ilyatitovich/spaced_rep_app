@@ -1,9 +1,9 @@
 @import "../../utils";
 
 .topic {
-    nav {
-        justify-content: space-between;
-    }
+    // nav {
+    //     justify-content: space-between;
+    // }
 
     .content {
         @include height(92);

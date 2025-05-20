@@ -10,3 +10,15 @@
   --color-red: #c20404;
   --color-green: #008000;
 }
+
+nav,
+footer {
+  height: calc(8 * 1vh);
+  height: calc(var(--vh, 1vh) * 8);
+}
+
+footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}

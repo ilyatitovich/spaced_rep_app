@@ -1,9 +1,9 @@
 @import "../../utils";
 
 .home {
-    nav {
-        justify-content: center;
-    }
+    // nav {
+    //     justify-content: center;
+    // }
 
     .content {
         @include height($points: 84);

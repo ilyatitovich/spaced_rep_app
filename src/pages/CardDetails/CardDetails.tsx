@@ -10,7 +10,7 @@ import {
 import Card from '../../components/Card/Card'
 import { Topic, LevelId, Card as CardType } from '../../lib/definitions'
 import { getTopic, getCard } from '../../lib/utils'
-import { Button } from '../../components/ui'
+import { Button, Navbar } from '../../components/ui'
 
 // eslint-disable-next-line react-refresh/only-export-components
 export async function loader({ params }: LoaderFunctionArgs) {
@@ -41,7 +41,7 @@ export default function CardDetails() {
 
   return (
     <div className="screen card-details">
-      <nav>
+      <Navbar>
         <Button
           onClick={() => {
             navigate(-1)
@@ -49,9 +49,9 @@ export default function CardDetails() {
         >
           Back
         </Button>
-        <p>{isFlipped ? 'Back' : 'Front'}</p>
-        <button onClick={deleteCard}>Delete</button>
-      </nav>
+        <h1>{isFlipped ? 'Back' : 'Front'}</h1>
+        <Button onClick={deleteCard}>Delete</Button>
+      </Navbar>
       <div className="card-container">
         <Card data={card} isFlipped={isFlipped} />
       </div>
