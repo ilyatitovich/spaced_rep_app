@@ -14,7 +14,7 @@ import NewTopic from './pages/new-topic'
 import NewCard, { loader as newCardLoader } from './pages/NewCard/NewCard'
 import Root from './pages/root'
 import Test, { loader as testLoader } from './pages/Test/Test'
-import Topic, { loader as topicLoader } from './pages/Topic/Topic'
+import Topic, { loader as topicLoader } from './pages/topic'
 
 const router = createBrowserRouter([
   {
