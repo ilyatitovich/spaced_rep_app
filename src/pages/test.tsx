@@ -1,26 +1,18 @@
 import { AnimatePresence } from 'framer-motion'
 import { useState, useEffect } from 'react'
-import {
-  useNavigate,
-  useLoaderData,
-  LoaderFunctionArgs
-} from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 import Card from '../components/card'
 import { Button, Navbar, Content } from '../components/ui'
-import { Topic } from '../lib/definitions'
-import { getTopic, saveTopic } from '../lib/utils'
-
-export async function loader({ params }: LoaderFunctionArgs) {
-  const topic = getTopic(params.topicId as string)
-  const today: number = new Date().getDay()
-  return { topic, today }
-}
+import { saveTopic } from '../lib/utils'
+import { useTopicStore } from '../stores/topic.store'
 
 export default function Test() {
   const navigate = useNavigate()
-  const { topic, today } = useLoaderData() as { topic: Topic; today: number }
-  const { week, levels } = topic
+  const topic = useTopicStore(state => state.topic)
+  const today: number = new Date().getDay()
+
+  const { week, levels } = topic!
 
   const [isFlipped, setIsFlipped] = useState<boolean>(false)
 
@@ -45,7 +37,7 @@ export default function Test() {
 
   if (cards.length === 0) {
     week[today]!.isDone = true
-    saveTopic(topic)
+    saveTopic(topic!)
   }
 
   function handleAnswer(answer: 'correct' | 'wrong') {
@@ -63,7 +55,7 @@ export default function Test() {
       updatedCards.push(currentCard!)
     }
 
-    saveTopic(topic)
+    saveTopic(topic!)
 
     setIsMoved(true)
     setCards(updatedCards)
