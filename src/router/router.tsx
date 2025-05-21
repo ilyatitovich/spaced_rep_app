@@ -1,65 +1,73 @@
 import { createBrowserRouter } from 'react-router'
 
-import CardDetails, { loader as cardDetailsLoader } from '../pages/card-details'
-import Draft, { loader as draftLoader } from '../pages/draft'
-import EditDraftCard, {
-  loader as editDraftCardLoader
-} from '../pages/edit-draft-card'
-import Error404 from '../pages/error-404'
-import Home, { loader as homeLoader } from '../pages/home'
-import Level, { loader as levelLoader } from '../pages/level'
-import NewCard from '../pages/new-card'
-import NewTopic from '../pages/new-topic'
-import Root from '../pages/root'
-import Test from '../pages/test'
-import Topic, { loader as topicLoader } from '../pages/topic'
+import {
+  homeLoader,
+  topicLoader,
+  cardDetailsLoader,
+  draftLoader,
+  editDraftCardLoader,
+  levelLoader
+} from './loaders'
+import {
+  NotFoundPage,
+  HomePage,
+  LevelPage,
+  CardDetailsPage,
+  DraftPage,
+  EditDraftCardPage,
+  NewCardPage,
+  NewTopicPage,
+  Root,
+  TestPage,
+  TopicPage
+} from '@/pages'
 
 export default createBrowserRouter([
   {
     path: '/',
     element: <Root />,
-    errorElement: <Error404 />,
+    errorElement: <NotFoundPage />,
     children: [
       {
         index: true,
-        element: <Home />,
+        element: <HomePage />,
         loader: homeLoader
       },
       {
         path: 'new-topic',
-        element: <NewTopic />
+        element: <NewTopicPage />
       },
       {
         path: 'topic/:topicId',
-        element: <Topic />,
+        element: <TopicPage />,
         loader: topicLoader
       },
       {
         path: 'topic/:topicId/draft',
-        element: <Draft />,
+        element: <DraftPage />,
         loader: draftLoader
       },
       {
         path: 'topic/:topicId/draft/:cardIndx/edit',
-        element: <EditDraftCard />,
+        element: <EditDraftCardPage />,
         loader: editDraftCardLoader
       },
       {
         path: 'topic/:topicId/new-card',
-        element: <NewCard />
+        element: <NewCardPage />
       },
       {
         path: 'topic/:topicId/test',
-        element: <Test />
+        element: <TestPage />
       },
       {
         path: 'topic/:topicId/:levelId',
-        element: <Level />,
+        element: <LevelPage />,
         loader: levelLoader
       },
       {
         path: 'topic/:topicId/:levelId/:cardIndx',
-        element: <CardDetails />,
+        element: <CardDetailsPage />,
         loader: cardDetailsLoader
       }
     ]

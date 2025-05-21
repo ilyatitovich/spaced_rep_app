@@ -1,15 +1,7 @@
-import { LoaderFunctionArgs, useLoaderData, useNavigate } from 'react-router'
+import { useLoaderData, useNavigate } from 'react-router'
 
-import CardsListContainer from '../components/cards-list-container'
-import { Button, Navbar } from '../components/ui'
-import { LevelId, Card } from '../lib/definitions'
-import { getLevelCards } from '../lib/utils'
-
-export async function loader({ params }: LoaderFunctionArgs) {
-  const levelId = params.levelId as LevelId
-  const levelCards = getLevelCards(params.topicId!, levelId)
-  return { levelId, levelCards }
-}
+import { Button, Navbar, CardsListContainer } from '@/components'
+import { LevelId, Card } from '@/lib/definitions'
 
 export default function Level() {
   const navigate = useNavigate()

@@ -2,10 +2,9 @@ import { AnimatePresence } from 'framer-motion'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
 
-import Card from '../components/card'
-import { Button, Navbar, Content } from '../components/ui'
-import { saveTopic } from '../lib/utils'
-import { useTopicStore } from '../stores/topic.store'
+import { Button, Navbar, Content, Card } from '@/components'
+import { saveTopic } from '@/lib/utils'
+import { useTopicStore } from '@/stores/topic.store'
 
 export default function Test() {
   const navigate = useNavigate()

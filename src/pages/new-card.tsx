@@ -1,11 +1,10 @@
 import { useState, useEffect, type ChangeEvent } from 'react'
 import { useNavigate } from 'react-router'
 
-import Card from '../components/card'
-import { Button, Navbar, Content } from '../components/ui'
-import { Topic } from '../lib/definitions'
-import { saveTopic } from '../lib/utils'
-import { useTopicStore } from '../stores/topic.store'
+import { Button, Navbar, Content, Card } from '@/components'
+import { Topic } from '@/lib/definitions'
+import { saveTopic } from '@/lib/utils'
+import { useTopicStore } from '@/stores'
 
 export default function NewCard() {
   const navigate = useNavigate()

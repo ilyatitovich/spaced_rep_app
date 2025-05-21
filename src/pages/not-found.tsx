@@ -1,8 +1,8 @@
 import { Link } from 'react-router'
 
-import { Content } from '../components/ui'
+import { Content } from '@/components'
 
-export default function Error404() {
+export default function NotFound() {
   return (
     <main>
       <Content className="h-dvh-100 flex flex-col items-center justify-center gap-4">
