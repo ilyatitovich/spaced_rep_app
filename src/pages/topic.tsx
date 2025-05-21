@@ -1,7 +1,7 @@
 import { faChevronRight } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useEffect } from 'react'
-import { Link, LoaderFunctionArgs, useLoaderData } from 'react-router-dom'
+import { Link, LoaderFunctionArgs, useLoaderData } from 'react-router'
 
 import LevelRow from '../components/level-row'
 import { Button, Navbar, Content } from '../components/ui'

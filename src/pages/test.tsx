@@ -1,6 +1,6 @@
 import { AnimatePresence } from 'framer-motion'
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 
 import Card from '../components/card'
 import { Button, Navbar, Content } from '../components/ui'

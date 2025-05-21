@@ -1,20 +1,20 @@
-import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import { createBrowserRouter } from 'react-router'
 
-import CardDetails, { loader as cardDetailsLoader } from './pages/card-details'
-import Draft, { loader as draftLoader } from './pages/draft'
+import CardDetails, { loader as cardDetailsLoader } from '../pages/card-details'
+import Draft, { loader as draftLoader } from '../pages/draft'
 import EditDraftCard, {
   loader as editDraftCardLoader
-} from './pages/edit-draft-card'
-import Error404 from './pages/error-404'
-import Home, { loader as homeLoader } from './pages/home'
-import Level, { loader as levelLoader } from './pages/level'
-import NewCard from './pages/new-card'
-import NewTopic from './pages/new-topic'
-import Root from './pages/root'
-import Test from './pages/test'
-import Topic, { loader as topicLoader } from './pages/topic'
+} from '../pages/edit-draft-card'
+import Error404 from '../pages/error-404'
+import Home, { loader as homeLoader } from '../pages/home'
+import Level, { loader as levelLoader } from '../pages/level'
+import NewCard from '../pages/new-card'
+import NewTopic from '../pages/new-topic'
+import Root from '../pages/root'
+import Test from '../pages/test'
+import Topic, { loader as topicLoader } from '../pages/topic'
 
-const router = createBrowserRouter([
+export default createBrowserRouter([
   {
     path: '/',
     element: <Root />,
@@ -65,7 +65,3 @@ const router = createBrowserRouter([
     ]
   }
 ])
-
-export default function App() {
-  return <RouterProvider router={router} />
-}

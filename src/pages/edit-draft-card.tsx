@@ -1,9 +1,5 @@
 import { useState, ChangeEvent } from 'react'
-import {
-  LoaderFunctionArgs,
-  useLoaderData,
-  useNavigate
-} from 'react-router-dom'
+import { LoaderFunctionArgs, useLoaderData, useNavigate } from 'react-router'
 
 import Card from '../components/card'
 import { Button, Navbar, Content } from '../components/ui'
