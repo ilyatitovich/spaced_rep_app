@@ -1,17 +1,14 @@
-import './Level.scss'
-
 import {
   LoaderFunctionArgs,
   useLoaderData,
   useNavigate
 } from 'react-router-dom'
 
-import CardsListContainer from '../../components/CardsListContainer/CardsListContainer'
-import { LevelId, Card } from '../../lib/definitions'
-import { getLevelCards } from '../../lib/utils'
-import { Button } from '../../components/ui'
+import CardsListContainer from '../components/cards-list-container'
+import { Button, Navbar } from '../components/ui'
+import { LevelId, Card } from '../lib/definitions'
+import { getLevelCards } from '../lib/utils'
 
-// eslint-disable-next-line react-refresh/only-export-components
 export async function loader({ params }: LoaderFunctionArgs) {
   const levelId = params.levelId as LevelId
   const levelCards = getLevelCards(params.topicId!, levelId)
@@ -26,12 +23,12 @@ export default function Level() {
   }
 
   return (
-    <div className="level">
-      <nav>
+    <main className="level">
+      <Navbar>
         <Button onClick={() => navigate(-1)}>Back</Button>
-        <p className="title">Level {levelId}</p>
-      </nav>
+        <h1 className="title">Level {levelId}</h1>
+      </Navbar>
       <CardsListContainer cardsFrom="level" cardsList={levelCards} />
-    </div>
+    </main>
   )
 }

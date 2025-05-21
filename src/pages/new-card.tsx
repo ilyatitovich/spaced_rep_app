@@ -6,7 +6,7 @@ import {
 } from 'react-router-dom'
 
 import Card from '../components/card'
-import { Button, Navbar } from '../components/ui'
+import { Button, Navbar, Content } from '../components/ui'
 import { Topic } from '../lib/definitions'
 import { getTopic, saveTopic } from '../lib/utils'
 
@@ -129,7 +129,7 @@ export default function NewCard() {
         <p>{isFlipped ? 'Back' : 'Front'}</p>
         {rightBtn}
       </Navbar>
-      <div className="card-container">
+      <Content centered>
         {!isSaving && (
           <Card
             data={cardData}
@@ -140,7 +140,7 @@ export default function NewCard() {
             handleChange={handleChange}
           />
         )}
-      </div>
+      </Content>
       <footer>
         <Button onClick={() => setIsFlipped(!isFlipped)}>Flip</Button>
       </footer>

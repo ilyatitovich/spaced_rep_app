@@ -1,17 +1,14 @@
-import './Draft.scss'
-
 import {
   LoaderFunctionArgs,
   useLoaderData,
   useNavigate
 } from 'react-router-dom'
 
-import CardsListContainer from '../../components/CardsListContainer/CardsListContainer'
-import { Card } from '../../lib/definitions'
-import { getLevelCards } from '../../lib/utils'
-import { Button, Navbar } from '../../components/ui'
+import CardsListContainer from '../components/cards-list-container'
+import { Button, Navbar } from '../components/ui'
+import { Card } from '../lib/definitions'
+import { getLevelCards } from '../lib/utils'
 
-// eslint-disable-next-line react-refresh/only-export-components
 export async function loader({ params }: LoaderFunctionArgs) {
   const draftCards = getLevelCards(params.topicId!, 'draft')
   return { draftCards }
@@ -24,12 +21,12 @@ export default function Draft() {
   }
 
   return (
-    <div className="draft">
+    <main>
       <Navbar>
         <Button onClick={() => navigate(-1)}>Back</Button>
-        <p className="title">Draft</p>
+        <h1 className="title">Draft</h1>
       </Navbar>
       <CardsListContainer cardsFrom="draft" cardsList={draftCards} />
-    </div>
+    </main>
   )
 }

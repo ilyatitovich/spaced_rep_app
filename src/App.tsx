@@ -1,19 +1,17 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 
-import CardDetails, {
-  loader as cardDetailsLoader
-} from './pages/CardDetails/CardDetails'
-import Draft, { loader as draftLoader } from './pages/Draft/Draft'
+import CardDetails, { loader as cardDetailsLoader } from './pages/card-details'
+import Draft, { loader as draftLoader } from './pages/draft'
 import EditDraftCard, {
   loader as editDraftCardLoader
-} from './pages/EditDraftCard/EditDraftCard'
+} from './pages/edit-draft-card'
 import Error404 from './pages/error-404'
 import Home, { loader as homeLoader } from './pages/home'
-import Level, { loader as levelLoader } from './pages/Level/Level'
-import NewTopic from './pages/new-topic'
+import Level, { loader as levelLoader } from './pages/level'
 import NewCard, { loader as newCardLoader } from './pages/new-card'
+import NewTopic from './pages/new-topic'
 import Root from './pages/root'
-import Test, { loader as testLoader } from './pages/Test/Test'
+import Test, { loader as testLoader } from './pages/test'
 import Topic, { loader as topicLoader } from './pages/topic'
 
 const router = createBrowserRouter([

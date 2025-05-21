@@ -1,5 +1,3 @@
-import './EditdraftCard.scss'
-
 import { useState, ChangeEvent } from 'react'
 import {
   LoaderFunctionArgs,
@@ -7,12 +5,11 @@ import {
   useNavigate
 } from 'react-router-dom'
 
-import Card from '../../components/card'
-import { Topic, Card as CardType } from '../../lib/definitions'
-import { getTopic, getCard } from '../../lib/utils'
-import { Button, Navbar } from '../../components/ui'
+import Card from '../components/card'
+import { Button, Navbar, Content } from '../components/ui'
+import { Topic, Card as CardType } from '../lib/definitions'
+import { getTopic, getCard } from '../lib/utils'
 
-// eslint-disable-next-line react-refresh/only-export-components
 export async function loader({ params }: LoaderFunctionArgs) {
   const { cardIndx } = params as {
     cardIndx: string
@@ -90,7 +87,7 @@ export default function EditDraftCard() {
   }
 
   return (
-    <div className="screen new-card">
+    <main>
       <Navbar>
         <Button
           onClick={() => {
@@ -102,7 +99,7 @@ export default function EditDraftCard() {
         <h1>{isFlipped ? 'Back' : 'Front'}</h1>
         {leftBtn}
       </Navbar>
-      <div className="card-container">
+      <Content centered>
         <Card
           data={cardData}
           isFlipped={isFlipped}
@@ -111,10 +108,10 @@ export default function EditDraftCard() {
           handleBlur={() => setIsEdited(false)}
           handleChange={handleChange}
         />
-      </div>
+      </Content>
       <footer>
         <Button onClick={() => setIsFlipped(!isFlipped)}>Flip</Button>
       </footer>
-    </div>
+    </main>
   )
 }

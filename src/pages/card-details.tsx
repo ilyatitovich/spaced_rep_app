@@ -1,5 +1,3 @@
-import './CardDetails.scss'
-
 import { useState } from 'react'
 import {
   LoaderFunctionArgs,
@@ -7,12 +5,11 @@ import {
   useNavigate
 } from 'react-router-dom'
 
-import Card from '../../components/card'
-import { Topic, LevelId, Card as CardType } from '../../lib/definitions'
-import { getTopic, getCard } from '../../lib/utils'
-import { Button, Navbar } from '../../components/ui'
+import Card from '../components/card'
+import { Button, Navbar, Content } from '../components/ui'
+import { Topic, LevelId, Card as CardType } from '../lib/definitions'
+import { getTopic, getCard } from '../lib/utils'
 
-// eslint-disable-next-line react-refresh/only-export-components
 export async function loader({ params }: LoaderFunctionArgs) {
   const { levelId, cardIndx } = params as {
     levelId: LevelId
@@ -40,7 +37,7 @@ export default function CardDetails() {
   }
 
   return (
-    <div className="screen card-details">
+    <main>
       <Navbar>
         <Button
           onClick={() => {
@@ -52,12 +49,12 @@ export default function CardDetails() {
         <h1>{isFlipped ? 'Back' : 'Front'}</h1>
         <Button onClick={deleteCard}>Delete</Button>
       </Navbar>
-      <div className="card-container">
+      <Content centered>
         <Card data={card} isFlipped={isFlipped} />
-      </div>
+      </Content>
       <footer>
         <Button onClick={() => setIsFlipped(!isFlipped)}>Flip</Button>
       </footer>
-    </div>
+    </main>
   )
 }

@@ -1,5 +1,3 @@
-import './Test.scss'
-
 import { AnimatePresence } from 'framer-motion'
 import { useState, useEffect } from 'react'
 import {
@@ -8,12 +6,11 @@ import {
   LoaderFunctionArgs
 } from 'react-router-dom'
 
-import Card from '../../components/card'
-import { Topic } from '../../lib/definitions'
-import { getTopic, saveTopic } from '../../lib/utils'
-import { Button, Navbar } from '../../components/ui'
+import Card from '../components/card'
+import { Button, Navbar, Content } from '../components/ui'
+import { Topic } from '../lib/definitions'
+import { getTopic, saveTopic } from '../lib/utils'
 
-// eslint-disable-next-line react-refresh/only-export-components
 export async function loader({ params }: LoaderFunctionArgs) {
   const topic = getTopic(params.topicId as string)
   const today: number = new Date().getDay()
@@ -74,7 +71,7 @@ export default function Test() {
   }
 
   return (
-    <div className="test">
+    <main className="test">
       <Navbar>
         <Button
           onClick={() => {
@@ -84,9 +81,12 @@ export default function Test() {
           Back
         </Button>
         <p>{isFlipped ? 'Back' : 'Front'}</p>
-        <small className="cards-num">{cards.length}</small>
+        <div className="py-2 px-4 rounded-full bg-light-gray flex items-center justify-center">
+          {cards.length}
+        </div>
       </Navbar>
-      <div className="card-container">
+
+      <Content centered>
         {!isMoved &&
           (cards.length > 0 ? (
             <AnimatePresence>
@@ -99,22 +99,30 @@ export default function Test() {
           ) : (
             <div>No cards</div>
           ))}
-      </div>
+      </Content>
 
-      <div className="btns-container">
+      <div className="w-full absolute bottom-4 mt-8 flex justify-evenly gap-2">
         {isFlipped ? (
           <>
-            <button className="wrong" onClick={() => handleAnswer('wrong')}>
+            <button
+              className="bg-red text-white py-3 px-10 rounded-md"
+              onClick={() => handleAnswer('wrong')}
+            >
               Wrong
             </button>
-            <button className="correct" onClick={() => handleAnswer('correct')}>
+            <button
+              className="bg-green text-white py-3 px-10 rounded-md"
+              onClick={() => handleAnswer('correct')}
+            >
               Correct
             </button>
           </>
         ) : (
-          <small>tap on card to reweal answer</small>
+          <small className="text-light-gray">
+            tap on card to reweal answer
+          </small>
         )}
       </div>
-    </div>
+    </main>
   )
 }
