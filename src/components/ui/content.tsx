@@ -7,7 +7,7 @@ type ContentProps = {
 
 export default function Content({ children, className }: ContentProps) {
   return (
-    <section className={`content p-4 overflow-y-scroll ${className}`}>
+    <section className={`h-dvh-84 p-4 overflow-y-scroll ${className}`}>
       {children}
     </section>
   )

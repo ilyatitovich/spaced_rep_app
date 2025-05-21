@@ -7,7 +7,7 @@ import Draft, { loader as draftLoader } from './pages/Draft/Draft'
 import EditDraftCard, {
   loader as editDraftCardLoader
 } from './pages/EditDraftCard/EditDraftCard'
-import Error404 from './pages/Error404/Error404'
+import Error404 from './pages/error-404'
 import Home, { loader as homeLoader } from './pages/home'
 import Level, { loader as levelLoader } from './pages/Level/Level'
 import NewTopic from './pages/new-topic'

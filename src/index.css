@@ -12,6 +12,19 @@
   --color-blue-gradient: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%);
 }
 
+@layer utilities {
+  .h-dvh-8 {
+    height: calc(var(--vh, 1vh) * 8) !important;
+  }
+
+  .h-dvh-84 {
+    height: calc(var(--vh, 1vh) * 84) !important;
+  }
+  .h-dvh-100 {
+    height: calc(var(--vh, 1vh) * 100) !important;
+  }
+}
+
 nav,
 footer {
   height: calc(8 * 1vh);
