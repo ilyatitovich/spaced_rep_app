@@ -14,12 +14,17 @@
 
 @layer utilities {
   .h-dvh-8 {
-    height: calc(var(--vh, 1vh) * 8) !important;
+    height: calc(var(--vh, 1vh) * 8);
   }
 
   .h-dvh-84 {
-    height: calc(var(--vh, 1vh) * 84) !important;
+    height: calc(var(--vh, 1vh) * 84);
   }
+
+  .h-dvh-92 {
+    height: calc(var(--vh, 1vh) * 92) !important;
+  }
+
   .h-dvh-100 {
     height: calc(var(--vh, 1vh) * 100) !important;
   }
@@ -37,10 +42,10 @@ footer {
   align-items: center;
 }
 
-.content {
+/* .content {
   height: calc(84 * 1vh);
   height: calc(var(--vh, 1vh) * 84);
-}
+} */
 
 .gradient {
   background-image: var(--color-blue-gradient);
