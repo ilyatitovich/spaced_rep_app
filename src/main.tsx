@@ -1,4 +1,3 @@
-import './index.scss'
 import './index.css'
 
 import { StrictMode } from 'react'
