@@ -1,5 +1,6 @@
 import { faChevronRight } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { useEffect } from 'react'
 import { Link, LoaderFunctionArgs, useLoaderData } from 'react-router-dom'
 
 import LevelRow from '../components/level-row'
@@ -7,6 +8,7 @@ import { Button, Navbar, Content } from '../components/ui'
 import Week from '../components/week'
 import { Topic as TopicType, Level } from '../lib/definitions'
 import { getTopic, updateWeek } from '../lib/utils'
+import { useTopicStore } from '../stores/topic.store'
 
 export async function loader({ params }: LoaderFunctionArgs) {
   let topic = getTopic(params.topicId!)
@@ -25,6 +27,13 @@ export default function Topic() {
     topic: TopicType
     today: number
   }
+
+  const setTopic = useTopicStore(state => state.setTopic)
+
+  useEffect(() => {
+    setTopic(topic)
+  }, [topic, setTopic])
+
   const { id, title, week, levels, draft } = topic
 
   function handleDelete(id: string) {

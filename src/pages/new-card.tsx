@@ -1,30 +1,22 @@
 import { useState, useEffect, type ChangeEvent } from 'react'
-import {
-  LoaderFunctionArgs,
-  useLoaderData,
-  useNavigate
-} from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 import Card from '../components/card'
 import { Button, Navbar, Content } from '../components/ui'
 import { Topic } from '../lib/definitions'
-import { getTopic, saveTopic } from '../lib/utils'
-
-export async function loader({ params }: LoaderFunctionArgs) {
-  const topic = getTopic(params.topicId!)
-  return { topic }
-}
+import { saveTopic } from '../lib/utils'
+import { useTopicStore } from '../stores/topic.store'
 
 export default function NewCard() {
   const navigate = useNavigate()
-  const { topic } = useLoaderData() as { topic: Topic }
+  const topic = useTopicStore(state => state.topic)
   const [isFlipped, setIsFlipped] = useState<boolean>(false)
   const [cardData, setCardData] = useState({ front: '', back: '' })
   const [isSaving, setIsSaving] = useState<boolean>(false)
   const [isEdited, setIsEdited] = useState<boolean>(false)
   const [isDraft, setIsDraft] = useState<boolean>(true)
 
-  const { levels, draft } = topic
+  const { levels, draft } = topic as Topic
   const firstLevelCards = levels[0].cards
   const cardDataIsExist = cardData.front && cardData.back
 
@@ -110,7 +102,7 @@ export default function NewCard() {
       draft.push(cardForSave)
     }
 
-    saveTopic(topic)
+    saveTopic(topic!)
     setIsSaving(true)
     setCardData({ front: '', back: '' })
     setIsFlipped(false)
