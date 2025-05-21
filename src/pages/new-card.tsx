@@ -1,5 +1,3 @@
-import './NewCard.scss'
-
 import { useState, useEffect, type ChangeEvent } from 'react'
 import {
   LoaderFunctionArgs,
@@ -7,12 +5,11 @@ import {
   useNavigate
 } from 'react-router-dom'
 
-import Card from '../../components/Card/Card'
-import { Topic } from '../../lib/definitions'
-import { getTopic, saveTopic } from '../../lib/utils'
-import { Button, Navbar } from '../../components/ui'
+import Card from '../components/card'
+import { Button, Navbar } from '../components/ui'
+import { Topic } from '../lib/definitions'
+import { getTopic, saveTopic } from '../lib/utils'
 
-// eslint-disable-next-line react-refresh/only-export-components
 export async function loader({ params }: LoaderFunctionArgs) {
   const topic = getTopic(params.topicId!)
   return { topic }
@@ -120,7 +117,7 @@ export default function NewCard() {
   }
 
   return (
-    <div className="new-card">
+    <main>
       <Navbar>
         <Button
           onClick={() => {
@@ -147,6 +144,6 @@ export default function NewCard() {
       <footer>
         <Button onClick={() => setIsFlipped(!isFlipped)}>Flip</Button>
       </footer>
-    </div>
+    </main>
   )
 }

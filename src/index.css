@@ -28,6 +28,10 @@
   .h-dvh-100 {
     height: calc(var(--vh, 1vh) * 100) !important;
   }
+
+  .transform-style-preserve-3d {
+    transform-style: preserve-3d;
+  }
 }
 
 nav,

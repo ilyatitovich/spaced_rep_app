@@ -8,7 +8,7 @@ import {
   LoaderFunctionArgs
 } from 'react-router-dom'
 
-import Card from '../../components/Card/Card'
+import Card from '../../components/card'
 import { Topic } from '../../lib/definitions'
 import { getTopic, saveTopic } from '../../lib/utils'
 import { Button, Navbar } from '../../components/ui'
