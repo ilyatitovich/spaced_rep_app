@@ -1,5 +1,5 @@
 import type { ReactNode, HTMLAttributes } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 
 type ButtonProps = HTMLAttributes<HTMLButtonElement | HTMLAnchorElement> & {
   href?: string

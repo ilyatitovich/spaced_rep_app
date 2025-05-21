@@ -1,8 +1,4 @@
-import {
-  LoaderFunctionArgs,
-  useLoaderData,
-  useNavigate
-} from 'react-router-dom'
+import { LoaderFunctionArgs, useLoaderData, useNavigate } from 'react-router'
 
 import CardsListContainer from '../components/cards-list-container'
 import { Button, Navbar } from '../components/ui'

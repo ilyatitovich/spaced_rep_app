@@ -1,4 +1,4 @@
-import { Link, useLoaderData } from 'react-router-dom'
+import { Link, useLoaderData } from 'react-router'
 
 import { Button, Navbar, Content } from '../components/ui'
 import { TopicItem } from '../lib/definitions'
