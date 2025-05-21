@@ -2,9 +2,9 @@ import { useRef } from 'react'
 import { useNavigate } from 'react-router'
 import { v4 as uuidv4 } from 'uuid'
 
-import { Button, Navbar, Content } from '../components/ui'
-import { TopicModel } from '../lib/models'
-import { saveTopic, getNextUpdateDate } from '../lib/utils'
+import { Button, Navbar, Content } from '@/components'
+import { TopicModel } from '@/lib/models'
+import { saveTopic, getNextUpdateDate } from '@/lib/utils'
 
 export default function NewTopic() {
   const navigate = useNavigate()

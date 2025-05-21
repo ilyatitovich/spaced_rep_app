@@ -1,8 +1,8 @@
 import { Link, useLoaderData } from 'react-router'
 
-import { Button, Navbar, Content } from '../components/ui'
-import { TopicItem } from '../lib/definitions'
-import { getTopicsList } from '../lib/utils'
+import { Button, Navbar, Content } from '@/components'
+import { TopicItem } from '@/lib/definitions'
+import { getTopicsList } from '@/lib/utils'
 
 export async function loader() {
   const topics: TopicItem[] = getTopicsList()
