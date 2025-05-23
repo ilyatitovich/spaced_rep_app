@@ -1,3 +1,5 @@
+import { nanoid } from 'nanoid'
+
 import {
   type levelColor,
   type Card,
@@ -59,8 +61,8 @@ export class TopicModel implements Topic {
   levels: Level[]
   nextUpdateDate: number
 
-  constructor(id: string, title: string, nextUpdateDate: number) {
-    this.id = id
+  constructor(title: string, nextUpdateDate: number) {
+    this.id = nanoid()
     this.title = title
     this.pivot = Date.now()
     this.week = this.setStartWeek(this.pivot)

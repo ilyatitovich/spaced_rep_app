@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { v4 as uuidv4 } from 'uuid'
 
 import { Button, Navbar, Content } from '@/components'
 import { TopicModel } from '@/lib/models'
@@ -31,7 +30,7 @@ export default function NewTopic() {
       return
     }
 
-    const topic = new TopicModel(uuidv4(), trimmedTitle, getNextUpdateDate())
+    const topic = new TopicModel(trimmedTitle, getNextUpdateDate())
 
     try {
       saveTopic(topic) // Temp save the topic to local storage

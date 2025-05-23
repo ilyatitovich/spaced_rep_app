@@ -1,15 +1,8 @@
-import type { TopicItem, levelColor, Topic, LevelId, Card } from './definitions'
+import type { levelColor, Topic, LevelId, Card } from './definitions'
 import { DayOfWeekModel } from './models'
 
 export function saveTopic(topic: Topic) {
   localStorage.setItem(topic.id, JSON.stringify(topic))
-}
-
-export function getTopicsList(): TopicItem[] {
-  return Object.values(localStorage).map(topic => {
-    const { id, title } = JSON.parse(topic) as Topic
-    return { id, title }
-  })
 }
 
 export function getTopic(id: string) {
