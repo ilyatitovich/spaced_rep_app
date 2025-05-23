@@ -26,6 +26,11 @@ export default function NewTopic() {
       return
     }
 
+    if (trimmedTitle.length > 10) {
+      setError('Title cannot exceed 10 characters. Try a shorter title')
+      return
+    }
+
     const topic = new TopicModel(uuidv4(), trimmedTitle, getNextUpdateDate())
 
     try {
@@ -70,24 +75,25 @@ export default function NewTopic() {
             What are you going to learn?
           </label>
 
-          <input
-            id="title"
-            name="title"
-            value={title}
-            maxLength={10}
-            onChange={handleTitleChange}
-            onKeyDown={handleKeyDown}
-            className="p-4 rounded-xl border-2 border-black focus:border-blue focus:outline-none"
-            placeholder="Enter a topic title"
-          />
+          <div className="flex flex-col justify-center gap-4 w-full">
+            <input
+              id="title"
+              name="title"
+              value={title}
+              onChange={handleTitleChange}
+              onKeyDown={handleKeyDown}
+              className="p-4 rounded-xl border-2 border-black focus:border-blue focus:outline-none"
+              placeholder="Enter a topic title"
+            />
 
-          {confirmation && (
-            <span className="text-green text-center mt-4">
-              Topic saved successfully!
-            </span>
-          )}
+            {confirmation && (
+              <span className="text-green text-center">
+                Topic saved successfully!
+              </span>
+            )}
 
-          {error && <span className="text-red text-center mt-4">{error}</span>}
+            {error && <span className="text-red text-center">{error}</span>}
+          </div>
         </form>
       </Content>
     </main>
