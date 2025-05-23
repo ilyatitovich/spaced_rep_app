@@ -1,42 +1,93 @@
-import { useRef } from 'react'
-import { useNavigate } from 'react-router'
+import { useState } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 
 import { Button, Navbar, Content } from '@/components'
 import { TopicModel } from '@/lib/models'
 import { saveTopic, getNextUpdateDate } from '@/lib/utils'
+import { createTopic } from '@/services'
 
 export default function NewTopic() {
-  const navigate = useNavigate()
-  const inputRef = useRef<HTMLInputElement>(null)
+  const [title, setTitle] = useState('')
+  const [confirmation, setConfirmation] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  function handleSave() {
-    const id = uuidv4()
-    const title = inputRef.current!.value
-    const nextUpdateDate = getNextUpdateDate()
-    const topic = new TopicModel(id, title, nextUpdateDate)
-    saveTopic(topic)
-    navigate(-1)
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTitle(e.target.value)
+    if (error) setError(null)
+    if (confirmation) setConfirmation(false)
+  }
+
+  const handleSave = async () => {
+    const trimmedTitle = title.trim()
+    setConfirmation(false)
+
+    if (!trimmedTitle) {
+      setError('Title cannot be empty')
+      return
+    }
+
+    const topic = new TopicModel(uuidv4(), trimmedTitle, getNextUpdateDate())
+
+    try {
+      saveTopic(topic) // Temp save the topic to local storage
+      await createTopic(topic)
+      setConfirmation(true)
+      setError(null)
+      setTitle('')
+    } catch (err) {
+      setConfirmation(false)
+      if (err instanceof Error) {
+        setError(err.message)
+      } else {
+        console.error('Unexpected error:', err)
+        setError('An unexpected error occurred, please try again')
+      }
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      handleSave()
+    }
   }
 
   return (
     <main>
       <Navbar>
         <Button href="/">Back</Button>
-        <Button onClick={handleSave}>Save</Button>
+        <Button disabled={!title} onClick={handleSave}>
+          Save
+        </Button>
       </Navbar>
+
       <Content>
-        <form className="flex flex-col items-center justify-center gap-6 h-full">
+        <form
+          className="flex flex-col items-center justify-center gap-6 h-full"
+          onSubmit={e => e.preventDefault()}
+        >
           <label htmlFor="title" className="text-2xl">
             What are you going to learn?
           </label>
+
           <input
-            className="p-4 rounded-xl border-2 border-black focus:border-blue focus:outline-none"
-            ref={inputRef}
+            id="title"
             name="title"
+            value={title}
             maxLength={10}
-            onKeyDown={event => event.key === 'Enter' && handleSave()}
+            onChange={handleTitleChange}
+            onKeyDown={handleKeyDown}
+            className="p-4 rounded-xl border-2 border-black focus:border-blue focus:outline-none"
+            placeholder="Enter a topic title"
           />
+
+          {confirmation && (
+            <span className="text-green text-center mt-4">
+              Topic saved successfully!
+            </span>
+          )}
+
+          {error && <span className="text-red text-center mt-4">{error}</span>}
         </form>
       </Content>
     </main>
