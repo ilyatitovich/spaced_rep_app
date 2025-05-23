@@ -39,6 +39,7 @@ export const useTopicStore = create<TopicState>((set, get) => ({
       if (topic.nextUpdateDate <= Date.now()) {
         topic = updateWeek(topic)
       }
+      //===========
 
       set(state => ({
         currentTopic: topic,

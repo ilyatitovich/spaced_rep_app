@@ -2,20 +2,21 @@ import { useState, useEffect, type ChangeEvent } from 'react'
 import { useNavigate } from 'react-router'
 
 import { Button, Navbar, Content, Card } from '@/components'
-import { Topic } from '@/lib/definitions'
 import { saveTopic } from '@/lib/utils'
 import { useTopicStore } from '@/stores'
 
 export default function NewCard() {
   const navigate = useNavigate()
-  const topic = useTopicStore(state => state.topic)
+
+  const { currentTopic } = useTopicStore()
+
   const [isFlipped, setIsFlipped] = useState<boolean>(false)
   const [cardData, setCardData] = useState({ front: '', back: '' })
   const [isSaving, setIsSaving] = useState<boolean>(false)
   const [isEdited, setIsEdited] = useState<boolean>(false)
   const [isDraft, setIsDraft] = useState<boolean>(true)
 
-  const { levels, draft } = topic as Topic
+  const { levels, draft } = currentTopic!
   const firstLevelCards = levels[0].cards
   const cardDataIsExist = cardData.front && cardData.back
 
@@ -101,7 +102,7 @@ export default function NewCard() {
       draft.push(cardForSave)
     }
 
-    saveTopic(topic!)
+    saveTopic(currentTopic!)
     setIsSaving(true)
     setCardData({ front: '', back: '' })
     setIsFlipped(false)
