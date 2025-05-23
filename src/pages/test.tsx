@@ -8,7 +8,7 @@ import { useTopicStore } from '@/stores/topic.store'
 
 export default function Test() {
   const navigate = useNavigate()
-  const topic = useTopicStore(state => state.topic)
+  const topic = useTopicStore(state => state.topics.currentTopic)
   const today: number = new Date().getDay()
 
   const { week, levels } = topic!
