@@ -1,7 +1,6 @@
 import { createBrowserRouter } from 'react-router'
 
 import {
-  topicLoader,
   cardDetailsLoader,
   draftLoader,
   editDraftCardLoader,
@@ -37,8 +36,7 @@ export default createBrowserRouter([
       },
       {
         path: 'topic/:topicId',
-        element: <TopicPage />,
-        loader: topicLoader
+        element: <TopicPage />
       },
       {
         path: 'topic/:topicId/draft',
