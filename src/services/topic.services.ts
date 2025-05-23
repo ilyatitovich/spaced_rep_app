@@ -43,12 +43,25 @@ export async function getTopicById(topicId: string): Promise<Topic | null> {
       const request = store.get(topicId)
 
       request.onsuccess = () => {
-        const topic = request.result as Topic | undefined
+        const topic = request.result
         resolve(topic ?? null)
       }
 
       request.onerror = () => {
         reject(request.error ?? new Error('Failed to fetch topic by ID'))
+      }
+    })
+  })
+}
+
+export async function deleteTopic(topicId: string): Promise<void> {
+  return withTransaction(STORES.TOPICS, 'readwrite', async store => {
+    return new Promise((resolve, reject) => {
+      const request = store.delete(topicId)
+
+      request.onsuccess = () => resolve()
+      request.onerror = () => {
+        reject(request.error ?? new Error('Failed to delete topic'))
       }
     })
   })

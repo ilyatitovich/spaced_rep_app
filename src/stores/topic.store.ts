@@ -2,7 +2,7 @@ import { create } from 'zustand'
 
 import type { Topic } from '@/lib/definitions'
 import { updateWeek } from '@/lib/utils'
-import { getTopicById } from '@/services'
+import { getTopicById, deleteTopic } from '@/services'
 
 type TopicState = {
   currentTopic: Topic | null
@@ -12,6 +12,7 @@ type TopicState = {
 
   fetchTopic: (id: string) => Promise<void>
   clearCurrent: () => void
+  deleteTopicById: (id: string) => Promise<void>
 }
 
 export const useTopicStore = create<TopicState>((set, get) => ({
@@ -45,8 +46,6 @@ export const useTopicStore = create<TopicState>((set, get) => ({
         loading: false,
         error: null
       }))
-
-      console.log(get())
     } catch (err) {
       console.error('Failed to load topic', err)
       set({
@@ -57,5 +56,24 @@ export const useTopicStore = create<TopicState>((set, get) => ({
     }
   },
 
-  clearCurrent: () => set({ currentTopic: null })
+  clearCurrent: () => set({ currentTopic: null }),
+
+  deleteTopicById: async (id: string) => {
+    try {
+      await deleteTopic(id)
+      const { currentTopic } = get()
+
+      set(state => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { [id]: _, ...rest } = state.topics
+        return {
+          topics: rest,
+          currentTopic: currentTopic?.id === id ? null : currentTopic
+        }
+      })
+    } catch (error) {
+      console.error('Error deleting topic:', error)
+      throw error
+    }
+  }
 }))

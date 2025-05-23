@@ -1,26 +1,39 @@
 import { faChevronRight } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useEffect } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, useParams, useNavigate } from 'react-router'
 
 import { Button, Navbar, Content, LevelRow, Week } from '@/components'
 import { Level } from '@/lib/definitions'
 import { useTopicStore } from '@/stores'
 
 export default function Topic() {
+  const navigate = useNavigate()
   const { topicId } = useParams()
-  const today: number = new Date().getDay()
 
-  const { currentTopic, fetchTopic, clearCurrent, loading, error } =
-    useTopicStore()
+  const {
+    currentTopic,
+    fetchTopic,
+    clearCurrent,
+    deleteTopicById,
+    loading,
+    error
+  } = useTopicStore()
+
+  const today: number = new Date().getDay()
 
   useEffect(() => {
     fetchTopic(topicId!)
     return () => clearCurrent()
   }, [clearCurrent, fetchTopic, topicId])
 
-  function handleDelete(id: string) {
-    localStorage.removeItem(id)
+  const handleDeleteTopic = async (id: string) => {
+    try {
+      await deleteTopicById(id)
+      navigate('/')
+    } catch (error) {
+      console.error('Failed to delete topic.', error)
+    }
   }
 
   if (loading) return <p>Loading...</p>
@@ -32,7 +45,7 @@ export default function Topic() {
       <Navbar>
         <Button href="/">Back</Button>
         <h1 className="title">{currentTopic.title}</h1>
-        <Button href="/" onClick={() => handleDelete(currentTopic.id)}>
+        <Button onClick={() => handleDeleteTopic(currentTopic.id)}>
           Delete
         </Button>
       </Navbar>
