@@ -1,16 +1,24 @@
-import { Link, useLoaderData } from 'react-router'
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router'
 
 import { Button, Navbar, Content } from '@/components'
 import { TopicItem } from '@/lib/definitions'
-import { getTopicsList } from '@/lib/utils'
-
-export async function loader() {
-  const topics: TopicItem[] = getTopicsList()
-  return { topics }
-}
+import { getAllTopics } from '@/services'
 
 export default function Home() {
-  const { topics } = useLoaderData() as { topics: TopicItem[] }
+  const [topics, setTopics] = useState<TopicItem[]>([])
+
+  useEffect(() => {
+    const fetchTopics = async () => {
+      try {
+        const topics = await getAllTopics()
+        setTopics(topics)
+      } catch (error) {
+        console.error('Error fetching topics:', error)
+      }
+    }
+    fetchTopics()
+  }, [])
 
   return (
     <main>

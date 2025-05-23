@@ -20,3 +20,19 @@ export async function createTopic(topic: Topic): Promise<void> {
     throw error
   }
 }
+
+export async function getAllTopics(): Promise<Topic[]> {
+  return withTransaction(STORES.TOPICS, 'readonly', async store => {
+    return new Promise((resolve, reject) => {
+      const request = store.getAll()
+
+      request.onsuccess = () => {
+        resolve(request.result)
+      }
+
+      request.onerror = () => {
+        reject(request.error ?? new Error('Failed to fetch topics'))
+      }
+    })
+  })
+}
