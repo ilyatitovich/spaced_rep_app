@@ -2,12 +2,10 @@ import { withTransaction, STORES } from '../lib/db'
 import { Topic } from '../lib/definitions'
 
 export async function createTopic(topic: Topic): Promise<void> {
-  const normalizedTopic = { ...topic, name: topic.title.toLowerCase() }
-
   try {
     await withTransaction(STORES.TOPICS, 'readwrite', async store => {
       await new Promise((resolve, reject) => {
-        const request = store.add(normalizedTopic)
+        const request = store.add(topic)
         request.onsuccess = () => resolve(undefined)
         request.onerror = () => reject(request.error)
       })
