@@ -1,15 +1,8 @@
-import type { TopicItem, levelColor, Topic, LevelId, Card } from './definitions'
-import { DayOfWeekModel } from './models'
+import type { levelColor, Topic, LevelId, Card } from './definitions'
+import { Day } from './helpers'
 
 export function saveTopic(topic: Topic) {
   localStorage.setItem(topic.id, JSON.stringify(topic))
-}
-
-export function getTopicsList(): TopicItem[] {
-  return Object.values(localStorage).map(topic => {
-    const { id, title } = JSON.parse(topic) as Topic
-    return { id, title }
-  })
 }
 
 export function getTopic(id: string) {
@@ -46,7 +39,7 @@ export function updateWeek(topic: Topic): Topic {
   topic.week = []
 
   for (let d = 0; d < 7; d++) {
-    const day = new DayOfWeekModel(Date.now() + 86400000 * (d - dayOfTheWeek))
+    const day = new Day(Date.now() + 86400000 * (d - dayOfTheWeek))
     day.setLevelList(pivot)
     topic.week.push(day)
   }
@@ -60,10 +53,10 @@ export function updateWeek(topic: Topic): Topic {
 
 export function getNextUpdateDate(): number {
   const today = new Date()
-  const currentDayOfWeek = today.getDay()
+  const currentDay = today.getDay()
 
   // Calculate the number of days until the next Sunday
-  const daysUntilSunday = 7 - currentDayOfWeek
+  const daysUntilSunday = 7 - currentDay
 
   // Set the date to the next Sunday
   const nextSunday = new Date(today)

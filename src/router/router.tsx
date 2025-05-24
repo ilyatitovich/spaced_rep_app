@@ -1,8 +1,6 @@
 import { createBrowserRouter } from 'react-router'
 
 import {
-  homeLoader,
-  topicLoader,
   cardDetailsLoader,
   draftLoader,
   editDraftCardLoader,
@@ -30,8 +28,7 @@ export default createBrowserRouter([
     children: [
       {
         index: true,
-        element: <HomePage />,
-        loader: homeLoader
+        element: <HomePage />
       },
       {
         path: 'new-topic',
@@ -39,8 +36,7 @@ export default createBrowserRouter([
       },
       {
         path: 'topic/:topicId',
-        element: <TopicPage />,
-        loader: topicLoader
+        element: <TopicPage />
       },
       {
         path: 'topic/:topicId/draft',

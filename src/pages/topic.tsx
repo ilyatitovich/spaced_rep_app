@@ -1,69 +1,63 @@
-import { faChevronRight } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useEffect } from 'react'
-import { Link, useLoaderData } from 'react-router'
+import { Link, useParams, useNavigate } from 'react-router'
 
 import { Button, Navbar, Content, LevelRow, Week } from '@/components'
-import { Topic as TopicType, Level } from '@/lib/definitions'
+import { Level } from '@/lib/helpers'
 import { useTopicStore } from '@/stores'
 
-export default function Topic() {
-  const { topic, today } = useLoaderData() as {
-    topic: TopicType
-    today: number
-  }
+const today: number = new Date().getDay()
 
-  const setTopic = useTopicStore(state => state.setTopic)
+export default function TopicPage() {
+  const navigate = useNavigate()
+  const { topicId } = useParams()
+
+  const { currentTopic, fetchTopic, deleteTopicById, loading, error } =
+    useTopicStore()
 
   useEffect(() => {
-    setTopic(topic)
-  }, [topic, setTopic])
+    if (!currentTopic) {
+      fetchTopic(topicId!)
+    }
+  }, [fetchTopic, topicId, currentTopic])
 
-  const { id, title, week, levels, draft } = topic
-
-  function handleDelete(id: string) {
-    localStorage.removeItem(id)
+  const handleDeleteTopic = async (id: string) => {
+    try {
+      await deleteTopicById(id)
+      navigate('/')
+    } catch (error) {
+      console.error('Failed to delete topic.', error)
+    }
   }
+
+  if (loading) return <p>Loading...</p>
+  if (error) return <p className="text-red">{error}</p>
+  if (!currentTopic) return null
 
   return (
     <main>
       <Navbar>
         <Button href="/">Back</Button>
-        <h1 className="title">{title}</h1>
-        <Button href="/" onClick={() => handleDelete(id)}>
+        <h1 className="font-bold">{currentTopic.title}</h1>
+        <Button onClick={() => handleDeleteTopic(currentTopic.id)}>
           Delete
         </Button>
       </Navbar>
 
       <Content height={92} className="pb-30">
-        <Week week={week} today={today} />
+        <Week week={currentTopic.week} today={today} />
 
         <div className="flex items-center justify-between py-2">
-          <h4>Levels</h4>
+          <h2 className="font-bold">Levels</h2>
           <Button href="new-card">Add Card</Button>
         </div>
 
-        {draft.length > 0 && (
-          <div className="py-4 border-b border-light-gray">
-            <Link to="draft" className="flex items-center justify-between">
-              <span>Draft</span>
-              <span className="flex items-center gap-2 text-gray">
-                <span>{`${draft.length} cards`}</span>
-                <span className="text-sm">
-                  <FontAwesomeIcon icon={faChevronRight} />
-                </span>
-              </span>
-            </Link>
-          </div>
-        )}
-
         <ul>
-          {levels.map((level: Level) => (
+          {currentTopic.levels.map((level: Level) => (
             <LevelRow key={level.id} level={level} />
           ))}
         </ul>
 
-        {!week[today]?.isDone && (
+        {!currentTopic.week[today]?.isDone && (
           <Link
             to="test"
             className="absolute left-1/2 bottom-4 -translate-x-1/2 w-2/3 py-5 text-center bg-purple text-white rounded-xl"
