@@ -93,7 +93,7 @@ export default function NewCard() {
       const testCard = new CardModel(
         cardData,
         currentTopic!.id,
-        cardStatus === 'new' ? 0 : -1
+        cardStatus === 'new' ? 1 : 0
       )
       await createCard(testCard)
 

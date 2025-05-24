@@ -1,5 +1,3 @@
-import { faChevronRight } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useEffect } from 'react'
 import { Link, useParams, useNavigate } from 'react-router'
 
@@ -17,8 +15,10 @@ export default function TopicPage() {
   const today: number = new Date().getDay()
 
   useEffect(() => {
-    fetchTopic(topicId!)
-  }, [fetchTopic, topicId])
+    if (!currentTopic) {
+      fetchTopic(topicId!)
+    }
+  }, [fetchTopic, topicId, currentTopic])
 
   const handleDeleteTopic = async (id: string) => {
     try {
@@ -37,7 +37,7 @@ export default function TopicPage() {
     <main>
       <Navbar>
         <Button href="/">Back</Button>
-        <h1 className="title">{currentTopic.title}</h1>
+        <h1 className="font-bold">{currentTopic.title}</h1>
         <Button onClick={() => handleDeleteTopic(currentTopic.id)}>
           Delete
         </Button>
@@ -47,23 +47,9 @@ export default function TopicPage() {
         <Week week={currentTopic.week} today={today} />
 
         <div className="flex items-center justify-between py-2">
-          <h4>Levels</h4>
+          <h2 className="font-bold">Levels</h2>
           <Button href="new-card">Add Card</Button>
         </div>
-
-        {currentTopic.draft.length > 0 && (
-          <div className="py-4 border-b border-light-gray">
-            <Link to="draft" className="flex items-center justify-between">
-              <span>Draft</span>
-              <span className="flex items-center gap-2 text-gray">
-                <span>{`${currentTopic.draft.length} cards`}</span>
-                <span className="text-sm">
-                  <FontAwesomeIcon icon={faChevronRight} />
-                </span>
-              </span>
-            </Link>
-          </div>
-        )}
 
         <ul>
           {currentTopic.levels.map((level: Level) => (

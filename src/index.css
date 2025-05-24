@@ -9,6 +9,16 @@
   --color-blue: #309bff;
   --color-red: #c20404;
   --color-green: #008000;
+
+  /* Level colors */
+  --color-lvl-1: red;
+  --color-lvl-2: rgb(21, 255, 0);
+  --color-lvl-3: rgb(255, 251, 0);
+  --color-lvl-4: rgb(0, 255, 242);
+  --color-lvl-5: rgb(0, 89, 255);
+  --color-lvl-6: rgb(183, 0, 255);
+  --color-lvl-7: rgb(89, 0, 255);
+
   --color-blue-gradient: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%);
 }
 
@@ -31,6 +41,34 @@
 
   .transform-style-preserve-3d {
     transform-style: preserve-3d;
+  }
+
+  .bg-lvl-1 {
+    background-color: var(--color-lvl-1);
+  }
+
+  .bg-lvl-2 {
+    background-color: var(--color-lvl-2);
+  }
+
+  .bg-lvl-3 {
+    background-color: var(--color-lvl-3);
+  }
+
+  .bg-lvl-4 {
+    background-color: var(--color-lvl-4);
+  }
+
+  .bg-lvl-5 {
+    background-color: var(--color-lvl-5);
+  }
+
+  .bg-lvl-6 {
+    background-color: var(--color-lvl-6);
+  }
+
+  .bg-lvl-7 {
+    background-color: var(--color-lvl-7);
   }
 }
 

@@ -40,7 +40,7 @@ export default function Week({ week, today }: WeekProps) {
                 key={bgColor}
                 className="w-2 h-2 rounded-full my-1"
                 style={{
-                  backgroundColor: day.todayLevels.includes(index)
+                  backgroundColor: day.todayLevels.includes(index + 1)
                     ? bgColor
                     : 'transparent'
                 }}

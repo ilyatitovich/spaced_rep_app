@@ -1,9 +1,6 @@
 import { nanoid } from 'nanoid'
 
-import { levelColors } from '../lib/utils'
 import { getNextUpdateDate } from '../lib/utils'
-import { Card } from './card.model'
-import type { levelColor } from '@/lib/definitions'
 import { Day, Level } from '@/lib/helpers'
 
 export class Topic {
@@ -11,7 +8,6 @@ export class Topic {
   title: string
   pivot: number
   week: Array<Day | null>
-  draft: Card[]
   levels: Level[]
   nextUpdateDate: number
 
@@ -20,12 +16,11 @@ export class Topic {
     this.title = title
     this.pivot = Date.now()
     this.week = this.setStartWeek(this.pivot)
-    this.draft = []
-    this.levels = this.createLevelsList(levelColors)
+    this.levels = this.createLevelsList()
     this.nextUpdateDate = getNextUpdateDate()
   }
 
-  setStartWeek(timestamp: number) {
+  private setStartWeek(timestamp: number): Array<Day | null> {
     const week: Array<Day | null> = []
     const dayOfTheWeek = new Date(timestamp).getDay()
 
@@ -42,7 +37,7 @@ export class Topic {
     return week
   }
 
-  createLevelsList(colors: levelColor[]) {
-    return colors.map((color, index) => new Level(index + 1, color))
+  private createLevelsList(): Level[] {
+    return new Array(8).fill(null).map((_, index) => new Level(index))
   }
 }
