@@ -1,11 +1,11 @@
 import { faXmark, faCheck } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
-import { DayOfWeek } from '../lib/definitions'
-import { levelColors } from '../lib/utils'
+import { Day } from '@/lib/helpers'
+import { levelColors } from '@/lib/utils'
 
-interface WeekProps {
-  week: Array<DayOfWeek | null>
+type WeekProps = {
+  week: Array<Day | null>
   today: number
 }
 

@@ -2,7 +2,7 @@ import { Link } from 'react-router'
 
 import { Content } from '@/components'
 
-export default function NotFound() {
+export default function NotFoundPage() {
   return (
     <main>
       <Content className="h-dvh-100 flex flex-col items-center justify-center gap-4">

@@ -2,7 +2,7 @@ import { faChevronRight } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Link } from 'react-router'
 
-import { type Level } from '../lib/definitions'
+import { Level } from '../lib/helpers'
 
 export default function LevelRow({ level }: { level: Level }) {
   const { id, color, cards } = level

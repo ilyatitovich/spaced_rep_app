@@ -6,7 +6,7 @@ import { Button, Navbar, Content, Card } from '@/components'
 import { saveTopic } from '@/lib/utils'
 import { useTopicStore } from '@/stores/topic.store'
 
-export default function Test() {
+export default function TestPage() {
   const navigate = useNavigate()
   const topic = useTopicStore(state => state.topics.currentTopic)
   const today: number = new Date().getDay()

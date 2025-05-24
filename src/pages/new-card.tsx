@@ -2,7 +2,8 @@ import { useState, useEffect, type ChangeEvent } from 'react'
 import { useNavigate } from 'react-router'
 
 import { Button, Navbar, Content, Card } from '@/components'
-import { saveTopic } from '@/lib/utils'
+import { Card as CardModel } from '@/models'
+import { createCard } from '@/services'
 import { useTopicStore } from '@/stores'
 
 export default function NewCard() {
@@ -16,8 +17,6 @@ export default function NewCard() {
   const [isEdited, setIsEdited] = useState<boolean>(false)
   const [isDraft, setIsDraft] = useState<boolean>(true)
 
-  const { levels, draft } = currentTopic!
-  const firstLevelCards = levels[0].cards
   const cardDataIsExist = cardData.front && cardData.back
 
   const rightBtn = isDraft ? (
@@ -89,23 +88,21 @@ export default function NewCard() {
     }
   }
 
-  function handleSaveCard(cardStatus: 'new' | 'draft') {
-    const cardForSave = {
-      id: firstLevelCards.length,
-      level: 0,
-      ...cardData
-    }
+  const handleSaveCard = async (cardStatus: 'new' | 'draft') => {
+    try {
+      const testCard = new CardModel(
+        cardData,
+        currentTopic!.id,
+        cardStatus === 'new' ? 0 : -1
+      )
+      await createCard(testCard)
 
-    if (cardStatus === 'new') {
-      firstLevelCards.push(cardForSave)
-    } else {
-      draft.push(cardForSave)
+      setIsSaving(true)
+      setCardData({ front: '', back: '' })
+      setIsFlipped(false)
+    } catch (error) {
+      console.error('Failed to save card:', error)
     }
-
-    saveTopic(currentTopic!)
-    setIsSaving(true)
-    setCardData({ front: '', back: '' })
-    setIsFlipped(false)
   }
 
   return (

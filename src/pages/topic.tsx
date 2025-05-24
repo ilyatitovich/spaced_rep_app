@@ -4,28 +4,21 @@ import { useEffect } from 'react'
 import { Link, useParams, useNavigate } from 'react-router'
 
 import { Button, Navbar, Content, LevelRow, Week } from '@/components'
-import { Level } from '@/lib/definitions'
+import { Level } from '@/lib/helpers'
 import { useTopicStore } from '@/stores'
 
-export default function Topic() {
+export default function TopicPage() {
   const navigate = useNavigate()
   const { topicId } = useParams()
 
-  const {
-    currentTopic,
-    fetchTopic,
-    clearCurrent,
-    deleteTopicById,
-    loading,
-    error
-  } = useTopicStore()
+  const { currentTopic, fetchTopic, deleteTopicById, loading, error } =
+    useTopicStore()
 
   const today: number = new Date().getDay()
 
   useEffect(() => {
     fetchTopic(topicId!)
-    return () => clearCurrent()
-  }, [clearCurrent, fetchTopic, topicId])
+  }, [fetchTopic, topicId])
 
   const handleDeleteTopic = async (id: string) => {
     try {

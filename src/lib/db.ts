@@ -22,9 +22,9 @@ function openDatabase(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(STORES.CARDS)) {
         const cardStore = db.createObjectStore(STORES.CARDS, { keyPath: 'id' })
         cardStore.createIndex('topicId', 'topicId', { unique: false })
-        cardStore.createIndex('nextReviewDate', 'nextReviewDate', {
-          unique: false
-        })
+        // cardStore.createIndex('nextReviewDate', 'nextReviewDate', {
+        //   unique: false
+        // })
       }
     }
 
@@ -34,13 +34,18 @@ function openDatabase(): Promise<IDBDatabase> {
 }
 
 export async function withTransaction<T>(
-  storeName: string,
+  storeNames: string[] | string,
   mode: IDBTransactionMode,
-  callback: (store: IDBObjectStore) => Promise<T>
+  callback: (stores: Record<string, IDBObjectStore>) => Promise<T>
 ): Promise<T> {
   const db = await openDatabase()
-  const transaction = db.transaction(storeName, mode)
-  const store = transaction.objectStore(storeName)
+  const storeList = Array.isArray(storeNames) ? storeNames : [storeNames]
+  const transaction = db.transaction(storeList, mode)
+
+  const stores: Record<string, IDBObjectStore> = {}
+  for (const name of storeList) {
+    stores[name] = transaction.objectStore(name)
+  }
 
   return new Promise((resolve, reject) => {
     let result: T
@@ -57,11 +62,12 @@ export async function withTransaction<T>(
       reject(transaction.error || new Error('Unknown transaction error'))
     }
 
-    callback(store)
+    callback(stores)
       .then(res => {
         result = res
       })
       .catch(err => {
+        transaction.abort()
         reject(err)
       })
   })

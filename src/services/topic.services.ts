@@ -1,11 +1,11 @@
 import { withTransaction, STORES } from '../lib/db'
-import { Topic } from '../lib/definitions'
+import { Topic, Card } from '@/models'
 
 export async function createTopic(topic: Topic): Promise<void> {
   try {
-    await withTransaction(STORES.TOPICS, 'readwrite', async store => {
+    await withTransaction(STORES.TOPICS, 'readwrite', async stores => {
       await new Promise((resolve, reject) => {
-        const request = store.add(topic)
+        const request = stores[STORES.TOPICS].add(topic)
         request.onsuccess = () => resolve(undefined)
         request.onerror = () => reject(request.error)
       })
@@ -22,9 +22,9 @@ export async function createTopic(topic: Topic): Promise<void> {
 }
 
 export async function getAllTopics(): Promise<Topic[]> {
-  return withTransaction(STORES.TOPICS, 'readonly', async store => {
+  return withTransaction(STORES.TOPICS, 'readonly', async stores => {
     return new Promise((resolve, reject) => {
-      const request = store.getAll()
+      const request = stores[STORES.TOPICS].getAll()
 
       request.onsuccess = () => {
         resolve(request.result)
@@ -38,26 +38,46 @@ export async function getAllTopics(): Promise<Topic[]> {
 }
 
 export async function getTopicById(topicId: string): Promise<Topic | null> {
-  return withTransaction(STORES.TOPICS, 'readonly', async store => {
-    return new Promise((resolve, reject) => {
-      const request = store.get(topicId)
+  return withTransaction(
+    [STORES.TOPICS, STORES.CARDS],
+    'readonly',
+    async stores => {
+      const topicStore = stores[STORES.TOPICS]
+      const cardStore = stores[STORES.CARDS]
 
-      request.onsuccess = () => {
-        const topic = request.result
-        resolve(topic ?? null)
-      }
+      const topicRequest = topicStore.get(topicId)
 
-      request.onerror = () => {
-        reject(request.error ?? new Error('Failed to fetch topic by ID'))
-      }
-    })
-  })
+      const topic = await new Promise<Topic | undefined>((resolve, reject) => {
+        topicRequest.onsuccess = () => resolve(topicRequest.result)
+        topicRequest.onerror = () =>
+          reject(topicRequest.error ?? new Error('Failed to fetch topic'))
+      })
+
+      if (!topic) return null
+
+      const cardsIndex = cardStore.index('topicId')
+      const cardsRequest = cardsIndex.getAll(IDBKeyRange.only(topicId))
+
+      const cards = await new Promise<Card[]>((resolve, reject) => {
+        cardsRequest.onsuccess = () => resolve(cardsRequest.result)
+        cardsRequest.onerror = () =>
+          reject(cardsRequest.error ?? new Error('Failed to fetch cards'))
+      })
+
+      cards.forEach(card => {
+        const cardLevel = card.level
+        topic.levels[cardLevel].cards.push(card)
+      })
+
+      return topic
+    }
+  )
 }
 
 export async function deleteTopic(topicId: string): Promise<void> {
-  return withTransaction(STORES.TOPICS, 'readwrite', async store => {
+  return withTransaction(STORES.TOPICS, 'readwrite', async stores => {
     return new Promise((resolve, reject) => {
-      const request = store.delete(topicId)
+      const request = stores[STORES.TOPICS].delete(topicId)
 
       request.onsuccess = () => resolve()
       request.onerror = () => {

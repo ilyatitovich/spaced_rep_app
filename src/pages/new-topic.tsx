@@ -1,50 +1,61 @@
 import { useState } from 'react'
 
 import { Button, Navbar, Content } from '@/components'
-import { TopicModel } from '@/lib/models'
-import { saveTopic, getNextUpdateDate } from '@/lib/utils'
+import { Topic } from '@/models'
 import { createTopic } from '@/services'
 
-export default function NewTopic() {
+export default function NewTopicPage() {
   const [title, setTitle] = useState('')
-  const [confirmation, setConfirmation] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+
+  const [status, setStatus] = useState<{
+    isError: boolean
+    message: string
+  } | null>(null)
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTitle(e.target.value)
-    if (error) setError(null)
-    if (confirmation) setConfirmation(false)
+    setTitle(e.target.value.trim())
+    if (status) setStatus(null)
   }
 
   const handleSave = async () => {
-    const trimmedTitle = title.trim()
-    setConfirmation(false)
+    setStatus(null)
 
-    if (!trimmedTitle) {
-      setError('Title cannot be empty')
+    if (!title) {
+      setStatus({
+        isError: true,
+        message: 'Please enter a title for the topic'
+      })
       return
     }
 
-    if (trimmedTitle.length > 10) {
-      setError('Title cannot exceed 10 characters. Try a shorter title')
+    if (title.length > 10) {
+      setStatus({
+        isError: true,
+        message: 'Title must be less than 10 characters'
+      })
       return
     }
 
-    const topic = new TopicModel(trimmedTitle, getNextUpdateDate())
+    const topic = new Topic(title)
 
     try {
-      saveTopic(topic) // Temp save the topic to local storage
       await createTopic(topic)
-      setConfirmation(true)
-      setError(null)
+      setStatus({
+        isError: false,
+        message: 'Topic saved successfully!'
+      })
       setTitle('')
-    } catch (err) {
-      setConfirmation(false)
-      if (err instanceof Error) {
-        setError(err.message)
+    } catch (error) {
+      if (error instanceof Error) {
+        setStatus({
+          isError: true,
+          message: error.message
+        })
       } else {
-        console.error('Unexpected error:', err)
-        setError('An unexpected error occurred, please try again')
+        setStatus({
+          isError: true,
+          message: 'An unexpected error occurred, please try again'
+        })
       }
     }
   }
@@ -85,13 +96,13 @@ export default function NewTopic() {
               placeholder="Enter a topic title"
             />
 
-            {confirmation && (
-              <span className="text-green text-center">
-                Topic saved successfully!
+            {status && (
+              <span
+                className={`${status.isError ? 'text-red' : 'text-green'} text-center`}
+              >
+                {status.message}
               </span>
             )}
-
-            {error && <span className="text-red text-center">{error}</span>}
           </div>
         </form>
       </Content>

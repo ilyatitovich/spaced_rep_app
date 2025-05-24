@@ -4,9 +4,12 @@ import { Link } from 'react-router'
 import { Button, Navbar, Content } from '@/components'
 import { TopicItem } from '@/lib/definitions'
 import { getAllTopics } from '@/services'
+import { useTopicStore } from '@/stores'
 
 export default function Home() {
   const [topics, setTopics] = useState<TopicItem[]>([])
+
+  const { clearCurrent } = useTopicStore()
 
   useEffect(() => {
     const fetchTopics = async () => {
@@ -19,6 +22,10 @@ export default function Home() {
     }
     fetchTopics()
   }, [])
+
+  useEffect(() => {
+    clearCurrent()
+  }, [clearCurrent])
 
   return (
     <main>
