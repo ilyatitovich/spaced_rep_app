@@ -1,31 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { Link } from 'react-router'
 
 import { Button, Navbar, Content } from '@/components'
-import { TopicItem } from '@/lib/definitions'
-import { getAllTopics } from '@/services'
 import { useTopicStore } from '@/stores'
 
-export default function Home() {
-  const [topics, setTopics] = useState<TopicItem[]>([])
-
-  const { clearCurrent } = useTopicStore()
+export default function HomePage() {
+  const { topics, fetchAllTopics } = useTopicStore()
 
   useEffect(() => {
-    const fetchTopics = async () => {
-      try {
-        const topics = await getAllTopics()
-        setTopics(topics)
-      } catch (error) {
-        console.error('Error fetching topics:', error)
-      }
-    }
-    fetchTopics()
-  }, [])
-
-  useEffect(() => {
-    clearCurrent()
-  }, [clearCurrent])
+    fetchAllTopics()
+  }, [fetchAllTopics])
 
   return (
     <main>
@@ -54,7 +38,7 @@ export default function Home() {
         )}
       </Content>
       <footer>
-        <Button href="new-topic" aria-label="Create a new topic">
+        <Button href="new-topic">
           Create Topic
         </Button>
       </footer>

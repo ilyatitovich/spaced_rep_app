@@ -1,23 +1,43 @@
 import { create } from 'zustand'
 
 import { Topic } from '@/models'
-import { getTopicById, deleteTopic } from '@/services'
+import { getAllTopics, getTopicById, deleteTopic } from '@/services'
 
 type TopicState = {
+  topics: Topic[]
   currentTopic: Topic | null
   loading: boolean
   error: string | null
 
+  fetchAllTopics: () => Promise<void>
   fetchTopic: (id: string) => Promise<void>
   clearCurrent: () => void
   deleteTopicById: (id: string) => Promise<void>
 }
 
 export const useTopicStore = create<TopicState>((set, get) => ({
+  topics: [],
   currentTopic: null,
-  topicCards: [],
   loading: false,
   error: null,
+
+  fetchAllTopics: async () => {
+    set({ loading: true, error: null })
+    try {
+      const topics = await getAllTopics()
+      set({
+        topics: topics,
+        loading: false,
+        error: null
+      })
+    } catch (error) {
+      console.error('Failed to load topics', error)
+      set({
+        loading: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
+    }
+  },
 
   fetchTopic: async (id: string) => {
     set({ loading: true, error: null })

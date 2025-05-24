@@ -5,14 +5,14 @@ import { Button, Navbar, Content, LevelRow, Week } from '@/components'
 import { Level } from '@/lib/helpers'
 import { useTopicStore } from '@/stores'
 
+const today: number = new Date().getDay()
+
 export default function TopicPage() {
   const navigate = useNavigate()
   const { topicId } = useParams()
 
   const { currentTopic, fetchTopic, deleteTopicById, loading, error } =
     useTopicStore()
-
-  const today: number = new Date().getDay()
 
   useEffect(() => {
     if (!currentTopic) {
