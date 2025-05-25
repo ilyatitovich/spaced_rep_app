@@ -5,11 +5,15 @@ import { Button, Navbar, Content } from '@/components'
 import { useTopicStore } from '@/stores'
 
 export default function HomePage() {
-  const { topics, fetchAllTopics } = useTopicStore()
+  const { topics, currentTopic, fetchAllTopics, clearCurrent } = useTopicStore()
 
   useEffect(() => {
     fetchAllTopics()
-  }, [fetchAllTopics])
+
+    if (currentTopic) {
+      clearCurrent()
+    }
+  }, [clearCurrent, currentTopic, fetchAllTopics])
 
   return (
     <main>
@@ -38,9 +42,7 @@ export default function HomePage() {
         )}
       </Content>
       <footer>
-        <Button href="new-topic">
-          Create Topic
-        </Button>
+        <Button href="new-topic">Create Topic</Button>
       </footer>
     </main>
   )

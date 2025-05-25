@@ -15,3 +15,20 @@ export async function createCard(card: Card): Promise<void> {
     throw error
   }
 }
+
+export async function updateCard(card: Card): Promise<void> {
+  try {
+    await withTransaction([STORES.CARDS], 'readwrite', async stores => {
+      const store = stores[STORES.CARDS]
+
+      await new Promise<void>((resolve, reject) => {
+        const request = store.put(card)
+        request.onsuccess = () => resolve()
+        request.onerror = () => reject(request.error)
+      })
+    })
+  } catch (error) {
+    console.error('Failed to update card:', error)
+    throw error
+  }
+}

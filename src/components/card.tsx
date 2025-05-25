@@ -4,7 +4,7 @@ import type { ChangeEvent, FocusEventHandler } from 'react'
 type CardSide = 'front' | 'back'
 
 type CardProps = {
-  data: { front: string; back: string }
+  data: { front: File | string; back: File | string }
   isFlipped: boolean
   isEditable?: boolean
   handleFocus?: FocusEventHandler<HTMLTextAreaElement>
@@ -38,13 +38,15 @@ export default function Card({
     }
 
     if (!isEditable) {
-      return <div {...commonProps}>{content}</div>
+      return (
+        <div {...commonProps}>{typeof content === 'string' ? content : ''}</div>
+      )
     }
 
     return (
       <textarea
         {...commonProps}
-        value={content}
+        value={typeof content === 'string' ? content : ''}
         maxLength={70}
         onChange={e => handleChange?.(e, side)}
         onFocus={handleFocus}

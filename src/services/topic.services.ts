@@ -75,14 +75,54 @@ export async function getTopicById(topicId: string): Promise<Topic | null> {
 }
 
 export async function deleteTopic(topicId: string): Promise<void> {
-  return withTransaction(STORES.TOPICS, 'readwrite', async stores => {
-    return new Promise((resolve, reject) => {
-      const request = stores[STORES.TOPICS].delete(topicId)
+  await withTransaction(
+    [STORES.TOPICS, STORES.CARDS],
+    'readwrite',
+    async stores => {
+      const topicStore = stores[STORES.TOPICS]
+      const cardStore = stores[STORES.CARDS]
 
+      // Delete the topic
+      await new Promise<void>((resolve, reject) => {
+        const request = topicStore.delete(topicId)
+        request.onsuccess = () => resolve()
+        request.onerror = () =>
+          reject(request.error ?? new Error('Failed to delete topic'))
+      })
+
+      // Delete all cards for that topic using index
+      const index = cardStore.index('topicId')
+      const range = IDBKeyRange.only(topicId)
+
+      return new Promise<void>((resolve, reject) => {
+        const request = index.openCursor(range)
+
+        request.onsuccess = () => {
+          const cursor = request.result
+          if (cursor) {
+            cursor.delete()
+            cursor.continue()
+          } else {
+            resolve()
+          }
+        }
+
+        request.onerror = () =>
+          reject(request.error ?? new Error('Failed to delete topic cards'))
+      })
+    }
+  )
+}
+
+export async function updateTopic(topic: Topic): Promise<void> {
+  await withTransaction([STORES.TOPICS], 'readwrite', async stores => {
+    const store = stores[STORES.TOPICS]
+
+    await new Promise<void>((resolve, reject) => {
+      const request = store.put(topic)
       request.onsuccess = () => resolve()
-      request.onerror = () => {
-        reject(request.error ?? new Error('Failed to delete topic'))
-      }
+      request.onerror = () =>
+        reject(request.error ?? new Error('Failed to update topic'))
     })
   })
 }

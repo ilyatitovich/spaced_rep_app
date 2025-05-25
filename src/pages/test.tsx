@@ -3,12 +3,13 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
 
 import { Button, Navbar, Content, Card } from '@/components'
-import { saveTopic } from '@/lib/utils'
+import { updateCard } from '@/services'
 import { useTopicStore } from '@/stores/topic.store'
 
 export default function TestPage() {
   const navigate = useNavigate()
-  const topic = useTopicStore(state => state.topics.currentTopic)
+  const topic = useTopicStore(state => state.currentTopic)
+  const setTopic = useTopicStore(state => state.setTopic)
   const today: number = new Date().getDay()
 
   const { week, levels } = topic!
@@ -30,35 +31,40 @@ export default function TestPage() {
     }
 
     return () => {
+      setTopic(topic)
       clearTimeout(timer)
     }
-  }, [isMoved])
+  }, [isMoved, setTopic, topic])
 
   if (cards.length === 0) {
     week[today]!.isDone = true
-    saveTopic(topic!)
   }
 
-  function handleAnswer(answer: 'correct' | 'wrong') {
-    const updatedCards = [...cards]
-    const currentCard = updatedCards.shift()
-    const indexToDelete = levels[currentCard!.level].cards.indexOf(currentCard!)
-    levels[currentCard!.level].cards.splice(indexToDelete, 1)
+  async function handleAnswer(isCorrect: boolean) {
+    try {
+      const updatedCards = [...cards]
+      const currentCard = updatedCards.shift()
+      const indexToDelete = levels[currentCard!.level].cards.indexOf(
+        currentCard!
+      )
+      levels[currentCard!.level].cards.splice(indexToDelete, 1)
 
-    if (answer === 'correct') {
-      currentCard!.level += 1
-      levels[currentCard!.level].cards.push(currentCard!)
-    } else {
-      currentCard!.level = 0
-      levels[0].cards.push(currentCard!)
-      updatedCards.push(currentCard!)
+      if (isCorrect) {
+        currentCard!.level += 1
+        levels[currentCard!.level].cards.push(currentCard!)
+      } else {
+        currentCard!.level = 1
+        levels[1].cards.push(currentCard!)
+        updatedCards.push(currentCard!)
+      }
+
+      await updateCard(currentCard!)
+      setIsMoved(true)
+      setCards(updatedCards)
+      setIsFlipped(false)
+    } catch (error) {
+      console.error('Error updating card:', error)
     }
-
-    saveTopic(topic!)
-
-    setIsMoved(true)
-    setCards(updatedCards)
-    setIsFlipped(false)
   }
 
   return (
@@ -82,7 +88,7 @@ export default function TestPage() {
           (cards.length > 0 ? (
             <AnimatePresence>
               <Card
-                data={cards[0]}
+                data={cards[0].data}
                 isFlipped={isFlipped}
                 handleClick={() => setIsFlipped(!isFlipped)}
               />
@@ -97,13 +103,13 @@ export default function TestPage() {
           <>
             <button
               className="bg-red text-white py-3 px-10 rounded-md"
-              onClick={() => handleAnswer('wrong')}
+              onClick={() => handleAnswer(false)}
             >
               Wrong
             </button>
             <button
               className="bg-green text-white py-3 px-10 rounded-md"
-              onClick={() => handleAnswer('correct')}
+              onClick={() => handleAnswer(true)}
             >
               Correct
             </button>
