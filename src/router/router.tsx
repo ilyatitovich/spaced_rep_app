@@ -1,6 +1,5 @@
 import { createBrowserRouter } from 'react-router'
 
-// import { cardDetailsLoader, draftLoader, editDraftCardLoader } from './loaders'
 import {
   NotFoundPage,
   HomePage,
@@ -36,12 +35,10 @@ export default createBrowserRouter([
       // {
       //   path: 'topic/:topicId/draft',
       //   element: <DraftPage />,
-      //   loader: draftLoader
       // },
       // {
       //   path: 'topic/:topicId/draft/:cardIndx/edit',
       //   element: <EditDraftCardPage />,
-      //   loader: editDraftCardLoader
       // },
       {
         path: 'topic/:topicId/new-card',
@@ -58,7 +55,6 @@ export default createBrowserRouter([
       // {
       //   path: 'topic/:topicId/:levelId/:cardIndx',
       //   element: <CardDetailsPage />,
-      //   loader: cardDetailsLoader
       // }
     ]
   }

@@ -47,13 +47,15 @@ export async function getTopicById(topicId: string): Promise<Topic | null> {
 
       const topicRequest = topicStore.get(topicId)
 
-      const topic = await new Promise<Topic | undefined>((resolve, reject) => {
+      let topic = await new Promise<Topic | undefined>((resolve, reject) => {
         topicRequest.onsuccess = () => resolve(topicRequest.result)
         topicRequest.onerror = () =>
           reject(topicRequest.error ?? new Error('Failed to fetch topic'))
       })
 
       if (!topic) return null
+
+      topic = Topic.fromRaw(topic)
 
       const cardsIndex = cardStore.index('topicId')
       const cardsRequest = cardsIndex.getAll(IDBKeyRange.only(topicId))

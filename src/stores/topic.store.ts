@@ -63,6 +63,11 @@ export const useTopicStore = create<TopicState>((set, get) => ({
       let topic = await getTopicById(id)
       if (!topic) throw new Error('Topic not found')
 
+      if (topic.nextUpdateDate <= Date.now()) {
+        topic.updateWeek()
+        await updateTopic(topic)
+      }
+
       set({
         currentTopic: topic,
         loading: false,
