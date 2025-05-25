@@ -24,10 +24,10 @@ export default function LevelPage() {
         className="flex content-start flex-wrap gap-4"
       >
         {isCards ? (
-          cards.map((card, i) => (
+          cards.map(card => (
             <Link
               key={nanoid()}
-              to={`${i}/edit`}
+              to={`${card.id}/edit`}
               className="w-[calc((100%-2em)/3-0.5em)] h-1/5 flex justify-center items-center text-[0.8rem] border border-black rounded-[0.7em] text-black"
             >
               <small>

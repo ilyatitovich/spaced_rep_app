@@ -74,13 +74,13 @@ export default function NewCard() {
       case 'front':
         setCardData({
           ...cardData,
-          front: event.target.value
+          front: event.target.value.trim()
         })
         break
       case 'back':
         setCardData({
           ...cardData,
-          back: event.target.value
+          back: event.target.value.trim()
         })
         break
       default:

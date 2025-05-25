@@ -4,8 +4,7 @@ import {
   NotFoundPage,
   HomePage,
   LevelPage,
-  // CardDetailsPage,
-  // EditDraftCardPage,
+  EditCardPage,
   NewCardPage,
   NewTopicPage,
   Root,
@@ -31,10 +30,10 @@ export default createBrowserRouter([
         path: 'topic/:topicId',
         element: <TopicPage />
       },
-      // {
-      //   path: 'topic/:topicId/draft/:cardIndx/edit',
-      //   element: <EditDraftCardPage />,
-      // },
+      {
+        path: 'topic/:topicId/:levelId/:cardId/edit',
+        element: <EditCardPage />
+      },
       {
         path: 'topic/:topicId/new-card',
         element: <NewCardPage />
@@ -47,10 +46,6 @@ export default createBrowserRouter([
         path: 'topic/:topicId/:levelId',
         element: <LevelPage />
       }
-      // {
-      //   path: 'topic/:topicId/:levelId/:cardIndx',
-      //   element: <CardDetailsPage />,
-      // }
     ]
   }
 ])
