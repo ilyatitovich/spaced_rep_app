@@ -1,18 +1,13 @@
 import { createBrowserRouter } from 'react-router'
 
-import {
-  cardDetailsLoader,
-  draftLoader,
-  editDraftCardLoader,
-  levelLoader
-} from './loaders'
+// import { cardDetailsLoader, draftLoader, editDraftCardLoader } from './loaders'
 import {
   NotFoundPage,
   HomePage,
   LevelPage,
-  CardDetailsPage,
-  DraftPage,
-  EditDraftCardPage,
+  // CardDetailsPage,
+  // DraftPage,
+  // EditDraftCardPage,
   NewCardPage,
   NewTopicPage,
   Root,
@@ -38,16 +33,16 @@ export default createBrowserRouter([
         path: 'topic/:topicId',
         element: <TopicPage />
       },
-      {
-        path: 'topic/:topicId/draft',
-        element: <DraftPage />,
-        loader: draftLoader
-      },
-      {
-        path: 'topic/:topicId/draft/:cardIndx/edit',
-        element: <EditDraftCardPage />,
-        loader: editDraftCardLoader
-      },
+      // {
+      //   path: 'topic/:topicId/draft',
+      //   element: <DraftPage />,
+      //   loader: draftLoader
+      // },
+      // {
+      //   path: 'topic/:topicId/draft/:cardIndx/edit',
+      //   element: <EditDraftCardPage />,
+      //   loader: editDraftCardLoader
+      // },
       {
         path: 'topic/:topicId/new-card',
         element: <NewCardPage />
@@ -58,14 +53,13 @@ export default createBrowserRouter([
       },
       {
         path: 'topic/:topicId/:levelId',
-        element: <LevelPage />,
-        loader: levelLoader
-      },
-      {
-        path: 'topic/:topicId/:levelId/:cardIndx',
-        element: <CardDetailsPage />,
-        loader: cardDetailsLoader
+        element: <LevelPage />
       }
+      // {
+      //   path: 'topic/:topicId/:levelId/:cardIndx',
+      //   element: <CardDetailsPage />,
+      //   loader: cardDetailsLoader
+      // }
     ]
   }
 ])

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-import { Topic } from '@/models'
+import { Topic, Card } from '@/models'
 import {
   getAllTopics,
   getTopicById,
@@ -19,6 +19,7 @@ type TopicState = {
   fetchTopic: (id: string) => Promise<void>
   clearCurrent: () => void
   deleteTopicById: (id: string) => Promise<void>
+  getLevelCards: (levelId: number) => Card[]
 }
 
 export const useTopicStore = create<TopicState>((set, get) => ({
@@ -89,5 +90,12 @@ export const useTopicStore = create<TopicState>((set, get) => ({
       console.error('Error deleting topic:', error)
       throw error
     }
+  },
+
+  getLevelCards: (levelId: number) => {
+    const topic = get().currentTopic
+    if (!topic) return []
+
+    return topic.levels[levelId].cards
   }
 }))

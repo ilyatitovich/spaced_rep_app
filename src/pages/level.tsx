@@ -1,14 +1,15 @@
-import { useLoaderData, useNavigate } from 'react-router'
+import { useParams, useNavigate } from 'react-router'
 
 import { Button, Navbar, CardsListContainer } from '@/components'
-import { LevelId, Card } from '@/lib/definitions'
+import { useTopicStore } from '@/stores'
 
-export default function Level() {
+export default function LevelPage() {
   const navigate = useNavigate()
-  const { levelId, levelCards } = useLoaderData() as {
-    levelId: LevelId
-    levelCards: Card[]
-  }
+  const { levelId } = useParams()
+
+  const levelCards = useTopicStore(state =>
+    state.getLevelCards(Number(levelId))
+  )
 
   return (
     <main className="level">

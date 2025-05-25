@@ -1,7 +1,7 @@
 import { useLoaderData, useNavigate } from 'react-router'
 
 import { Button, Navbar, CardsListContainer } from '@/components'
-import type { Card } from '@/lib/definitions'
+import { Card } from '@/models'
 
 export default function Draft() {
   const navigate = useNavigate()

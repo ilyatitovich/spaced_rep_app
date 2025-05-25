@@ -1,8 +1,8 @@
 import { nanoid } from 'nanoid'
 import { Link } from 'react-router'
 
-import { Card } from '../lib/definitions'
 import { Content } from './ui'
+import { Card } from '@/models'
 
 type CardsListContainerProps = {
   cardsFrom: 'level' | 'draft'
@@ -28,7 +28,9 @@ export default function CardsListContainer({
             to={cardsFrom === 'draft' ? `${index}/edit` : `${index}`}
             className="w-[calc((100%-2em)/3-0.5em)] h-1/5 flex justify-center items-center text-[0.8rem] border border-black rounded-[0.7em] text-black"
           >
-            <small>{card.front}</small>
+            <small>
+              {typeof card.data.front === 'string' ? card.data.front : ''}
+            </small>
           </Link>
         ))
       ) : (
