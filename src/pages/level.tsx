@@ -15,7 +15,10 @@ export default function LevelPage() {
     <main className="level">
       <Navbar>
         <Button onClick={() => navigate(-1)}>Back</Button>
-        <h1 className="title">Level {levelId}</h1>
+        <h1 className="title">
+          {' '}
+          {Number(levelId) === 0 ? 'Draft' : `Level ${levelId}`}
+        </h1>
       </Navbar>
       <CardsListContainer cardsFrom="level" cardsList={levelCards} />
     </main>

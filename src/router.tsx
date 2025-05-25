@@ -5,7 +5,6 @@ import {
   HomePage,
   LevelPage,
   // CardDetailsPage,
-  // DraftPage,
   // EditDraftCardPage,
   NewCardPage,
   NewTopicPage,
@@ -32,10 +31,6 @@ export default createBrowserRouter([
         path: 'topic/:topicId',
         element: <TopicPage />
       },
-      // {
-      //   path: 'topic/:topicId/draft',
-      //   element: <DraftPage />,
-      // },
       // {
       //   path: 'topic/:topicId/draft/:cardIndx/edit',
       //   element: <EditDraftCardPage />,
