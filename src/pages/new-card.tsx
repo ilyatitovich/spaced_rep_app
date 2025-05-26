@@ -2,21 +2,21 @@ import { useState, useEffect, type ChangeEvent } from 'react'
 import { useNavigate } from 'react-router'
 
 import { Button, Navbar, Content, Card } from '@/components'
-import { Topic } from '@/lib/definitions'
-import { saveTopic } from '@/lib/utils'
+import { Card as CardModel } from '@/models'
+import { createCard } from '@/services'
 import { useTopicStore } from '@/stores'
 
 export default function NewCard() {
   const navigate = useNavigate()
-  const topic = useTopicStore(state => state.topic)
+
+  const { currentTopic } = useTopicStore()
+
   const [isFlipped, setIsFlipped] = useState<boolean>(false)
   const [cardData, setCardData] = useState({ front: '', back: '' })
   const [isSaving, setIsSaving] = useState<boolean>(false)
   const [isEdited, setIsEdited] = useState<boolean>(false)
   const [isDraft, setIsDraft] = useState<boolean>(true)
 
-  const { levels, draft } = topic as Topic
-  const firstLevelCards = levels[0].cards
   const cardDataIsExist = cardData.front && cardData.back
 
   const rightBtn = isDraft ? (
@@ -74,13 +74,13 @@ export default function NewCard() {
       case 'front':
         setCardData({
           ...cardData,
-          front: event.target.value
+          front: event.target.value.trim()
         })
         break
       case 'back':
         setCardData({
           ...cardData,
-          back: event.target.value
+          back: event.target.value.trim()
         })
         break
       default:
@@ -88,23 +88,21 @@ export default function NewCard() {
     }
   }
 
-  function handleSaveCard(cardStatus: 'new' | 'draft') {
-    const cardForSave = {
-      id: firstLevelCards.length,
-      level: 0,
-      ...cardData
-    }
+  const handleSaveCard = async (cardStatus: 'new' | 'draft') => {
+    try {
+      const testCard = new CardModel(
+        cardData,
+        currentTopic!.id,
+        cardStatus === 'new' ? 1 : 0
+      )
+      await createCard(testCard)
 
-    if (cardStatus === 'new') {
-      firstLevelCards.push(cardForSave)
-    } else {
-      draft.push(cardForSave)
+      setIsSaving(true)
+      setCardData({ front: '', back: '' })
+      setIsFlipped(false)
+    } catch (error) {
+      console.error('Failed to save card:', error)
     }
-
-    saveTopic(topic!)
-    setIsSaving(true)
-    setCardData({ front: '', back: '' })
-    setIsFlipped(false)
   }
 
   return (

@@ -27,7 +27,7 @@ export interface Level {
   cards: Card[]
 }
 
-export interface DayOfWeek {
+export interface Day {
   date: number
   todayLevels: number[]
   isDone: boolean
@@ -37,7 +37,7 @@ export interface Topic {
   id: string
   title: string
   pivot: number
-  week: Array<DayOfWeek | null>
+  week: Array<Day | null>
   draft: Card[]
   levels: Level[]
   nextUpdateDate: number

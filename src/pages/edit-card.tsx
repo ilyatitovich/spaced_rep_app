@@ -1,23 +1,21 @@
 import { useState, ChangeEvent } from 'react'
-import { useLoaderData, useNavigate } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
 
 import { Button, Navbar, Content, Card } from '@/components'
-import { Topic, Card as CardType } from '@/lib/definitions'
+import { updateCard } from '@/services'
+import { useTopicStore } from '@/stores'
 
-export default function EditDraftCard() {
+export default function EditCardPage() {
   const navigate = useNavigate()
-  const { cardIndx, topic, card } = useLoaderData() as {
-    cardIndx: string
-    card: CardType
-    topic: Topic
-  }
-  const { id, levels, draft } = topic
-  const firstLevelCards = levels[0].cards
+  const { cardId, levelId } = useParams()
+
+  const cards = useTopicStore(state => state.getLevelCards(Number(levelId)))
+  const card = cards.find(card => card.id === cardId)
 
   const [isFlipped, setIsFlipped] = useState<boolean>(false)
   const [cardData, setCardData] = useState({
-    front: card.front,
-    back: card.back
+    front: card?.data.front ?? '',
+    back: card?.data.back ?? ''
   })
   const [isEdited, setIsEdited] = useState<boolean>(false)
 
@@ -43,13 +41,13 @@ export default function EditDraftCard() {
       case 'front':
         setCardData({
           ...cardData,
-          front: event.target.value
+          front: event.target.value.trim()
         })
         break
       case 'back':
         setCardData({
           ...cardData,
-          back: event.target.value
+          back: event.target.value.trim()
         })
         break
       default:
@@ -57,18 +55,21 @@ export default function EditDraftCard() {
     }
   }
 
-  function handleSaveCard() {
-    const cardForSave = {
-      id: firstLevelCards.length,
-      level: 0,
-      ...cardData
+  async function handleSaveCard() {
+    try {
+      if (!card) return
+
+      card.data = cardData
+
+      if (card.level === 0 && cardData.front && cardData.back) {
+        card.level += 1
+      }
+
+      await updateCard(card)
+      navigate(-1)
+    } catch (error) {
+      console.error('Failed to save card:', error)
     }
-
-    draft.splice(Number(cardIndx), 1)
-    firstLevelCards.push(cardForSave)
-
-    localStorage.setItem(id, JSON.stringify(topic))
-    navigate(-1)
   }
 
   return (

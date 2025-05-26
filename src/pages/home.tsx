@@ -1,16 +1,19 @@
-import { Link, useLoaderData } from 'react-router'
+import { useEffect } from 'react'
+import { Link } from 'react-router'
 
 import { Button, Navbar, Content } from '@/components'
-import { TopicItem } from '@/lib/definitions'
-import { getTopicsList } from '@/lib/utils'
+import { useTopicStore } from '@/stores'
 
-export async function loader() {
-  const topics: TopicItem[] = getTopicsList()
-  return { topics }
-}
+export default function HomePage() {
+  const { topics, currentTopic, fetchAllTopics, clearCurrent } = useTopicStore()
 
-export default function Home() {
-  const { topics } = useLoaderData() as { topics: TopicItem[] }
+  useEffect(() => {
+    fetchAllTopics()
+
+    if (currentTopic) {
+      clearCurrent()
+    }
+  }, [clearCurrent, currentTopic, fetchAllTopics])
 
   return (
     <main>
@@ -39,9 +42,7 @@ export default function Home() {
         )}
       </Content>
       <footer>
-        <Button href="new-topic" aria-label="Create a new topic">
-          Create Topic
-        </Button>
+        <Button href="new-topic">Create Topic</Button>
       </footer>
     </main>
   )
