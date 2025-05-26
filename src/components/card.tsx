@@ -3,7 +3,8 @@
 import type { FocusEventHandler, Ref } from 'react'
 import { forwardRef, useRef, useImperativeHandle } from 'react'
 
-type CardSide = 'front' | 'back'
+import Side from './side'
+import type { CardHandle, CardSide } from '@/types'
 
 type CardProps = {
   data: { front: File | string; back: File | string }
@@ -14,41 +15,6 @@ type CardProps = {
   handleBlur?: FocusEventHandler<HTMLElement>
   handleClick?: () => void
   handleChange?: (data: string, side: CardSide) => void
-}
-
-type CardHandle = {
-  getContent: () => { front: string; back: string }
-}
-
-function Side({
-  side,
-  content,
-  isEditable,
-  handleFocus,
-  handleBlur,
-  innerRef
-}: {
-  side: CardSide
-  content?: string | File
-  isEditable?: boolean
-  handleFocus?: FocusEventHandler<HTMLElement>
-  handleBlur?: FocusEventHandler<HTMLElement>
-  innerRef?: React.RefObject<HTMLDivElement>
-}) {
-  return (
-    <div
-      ref={innerRef}
-      className={`absolute w-full h-full py-[1.5em] px-[1em] backface-hidden border-black border-4 rounded-4xl bg-white ${side === 'back' ? 'rotate-y-180' : ''}`.trim()}
-      contentEditable={isEditable}
-      suppressContentEditableWarning
-      role="textbox"
-      tabIndex={0}
-      onFocus={handleFocus}
-      onBlur={handleBlur}
-    >
-      {typeof content === 'string' ? content : ''}
-    </div>
-  )
 }
 
 export default forwardRef(function Card(
@@ -68,8 +34,8 @@ export default forwardRef(function Card(
 
   useImperativeHandle(ref, () => ({
     getContent: () => ({
-      front: frontRef.current?.innerText || '',
-      back: backRef.current?.innerText || ''
+      front: frontRef.current?.innerText.trim() || '',
+      back: backRef.current?.innerText.trim() || ''
     })
   }))
 

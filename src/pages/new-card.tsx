@@ -1,26 +1,21 @@
 import { useState, useRef } from 'react'
-import { useNavigate } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
 
 import { Button, Navbar, Content, Card } from '@/components'
 import { Card as CardModel } from '@/models'
 import { createCard } from '@/services'
-import { useTopicStore } from '@/stores'
-
-type CardHandle = {
-  getContent: () => { front: string; back: string }
-}
+import type { CardHandle, CardData } from '@/types'
 
 export default function NewCard() {
   const navigate = useNavigate()
+  const { topicId } = useParams()
 
   const [isFlipped, setIsFlipped] = useState(false)
-  const [cardData, setCardData] = useState({ front: '', back: '' })
+  const [cardData, setCardData] = useState<CardData>({ front: '', back: '' })
   const [isEdited, setIsEdited] = useState(false)
   const [isDraft, setIsDraft] = useState(true)
   const [isFirstCardActive, setIsFirstCardActive] = useState(true)
   const [isInitialRender, setIsInitialRender] = useState(true)
-
-  const { currentTopic } = useTopicStore()
 
   const cardRef = useRef<CardHandle>(null)
 
@@ -39,18 +34,7 @@ export default function NewCard() {
       </Button>
     )
   ) : isEdited ? (
-    <Button
-      key="done"
-      onClick={() => {
-        if (cardRef.current) {
-          const content = cardRef.current.getContent()
-          console.log('Saved content:', content)
-        }
-
-        console.log('hi')
-        setIsEdited(false)
-      }}
-    >
+    <Button key="done" onClick={() => setIsEdited(false)}>
       Done
     </Button>
   ) : (
@@ -61,13 +45,9 @@ export default function NewCard() {
 
   async function handleSaveCard(cardStatus: 'new' | 'draft') {
     try {
-      if (cardRef.current) {
-        const content = cardRef.current.getContent()
-        console.log('Saved content:', content)
-      }
       const card = new CardModel(
         cardData,
-        currentTopic!.id,
+        topicId!,
         cardStatus === 'new' ? 1 : 0
       )
       await createCard(card)
@@ -85,17 +65,17 @@ export default function NewCard() {
     if (cardRef.current) {
       const { front, back } = cardRef.current.getContent()
 
-      if (!front.trim() || !back.trim()) {
+      if (!front || !back) {
         setIsDraft(true)
       }
 
-      if (front.trim() && back.trim()) {
+      if (front && back) {
         setIsDraft(false)
       }
 
       setCardData({
-        front: front.trim(),
-        back: back.trim()
+        front: front,
+        back: back
       })
     }
     setIsEdited(false)
@@ -111,7 +91,7 @@ export default function NewCard() {
         >
           Back
         </Button>
-        <p>{isFlipped ? 'Back' : 'Front'}</p>
+        <p className="font-bold">{isFlipped ? 'Back' : 'Front'}</p>
         {rightBtn}
       </Navbar>
       <Content centered>
@@ -121,10 +101,7 @@ export default function NewCard() {
           data={cardData}
           isFlipped={isFirstCardActive ? isFlipped : false}
           isEditable={true}
-          handleFocus={() => {
-            console.log('hi')
-            setIsEdited(true)
-          }}
+          handleFocus={() => setIsEdited(true)}
           handleBlur={handleBlur}
         />
         <Card
@@ -133,10 +110,7 @@ export default function NewCard() {
           data={cardData}
           isFlipped={isFirstCardActive ? false : isFlipped}
           isEditable={true}
-          handleFocus={() => {
-            console.log('hi2')
-            setIsEdited(true)
-          }}
+          handleFocus={() => setIsEdited(true)}
           handleBlur={handleBlur}
         />
       </Content>
