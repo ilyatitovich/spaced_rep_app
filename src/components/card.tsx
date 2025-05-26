@@ -1,5 +1,7 @@
-import { motion } from 'framer-motion'
-import type { ChangeEvent, FocusEventHandler } from 'react'
+/* eslint-disable jsx-a11y/click-events-have-key-events */
+/* eslint-disable jsx-a11y/no-static-element-interactions */
+import type { FocusEventHandler, Ref } from 'react'
+import { forwardRef, useRef, useImperativeHandle } from 'react'
 
 type CardSide = 'front' | 'back'
 
@@ -7,71 +9,98 @@ type CardProps = {
   data: { front: File | string; back: File | string }
   isFlipped: boolean
   isEditable?: boolean
-  handleFocus?: FocusEventHandler<HTMLTextAreaElement>
-  handleBlur?: FocusEventHandler<HTMLTextAreaElement>
+  className?: string
+  handleFocus?: FocusEventHandler<HTMLElement>
+  handleBlur?: FocusEventHandler<HTMLElement>
   handleClick?: () => void
-  handleChange?: (
-    event: ChangeEvent<HTMLTextAreaElement>,
-    side: CardSide
-  ) => void
+  handleChange?: (data: string, side: CardSide) => void
 }
 
-const baseFaceStyles =
-  'w-full h-full flex justify-center items-center text-[2rem] text-center p-[1.5em] leading-[1.5] border-none shadow-none outline-none absolute backface-hidden rounded-[1em] bg-white'
+type CardHandle = {
+  getContent: () => { front: string; back: string }
+}
 
-const backFaceModifier = '-rotate-y-180'
-
-export default function Card({
-  data,
-  isFlipped,
-  isEditable = false,
+function Side({
+  side,
+  content,
+  isEditable,
   handleFocus,
   handleBlur,
-  handleClick,
-  handleChange
-}: CardProps) {
-  const renderSide = (side: CardSide, isBack = false) => {
-    const content = data[side]
-
-    const commonProps = {
-      className: `${baseFaceStyles} ${isBack ? backFaceModifier : ''}`
-    }
-
-    if (!isEditable) {
-      return (
-        <div {...commonProps}>{typeof content === 'string' ? content : ''}</div>
-      )
-    }
-
-    return (
-      <textarea
-        {...commonProps}
-        value={typeof content === 'string' ? content : ''}
-        maxLength={70}
-        onChange={e => handleChange?.(e, side)}
-        onFocus={handleFocus}
-        onBlur={handleBlur}
-      />
-    )
-  }
-
+  innerRef
+}: {
+  side: CardSide
+  content?: string | File
+  isEditable?: boolean
+  handleFocus?: FocusEventHandler<HTMLElement>
+  handleBlur?: FocusEventHandler<HTMLElement>
+  innerRef?: React.RefObject<HTMLDivElement>
+}) {
   return (
-    <motion.div
-      initial={{ scale: 0 }}
-      animate={{ scale: 1 }}
-      className="flex justify-center items-center"
-      onClick={handleClick}
+    <div
+      ref={innerRef}
+      className={`absolute w-full h-full py-[1.5em] px-[1em] backface-hidden border-black border-4 rounded-4xl bg-white ${side === 'back' ? 'rotate-y-180' : ''}`.trim()}
+      contentEditable={isEditable}
+      suppressContentEditableWarning
+      role="textbox"
+      tabIndex={0}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
     >
-      <div className="perspective-[1000px] w-[80vw] h-[70vh] relative">
-        <div
-          className={`w-full h-full transform-style-preserve-3d transition-transform duration-600 rounded-[1.5em] border-[4px] border-black ${
-            isFlipped ? '-rotate-y-180' : ''
-          }`}
-        >
-          {renderSide('front')}
-          {renderSide('back', true)}
-        </div>
-      </div>
-    </motion.div>
+      {typeof content === 'string' ? content : ''}
+    </div>
   )
 }
+
+export default forwardRef(function Card(
+  {
+    data,
+    isFlipped,
+    className = '',
+    isEditable = false,
+    handleClick,
+    handleBlur,
+    handleFocus
+  }: CardProps,
+  ref: Ref<CardHandle>
+) {
+  const frontRef = useRef<HTMLDivElement>(null)
+  const backRef = useRef<HTMLDivElement>(null)
+
+  useImperativeHandle(ref, () => ({
+    getContent: () => ({
+      front: frontRef.current?.innerText || '',
+      back: backRef.current?.innerText || ''
+    })
+  }))
+
+  return (
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events
+    <div
+      className={`perspective-[1000px] w-[80vw] h-[70vh] absolute ${className}`.trim()}
+      onClick={handleClick}
+    >
+      <div
+        className={`w-full h-full relative transform-style-preserve-3d transition-transform duration-600 ${
+          isFlipped ? 'rotate-y-180' : ''
+        }`.trim()}
+      >
+        <Side
+          side="front"
+          content={data['front']}
+          isEditable={isEditable}
+          innerRef={frontRef}
+          handleBlur={handleBlur}
+          handleFocus={handleFocus}
+        />
+        <Side
+          side="back"
+          content={data['back']}
+          isEditable={isEditable}
+          innerRef={backRef}
+          handleBlur={handleBlur}
+          handleFocus={handleFocus}
+        />
+      </div>
+    </div>
+  )
+})

@@ -1,4 +1,4 @@
-import { useState, useEffect, type ChangeEvent } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router'
 
 import { Button, Navbar, Content, Card } from '@/components'
@@ -6,18 +6,23 @@ import { Card as CardModel } from '@/models'
 import { createCard } from '@/services'
 import { useTopicStore } from '@/stores'
 
+type CardHandle = {
+  getContent: () => { front: string; back: string }
+}
+
 export default function NewCard() {
   const navigate = useNavigate()
 
+  const [isFlipped, setIsFlipped] = useState(false)
+  const [cardData, setCardData] = useState({ front: '', back: '' })
+  const [isEdited, setIsEdited] = useState(false)
+  const [isDraft, setIsDraft] = useState(true)
+  const [isFirstCardActive, setIsFirstCardActive] = useState(true)
+  const [isInitialRender, setIsInitialRender] = useState(true)
+
   const { currentTopic } = useTopicStore()
 
-  const [isFlipped, setIsFlipped] = useState<boolean>(false)
-  const [cardData, setCardData] = useState({ front: '', back: '' })
-  const [isSaving, setIsSaving] = useState<boolean>(false)
-  const [isEdited, setIsEdited] = useState<boolean>(false)
-  const [isDraft, setIsDraft] = useState<boolean>(true)
-
-  const cardDataIsExist = cardData.front && cardData.back
+  const cardRef = useRef<CardHandle>(null)
 
   const rightBtn = isDraft ? (
     isEdited ? (
@@ -34,7 +39,18 @@ export default function NewCard() {
       </Button>
     )
   ) : isEdited ? (
-    <Button key="done" onClick={() => setIsEdited(false)}>
+    <Button
+      key="done"
+      onClick={() => {
+        if (cardRef.current) {
+          const content = cardRef.current.getContent()
+          console.log('Saved content:', content)
+        }
+
+        console.log('hi')
+        setIsEdited(false)
+      }}
+    >
       Done
     </Button>
   ) : (
@@ -43,66 +59,46 @@ export default function NewCard() {
     </Button>
   )
 
-  useEffect(() => {
-    if (cardDataIsExist) {
-      setIsDraft(false)
-    } else {
-      setIsDraft(true)
-    }
-  }, [cardDataIsExist])
-
-  useEffect(() => {
-    let timer: NodeJS.Timeout
-
-    if (isSaving) {
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      timer = setTimeout(() => {
-        setIsSaving(false)
-      }, 100)
-    }
-
-    return () => {
-      clearTimeout(timer)
-    }
-  }, [isSaving])
-
-  function handleChange(
-    event: ChangeEvent<HTMLTextAreaElement>,
-    side: 'front' | 'back'
-  ) {
-    switch (side) {
-      case 'front':
-        setCardData({
-          ...cardData,
-          front: event.target.value.trim()
-        })
-        break
-      case 'back':
-        setCardData({
-          ...cardData,
-          back: event.target.value.trim()
-        })
-        break
-      default:
-        return
-    }
-  }
-
-  const handleSaveCard = async (cardStatus: 'new' | 'draft') => {
+  async function handleSaveCard(cardStatus: 'new' | 'draft') {
     try {
-      const testCard = new CardModel(
+      if (cardRef.current) {
+        const content = cardRef.current.getContent()
+        console.log('Saved content:', content)
+      }
+      const card = new CardModel(
         cardData,
         currentTopic!.id,
         cardStatus === 'new' ? 1 : 0
       )
-      await createCard(testCard)
+      await createCard(card)
 
-      setIsSaving(true)
       setCardData({ front: '', back: '' })
       setIsFlipped(false)
+      setIsFirstCardActive(prev => !prev)
+      setIsInitialRender(false)
     } catch (error) {
       console.error('Failed to save card:', error)
     }
+  }
+
+  function handleBlur(): void {
+    if (cardRef.current) {
+      const { front, back } = cardRef.current.getContent()
+
+      if (!front.trim() || !back.trim()) {
+        setIsDraft(true)
+      }
+
+      if (front.trim() && back.trim()) {
+        setIsDraft(false)
+      }
+
+      setCardData({
+        front: front.trim(),
+        back: back.trim()
+      })
+    }
+    setIsEdited(false)
   }
 
   return (
@@ -119,16 +115,30 @@ export default function NewCard() {
         {rightBtn}
       </Navbar>
       <Content centered>
-        {!isSaving && (
-          <Card
-            data={cardData}
-            isFlipped={isFlipped}
-            isEditable={true}
-            handleFocus={() => setIsEdited(true)}
-            handleBlur={() => setIsEdited(false)}
-            handleChange={handleChange}
-          />
-        )}
+        <Card
+          ref={isFirstCardActive ? cardRef : null}
+          className={`${isFirstCardActive ? 'scale-up' : 'move-left'}`}
+          data={cardData}
+          isFlipped={isFirstCardActive ? isFlipped : false}
+          isEditable={true}
+          handleFocus={() => {
+            console.log('hi')
+            setIsEdited(true)
+          }}
+          handleBlur={handleBlur}
+        />
+        <Card
+          ref={isFirstCardActive ? null : cardRef}
+          className={`${isInitialRender ? 'hidden' : ''} ${isFirstCardActive ? 'move-left' : 'scale-up'}`.trim()}
+          data={cardData}
+          isFlipped={isFirstCardActive ? false : isFlipped}
+          isEditable={true}
+          handleFocus={() => {
+            console.log('hi2')
+            setIsEdited(true)
+          }}
+          handleBlur={handleBlur}
+        />
       </Content>
       <footer>
         <Button onClick={() => setIsFlipped(!isFlipped)}>Flip</Button>
