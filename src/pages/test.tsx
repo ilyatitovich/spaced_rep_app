@@ -14,7 +14,7 @@ export default function TestPage() {
   const topicCards = useTopicStore(state => state.topicCards)
   const setTopic = useTopicStore(state => state.setTopic)
 
-  const { week, levels } = topic!
+  const { week } = topic!
 
   const [isFlipped, setIsFlipped] = useState(false)
 
@@ -25,22 +25,23 @@ export default function TestPage() {
   const [isCorrect, setIsCorrect] = useState(false)
 
   useEffect(() => {
-    const result: CardModel[] = []
-    week[today]?.todayLevels.forEach(levelId => {
-      const cardsForLevel = topicCards[levelId] || []
-      result.push(...cardsForLevel)
-    })
+    const result = week[today]!.todayLevels.flatMap(
+      levelId => topicCards[levelId]
+    )
     setCards(result)
   }, [week, topicCards])
+
+  useEffect(() => {
+    if (cards.length === 0) {
+      week[today]!.isDone = true
+      setTopic(topic)
+    }
+  }, [cards.length, setTopic, topic, week])
 
   async function handleAnswer(isCorrect: boolean) {
     try {
       const updatedCards = [...cards]
       const currentCard = updatedCards.shift()
-      const indexToDelete = levels[currentCard!.level].cards.indexOf(
-        currentCard!
-      )
-      levels[currentCard!.level].cards.splice(indexToDelete, 1)
 
       if (isCorrect) {
         if (!wrongCards.includes(currentCard!)) {
@@ -62,11 +63,10 @@ export default function TestPage() {
       setIsInitialRender(false)
 
       if (updatedCards.length === 0) {
-        week[today]!.isDone = true
-        setTopic(topic)
+        setIsFirstCardActive(false)
+      } else {
+        setIsFirstCardActive(prev => !prev)
       }
-
-      setIsFirstCardActive(prev => !prev)
     } catch (error) {
       console.error('Error updating card:', error)
     }
@@ -89,22 +89,28 @@ export default function TestPage() {
       </Navbar>
 
       <Content centered>
-        <Card
-          className={`${isFirstCardActive ? 'scale-up' : isCorrect ? 'move-right' : 'move-left'}`}
-          data={cards.length > 0 ? cards[0].data : { front: '', back: '' }}
-          isFlipped={isFirstCardActive ? isFlipped : false}
-          handleClick={() => setIsFlipped(prev => !prev)}
-        />
-
-        {cards.length > 0 ? (
-          <Card
-            className={`${isInitialRender ? 'hidden' : ''} ${isFirstCardActive ? (isCorrect ? 'move-right' : 'move-left') : 'scale-up'}`.trim()}
-            data={cards[0].data}
-            isFlipped={isFirstCardActive ? false : isFlipped}
-            handleClick={() => setIsFlipped(prev => !prev)}
-          />
-        ) : (
+        {isInitialRender && cards.length === 0 ? (
           <p>No cards</p>
+        ) : (
+          <>
+            <Card
+              className={`${isFirstCardActive ? 'scale-up' : isCorrect ? 'move-right' : 'move-left'}`}
+              data={cards[0] ? cards[0].data : { front: '', back: '' }}
+              isFlipped={isFirstCardActive ? isFlipped : false}
+              handleClick={() => setIsFlipped(prev => !prev)}
+            />
+
+            {cards.length > 0 ? (
+              <Card
+                className={`${isInitialRender ? 'hidden' : ''} ${isFirstCardActive ? (isCorrect ? 'move-right' : 'move-left') : 'scale-up'}`.trim()}
+                data={cards[0].data}
+                isFlipped={isFirstCardActive ? false : isFlipped}
+                handleClick={() => setIsFlipped(prev => !prev)}
+              />
+            ) : (
+              <p>No cards</p>
+            )}
+          </>
         )}
       </Content>
 

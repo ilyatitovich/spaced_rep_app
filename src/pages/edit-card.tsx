@@ -1,4 +1,4 @@
-import { useState, ChangeEvent } from 'react'
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 
 import { Button, Navbar, Content, Card } from '@/components'
@@ -13,7 +13,7 @@ export default function EditCardPage() {
   const card = cards.find(card => card.id === cardId)
 
   const [isFlipped, setIsFlipped] = useState<boolean>(false)
-  const [cardData, setCardData] = useState({
+  const [cardData] = useState({
     front: card?.data.front ?? '',
     back: card?.data.back ?? ''
   })
@@ -33,27 +33,27 @@ export default function EditCardPage() {
     </Button>
   )
 
-  function handleChange(
-    event: ChangeEvent<HTMLTextAreaElement>,
-    side: 'front' | 'back'
-  ) {
-    switch (side) {
-      case 'front':
-        setCardData({
-          ...cardData,
-          front: event.target.value.trim()
-        })
-        break
-      case 'back':
-        setCardData({
-          ...cardData,
-          back: event.target.value.trim()
-        })
-        break
-      default:
-        return
-    }
-  }
+  // function handleChange(
+  //   event: ChangeEvent<HTMLTextAreaElement>,
+  //   side: 'front' | 'back'
+  // ) {
+  //   switch (side) {
+  //     case 'front':
+  //       setCardData({
+  //         ...cardData,
+  //         front: event.target.value.trim()
+  //       })
+  //       break
+  //     case 'back':
+  //       setCardData({
+  //         ...cardData,
+  //         back: event.target.value.trim()
+  //       })
+  //       break
+  //     default:
+  //       return
+  //   }
+  // }
 
   async function handleSaveCard() {
     try {
@@ -92,7 +92,6 @@ export default function EditCardPage() {
           isEditable={true}
           handleFocus={() => setIsEdited(true)}
           handleBlur={() => setIsEdited(false)}
-          handleChange={handleChange}
         />
       </Content>
       <footer>
