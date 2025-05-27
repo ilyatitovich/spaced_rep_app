@@ -6,12 +6,17 @@ import { Card as CardModel } from '@/models'
 import { createCard } from '@/services'
 import type { CardHandle, CardData } from '@/types'
 
-export default function NewCard() {
+const initialCardData: CardData = {
+  front: '',
+  back: ''
+}
+
+export default function NewCardPage() {
   const navigate = useNavigate()
   const { topicId } = useParams()
 
   const [isFlipped, setIsFlipped] = useState(false)
-  const [cardData, setCardData] = useState<CardData>({ front: '', back: '' })
+  const [cardData, setCardData] = useState(initialCardData)
   const [isEdited, setIsEdited] = useState(false)
   const [isDraft, setIsDraft] = useState(true)
   const [isFirstCardActive, setIsFirstCardActive] = useState(true)
@@ -19,41 +24,49 @@ export default function NewCard() {
 
   const cardRef = useRef<CardHandle>(null)
 
-  const rightBtn = isDraft ? (
-    isEdited ? (
+  let rightBtn
+
+  if (isEdited) {
+    rightBtn = (
       <Button key="done" onClick={() => setIsEdited(false)}>
         Done
       </Button>
-    ) : (
+    )
+  } else if (isDraft) {
+    rightBtn = (
       <Button
         key="save-draft"
         onClick={() => handleSaveCard('draft')}
-        disabled={!!cardData.front === false}
+        disabled={!cardData.front}
       >
         Save Draft
       </Button>
     )
-  ) : isEdited ? (
-    <Button key="done" onClick={() => setIsEdited(false)}>
-      Done
-    </Button>
-  ) : (
-    <Button key="save" onClick={() => handleSaveCard('new')}>
-      Save
-    </Button>
-  )
+  } else {
+    rightBtn = (
+      <Button key="save" onClick={() => handleSaveCard('new')}>
+        Save
+      </Button>
+    )
+  }
 
   async function handleSaveCard(cardStatus: 'new' | 'draft') {
     try {
+      if (!topicId) {
+        console.error('Topic ID is required to save the card.')
+        return
+      }
+
       const card = new CardModel(
         cardData,
-        topicId!,
+        topicId,
         cardStatus === 'new' ? 1 : 0
       )
       await createCard(card)
 
-      setCardData({ front: '', back: '' })
+      setCardData(initialCardData)
       setIsFlipped(false)
+      setIsDraft(true)
       setIsFirstCardActive(prev => !prev)
       setIsInitialRender(false)
     } catch (error) {

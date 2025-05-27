@@ -11,6 +11,7 @@ import {
 type TopicState = {
   topics: Topic[]
   currentTopic: Topic | null
+  topicCards: Record<number, Card[]>
   loading: boolean
   error: string | null
 
@@ -25,6 +26,7 @@ type TopicState = {
 export const useTopicStore = create<TopicState>((set, get) => ({
   topics: [],
   currentTopic: null,
+  topicCards: {},
   loading: false,
   error: null,
 
@@ -60,7 +62,11 @@ export const useTopicStore = create<TopicState>((set, get) => ({
     set({ loading: true, error: null })
 
     try {
-      let topic = await getTopicById(id)
+      if (get().currentTopic) {
+        get().clearCurrent()
+      }
+
+      let { topic, cards } = await getTopicById(id)
       if (!topic) throw new Error('Topic not found')
 
       if (topic.nextUpdateDate <= Date.now()) {
@@ -70,6 +76,7 @@ export const useTopicStore = create<TopicState>((set, get) => ({
 
       set({
         currentTopic: topic,
+        topicCards: cards,
         loading: false,
         error: null
       })
@@ -77,6 +84,7 @@ export const useTopicStore = create<TopicState>((set, get) => ({
       console.error('Failed to load topic', err)
       set({
         currentTopic: null,
+
         loading: false,
         error: err instanceof Error ? err.message : 'Unknown error'
       })

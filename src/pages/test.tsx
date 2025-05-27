@@ -1,44 +1,37 @@
-import { AnimatePresence } from 'framer-motion'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
 
 import { Button, Navbar, Content, Card } from '@/components'
+import { Card as CardModel } from '@/models'
 import { updateCard } from '@/services'
 import { useTopicStore } from '@/stores/topic.store'
+
+const today: number = new Date().getDay()
 
 export default function TestPage() {
   const navigate = useNavigate()
   const topic = useTopicStore(state => state.currentTopic)
+  const topicCards = useTopicStore(state => state.topicCards)
   const setTopic = useTopicStore(state => state.setTopic)
-  const today: number = new Date().getDay()
 
   const { week, levels } = topic!
 
-  const [isFlipped, setIsFlipped] = useState<boolean>(false)
+  const [isFlipped, setIsFlipped] = useState(false)
 
-  const cardsForTest = week[today]!.todayLevels.flatMap(el => levels[el].cards)
-  const [cards, setCards] = useState(cardsForTest)
-  const [isMoved, setIsMoved] = useState<boolean>(false)
+  const [cards, setCards] = useState<CardModel[]>([])
+  const [wrongCards, setWrongCards] = useState<CardModel[]>([])
+  const [isFirstCardActive, setIsFirstCardActive] = useState(true)
+  const [isInitialRender, setIsInitialRender] = useState(true)
+  const [isCorrect, setIsCorrect] = useState(false)
 
   useEffect(() => {
-    let timer: NodeJS.Timeout
-
-    if (isMoved) {
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      timer = setTimeout(() => {
-        setIsMoved(false)
-      }, 100)
-    }
-
-    return () => {
-      setTopic(topic)
-      clearTimeout(timer)
-    }
-  }, [isMoved, setTopic, topic])
-
-  if (cards.length === 0) {
-    week[today]!.isDone = true
-  }
+    const result: CardModel[] = []
+    week[today]?.todayLevels.forEach(levelId => {
+      const cardsForLevel = topicCards[levelId] || []
+      result.push(...cardsForLevel)
+    })
+    setCards(result)
+  }, [week, topicCards])
 
   async function handleAnswer(isCorrect: boolean) {
     try {
@@ -50,25 +43,37 @@ export default function TestPage() {
       levels[currentCard!.level].cards.splice(indexToDelete, 1)
 
       if (isCorrect) {
-        currentCard!.level += 1
-        levels[currentCard!.level].cards.push(currentCard!)
+        if (!wrongCards.includes(currentCard!)) {
+          currentCard!.level += 1
+        }
+
+        setWrongCards(prev => prev.filter(card => card.id !== currentCard!.id))
       } else {
         currentCard!.level = 1
-        levels[1].cards.push(currentCard!)
         updatedCards.push(currentCard!)
+        setWrongCards(prev => [...prev, currentCard!])
       }
 
       await updateCard(currentCard!)
-      setIsMoved(true)
+
+      setIsCorrect(isCorrect)
       setCards(updatedCards)
       setIsFlipped(false)
+      setIsInitialRender(false)
+
+      if (updatedCards.length === 0) {
+        week[today]!.isDone = true
+        setTopic(topic)
+      }
+
+      setIsFirstCardActive(prev => !prev)
     } catch (error) {
       console.error('Error updating card:', error)
     }
   }
 
   return (
-    <main className="test">
+    <main>
       <Navbar>
         <Button
           onClick={() => {
@@ -77,25 +82,30 @@ export default function TestPage() {
         >
           Back
         </Button>
-        <p>{isFlipped ? 'Back' : 'Front'}</p>
+        <h1>{isFlipped ? 'Back' : 'Front'}</h1>
         <div className="py-2 px-4 rounded-full bg-light-gray flex items-center justify-center">
           {cards.length}
         </div>
       </Navbar>
 
       <Content centered>
-        {!isMoved &&
-          (cards.length > 0 ? (
-            <AnimatePresence>
-              <Card
-                data={cards[0].data}
-                isFlipped={isFlipped}
-                handleClick={() => setIsFlipped(!isFlipped)}
-              />
-            </AnimatePresence>
-          ) : (
-            <div>No cards</div>
-          ))}
+        <Card
+          className={`${isFirstCardActive ? 'scale-up' : isCorrect ? 'move-right' : 'move-left'}`}
+          data={cards.length > 0 ? cards[0].data : { front: '', back: '' }}
+          isFlipped={isFirstCardActive ? isFlipped : false}
+          handleClick={() => setIsFlipped(prev => !prev)}
+        />
+
+        {cards.length > 0 ? (
+          <Card
+            className={`${isInitialRender ? 'hidden' : ''} ${isFirstCardActive ? (isCorrect ? 'move-right' : 'move-left') : 'scale-up'}`.trim()}
+            data={cards[0].data}
+            isFlipped={isFirstCardActive ? false : isFlipped}
+            handleClick={() => setIsFlipped(prev => !prev)}
+          />
+        ) : (
+          <p>No cards</p>
+        )}
       </Content>
 
       <div className="w-full absolute bottom-4 mt-8 flex justify-evenly gap-2">

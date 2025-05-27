@@ -2,7 +2,6 @@ import { useEffect } from 'react'
 import { Link, useParams, useNavigate } from 'react-router'
 
 import { Button, Navbar, Content, LevelRow, Week } from '@/components'
-import { Level } from '@/lib/helpers'
 import { useTopicStore } from '@/stores'
 
 const today: number = new Date().getDay()
@@ -11,14 +10,19 @@ export default function TopicPage() {
   const navigate = useNavigate()
   const { topicId } = useParams()
 
-  const { currentTopic, fetchTopic, deleteTopicById, loading, error } =
-    useTopicStore()
+  const {
+    currentTopic,
+    topicCards,
+    fetchTopic,
+    deleteTopicById,
+    loading,
+    error
+  } = useTopicStore()
 
   useEffect(() => {
-    if (!currentTopic) {
-      fetchTopic(topicId!)
-    }
-  }, [fetchTopic, topicId, currentTopic])
+    fetchTopic(topicId!)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleDeleteTopic = async (id: string) => {
     try {
@@ -29,7 +33,6 @@ export default function TopicPage() {
     }
   }
 
-  if (loading) return <p>Loading...</p>
   if (error) return <p className="text-red">{error}</p>
   if (!currentTopic) return null
 
@@ -42,8 +45,7 @@ export default function TopicPage() {
           Delete
         </Button>
       </Navbar>
-
-      <Content height={92} className="pb-30">
+      <Content height={92} className="pb-30" loading={loading}>
         <Week week={currentTopic.week} today={today} />
 
         <div className="flex items-center justify-between py-2">
@@ -52,8 +54,12 @@ export default function TopicPage() {
         </div>
 
         <ul>
-          {currentTopic.levels.map((level: Level) => (
-            <LevelRow key={level.id} level={level} />
+          {currentTopic.levels.map(level => (
+            <LevelRow
+              key={level.id}
+              levelId={level.id}
+              cardsNumber={topicCards[level.id]?.length || 0}
+            />
           ))}
         </ul>
 

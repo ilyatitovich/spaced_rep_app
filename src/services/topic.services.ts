@@ -37,7 +37,9 @@ export async function getAllTopics(): Promise<Topic[]> {
   })
 }
 
-export async function getTopicById(topicId: string): Promise<Topic | null> {
+export async function getTopicById(
+  topicId: string
+): Promise<{ topic: Topic; cards: Record<number, Card[]> }> {
   return withTransaction(
     [STORES.TOPICS, STORES.CARDS],
     'readonly',
@@ -53,7 +55,9 @@ export async function getTopicById(topicId: string): Promise<Topic | null> {
           reject(topicRequest.error ?? new Error('Failed to fetch topic'))
       })
 
-      if (!topic) return null
+      if (!topic) {
+        throw new Error(`Topic with ID ${topicId} not found`)
+      }
 
       topic = Topic.fromRaw(topic)
 
@@ -66,12 +70,16 @@ export async function getTopicById(topicId: string): Promise<Topic | null> {
           reject(cardsRequest.error ?? new Error('Failed to fetch cards'))
       })
 
-      cards.forEach(card => {
-        const cardLevel = card.level
-        topic.levels[cardLevel].cards.push(card)
-      })
+      const topicCards = cards.reduce<Record<number, Card[]>>((acc, card) => {
+        const level = card.level
+        if (!acc[level]) {
+          acc[level] = []
+        }
+        acc[level].push(card)
+        return acc
+      }, {})
 
-      return topic
+      return { topic, cards: topicCards }
     }
   )
 }

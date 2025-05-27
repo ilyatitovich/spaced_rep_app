@@ -5,19 +5,25 @@ type ContentProps = {
   className?: string
   height?: 84 | 92 | 100
   centered?: boolean
+  loading?: boolean
 }
 
 export default function Content({
   children,
   className = '',
   height = 84,
-  centered = false
+  centered = false,
+  loading = false
 }: ContentProps) {
+  if (loading) {
+    centered = true
+  }
+
   return (
     <section
-      className={`h-dvh-${height} p-4 overflow-y-scroll ${className} ${centered ? 'flex items-center justify-center' : ''}`.trim()}
+      className={`h-dvh-${height} p-4 overflow-y-auto ${className} ${centered ? 'flex items-center justify-center' : ''}`.trim()}
     >
-      {children}
+      {loading ? <p>Loading...</p> : children}
     </section>
   )
 }
