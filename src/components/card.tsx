@@ -42,7 +42,7 @@ export default forwardRef(function Card(
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events
     <div
-      className={`perspective-[1000px] w-[80vw] h-[70vh] absolute ${className}`.trim()}
+      className={`perspective-[1000px] w-[80vw] h-[60vh] absolute ${className}`.trim()}
       onClick={handleClick}
     >
       <div

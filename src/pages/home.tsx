@@ -27,7 +27,7 @@ export default function HomePage() {
               <li key={topic.id}>
                 <Link
                   to={`topic/${topic.id}`}
-                  className="w-full flex items-center justify-center p-4 my-4 mx-auto rounded-xl text-black gradient"
+                  className="w-full flex items-center justify-center px-4 py-6 my-4 mx-auto rounded-xl text-black gradient"
                   aria-label={`Go to topic: ${topic.title}`}
                 >
                   {topic.title}

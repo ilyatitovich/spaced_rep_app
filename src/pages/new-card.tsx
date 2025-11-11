@@ -50,7 +50,7 @@ export default function NewCardPage() {
     )
   }
 
-  async function handleSaveCard(cardStatus: 'new' | 'draft') {
+  async function handleSaveCard(cardStatus: 'new' | 'draft'): Promise<void> {
     try {
       if (!topicId) {
         console.error('Topic ID is required to save the card.')
@@ -111,7 +111,7 @@ export default function NewCardPage() {
         <Card
           ref={isFirstCardActive ? cardRef : null}
           className={`${isFirstCardActive ? 'scale-up' : 'move-left'}`}
-          data={cardData}
+          data={isFirstCardActive ? initialCardData : cardData}
           isFlipped={isFirstCardActive ? isFlipped : false}
           isEditable={true}
           handleFocus={() => setIsEdited(true)}
@@ -120,7 +120,7 @@ export default function NewCardPage() {
         <Card
           ref={isFirstCardActive ? null : cardRef}
           className={`${isInitialRender ? 'hidden' : ''} ${isFirstCardActive ? 'move-left' : 'scale-up'}`.trim()}
-          data={cardData}
+          data={isFirstCardActive ? cardData : initialCardData}
           isFlipped={isFirstCardActive ? false : isFlipped}
           isEditable={true}
           handleFocus={() => setIsEdited(true)}

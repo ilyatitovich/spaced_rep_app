@@ -19,7 +19,6 @@ export default function TestPage() {
   const [isFlipped, setIsFlipped] = useState(false)
 
   const [cards, setCards] = useState<CardModel[]>([])
-  const [wrongCards, setWrongCards] = useState<CardModel[]>([])
   const [isFirstCardActive, setIsFirstCardActive] = useState(true)
   const [isInitialRender, setIsInitialRender] = useState(true)
   const [isCorrect, setIsCorrect] = useState(false)
@@ -38,21 +37,16 @@ export default function TestPage() {
     }
   }, [cards.length, setTopic, topic, week])
 
-  async function handleAnswer(isCorrect: boolean) {
+  async function handleAnswer(isCorrect: boolean): Promise<void> {
     try {
       const updatedCards = [...cards]
       const currentCard = updatedCards.shift()
 
       if (isCorrect) {
-        if (!wrongCards.includes(currentCard!)) {
-          currentCard!.level += 1
-        }
-
-        setWrongCards(prev => prev.filter(card => card.id !== currentCard!.id))
+        currentCard!.level += 1
       } else {
         currentCard!.level = 1
         updatedCards.push(currentCard!)
-        setWrongCards(prev => [...prev, currentCard!])
       }
 
       await updateCard(currentCard!)

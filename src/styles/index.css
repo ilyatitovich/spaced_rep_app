@@ -28,7 +28,7 @@
   }
 
   .h-dvh-84 {
-    height: calc(var(--vh, 1vh) * 84);
+    height: calc(var(--vh, 1vh) * 80);
   }
 
   .h-dvh-92 {
@@ -105,8 +105,8 @@ h1 {
 
 nav,
 footer {
-  height: calc(8 * 1vh);
-  height: calc(var(--vh, 1vh) * 8);
+  height: calc(10 * 1vh);
+  height: calc(var(--vh, 1vh) * 10);
 }
 
 footer {
@@ -114,21 +114,6 @@ footer {
   justify-content: center;
   align-items: center;
   border-top: 1px solid var(--color-light-gray);
-}
-
-[contenteditable] {
-  outline: none;
-  resize: none;
-  white-space: pre-wrap;
-  overflow-wrap: break-word;
-  overflow-y: auto;
-  text-align: center;
-  font-size: 2rem;
-  scrollbar-width: none; /* Firefox */
-}
-
-[contententeditable]::-webkit-scrollbar {
-  display: none;
 }
 
 .gradient {
