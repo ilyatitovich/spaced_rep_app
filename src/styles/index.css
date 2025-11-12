@@ -20,6 +20,9 @@
   --color-lvl-7: rgb(89, 0, 255);
 
   --color-blue-gradient: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%);
+
+  /* New style */
+  --color-background: #f7f7f7;
 }
 
 @layer utilities {
@@ -79,6 +82,7 @@ body {
   font-size: clamp(1rem, 0.75rem + 4vw, 1.25rem);
   line-height: 1.2;
   overflow: hidden;
+  background-color: var(--color-background);
 }
 
 #desktop-message {

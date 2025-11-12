@@ -4,7 +4,11 @@ import { Button, Navbar, Content } from '@/components'
 import { Topic } from '@/models'
 import { createTopic } from '@/services'
 
-export default function NewTopicPage() {
+type CreateTopicProps = {
+  handleClose: () => void
+}
+
+export default function CreateTopic({ handleClose }: CreateTopicProps) {
   const [title, setTitle] = useState('')
 
   const [status, setStatus] = useState<{
@@ -70,7 +74,7 @@ export default function NewTopicPage() {
   return (
     <main>
       <Navbar>
-        <Button href="/">Back</Button>
+        <Button onClick={handleClose}>Back</Button>
         <Button disabled={!title} onClick={handleSave}>
           Save
         </Button>
