@@ -89,18 +89,7 @@ export default function HomePage() {
         </div>
       </motion.button>
       <AnimatePresence>
-        {isCreating && (
-          <motion.div
-            key="create"
-            initial={{ y: '100%' }} // start offscreen at bottom
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ duration: 0.4, ease: 'easeInOut' }}
-            className="fixed inset-0 bg-background z-50 flex flex-col rounded-t-2xl shadow-lg overflow-hidden"
-          >
-            <CreateTopic handleClose={closeCreate} />
-          </motion.div>
-        )}
+        {isCreating && <CreateTopic handleClose={closeCreate} />}
       </AnimatePresence>
     </main>
   )
