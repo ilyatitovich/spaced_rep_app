@@ -1,12 +1,7 @@
 import { create } from 'zustand'
 
 import { Topic, Card } from '@/models'
-import {
-  getAllTopics,
-  getTopicById,
-  deleteTopic,
-  updateTopic
-} from '@/services'
+import { getTopicById, deleteTopic, updateTopic } from '@/services'
 
 type TopicState = {
   topics: Topic[]
@@ -16,7 +11,6 @@ type TopicState = {
   error: string | null
 
   setTopic: (topic: Topic | null) => Promise<void>
-  fetchAllTopics: () => Promise<void>
   fetchTopic: (id: string) => Promise<void>
   clearCurrent: () => void
   deleteTopicById: (id: string) => Promise<void>
@@ -38,23 +32,6 @@ export const useTopicStore = create<TopicState>((set, get) => ({
       set({ currentTopic: topic })
     } catch (error) {
       console.error('Error updating topic:', error)
-    }
-  },
-  fetchAllTopics: async () => {
-    set({ loading: true, error: null })
-    try {
-      const topics = await getAllTopics()
-      set({
-        topics: topics,
-        loading: false,
-        error: null
-      })
-    } catch (error) {
-      console.error('Failed to load topics', error)
-      set({
-        loading: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      })
     }
   },
 

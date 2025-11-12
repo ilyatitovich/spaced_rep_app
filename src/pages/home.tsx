@@ -1,9 +1,10 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 
-import { Navbar, Content, CreateTopic } from '@/components'
-import { useTopicStore } from '@/stores'
+import { Navbar, Content, CreateTopic, Spinner } from '@/components'
+import { Topic } from '@/models'
+import { getAllTopics } from '@/services'
 
 const listVariants = {
   hidden: {},
@@ -20,25 +21,32 @@ const itemVariants = {
 }
 
 export default function HomePage() {
-  const { topics, currentTopic, fetchAllTopics, clearCurrent } = useTopicStore()
+  const [topics, setTopics] = useState<Topic[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
   const [searchParams, setSearchParams] = useSearchParams()
   const isCreating = searchParams.get('create') === 'true'
 
   useEffect(() => {
-    if (!isCreating) {
-      fetchAllTopics()
+    const loadTopics = async () => {
+      try {
+        if (!isCreating) {
+          const topics = await getAllTopics()
+          setTopics(topics)
+        }
+      } catch (err) {
+        console.error('Failed to load topics:', err)
+      } finally {
+        setIsLoading(false)
+      }
     }
 
-    if (currentTopic) {
-      clearCurrent()
-    }
-  }, [clearCurrent, currentTopic, fetchAllTopics, isCreating])
+    loadTopics()
+  }, [isCreating])
 
   const openCreate = () => setSearchParams({ create: 'true' })
 
-  const closeCreate = () => {
-    setSearchParams({})
-  }
+  const closeCreate = () => setSearchParams({})
 
   return (
     <main>
@@ -46,7 +54,16 @@ export default function HomePage() {
         <span>Topics</span>
       </Navbar>
       <Content>
-        {topics.length > 0 ? (
+        {isLoading ? (
+          <Spinner />
+        ) : topics.length === 0 ? (
+          <div className="h-full flex items-center justify-center">
+            <div className="text-center text-gray-500">
+              <p>No topics found.</p>
+              <p>Click the + button to create one!</p>
+            </div>
+          </div>
+        ) : (
           <motion.ul variants={listVariants} initial="hidden" animate="visible">
             {topics.map(topic => (
               <motion.li key={topic.id} variants={itemVariants}>
@@ -60,10 +77,6 @@ export default function HomePage() {
               </motion.li>
             ))}
           </motion.ul>
-        ) : (
-          <div className="h-full flex items-center justify-center">
-            <p>No topics to study yet</p>
-          </div>
         )}
       </Content>
       <motion.button
