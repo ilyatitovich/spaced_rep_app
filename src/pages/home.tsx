@@ -160,7 +160,7 @@ export default function HomePage() {
       <AnimatePresence>
         {isSelectionMode && (
           <SelectionModeFooter
-            isItemsForDelete={selectedItems.length === 0}
+            countItemsForDelete={selectedItems.length}
             handleDelete={handleDeleteSelectedItems}
           />
         )}
