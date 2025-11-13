@@ -1,8 +1,15 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router'
+import { useSearchParams } from 'react-router'
 
-import { Navbar, Content, CreateTopic, Spinner } from '@/components'
+import {
+  Navbar,
+  Content,
+  CreateTopic,
+  SelectionModeHeader,
+  Spinner,
+  TopicItem
+} from '@/components'
 import { Topic } from '@/models'
 import { getAllTopics } from '@/services'
 
@@ -24,6 +31,9 @@ export default function HomePage() {
   const [topics, setTopics] = useState<Topic[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
+  const [isSelectionMode, setIsSelectionMode] = useState(false)
+  const [selectedItems, setSelectedItems] = useState<string[]>([])
+
   const [searchParams, setSearchParams] = useSearchParams()
   const isCreating = searchParams.get('create') === 'true'
 
@@ -44,15 +54,42 @@ export default function HomePage() {
     loadTopics()
   }, [isCreating])
 
-  const openCreate = () => setSearchParams({ create: 'true' })
+  const handlePress = (isPressed: boolean): void => {
+    setIsSelectionMode(isPressed)
+  }
 
-  const closeCreate = () => setSearchParams({})
+  const handleSelectItem = (topicId: string, add: boolean = true): void => {
+    setSelectedItems(prev =>
+      add ? [...prev, topicId] : prev.filter(tId => tId !== topicId)
+    )
+  }
+
+  const handleCancelSelectedMode = (): void => {
+    setIsSelectionMode(false)
+    setSelectedItems([])
+  }
+
+  const handleSelectAll = (isSelectAll: boolean): void => {
+    setSelectedItems(isSelectAll ? topics.map(topic => topic.id) : [])
+  }
 
   return (
     <main>
+      <AnimatePresence>
+        {isSelectionMode && (
+          <SelectionModeHeader
+            handleCancel={handleCancelSelectedMode}
+            selectedItemsCount={selectedItems.length}
+            isAllSelected={selectedItems.length === topics.length}
+            handleSelectAll={handleSelectAll}
+          />
+        )}
+      </AnimatePresence>
+
       <Navbar>
         <span>Topics</span>
       </Navbar>
+
       <Content>
         {isLoading ? (
           <Spinner />
@@ -67,29 +104,37 @@ export default function HomePage() {
           <motion.ul variants={listVariants} initial="hidden" animate="visible">
             {topics.map(topic => (
               <motion.li key={topic.id} variants={itemVariants}>
-                <Link
-                  to={`topic/${topic.id}`}
-                  className="w-full flex items-center justify-center px-4 py-6 my-4 mx-auto rounded-xl text-black bg-white active:scale-95"
-                  aria-label={`Go to topic: ${topic.title}`}
-                >
-                  {topic.title}
-                </Link>
+                <TopicItem
+                  topic={topic}
+                  isSelectionMode={isSelectionMode}
+                  isSelected={selectedItems.includes(topic.id)}
+                  onPress={handlePress}
+                  onSelect={handleSelectItem}
+                />
               </motion.li>
             ))}
           </motion.ul>
         )}
       </Content>
-      <motion.button
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-purple-700 text-white text-4xl shadow-lg flex items-center justify-center active:scale-90"
-        onClick={openCreate}
-      >
-        <div className="relative w-6 h-6 flex items-center justify-center">
-          <div className="absolute w-5 h-1 bg-white rounded-full"></div>
-          <div className="absolute h-5 w-1 bg-white rounded-full"></div>
-        </div>
-      </motion.button>
       <AnimatePresence>
-        {isCreating && <CreateTopic handleClose={closeCreate} />}
+        {!isSelectionMode && (
+          <motion.button
+            key="create-topic-button"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-purple-700 text-white text-4xl shadow-lg flex items-center justify-center active:scale-90"
+            onClick={() => setSearchParams({ create: 'true' })}
+          >
+            <div className="relative w-6 h-6 flex items-center justify-center">
+              <div className="absolute w-5 h-1 bg-white rounded-full"></div>
+              <div className="absolute h-5 w-1 bg-white rounded-full"></div>
+            </div>
+          </motion.button>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {isCreating && <CreateTopic handleClose={() => setSearchParams({})} />}
       </AnimatePresence>
     </main>
   )
