@@ -62,10 +62,10 @@ export default function CreateTopic({ handleClose }: CreateTopicProps) {
   return (
     <motion.div
       key="create"
-      initial={{ y: '100%' }} // start offscreen at bottom
-      animate={{ y: 0 }}
-      exit={{ y: '100%' }}
-      transition={{ duration: 0.4, ease: 'easeInOut' }}
+      initial={{ x: '100%' }} // start offscreen at bottom
+      animate={{ x: 0 }}
+      exit={{ x: '100%' }}
+      transition={{ ease: 'easeInOut' }}
       className="fixed inset-0 bg-background z-50 flex flex-col rounded-t-2xl shadow-lg overflow-hidden"
     >
       <Toaster position="top-center" reverseOrder={false} />
