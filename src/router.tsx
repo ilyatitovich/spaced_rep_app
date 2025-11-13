@@ -6,7 +6,6 @@ import {
   LevelPage,
   EditCardPage,
   NewCardPage,
-  NewTopicPage,
   Root,
   TestPage,
   TopicPage
@@ -21,10 +20,6 @@ export default createBrowserRouter([
       {
         index: true,
         element: <HomePage />
-      },
-      {
-        path: 'new-topic',
-        element: <NewTopicPage />
       },
       {
         path: 'topic/:topicId',

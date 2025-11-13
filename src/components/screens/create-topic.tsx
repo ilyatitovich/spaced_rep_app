@@ -1,38 +1,35 @@
+import { motion } from 'motion/react'
+import type { ChangeEvent } from 'react'
 import { useState } from 'react'
+import { Toaster, toast } from 'react-hot-toast'
 
 import { Button, Navbar, Content } from '@/components'
 import { Topic } from '@/models'
 import { createTopic } from '@/services'
 
-export default function NewTopicPage() {
+type CreateTopicProps = {
+  handleClose: () => void
+}
+
+export default function CreateTopic({ handleClose }: CreateTopicProps) {
   const [title, setTitle] = useState('')
+  const [error, setError] = useState('')
 
-  const [status, setStatus] = useState<{
-    isError: boolean
-    message: string
-  } | null>(null)
-
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleTitleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setTitle(e.target.value.trim())
-    if (status) setStatus(null)
+    if (error) setError('')
   }
 
   const handleSave = async () => {
-    setStatus(null)
+    setError('')
 
     if (!title) {
-      setStatus({
-        isError: true,
-        message: 'Please enter a title for the topic'
-      })
+      setError('Please enter a title for the topic')
       return
     }
 
     if (title.length > 10) {
-      setStatus({
-        isError: true,
-        message: 'Title must be less than 10 characters'
-      })
+      setError('Title must be less than 10 characters')
       return
     }
 
@@ -40,23 +37,18 @@ export default function NewTopicPage() {
 
     try {
       await createTopic(topic)
-      setStatus({
-        isError: false,
-        message: 'Topic saved successfully!'
+      toast.success('Topic created!', {
+        iconTheme: {
+          primary: 'green',
+          secondary: 'white'
+        }
       })
       setTitle('')
     } catch (error) {
       if (error instanceof Error) {
-        setStatus({
-          isError: true,
-          message: error.message
-        })
-      } else {
-        setStatus({
-          isError: true,
-          message: 'An unexpected error occurred, please try again'
-        })
+        setError(error.message)
       }
+      toast.error('Please try again')
     }
   }
 
@@ -68,9 +60,17 @@ export default function NewTopicPage() {
   }
 
   return (
-    <main>
+    <motion.div
+      key="create"
+      initial={{ y: '100%' }} // start offscreen at bottom
+      animate={{ y: 0 }}
+      exit={{ y: '100%' }}
+      transition={{ duration: 0.4, ease: 'easeInOut' }}
+      className="fixed inset-0 bg-background z-50 flex flex-col rounded-t-2xl shadow-lg overflow-hidden"
+    >
+      <Toaster position="top-center" reverseOrder={false} />
       <Navbar>
-        <Button href="/">Back</Button>
+        <Button onClick={handleClose}>Back</Button>
         <Button disabled={!title} onClick={handleSave}>
           Save
         </Button>
@@ -96,16 +96,10 @@ export default function NewTopicPage() {
               placeholder="Enter a topic title"
             />
 
-            {status && (
-              <span
-                className={`${status.isError ? 'text-red' : 'text-green'} text-center`}
-              >
-                {status.message}
-              </span>
-            )}
+            {error && <span className="text-red text-center">{error}</span>}
           </div>
         </form>
       </Content>
-    </main>
+    </motion.div>
   )
 }
