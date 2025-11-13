@@ -65,8 +65,8 @@ export default function TopicItem({
       <div
         className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
           isSelectionMode
-            ? `${isSelected ? 'bg-purple-600 border-purple-600' : 'bg-transparent border-gray-300'}  scale-100 opacity-100`
-            : 'bg-transparent border-gray-300 scale-0 opacity-0'
+            ? `${isSelected ? 'bg-purple-600 border-purple-600' : 'bg-gray-300 border-gray-300'}  scale-100 opacity-100`
+            : 'bg-gray-300 border-gray-300 scale-0 opacity-0'
         }`}
       >
         {isSelected && (

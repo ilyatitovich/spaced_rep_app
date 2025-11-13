@@ -7,24 +7,22 @@ import {
   Content,
   CreateTopic,
   SelectionModeHeader,
+  SelectionModeFooter,
   Spinner,
   TopicItem
 } from '@/components'
 import { Topic } from '@/models'
-import { getAllTopics } from '@/services'
+import { getAllTopics, deleteTopic } from '@/services'
 
 const listVariants = {
-  hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.1
-    }
-  }
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.05 } }
 }
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 16 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -20, transition: { duration: 0.25 } }
 }
 
 export default function HomePage() {
@@ -73,6 +71,25 @@ export default function HomePage() {
     setSelectedItems(isSelectAll ? topics.map(topic => topic.id) : [])
   }
 
+  const handleDeleteSelectedItems = async () => {
+    try {
+      await Promise.all(selectedItems.map(topicId => deleteTopic(topicId)))
+      const restTopics = topics.filter(
+        topic => !selectedItems.includes(topic.id)
+      )
+      setTopics(restTopics)
+
+      if (restTopics.length === 0) {
+        setIsSelectionMode(false)
+      }
+
+      setSelectedItems([])
+      console.log('All topics deleted successfully')
+    } catch (error) {
+      console.error('Failed to delete some topics:', error)
+    }
+  }
+
   return (
     <main>
       <AnimatePresence>
@@ -102,17 +119,24 @@ export default function HomePage() {
           </div>
         ) : (
           <motion.ul variants={listVariants} initial="hidden" animate="visible">
-            {topics.map(topic => (
-              <motion.li key={topic.id} variants={itemVariants}>
-                <TopicItem
-                  topic={topic}
-                  isSelectionMode={isSelectionMode}
-                  isSelected={selectedItems.includes(topic.id)}
-                  onPress={handlePress}
-                  onSelect={handleSelectItem}
-                />
-              </motion.li>
-            ))}
+            <AnimatePresence>
+              {topics.map(topic => (
+                <motion.li
+                  key={topic.id}
+                  variants={itemVariants}
+                  layout
+                  exit="exit"
+                >
+                  <TopicItem
+                    topic={topic}
+                    isSelectionMode={isSelectionMode}
+                    isSelected={selectedItems.includes(topic.id)}
+                    onPress={handlePress}
+                    onSelect={handleSelectItem}
+                  />
+                </motion.li>
+              ))}
+            </AnimatePresence>
           </motion.ul>
         )}
       </Content>
@@ -131,6 +155,14 @@ export default function HomePage() {
               <div className="absolute h-5 w-1 bg-white rounded-full"></div>
             </div>
           </motion.button>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {isSelectionMode && (
+          <SelectionModeFooter
+            isItemsForDelete={selectedItems.length === 0}
+            handleDelete={handleDeleteSelectedItems}
+          />
         )}
       </AnimatePresence>
       <AnimatePresence>

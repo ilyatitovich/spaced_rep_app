@@ -27,7 +27,9 @@ export default function SelectionModeHeader({
         <X />
       </button>
       <span>
-        {`${selectedItemsCount} selected ${selectedItemsCount === 1 ? 'item' : 'items'}`}
+        {selectedItemsCount === 0
+          ? 'Select items'
+          : `${selectedItemsCount} selected ${selectedItemsCount === 1 ? 'item' : 'items'}`}
       </span>
       <button onClick={() => handleSelectAll(!isAllSelected)}>
         <ListCheck
