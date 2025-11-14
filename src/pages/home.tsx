@@ -3,13 +3,13 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router'
 
 import {
-  Navbar,
   Content,
   CreateTopic,
   SelectionModeHeader,
   SelectionModeFooter,
   Spinner,
-  TopicItem
+  TopicItem,
+  CreateTopicButton
 } from '@/components'
 import { Topic } from '@/models'
 import { getAllTopics, deleteTopic } from '@/services'
@@ -36,7 +36,7 @@ export default function HomePage() {
   const isCreating = searchParams.get('create') === 'true'
 
   useEffect(() => {
-    const loadTopics = async () => {
+    const loadTopics = async (): Promise<void> => {
       try {
         if (!isCreating) {
           const topics = await getAllTopics()
@@ -71,7 +71,7 @@ export default function HomePage() {
     setSelectedItems(isSelectAll ? topics.map(topic => topic.id) : [])
   }
 
-  const handleDeleteSelectedItems = async () => {
+  const handleDeleteSelectedItems = async (): Promise<void> => {
     try {
       await Promise.all(selectedItems.map(topicId => deleteTopic(topicId)))
       const restTopics = topics.filter(
@@ -103,9 +103,9 @@ export default function HomePage() {
         )}
       </AnimatePresence>
 
-      <Navbar>
+      <div className="p-4 border-b border-gray-200 flex items-center justify-center">
         <span>Topics</span>
-      </Navbar>
+      </div>
 
       <Content>
         {isLoading ? (
@@ -140,23 +140,10 @@ export default function HomePage() {
           </motion.ul>
         )}
       </Content>
-      <AnimatePresence>
-        {!isSelectionMode && (
-          <motion.button
-            key="create-topic-button"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-purple-700 text-white text-4xl shadow-lg flex items-center justify-center active:scale-90"
-            onClick={() => setSearchParams({ create: 'true' })}
-          >
-            <div className="relative w-6 h-6 flex items-center justify-center">
-              <div className="absolute w-5 h-1 bg-white rounded-full"></div>
-              <div className="absolute h-5 w-1 bg-white rounded-full"></div>
-            </div>
-          </motion.button>
-        )}
-      </AnimatePresence>
+      <CreateTopicButton
+        isHidden={isSelectionMode}
+        onClick={() => setSearchParams({ create: 'true' })}
+      />
       <AnimatePresence>
         {isSelectionMode && (
           <SelectionModeFooter
