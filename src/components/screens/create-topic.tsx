@@ -1,7 +1,6 @@
-import { motion } from 'motion/react'
 import type { ChangeEvent } from 'react'
 import { useState } from 'react'
-import { Toaster, toast } from 'react-hot-toast'
+// import { Toaster, toast } from 'react-hot-toast'
 
 import { Button, Navbar, Content } from '@/components'
 import { Topic } from '@/models'
@@ -37,18 +36,18 @@ export default function CreateTopic({ handleClose }: CreateTopicProps) {
 
     try {
       await createTopic(topic)
-      toast.success('Topic created!', {
-        iconTheme: {
-          primary: 'green',
-          secondary: 'white'
-        }
-      })
+      // toast.success('Topic created!', {
+      //   iconTheme: {
+      //     primary: 'green',
+      //     secondary: 'white'
+      //   }
+      // })
       setTitle('')
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message)
       }
-      toast.error('Please try again')
+      // toast.error('Please try again')
     }
   }
 
@@ -60,15 +59,8 @@ export default function CreateTopic({ handleClose }: CreateTopicProps) {
   }
 
   return (
-    <motion.div
-      key="create"
-      initial={{ x: '100%' }} // start offscreen at bottom
-      animate={{ x: 0 }}
-      exit={{ x: '100%' }}
-      transition={{ ease: 'easeInOut' }}
-      className="fixed inset-0 bg-background z-50 flex flex-col rounded-t-2xl shadow-lg overflow-hidden"
-    >
-      <Toaster position="top-center" reverseOrder={false} />
+    <div className="h-full bg-background flex flex-col overflow-hidden">
+      {/* <Toaster position="top-center" reverseOrder={false} /> */}
       <Navbar>
         <Button onClick={handleClose}>Back</Button>
         <Button disabled={!title} onClick={handleSave}>
@@ -100,6 +92,6 @@ export default function CreateTopic({ handleClose }: CreateTopicProps) {
           </div>
         </form>
       </Content>
-    </motion.div>
+    </div>
   )
 }
