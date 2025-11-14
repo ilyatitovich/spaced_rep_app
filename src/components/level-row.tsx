@@ -1,5 +1,4 @@
-import { faChevronRight } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { ChevronRight } from 'lucide-react'
 import { Link } from 'react-router'
 
 type LevelRowProps = {
@@ -10,16 +9,14 @@ type LevelRowProps = {
 export default function LevelRow({ levelId, cardsNumber }: LevelRowProps) {
   let leftContent = (
     <>
-      <span
-        className={`inline-block w-2 h-2 rounded-full bg-lvl-${levelId}`}
-      ></span>
-      <span className="flex flex-col text-black">
-        <p>{`Level ${levelId}`}</p>
-        <small className="text-gray">
+      <span className={`w-2 h-2 rounded-full bg-lvl-${levelId}`}></span>
+      <span className="flex flex-col gap-0.5 text-black">
+        <span>{`Level ${levelId}`}</span>
+        <span className="text-gray-500 text-sm">
           {levelId === 1
             ? 'Everyday'
             : `Every ${Math.pow(2, levelId) / 2} days`}
-        </small>
+        </span>
       </span>
     </>
   )
@@ -39,14 +36,12 @@ export default function LevelRow({ levelId, cardsNumber }: LevelRowProps) {
   }
 
   return (
-    <li className="py-4 border-b border-light-gray">
+    <li className="py-4 border-b border-gray-300">
       <Link to={`${levelId}`} className="flex justify-between items-center">
         <span className="flex items-center gap-3">{leftContent}</span>
-        <span className="flex items-center gap-3 text-gray">
+        <span className="flex items-center gap-3 text-gray-500">
           <span>{`${cardsNumber} cards`}</span>
-          <span className="text-sm">
-            <FontAwesomeIcon icon={faChevronRight} />
-          </span>
+          <ChevronRight className="text-sm" />
         </span>
       </Link>
     </li>
