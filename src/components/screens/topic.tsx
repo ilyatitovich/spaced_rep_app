@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router'
 
-import { Button, Content, LevelRow, Week } from '@/components'
+import { Button, Content, TestButton, LevelRow, Week } from '@/components'
 import { Topic } from '@/models'
 import { getTopicById, deleteTopic } from '@/services'
 import { useTopicStore } from '@/stores'
@@ -94,14 +93,7 @@ export default function TopicScreen({
           ))}
         </ul>
 
-        {!topic.week[today]?.isDone && (
-          <Link
-            to="test"
-            className="absolute left-1/2 bottom-4 -translate-x-1/2 w-2/3 py-5 text-center bg-purple text-white rounded-xl"
-          >
-            <p>Today's Test</p>
-          </Link>
-        )}
+        {!topic.week[today]?.isDone && <TestButton onClick={() => null} />}
       </Content>
     </div>
   )
