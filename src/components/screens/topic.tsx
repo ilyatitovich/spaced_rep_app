@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
 
 import { Button, Content, TestButton, LevelRow, Week } from '@/components'
-import { Topic } from '@/models'
+import { Topic, Card } from '@/models'
 import { getTopicById, deleteTopic } from '@/services'
-import { useTopicStore } from '@/stores'
 
 type TopicPageProps = {
   isOpen: boolean
@@ -21,14 +20,14 @@ export default function TopicScreen({
   onDelete
 }: TopicPageProps) {
   const [topic, setTopic] = useState<Topic | null>(null)
-
-  const { topicCards, loading, error } = useTopicStore()
+  const [cards, setCards] = useState<Record<number, Card[]>>({})
 
   useEffect(() => {
     async function fetchTopic(): Promise<void> {
       try {
-        const res = await getTopicById(topicId)
-        setTopic(res.topic)
+        const { topic, cards } = await getTopicById(topicId)
+        setTopic(topic)
+        setCards(cards)
       } catch (error) {
         console.error('Failed to fetch topic:', error)
       }
@@ -49,7 +48,6 @@ export default function TopicScreen({
     }
   }
 
-  if (error) return <p className="text-red">{error}</p>
   if (!topic) return null
 
   return (
@@ -75,12 +73,12 @@ export default function TopicScreen({
         <Button onClick={handleDeleteTopic}>Delete</Button>
       </div>
 
-      <Content height={92} className="pb-30" loading={loading}>
+      <Content height={92} className="pb-30">
         <Week week={topic.week} today={today} />
 
         <div className="flex items-center justify-between py-2">
           <span className="font-bold">Levels</span>
-          <Button href="new-card">Add Card</Button>
+          <Button onClick={() => console.log('add card')}>Add Card</Button>
         </div>
 
         <ul>
@@ -88,7 +86,7 @@ export default function TopicScreen({
             <LevelRow
               key={level.id}
               levelId={level.id}
-              cardsNumber={topicCards[level.id]?.length || 0}
+              cardsNumber={cards[level.id]?.length || 0}
             />
           ))}
         </ul>

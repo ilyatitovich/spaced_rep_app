@@ -1,9 +1,6 @@
 import type { ReactNode, HTMLAttributes } from 'react'
-import { Link } from 'react-router'
 
-type ButtonProps = HTMLAttributes<HTMLButtonElement | HTMLAnchorElement> & {
-  href?: string
-  type?: 'button' | 'submit' | 'reset'
+type ButtonProps = HTMLAttributes<HTMLButtonElement> & {
   disabled?: boolean
   children: ReactNode
   className?: string
@@ -11,8 +8,6 @@ type ButtonProps = HTMLAttributes<HTMLButtonElement | HTMLAnchorElement> & {
 }
 
 export default function Button({
-  href,
-  type = 'button',
   disabled = false,
   children,
   className = '',
@@ -21,9 +16,8 @@ export default function Button({
 }: ButtonProps) {
   const baseClasses = `
     inline-flex items-center justify-center
-    font-medium focus:outline-blue focus:outline-offset-6
-    ${disabled ? 'text-light-gray cursor-not-allowed' : 'hover:bg-opacity-90'}
-    bg-transparent text-blue
+    font-medium ${disabled ? 'text-gray-200 cursor-not-allowed' : 'text-purple-600'}
+    bg-transparent
   `
 
   const combinedClasses = `${baseClasses} ${className}`.trim()
@@ -34,22 +28,9 @@ export default function Button({
     ...props
   }
 
-  if (href && !disabled) {
-    return (
-      <Link
-        to={href}
-        className={combinedClasses}
-        rel="noopener noreferrer"
-        {...commonProps}
-      >
-        {children}
-      </Link>
-    )
-  }
-
   return (
     <button
-      type={type}
+      type="button"
       disabled={disabled}
       className={combinedClasses}
       {...commonProps}
