@@ -42,7 +42,7 @@ export default function LevelRow({ levelId, cardsNumber }: LevelRowProps) {
       <Link to={`${levelId}`} className="flex justify-between items-center">
         <span className="flex items-center gap-3">{leftContent}</span>
         <span className="flex items-center gap-3 text-gray-500">
-          <span>{`${cardsNumber} cards`}</span>
+          <span className="text-lg">{`${cardsNumber} cards`}</span>
           <ChevronRight className="text-sm" />
         </span>
       </Link>
