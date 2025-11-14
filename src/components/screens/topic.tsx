@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 
-import { Button, Navbar, Content, LevelRow, Week } from '@/components'
+import { Button, Content, LevelRow, Week } from '@/components'
 import { Topic } from '@/models'
 import { getTopicById, deleteTopic } from '@/services'
 import { useTopicStore } from '@/stores'
@@ -39,9 +39,10 @@ export default function TopicScreen({
     fetchTopic()
   }, [topicId])
 
-  const handleDeleteTopic = async (id: string): Promise<void> => {
+  const handleDeleteTopic = async (): Promise<void> => {
+    if (!topic) return
     try {
-      await deleteTopic(id)
+      await deleteTopic(topic.id)
       onDelete()
       onClose()
     } catch (error) {
@@ -56,16 +57,30 @@ export default function TopicScreen({
     <div
       className={`${isOpen ? 'translate-x-0' : 'translate-x-full'} transition-transform duration-300 ease-in-out fixed inset-0 z-50 bg-background`}
     >
-      <Navbar>
+      <div className="relative w-full p-4 flex justify-between items-center border-b border-gray-200">
         <Button onClick={onClose}>Back</Button>
-        <h1 className="font-bold">{topic?.title}</h1>
-        <Button onClick={() => handleDeleteTopic(topic.id)}>Delete</Button>
-      </Navbar>
+        <span
+          className={`
+            font-bold
+            absolute
+            top-1/2
+            left-1/2
+            -translate-x-1/2
+            -translate-y-1/2
+            max-w-[160px]
+            truncate
+            `}
+        >
+          {topic.title}
+        </span>
+        <Button onClick={handleDeleteTopic}>Delete</Button>
+      </div>
+
       <Content height={92} className="pb-30" loading={loading}>
         <Week week={topic.week} today={today} />
 
         <div className="flex items-center justify-between py-2">
-          <h2 className="font-bold">Levels</h2>
+          <span className="font-bold">Levels</span>
           <Button href="new-card">Add Card</Button>
         </div>
 

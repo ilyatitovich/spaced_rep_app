@@ -1,6 +1,4 @@
-import { faXmark, faCheck } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { nanoid } from 'nanoid'
+import { Check, X } from 'lucide-react'
 
 import { Day } from '@/lib/helpers'
 
@@ -9,32 +7,54 @@ type WeekProps = {
   today: number
 }
 
+// const fakeWeek = [
+//   { isDone: true },
+//   { isDone: true },
+//   { isDone: false },
+//   { isDone: false },
+//   { isDone: false },
+//   { isDone: true },
+//   { isDone: true }
+// ]
+
 const letters = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 
 export default function Week({ week, today }: WeekProps) {
   return (
     <div className="flex justify-between week">
       {week.map((day, index) => (
-        <span key={nanoid()} className="day flex flex-col items-center">
-          <small>{letters[index]}</small>
+        <span key={index} className="day flex flex-col items-center">
+          <small className={day ? 'text-black' : 'text-gray-300'}>
+            {letters[index]}
+          </small>
 
           {/* status */}
-          <div className="flex items-center justify-center h-6 w-6 my-2 border rounded-full">
-            {day ? (
-              index < today ? (
-                <FontAwesomeIcon
-                  icon={day.isDone ? faCheck : faXmark}
-                  className={day.isDone ? 'text-green' : 'text-red'}
-                />
-              ) : (
-                <div
-                  className={`h-3 w-3 rounded-full ${today === index ? 'bg-purple' : 'bg-transparent'}`}
-                ></div>
-              )
+          {day ? (
+            index < today ? (
+              <div
+                className={`flex items-center justify-center h-6 w-6 my-2 border-2 rounded-full ${day.isDone ? 'border-green-600 bg-green-600' : 'border-red-500 bg-red-500'}`}
+              >
+                {day.isDone ? (
+                  <Check
+                    className="w-4 h-4 text-white transition-transform duration-200"
+                    strokeWidth={3}
+                  />
+                ) : (
+                  <X
+                    className="w-4 h-4 text-white transition-transform duration-200"
+                    strokeWidth={3}
+                  />
+                )}
+              </div>
             ) : (
-              <div className="h-3 w-3 rounded-full bg-gray"></div>
-            )}
-          </div>
+              <div
+                className={`flex items-center justify-center h-6 w-6 my-2 rounded-full border-2
+            ${today === index ? 'border-purple-600 bg-purple-600' : 'border-gray-300 bg-transparent'}`}
+              />
+            )
+          ) : (
+            <div className="flex items-center justify-center h-6 w-6 my-2 border-2 bg-gray-300 border-gray-300 rounded-full" />
+          )}
 
           {/* levels */}
           {day &&
@@ -42,7 +62,7 @@ export default function Week({ week, today }: WeekProps) {
               .fill(null)
               .map((_, i) => (
                 <div
-                  key={nanoid()}
+                  key={i}
                   className={`w-2 h-2 rounded-full my-1 ${day.todayLevels.includes(i + 1) ? `bg-lvl-${i + 1}` : 'bg-transparent'}`}
                 ></div>
               ))}
