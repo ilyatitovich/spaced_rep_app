@@ -58,7 +58,7 @@ export default function TopicScreen({
     >
       <Navbar>
         <Button onClick={onClose}>Back</Button>
-        <h1 className="font-bold">{topic.title}</h1>
+        <h1 className="font-bold">{topic?.title}</h1>
         <Button onClick={() => handleDeleteTopic(topic.id)}>Delete</Button>
       </Navbar>
       <Content height={92} className="pb-30" loading={loading}>

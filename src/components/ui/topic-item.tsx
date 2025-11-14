@@ -26,7 +26,10 @@ export default function TopicItem({
   const handleTouchStart = () => {
     timerRef.current = setTimeout(() => {
       onPress(true)
-      onSelect(topic.id)
+
+      if (!isSelected) {
+        onSelect(topic.id)
+      }
     }, 300) // long press threshold
   }
 
