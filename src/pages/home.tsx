@@ -4,11 +4,12 @@ import { useSearchParams } from 'react-router'
 
 import {
   Content,
-  CreateTopic,
+  CreateTopicScreen,
   SelectionModeHeader,
   SelectionModeFooter,
   Spinner,
   TopicItem,
+  TopicScreen,
   CreateTopicButton
 } from '@/components'
 import { Topic } from '@/models'
@@ -34,6 +35,7 @@ export default function HomePage() {
 
   const [searchParams, setSearchParams] = useSearchParams()
   const isCreating = searchParams.get('create') === 'true'
+  const currentTopic = searchParams.get('topicId')
 
   useEffect(() => {
     const loadTopics = async (): Promise<void> => {
@@ -133,6 +135,7 @@ export default function HomePage() {
                     isSelected={selectedItems.includes(topic.id)}
                     onPress={handlePress}
                     onSelect={handleSelectItem}
+                    onOpen={() => setSearchParams({ topicId: topic.id })}
                   />
                 </motion.li>
               ))}
@@ -153,7 +156,19 @@ export default function HomePage() {
         )}
       </AnimatePresence>
 
-      <CreateTopic isOpen={isCreating} onClose={() => setSearchParams({})} />
+      <CreateTopicScreen
+        isOpen={isCreating}
+        onClose={() => setSearchParams({})}
+      />
+
+      <TopicScreen
+        isOpen={currentTopic !== null}
+        topicId={currentTopic ?? ''}
+        onClose={() => setSearchParams({})}
+        onDelete={() =>
+          setTopics(prev => prev.filter(t => t.id !== currentTopic))
+        }
+      />
     </main>
   )
 }

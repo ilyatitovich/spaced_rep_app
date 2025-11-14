@@ -7,8 +7,7 @@ import {
   EditCardPage,
   NewCardPage,
   Root,
-  TestPage,
-  TopicPage
+  TestPage
 } from '@/pages'
 
 export default createBrowserRouter([
@@ -20,10 +19,6 @@ export default createBrowserRouter([
       {
         index: true,
         element: <HomePage />
-      },
-      {
-        path: 'topic/:topicId',
-        element: <TopicPage />
       },
       {
         path: 'topic/:topicId/:levelId/:cardId/edit',

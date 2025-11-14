@@ -10,7 +10,7 @@ type TopicItemProps = {
   isSelected: boolean
   onPress: (isPressed: boolean) => void
   onSelect: (topicId: string, add?: boolean) => void
-  // onClick: (topicId: string) => void
+  onOpen: () => void
 }
 
 export default function TopicItem({
@@ -18,7 +18,8 @@ export default function TopicItem({
   isSelectionMode = false,
   isSelected = false,
   onPress,
-  onSelect
+  onSelect,
+  onOpen
 }: TopicItemProps) {
   const timerRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -42,7 +43,7 @@ export default function TopicItem({
       return
     }
 
-    console.log('Move to topic')
+    onOpen()
   }
 
   return (
