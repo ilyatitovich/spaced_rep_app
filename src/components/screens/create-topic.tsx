@@ -22,7 +22,7 @@ export default function CreateTopic({ isOpen, onClose }: CreateTopicProps) {
     if (error) setError('')
   }
 
-  const handleSave = async (e: FormEvent) => {
+  const handleSave = async (e: FormEvent): Promise<void> => {
     if (typeof e !== 'undefined') {
       e.preventDefault()
     }
@@ -58,9 +58,10 @@ export default function CreateTopic({ isOpen, onClose }: CreateTopicProps) {
     }
   }
 
-  const handleClose = () => {
+  const handleClose = (): void => {
     setTitle('')
     setError('')
+    toast.dismissAll()
     onClose()
   }
 
