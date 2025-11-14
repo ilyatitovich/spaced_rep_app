@@ -11,13 +11,13 @@
   --color-green: #008000;
 
   /* Level colors */
-  --color-lvl-1: red;
-  --color-lvl-2: rgb(21, 255, 0);
-  --color-lvl-3: rgb(255, 251, 0);
-  --color-lvl-4: rgb(0, 255, 242);
-  --color-lvl-5: rgb(0, 89, 255);
-  --color-lvl-6: rgb(183, 0, 255);
-  --color-lvl-7: rgb(89, 0, 255);
+  --color-lvl-1: #ee4035;
+  --color-lvl-2: #f37736;
+  --color-lvl-3: #ffdb13;
+  --color-lvl-4: #7bc043;
+  --color-lvl-5: #0392cf;
+  --color-lvl-6: #673888;
+  --color-lvl-7: #ef4f91;
 
   --color-blue-gradient: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%);
 
