@@ -166,11 +166,7 @@ export default function HomePage() {
         )}
       </AnimatePresence>
 
-      <div
-        className={`${isCreating ? 'translate-y-0' : 'translate-y-full'} transition-transform duration-300 ease-in-out fixed inset-0 z-50`}
-      >
-        <CreateTopic handleClose={() => setSearchParams({})} />
-      </div>
+      <CreateTopic isOpen={isCreating} onClose={() => setSearchParams({})} />
     </main>
   )
 }

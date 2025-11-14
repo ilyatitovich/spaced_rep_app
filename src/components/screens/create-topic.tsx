@@ -1,25 +1,32 @@
-import type { ChangeEvent } from 'react'
+import type { ChangeEvent, FormEvent } from 'react'
 import { useState } from 'react'
-// import { Toaster, toast } from 'react-hot-toast'
+import { Toaster, toast } from 'react-hot-toast'
 
-import { Button, Navbar, Content } from '@/components'
+import { Button, Content } from '@/components'
 import { Topic } from '@/models'
 import { createTopic } from '@/services'
 
 type CreateTopicProps = {
-  handleClose: () => void
+  isOpen: boolean
+  onClose: () => void
 }
 
-export default function CreateTopic({ handleClose }: CreateTopicProps) {
+const CHARS_LIMIT = 50
+
+export default function CreateTopic({ isOpen, onClose }: CreateTopicProps) {
   const [title, setTitle] = useState('')
   const [error, setError] = useState('')
 
   const handleTitleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setTitle(e.target.value.trim())
+    setTitle(e.target.value)
     if (error) setError('')
   }
 
-  const handleSave = async () => {
+  const handleSave = async (e: FormEvent) => {
+    if (typeof e !== 'undefined') {
+      e.preventDefault()
+    }
+
     setError('')
 
     if (!title) {
@@ -27,71 +34,74 @@ export default function CreateTopic({ handleClose }: CreateTopicProps) {
       return
     }
 
-    if (title.length > 10) {
-      setError('Title must be less than 10 characters')
+    if (title.length > CHARS_LIMIT) {
+      setError(`Title must be less than ${CHARS_LIMIT} characters`)
       return
     }
 
-    const topic = new Topic(title)
+    const topic = new Topic(title.trim())
 
     try {
       await createTopic(topic)
-      // toast.success('Topic created!', {
-      //   iconTheme: {
-      //     primary: 'green',
-      //     secondary: 'white'
-      //   }
-      // })
+      toast.success('Topic created!', {
+        iconTheme: {
+          primary: 'green',
+          secondary: 'white'
+        }
+      })
       setTitle('')
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message)
       }
-      // toast.error('Please try again')
+      toast.error('Please try again')
     }
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      handleSave()
-    }
+  const handleClose = () => {
+    setTitle('')
+    setError('')
+    onClose()
   }
 
   return (
-    <div className="h-full bg-background flex flex-col overflow-hidden">
-      {/* <Toaster position="top-center" reverseOrder={false} /> */}
-      <Navbar>
-        <Button onClick={handleClose}>Back</Button>
-        <Button disabled={!title} onClick={handleSave}>
-          Save
-        </Button>
-      </Navbar>
+    <div
+      className={`${isOpen ? 'translate-y-0' : 'translate-y-full'} transition-transform duration-300 ease-in-out fixed inset-0 z-50`}
+    >
+      {isOpen && <Toaster position="top-center" reverseOrder={false} />}
+      <div className="h-full bg-background flex flex-col overflow-hidden">
+        <div className="flex justify-between items-center p-4 border-b border-gray-200">
+          <Button onClick={handleClose}>Close</Button>
+          <Button disabled={!title} onClick={handleSave}>
+            Save
+          </Button>
+        </div>
 
-      <Content>
-        <form
-          className="flex flex-col items-center justify-center gap-6 h-full"
-          onSubmit={e => e.preventDefault()}
-        >
-          <label htmlFor="title" className="text-2xl">
-            What are you going to learn?
-          </label>
+        <Content>
+          <form onSubmit={handleSave} className="flex flex-col gap-6 mt-8 px-6">
+            <div className="flex flex-col gap-2">
+              <label htmlFor="title" className="text-lg font-medium">
+                Topic title
+              </label>
 
-          <div className="flex flex-col justify-center gap-4 w-full">
-            <input
-              id="title"
-              name="title"
-              value={title}
-              onChange={handleTitleChange}
-              onKeyDown={handleKeyDown}
-              className="p-4 rounded-xl border-2 border-black focus:border-blue focus:outline-none"
-              placeholder="Enter a topic title"
-            />
+              <input
+                id="title"
+                value={title}
+                onChange={handleTitleChange}
+                placeholder="e.g. Spanish Basics"
+                className="w-full p-4 rounded-xl border border-gray-300 focus:border-purple-600 focus:outline-none transition"
+              />
 
-            {error && <span className="text-red text-center">{error}</span>}
-          </div>
-        </form>
-      </Content>
+              {error && <span className="text-red-600 text-sm">{error}</span>}
+            </div>
+
+            <p className="text-gray-500 text-sm leading-snug">
+              Choose a short, clear name. This will be shown in your topics
+              list.
+            </p>
+          </form>
+        </Content>
+      </div>
     </div>
   )
 }
