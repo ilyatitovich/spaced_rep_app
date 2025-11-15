@@ -53,7 +53,7 @@ export default function TopicItem({
 
   return (
     <button
-      className={`w-full flex justify-between items-center gap-2 p-4 my-4 mx-auto rounded-xl bg-white shadow-sm active:scale-95 transition-transform duration-150 ${
+      className={`w-full flex justify-between items-center gap-2 p-4 my-4 mx-auto rounded-xl bg-white shadow-sm active:scale-95 transition-transform duration-150 select-none ${
         isSelectionMode && isSelected ? 'ring-2 ring-purple-500' : ''
       }`}
       aria-label={`Go to topic: ${topic.title}`}
