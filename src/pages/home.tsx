@@ -86,7 +86,6 @@ export default function HomePage() {
       }
 
       setSelectedItems([])
-      console.log('All topics deleted successfully')
     } catch (error) {
       console.error('Failed to delete some topics:', error)
     }

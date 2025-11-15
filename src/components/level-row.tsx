@@ -36,9 +36,7 @@ export default function LevelRow({ levelId, cardsNumber }: LevelRowProps) {
   }
 
   return (
-    <li
-      className={`py-3 ${levelId === 1 ? '' : 'border-t border-gray-200'}`.trim()}
-    >
+    <li className="py-3.5 border-b border-gray-200 last:border-b-0">
       <Link to={`${levelId}`} className="flex justify-between items-center">
         <span className="flex items-center gap-3">{leftContent}</span>
         <span className="flex items-center gap-3 text-gray-500">

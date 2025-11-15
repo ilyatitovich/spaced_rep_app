@@ -36,7 +36,11 @@ export default forwardRef(function Card(
     getContent: () => ({
       front: frontRef.current?.innerText.trim() || '',
       back: backRef.current?.innerText.trim() || ''
-    })
+    }),
+    resetContent: () => {
+      if (frontRef.current) frontRef.current.innerText = ''
+      if (backRef.current) backRef.current.innerText = ''
+    }
   }))
 
   return (

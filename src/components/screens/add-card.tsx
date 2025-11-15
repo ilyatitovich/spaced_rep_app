@@ -1,20 +1,28 @@
-import { useState, useRef } from 'react'
-import { useNavigate, useParams } from 'react-router'
+import { useState, useRef, useEffect } from 'react'
 
-import { Button, Navbar, Content, Card } from '@/components'
+import { Button, Content, Card } from '@/components'
 import { Card as CardModel } from '@/models'
 import { createCard } from '@/services'
 import type { CardHandle, CardData } from '@/types'
+
+type NewCardPageProps = {
+  isOpen: boolean
+  topicId: string
+  onClose: () => void
+  onAdd: (payload: { level: number; card: CardModel }) => void
+}
 
 const initialCardData: CardData = {
   front: '',
   back: ''
 }
 
-export default function NewCardPage() {
-  const navigate = useNavigate()
-  const { topicId } = useParams()
-
+export default function AddCardScreen({
+  isOpen,
+  topicId,
+  onClose,
+  onAdd
+}: NewCardPageProps) {
   const [isFlipped, setIsFlipped] = useState(false)
   const [cardData, setCardData] = useState(initialCardData)
   const [isEdited, setIsEdited] = useState(false)
@@ -22,7 +30,27 @@ export default function NewCardPage() {
   const [isFirstCardActive, setIsFirstCardActive] = useState(true)
   const [isInitialRender, setIsInitialRender] = useState(true)
 
+  const screenRef = useRef<HTMLDivElement>(null)
   const cardRef = useRef<CardHandle>(null)
+
+  useEffect(() => {
+    if (!isOpen) {
+      const node = screenRef.current
+      if (!node) return
+
+      const handleEnd = () => {
+        setCardData(initialCardData)
+        setIsFlipped(false)
+        setIsDraft(true)
+        setIsFirstCardActive(true)
+        setIsInitialRender(true)
+        cardRef.current?.resetContent()
+        node.removeEventListener('transitionend', handleEnd)
+      }
+
+      node.addEventListener('transitionend', handleEnd)
+    }
+  }, [isOpen])
 
   let rightBtn
 
@@ -63,7 +91,7 @@ export default function NewCardPage() {
         cardStatus === 'new' ? 1 : 0
       )
       await createCard(card)
-
+      onAdd({ level: card.level, card })
       setCardData(initialCardData)
       setIsFlipped(false)
       setIsDraft(true)
@@ -94,19 +122,25 @@ export default function NewCardPage() {
     setIsEdited(false)
   }
 
+  const handleClose = (): void => {
+    if (isEdited) {
+      setIsEdited(false)
+    }
+    onClose()
+  }
+
   return (
-    <main>
-      <Navbar>
-        <Button
-          onClick={() => {
-            navigate(-1)
-          }}
-        >
-          Back
-        </Button>
-        <p className="font-bold">{isFlipped ? 'Back' : 'Front'}</p>
+    <div
+      ref={screenRef}
+      className={`${isOpen ? 'translate-y-0' : 'translate-y-full'} h-full transition-transform duration-300 ease-in-out fixed inset-0 z-50 bg-background`}
+    >
+      <div className="relative w-full p-4 flex justify-between items-center border-b border-gray-200">
+        <Button onClick={handleClose}>Back</Button>
+        <span className="font-bold absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+          {isFlipped ? 'Back' : 'Front'}
+        </span>
         {rightBtn}
-      </Navbar>
+      </div>
       <Content centered>
         <Card
           ref={isFirstCardActive ? cardRef : null}
@@ -127,9 +161,9 @@ export default function NewCardPage() {
           handleBlur={handleBlur}
         />
       </Content>
-      <footer>
+      <div className="flex justify-center items-center p-4 border-t border-gray-200">
         <Button onClick={() => setIsFlipped(!isFlipped)}>Flip</Button>
-      </footer>
-    </main>
+      </div>
+    </div>
   )
 }

@@ -1,6 +1,5 @@
 export { default as HomePage } from './home'
 export { default as LevelPage } from './level'
-export { default as NewCardPage } from './new-card'
 export { default as Root } from './root'
 export { default as TestPage } from './test'
 export { default as TopicPage } from '../components/screens/topic'
