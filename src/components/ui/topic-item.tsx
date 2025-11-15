@@ -1,7 +1,8 @@
 import { Check } from 'lucide-react'
 import { useRef } from 'react'
 
-import { formatTimestamp } from '@/lib'
+import { formatTimestamp, getToday, joinNumbers } from '@/lib'
+import { Day } from '@/lib/helpers'
 import { Topic } from '@/models'
 
 type TopicItemProps = {
@@ -22,6 +23,7 @@ export default function TopicItem({
   onOpen
 }: TopicItemProps) {
   const timerRef = useRef<NodeJS.Timeout | null>(null)
+  const { todayLevels } = topic.week[getToday()] as Day
 
   const handleTouchStart = () => {
     timerRef.current = setTimeout(() => {
@@ -59,10 +61,13 @@ export default function TopicItem({
       onTouchEnd={handleTouchEnd}
       onClick={handleClick}
     >
-      <div className="flex flex-col gap-2">
-        <span className="text-black text-left">{topic.title}</span>
-        <span className="text-sm text-gray-500 text-left">
-          {formatTimestamp(topic.pivot)}
+      <div className="flex flex-col gap-1.5 text-left w-3/4">
+        <span className="text-black font-semibold truncate">{topic.title}</span>
+        <span className="text-sm text-gray-700">
+          {`Today's level${todayLevels.length > 1 ? 's' : ''}: ${joinNumbers(todayLevels)}`}
+        </span>
+        <span className="text-xs text-gray-500">
+          {`Started on ${formatTimestamp(topic.pivot)}`}
         </span>
       </div>
 

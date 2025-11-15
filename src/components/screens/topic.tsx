@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useSearchParams } from 'react-router'
 
 import {
@@ -9,6 +9,8 @@ import {
   LevelRow,
   Week
 } from '@/components'
+import { getToday } from '@/lib'
+import { Day } from '@/lib/helpers'
 import { Topic, Card } from '@/models'
 import { getTopicById, deleteTopic } from '@/services'
 
@@ -19,8 +21,6 @@ type TopicPageProps = {
   onDelete: () => void
 }
 
-const today: number = new Date().getDay()
-
 export default function TopicScreen({
   isOpen,
   topicId,
@@ -29,6 +29,8 @@ export default function TopicScreen({
 }: TopicPageProps) {
   const [topic, setTopic] = useState<Topic | null>(null)
   const [cards, setCards] = useState<Record<number, Card[]>>({})
+
+  const contentRef = useRef<HTMLDivElement>(null)
 
   const [searchParams, setSearchParams] = useSearchParams()
   const isAddingCard = searchParams.get('addCard') === 'true'
@@ -39,14 +41,23 @@ export default function TopicScreen({
         const { topic, cards } = await getTopicById(topicId)
         setTopic(topic)
         setCards(cards)
+        const contentEl = contentRef.current
+        if (contentEl) {
+          contentEl.scrollTop = 0
+        }
       } catch (error) {
         console.error('Failed to fetch topic:', error)
       }
     }
 
     if (!topicId) return
+
     fetchTopic()
   }, [topicId])
+
+  if (!topic) return null
+
+  const { isDone, todayLevels } = topic.week[getToday()] as Day
 
   const handleDeleteTopic = async (): Promise<void> => {
     if (!topic) return
@@ -85,8 +96,6 @@ export default function TopicScreen({
     })
   }
 
-  if (!topic) return null
-
   return (
     <>
       <div
@@ -111,8 +120,8 @@ export default function TopicScreen({
           <Button onClick={handleDeleteTopic}>Delete</Button>
         </div>
 
-        <Content height={92} className="pb-30">
-          <Week week={topic.week} today={today} />
+        <Content height={92} className="pb-30" ref={contentRef}>
+          <Week week={topic.week} />
 
           <div className="flex items-center justify-between py-2">
             <span className="font-bold">Levels</span>
@@ -129,7 +138,9 @@ export default function TopicScreen({
             ))}
           </ul>
 
-          {!topic.week[today]?.isDone && <TestButton onClick={() => null} />}
+          {!isDone && (
+            <TestButton todayLevels={todayLevels} onClick={() => null} />
+          )}
         </Content>
       </div>
 

@@ -1,10 +1,10 @@
 import { Check, X } from 'lucide-react'
 
+import { getToday } from '@/lib'
 import { Day } from '@/lib/helpers'
 
 type WeekProps = {
   week: Array<Day | null>
-  today: number
 }
 
 // const fakeWeek = [
@@ -19,7 +19,7 @@ type WeekProps = {
 
 const letters = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 
-export default function Week({ week, today }: WeekProps) {
+export default function Week({ week }: WeekProps) {
   return (
     <div className="flex justify-between week">
       {week.map((day, index) => (
@@ -30,7 +30,7 @@ export default function Week({ week, today }: WeekProps) {
 
           {/* status */}
           {day ? (
-            index < today ? (
+            index < getToday() ? (
               <div
                 className={`flex items-center justify-center h-6 w-6 my-2 border-2 rounded-full ${day.isDone ? 'border-green-600 bg-green-600' : 'border-red-500 bg-red-500'}`}
               >
@@ -49,7 +49,7 @@ export default function Week({ week, today }: WeekProps) {
             ) : (
               <div
                 className={`flex items-center justify-center h-6 w-6 my-2 rounded-full border-2
-            ${today === index ? 'border-purple-600 bg-purple-600' : 'border-gray-300 bg-transparent'}`}
+            ${getToday() === index ? 'border-purple-600 bg-purple-600' : 'border-gray-300 bg-transparent'}`}
               />
             )
           ) : (

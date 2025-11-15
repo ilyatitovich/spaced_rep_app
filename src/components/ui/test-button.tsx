@@ -1,15 +1,18 @@
+import { joinNumbers } from '@/lib'
+
 type TestButtonProps = {
+  todayLevels: number[]
   onClick: () => void
 }
 
-export default function TestButton({ onClick }: TestButtonProps) {
+export default function TestButton({ todayLevels, onClick }: TestButtonProps) {
   return (
     <button
       onClick={onClick}
       className={`
         absolute left-1/2 bottom-4 -translate-x-1/2
         w-2/3
-        py-5
+        py-4
         text-center
         text-white
         font-semibold
@@ -19,9 +22,11 @@ export default function TestButton({ onClick }: TestButtonProps) {
         active:scale-95
         active:shadow-[0_4px_12px_rgba(168,85,247,0.3)]
         transition-all duration-300
+        flex flex-col gap-2 items-center
       `}
     >
-      Today’s Test
+      <span className="text-xl">Today’s Test</span>
+      <span className="text-sm">{`Level${todayLevels.length > 1 ? `s` : ''}:  ${joinNumbers(todayLevels)}`}</span>
     </button>
   )
 }
