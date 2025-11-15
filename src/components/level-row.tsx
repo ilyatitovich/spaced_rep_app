@@ -1,12 +1,16 @@
 import { ChevronRight } from 'lucide-react'
-import { Link } from 'react-router'
 
 type LevelRowProps = {
   levelId: number
   cardsNumber: number
+  onLevelOpen: () => void
 }
 
-export default function LevelRow({ levelId, cardsNumber }: LevelRowProps) {
+export default function LevelRow({
+  levelId,
+  cardsNumber,
+  onLevelOpen
+}: LevelRowProps) {
   let leftContent = (
     <>
       <span className={`w-2 h-2 rounded-full bg-lvl-${levelId}`}></span>
@@ -37,13 +41,16 @@ export default function LevelRow({ levelId, cardsNumber }: LevelRowProps) {
 
   return (
     <li className="py-3.5 border-b border-gray-200 last:border-b-0">
-      <Link to={`${levelId}`} className="flex justify-between items-center">
+      <button
+        onClick={onLevelOpen}
+        className="w-full flex justify-between items-center"
+      >
         <span className="flex items-center gap-3 text-lg">{leftContent}</span>
         <span className="flex items-center gap-3 text-gray-500">
-          <span className="text-lg">{`${cardsNumber} cards`}</span>
+          <span className="text-lg">{`${cardsNumber} card${cardsNumber === 1 ? '' : 's'}`}</span>
           <ChevronRight className="text-sm" />
         </span>
-      </Link>
+      </button>
     </li>
   )
 }

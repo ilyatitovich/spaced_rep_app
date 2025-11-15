@@ -136,6 +136,13 @@ export default function TopicScreen({
                 key={level.id}
                 levelId={level.id}
                 cardsNumber={cards[level.id]?.length ?? 0}
+                onLevelOpen={() =>
+                  setSearchParams(prev => {
+                    const params = new URLSearchParams(prev)
+                    params.set('levelId', String(level.id))
+                    return params
+                  })
+                }
               />
             ))}
           </ul>
