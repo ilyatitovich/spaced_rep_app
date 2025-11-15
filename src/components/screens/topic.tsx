@@ -6,6 +6,7 @@ import {
   Button,
   Content,
   TestButton,
+  TestScreen,
   LevelRow,
   Week
 } from '@/components'
@@ -34,6 +35,7 @@ export default function TopicScreen({
 
   const [searchParams, setSearchParams] = useSearchParams()
   const isAddingCard = searchParams.get('addCard') === 'true'
+  const isTest = searchParams.get('test') === 'true'
 
   useEffect(() => {
     async function fetchTopic(): Promise<void> {
@@ -139,7 +141,16 @@ export default function TopicScreen({
           </ul>
 
           {!isDone && (
-            <TestButton todayLevels={todayLevels} onClick={() => null} />
+            <TestButton
+              todayLevels={todayLevels}
+              onClick={() =>
+                setSearchParams(prev => {
+                  const params = new URLSearchParams(prev)
+                  params.set('test', 'true')
+                  return params
+                })
+              }
+            />
           )}
         </Content>
       </div>
@@ -149,6 +160,18 @@ export default function TopicScreen({
         topicId={topicId}
         onClose={handleCloseAddCard}
         onAdd={handleAddCard}
+      />
+      <TestScreen
+        isOpen={isDone ? false : !isAddingCard && isTest}
+        topicCards={cards}
+        topic={topic}
+        onClose={() => {
+          setSearchParams(prev => {
+            const params = new URLSearchParams(prev)
+            params.delete('test')
+            return params
+          })
+        }}
       />
     </>
   )

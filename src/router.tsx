@@ -1,13 +1,6 @@
 import { createBrowserRouter } from 'react-router'
 
-import {
-  NotFoundPage,
-  HomePage,
-  LevelPage,
-  EditCardPage,
-  Root,
-  TestPage
-} from '@/pages'
+import { NotFoundPage, HomePage, LevelPage, EditCardPage, Root } from '@/pages'
 
 export default createBrowserRouter([
   {
@@ -22,10 +15,6 @@ export default createBrowserRouter([
       {
         path: 'topic/:topicId/:levelId/:cardId/edit',
         element: <EditCardPage />
-      },
-      {
-        path: 'topic/:topicId/test',
-        element: <TestPage />
       },
       {
         path: 'topic/:topicId/:levelId',

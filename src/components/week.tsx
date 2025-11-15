@@ -7,16 +7,6 @@ type WeekProps = {
   week: Array<Day | null>
 }
 
-// const fakeWeek = [
-//   { isDone: true },
-//   { isDone: true },
-//   { isDone: false },
-//   { isDone: false },
-//   { isDone: false },
-//   { isDone: true },
-//   { isDone: true }
-// ]
-
 const letters = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 
 export default function Week({ week }: WeekProps) {
@@ -29,32 +19,13 @@ export default function Week({ week }: WeekProps) {
           </small>
 
           {/* status */}
-          {day ? (
-            index < getToday() ? (
-              <div
-                className={`flex items-center justify-center h-6 w-6 my-2 border-2 rounded-full ${day.isDone ? 'border-green-600 bg-green-600' : 'border-red-500 bg-red-500'}`}
-              >
-                {day.isDone ? (
-                  <Check
-                    className="w-4 h-4 text-white transition-transform duration-200"
-                    strokeWidth={3}
-                  />
-                ) : (
-                  <X
-                    className="w-4 h-4 text-white transition-transform duration-200"
-                    strokeWidth={3}
-                  />
-                )}
-              </div>
-            ) : (
-              <div
-                className={`flex items-center justify-center h-6 w-6 my-2 rounded-full border-2
-            ${getToday() === index ? 'border-purple-600 bg-purple-600' : 'border-gray-300 bg-transparent'}`}
-              />
-            )
-          ) : (
-            <div className="flex items-center justify-center h-6 w-6 my-2 border-2 bg-gray-300 border-gray-300 rounded-full" />
-          )}
+          {day
+            ? index < getToday()
+              ? renderPast(day)
+              : index === getToday()
+                ? renderToday(day)
+                : renderFuture()
+            : renderPastUnactiveDays()}
 
           {/* levels */}
           {day &&
@@ -69,5 +40,50 @@ export default function Week({ week }: WeekProps) {
         </span>
       ))}
     </div>
+  )
+}
+
+function renderPast(day: Day) {
+  return (
+    <div
+      className={`
+        flex items-center justify-center h-6 w-6 my-2 border-2 rounded-full
+        ${day.isDone ? 'border-green-600 bg-green-600' : 'border-red-500 bg-red-500'}
+      `}
+    >
+      {day.isDone ? (
+        <Check className="w-4 h-4 text-white" strokeWidth={3} />
+      ) : (
+        <X className="w-4 h-4 text-white" strokeWidth={3} />
+      )}
+    </div>
+  )
+}
+
+function renderToday(day: Day) {
+  // today & done
+  if (day.isDone) {
+    return (
+      <div className="flex items-center justify-center h-6 w-6 my-2 border-2 rounded-full border-green-600 bg-green-600">
+        <Check className="w-4 h-4 text-white" strokeWidth={3} />
+      </div>
+    )
+  }
+
+  // today & NOT done
+  return (
+    <div className="flex items-center justify-center h-6 w-6 my-2 border-2 border-gray-300 rounded-full">
+      <div className="h-3 w-3 rounded-full bg-gradient-to-br from-purple-600 to-purple-800" />
+    </div>
+  )
+}
+
+function renderFuture() {
+  return <div className="h-6 w-6 my-2 border-2 rounded-full border-gray-300" />
+}
+
+function renderPastUnactiveDays() {
+  return (
+    <div className="h-6 w-6 my-2 border-2 rounded-full bg-gray-300 border-gray-300" />
   )
 }
