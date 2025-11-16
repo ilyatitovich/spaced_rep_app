@@ -14,7 +14,7 @@ export default function LevelRow({
   let leftContent = (
     <>
       <span className={`w-2 h-2 rounded-full bg-lvl-${levelId}`}></span>
-      <span className="flex flex-col text-black">
+      <span className="flex flex-col text-black text-left">
         <span>{`Level ${levelId}`}</span>
         <span className="text-gray-500 text-sm">
           {levelId === 1

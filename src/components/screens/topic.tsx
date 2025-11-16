@@ -8,6 +8,7 @@ import {
   TestButton,
   TestScreen,
   LevelRow,
+  LevelScreen,
   Week
 } from '@/components'
 import { getToday } from '@/lib'
@@ -36,6 +37,7 @@ export default function TopicScreen({
   const [searchParams, setSearchParams] = useSearchParams()
   const isAddingCard = searchParams.get('addCard') === 'true'
   const isTest = searchParams.get('test') === 'true'
+  const levelId = searchParams.get('levelId') ?? ''
 
   useEffect(() => {
     async function fetchTopic(): Promise<void> {
@@ -179,6 +181,19 @@ export default function TopicScreen({
             return params
           })
         }}
+      />
+
+      <LevelScreen
+        isOpen={levelId !== ''}
+        levelId={levelId}
+        cards={cards[Number(levelId)]}
+        onClose={() =>
+          setSearchParams(prev => {
+            const params = new URLSearchParams(prev)
+            params.delete('levelId')
+            return params
+          })
+        }
       />
     </>
   )

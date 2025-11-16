@@ -27,7 +27,16 @@ export async function getAllTopics(): Promise<Topic[]> {
       const request = stores[STORES.TOPICS].getAll()
 
       request.onsuccess = () => {
-        resolve(request.result)
+        let topics = (request.result as Topic[]).map(t => Topic.fromRaw(t))
+
+        topics = topics.map(t => {
+          if (t.nextUpdateDate <= Date.now()) {
+            t.updateWeek()
+          }
+          return t
+        })
+
+        resolve(topics)
       }
 
       request.onerror = () => {
@@ -60,6 +69,11 @@ export async function getTopicById(
       }
 
       topic = Topic.fromRaw(topic)
+
+      if (topic.nextUpdateDate <= Date.now()) {
+        topic.updateWeek()
+        await updateTopic(topic)
+      }
 
       const cardsIndex = cardStore.index('topicId')
       const cardsRequest = cardsIndex.getAll(IDBKeyRange.only(topicId))
