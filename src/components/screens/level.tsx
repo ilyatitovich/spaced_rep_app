@@ -1,4 +1,4 @@
-import { Button, Content } from '@/components'
+import { Button } from '@/components'
 import { Card } from '@/models'
 
 type LevelScreenProps = {
@@ -30,19 +30,20 @@ export default function LevelScreen({
       </div>
 
       {cards && cards.length > 0 ? (
-        <Content height={92} className="flex content-start flex-wrap gap-4">
+        <div className="grid grid-cols-3 gap-4 content-start p-4">
           {cards.map(card => (
             <button
               key={card.id}
               onClick={() => console.log('open card id', card.id)}
-              className="w-[calc((100%-2em)/3-0.5em)] h-1/5 flex justify-center items-center text-[0.8rem] border-2 border-black rounded-2xl text-black"
+              className="p-3 h-30 text-xs border-2 border-black
+                 rounded-2xl text-black bg-white"
             >
-              <span className="font-bold">
+              <span className="font-bold break-all w-full h-full flex justify-center items-center overflow-hidden">
                 {typeof card.data.front === 'string' ? card.data.front : ''}
               </span>
             </button>
           ))}
-        </Content>
+        </div>
       ) : (
         <p className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-gray-500">
           No cards
