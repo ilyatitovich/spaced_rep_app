@@ -21,7 +21,7 @@ export default function SelectionModeHeader({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: '-100%' }}
       transition={{ duration: 0.3, ease: 'easeInOut' }}
-      className="absolute top-0 left-0 right-0 w-full flex justify-between items-center p-4 bg-background"
+      className="absolute top-0 left-0 right-0 z-50 w-full flex justify-between items-center p-4 bg-background"
     >
       <button onClick={handleCancel}>
         <X />
