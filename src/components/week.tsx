@@ -53,7 +53,7 @@ function renderPast(day: Day): JSX.Element {
         flex items-center justify-center h-7 w-7 my-2 border-2 rounded-full border-black"
     >
       {day.isDone ? (
-        <Check className="w-4 h-4 text-green-500" strokeWidth={6} />
+        <Check className="w-4 h-4 text-green-700" strokeWidth={6} />
       ) : (
         <X className="w-4 h-4 text-red-500" strokeWidth={6} />
       )}
@@ -66,7 +66,7 @@ function renderToday(day: Day): JSX.Element {
   if (day.isDone) {
     return (
       <div className="flex items-center justify-center h-7 w-7 my-2 border-2 rounded-full border-black">
-        <Check className="w-4 h-4 text-green-500" strokeWidth={6} />
+        <Check className="w-4 h-4 text-green-700" strokeWidth={6} />
       </div>
     )
   }
