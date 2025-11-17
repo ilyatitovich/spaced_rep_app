@@ -11,10 +11,12 @@ const letters = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 
 export default function Week({ week }: WeekProps) {
   return (
-    <div className="flex justify-between week">
+    <div className="flex justify-between">
       {week.map((day, index) => (
-        <span key={index} className="day flex flex-col items-center">
-          <small className={day ? 'text-black' : 'text-gray-300'}>
+        <span key={index} className="flex flex-col items-center">
+          <small
+            className={`font-semibold ${index === getToday() ? 'text-purple-600' : `${day ? 'text-black' : 'text-gray-300'}`}`}
+          >
             {letters[index]}
           </small>
 
@@ -34,56 +36,51 @@ export default function Week({ week }: WeekProps) {
               .map((_, i) => (
                 <div
                   key={i}
-                  className={`w-2 h-2 rounded-full my-1 ${day.todayLevels.includes(i + 1) ? `bg-lvl-${i + 1}` : 'bg-transparent'}`}
+                  className={`w-2 h-2 rounded-full my-0.5 ${day.todayLevels.includes(i + 1) ? `bg-lvl-${i + 1}` : 'bg-transparent'}`}
                 ></div>
-              ))}
+              ))
+              .reverse()}
         </span>
       ))}
     </div>
   )
 }
 
-function renderPast(day: Day) {
+function renderPast(day: Day): JSX.Element {
   return (
     <div
-      className={`
-        flex items-center justify-center h-6 w-6 my-2 border-2 rounded-full
-        ${day.isDone ? 'border-green-600 bg-green-600' : 'border-red-500 bg-red-500'}
-      `}
+      className="
+        flex items-center justify-center h-7 w-7 my-2 border-2 rounded-full border-black"
     >
       {day.isDone ? (
-        <Check className="w-4 h-4 text-white" strokeWidth={3} />
+        <Check className="w-4 h-4 text-green-500" strokeWidth={6} />
       ) : (
-        <X className="w-4 h-4 text-white" strokeWidth={3} />
+        <X className="w-4 h-4 text-red-500" strokeWidth={6} />
       )}
     </div>
   )
 }
 
-function renderToday(day: Day) {
+function renderToday(day: Day): JSX.Element {
   // today & done
   if (day.isDone) {
     return (
-      <div className="flex items-center justify-center h-6 w-6 my-2 border-2 rounded-full border-green-600 bg-green-600">
-        <Check className="w-4 h-4 text-white" strokeWidth={3} />
+      <div className="flex items-center justify-center h-7 w-7 my-2 border-2 rounded-full border-black">
+        <Check className="w-4 h-4 text-green-500" strokeWidth={6} />
       </div>
     )
   }
 
   // today & NOT done
   return (
-    <div className="flex items-center justify-center h-6 w-6 my-2 border-2 border-gray-300 rounded-full">
-      <div className="h-3 w-3 rounded-full bg-gradient-to-br from-purple-600 to-purple-800" />
-    </div>
+    <div className="flex items-center justify-center h-7 w-7 my-2 border-2 border-black rounded-full" />
   )
 }
 
-function renderFuture() {
-  return <div className="h-6 w-6 my-2 border-2 rounded-full border-gray-300" />
+function renderFuture(): JSX.Element {
+  return <div className="h-7 w-7 my-2 border-2 rounded-full border-black" />
 }
 
-function renderPastUnactiveDays() {
-  return (
-    <div className="h-6 w-6 my-2 border-2 rounded-full bg-gray-300 border-gray-300" />
-  )
+function renderPastUnactiveDays(): JSX.Element {
+  return <div className="h-7 w-7 my-2 border-2 rounded-full border-gray-300" />
 }

@@ -127,7 +127,7 @@ export default function TopicScreen({
         <Content height={92} className="pb-30" ref={contentRef}>
           <Week week={topic.week} />
 
-          <div className="flex items-center justify-between py-2">
+          <div className="flex items-center justify-between mt-10 py-2">
             <span className="font-bold">Levels</span>
             <Button onClick={handleOpenAddCard}>Add Card</Button>
           </div>
@@ -193,6 +193,13 @@ export default function TopicScreen({
             [Number(levelId)]: cards
           }))
         }}
+        onShowCardDatails={cardId =>
+          setSearchParams(prev => {
+            const params = new URLSearchParams(prev)
+            params.set('cardId', cardId)
+            return params
+          })
+        }
         onClose={() =>
           setSearchParams(prev => {
             const params = new URLSearchParams(prev)

@@ -1,6 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useState, useEffect, useRef } from 'react'
-import { useSearchParams } from 'react-router'
 
 import {
   Button,
@@ -16,6 +15,7 @@ type LevelScreenProps = {
   levelId: string
   cards: Card[]
   onDeleteCards: (cards: Card[]) => void
+  onShowCardDatails: (cardId: string) => void
   onClose: () => void
 }
 
@@ -35,16 +35,13 @@ export default function LevelScreen({
   levelId,
   cards,
   onDeleteCards,
+  onShowCardDatails,
   onClose
 }: LevelScreenProps) {
   const [isSelectionMode, setIsSelectionMode] = useState(false)
   const [selectedItems, setSelectedItems] = useState<string[]>([])
 
   const screenRef = useRef<HTMLDivElement>(null)
-
-  const [searchParams, setSearchParams] = useSearchParams()
-  const cardId = searchParams.get('cardId')
-  console.log(cardId)
 
   useEffect(() => {
     if (!isOpen) {
@@ -144,13 +141,7 @@ export default function LevelScreen({
                   isSelectionMode={isSelectionMode}
                   onPress={handlePress}
                   onSelect={handleSelectItem}
-                  onOpen={() =>
-                    setSearchParams(prev => {
-                      const params = new URLSearchParams(prev)
-                      params.set('addCard', 'true')
-                      return params
-                    })
-                  }
+                  onOpen={() => onShowCardDatails(card.id)}
                 />
               </motion.div>
             ))}
