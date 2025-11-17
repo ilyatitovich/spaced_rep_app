@@ -1,7 +1,6 @@
 # 📚 Spaced Repetition App
 
 A lightweight and mobile-friendly **spaced repetition learning app** designed to help you remember anything efficiently.
-Inspired by the brilliant work of **Nicky Case**: [https://ncase.me/remember/](https://ncase.me/remember/)
 
 This project focuses on **fast UX**, **offline support via IndexedDB**, and a clean UI.
 
@@ -27,7 +26,7 @@ This project focuses on **fast UX**, **offline support via IndexedDB**, and a cl
 - **React Router 7** – navigation & URL state
 - **Motion (Framer Motion v2 API)** – animations
 - **Lucide-React** – icons
-- **React Hot Toast / Sonner** – notifications
+- **React Hot Toast** – notifications
 - **TailwindCSS** – styling
 
 **Storage**
@@ -38,8 +37,7 @@ This project focuses on **fast UX**, **offline support via IndexedDB**, and a cl
 
 ## 💡 Inspiration
 
-The core concept is inspired by Nicky Case’s interactive explanation of spaced repetition:
-👉 [https://ncase.me/remember/](https://ncase.me/remember/)
+The core concept is inspired by [Nicky Case’s interactive explanation of spaced repetition](https://ncase.me/remember/)
 
 The goal of this app is to bring that idea into a **practical, everyday tool**.
 
