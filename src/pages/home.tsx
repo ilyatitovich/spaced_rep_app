@@ -150,6 +150,7 @@ export default function HomePage() {
         {isSelectionMode && (
           <SelectionModeFooter
             countItemsForDelete={selectedItems.length}
+            nameItemsForDelete="topic"
             handleDelete={handleDeleteSelectedItems}
           />
         )}

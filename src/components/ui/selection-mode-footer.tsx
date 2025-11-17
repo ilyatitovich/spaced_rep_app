@@ -6,11 +6,13 @@ import ConfirmDeleteModal from './confirm-delete-modal'
 
 type SelectionModeFooterProps = {
   countItemsForDelete: number
+  nameItemsForDelete: 'topic' | 'card'
   handleDelete: () => void
 }
 
 export default function SelectionModeFooter({
   countItemsForDelete,
+  nameItemsForDelete,
   handleDelete
 }: SelectionModeFooterProps) {
   const [isConfirmDeleteModalOpen, setIsConfirmDeleteModalOpen] =
@@ -42,7 +44,7 @@ export default function SelectionModeFooter({
         onConfirm={handleDelete}
         onClose={() => setIsConfirmDeleteModalOpen(false)}
         count={countItemsForDelete}
-        itemName="topic"
+        itemName={nameItemsForDelete}
       />
     </>
   )

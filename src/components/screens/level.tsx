@@ -1,21 +1,21 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router'
 
 import {
   Button,
   LevelCard,
-  SelectionModeHeader
-  // SelectionModeFooter
+  SelectionModeHeader,
+  SelectionModeFooter
 } from '@/components'
 import { Card } from '@/models'
-
-// 1. Add selection mode for cards deletion
+import { deleteCardsBulk } from '@/services'
 
 type LevelScreenProps = {
   isOpen: boolean
   levelId: string
   cards: Card[]
+  onDeleteCards: (cards: Card[]) => void
   onClose: () => void
 }
 
@@ -34,13 +34,32 @@ export default function LevelScreen({
   isOpen,
   levelId,
   cards,
+  onDeleteCards,
   onClose
 }: LevelScreenProps) {
   const [isSelectionMode, setIsSelectionMode] = useState(false)
   const [selectedItems, setSelectedItems] = useState<string[]>([])
+
+  const screenRef = useRef<HTMLDivElement>(null)
+
   const [searchParams, setSearchParams] = useSearchParams()
   const cardId = searchParams.get('cardId')
   console.log(cardId)
+
+  useEffect(() => {
+    if (!isOpen) {
+      const node = screenRef.current
+      if (!node) return
+
+      const handleEnd = () => {
+        setIsSelectionMode(false)
+        setSelectedItems([])
+        node.removeEventListener('transitionend', handleEnd)
+      }
+
+      node.addEventListener('transitionend', handleEnd)
+    }
+  }, [isOpen])
 
   const handleClose = (): void => {
     onClose()
@@ -65,26 +84,25 @@ export default function LevelScreen({
     setSelectedItems(isSelectAll ? cards.map(c => c.id) : [])
   }
 
-  // const handleDeleteSelectedItems = async (): Promise<void> => {
-  //   try {
-  //     await Promise.all(selectedItems.map(topicId => deleteTopic(topicId)))
-  //     const restTopics = topics.filter(
-  //       topic => !selectedItems.includes(topic.id)
-  //     )
-  //     setTopics(restTopics)
+  const handleDeleteSelectedItems = async (): Promise<void> => {
+    try {
+      await deleteCardsBulk(selectedItems)
+      const restCards = cards.filter(card => !selectedItems.includes(card.id))
+      onDeleteCards(restCards)
 
-  //     if (restTopics.length === 0) {
-  //       setIsSelectionMode(false)
-  //     }
+      if (restCards.length === 0) {
+        setIsSelectionMode(false)
+      }
 
-  //     setSelectedItems([])
-  //   } catch (error) {
-  //     console.error('Failed to delete some topics:', error)
-  //   }
-  // }
+      setSelectedItems([])
+    } catch (error) {
+      console.error('Failed to delete some topics:', error)
+    }
+  }
 
   return (
     <div
+      ref={screenRef}
       className={`${isOpen ? 'translate-x-0' : 'translate-x-full'} transition-transform duration-300 ease-in-out fixed inset-0 z-50 bg-background`}
     >
       <AnimatePresence>
@@ -105,7 +123,7 @@ export default function LevelScreen({
         </span>
       </div>
 
-      {cards && cards.length > 0 ? (
+      {cards.length > 0 ? (
         <motion.div
           className="grid grid-cols-3 gap-4 content-start p-4"
           variants={listVariants}
@@ -144,14 +162,15 @@ export default function LevelScreen({
         </p>
       )}
 
-      {/* <AnimatePresence>
+      <AnimatePresence>
         {isSelectionMode && (
           <SelectionModeFooter
             countItemsForDelete={selectedItems.length}
             handleDelete={handleDeleteSelectedItems}
+            nameItemsForDelete="card"
           />
         )}
-      </AnimatePresence> */}
+      </AnimatePresence>
     </div>
   )
 }

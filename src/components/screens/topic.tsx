@@ -184,9 +184,15 @@ export default function TopicScreen({
       />
 
       <LevelScreen
-        isOpen={levelId !== ''}
+        isOpen={!!levelId}
         levelId={levelId}
-        cards={cards[Number(levelId)]}
+        cards={levelId ? (cards[Number(levelId)] ?? []) : []}
+        onDeleteCards={cards => {
+          setCards(prev => ({
+            ...prev,
+            [Number(levelId)]: cards
+          }))
+        }}
         onClose={() =>
           setSearchParams(prev => {
             const params = new URLSearchParams(prev)
