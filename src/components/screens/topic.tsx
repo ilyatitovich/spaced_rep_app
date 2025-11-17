@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router'
 import {
   AddCardScreen,
   Button,
+  CardDetailsScreen,
   Content,
   TestButton,
   TestScreen,
@@ -38,6 +39,7 @@ export default function TopicScreen({
   const isAddingCard = searchParams.get('addCard') === 'true'
   const isTest = searchParams.get('test') === 'true'
   const levelId = searchParams.get('levelId') ?? ''
+  const cardId = searchParams.get('cardId') ?? ''
 
   useEffect(() => {
     async function fetchTopic(): Promise<void> {
@@ -204,6 +206,22 @@ export default function TopicScreen({
           setSearchParams(prev => {
             const params = new URLSearchParams(prev)
             params.delete('levelId')
+            return params
+          })
+        }
+      />
+
+      <CardDetailsScreen
+        isOpen={!!cardId}
+        card={
+          cardId && levelId
+            ? cards[Number(levelId)].find(card => card.id === cardId)
+            : null
+        }
+        onClose={() =>
+          setSearchParams(prev => {
+            const params = new URLSearchParams(prev)
+            params.delete('cardId')
             return params
           })
         }
