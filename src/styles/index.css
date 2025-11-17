@@ -1,5 +1,11 @@
 @import 'tailwindcss';
 
+@font-face {
+  font-family: PatrickHand;
+  font-style: regular;
+  src: url('/src/assets/fonts/PatrickHand-Regular.woff2') format('woff2');
+}
+
 @theme {
   --color-white: #ffffff;
   --color-black: #242424;
@@ -23,6 +29,8 @@
 
   /* New style */
   --color-background: #f7f7f7;
+
+  --font-card: 'PatrickHand', sans-serif;
 }
 
 @layer utilities {

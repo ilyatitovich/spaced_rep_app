@@ -56,7 +56,7 @@ export default function LevelCard({
       onTouchEnd={handleTouchEnd}
       onClick={handleClick}
     >
-      <span className="font-bold break-all w-full h-full flex justify-center items-center overflow-hidden">
+      <span className="font-bold font-card break-all w-full h-full flex justify-center items-center overflow-hidden">
         {typeof card.data.front === 'string' ? card.data.front : ''}
       </span>
 
