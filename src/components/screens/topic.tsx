@@ -1,3 +1,4 @@
+import { ChevronLeft, Trash } from 'lucide-react'
 import { useEffect, useState, useRef } from 'react'
 import { useSearchParams } from 'react-router'
 
@@ -108,7 +109,9 @@ export default function TopicScreen({
         className={`${isOpen ? 'translate-x-0' : 'translate-x-full'} transition-transform duration-300 ease-in-out fixed inset-0 z-50 bg-background`}
       >
         <div className="relative w-full p-4 flex justify-between items-center border-b border-gray-200">
-          <Button onClick={onClose}>Back</Button>
+          <Button onClick={onClose}>
+            <ChevronLeft />
+          </Button>
           <span
             className={`
             font-bold
@@ -123,7 +126,9 @@ export default function TopicScreen({
           >
             {topic.title}
           </span>
-          <Button onClick={handleDeleteTopic}>Delete</Button>
+          <Button onClick={handleDeleteTopic}>
+            <Trash />
+          </Button>
         </div>
 
         <Content height={92} className="pb-30" ref={contentRef}>

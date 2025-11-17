@@ -1,3 +1,4 @@
+import { ChevronLeft } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useState, useEffect, useRef } from 'react'
 
@@ -114,7 +115,9 @@ export default function LevelScreen({
       </AnimatePresence>
 
       <div className="relative w-full p-4 flex justify-between items-center border-b border-gray-200">
-        <Button onClick={handleClose}>Back</Button>
+        <Button onClick={handleClose}>
+          <ChevronLeft />
+        </Button>
         <span className="font-semibold">
           {levelId === '0' ? 'Draft' : `Level ${levelId}`}
         </span>

@@ -38,6 +38,7 @@ export default function CardDetailsScreen({
       }
 
       node.addEventListener('transitionend', handleEnd)
+      return
     }
   }, [isOpen])
 

@@ -1,3 +1,4 @@
+import { X } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
 import { Button, Content, Card } from '@/components'
@@ -98,7 +99,9 @@ export default function TestScreen({
       className={`${isOpen ? 'translate-y-0' : 'translate-y-full'} transition-transform duration-300 ease-in-out fixed inset-0 z-50 bg-background`}
     >
       <div className="relative p-4 flex justify-between items-center border-b border-gray-200">
-        <Button onClick={handleClose}>Back</Button>
+        <Button onClick={handleClose}>
+          <X className="text-black" />
+        </Button>
         <span className="font-semibold absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
           {isFlipped ? 'Back' : 'Front'}
         </span>

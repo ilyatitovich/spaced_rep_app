@@ -66,7 +66,7 @@ export default function TopicItem({
         <span className="text-sm text-gray-700 flex items-center gap-1">
           Today's test:{' '}
           {topic.week[getToday()]?.isDone ? (
-            <Check size={18} className="-mt-0.5 text-green-700" />
+            <Check size={18} className="-mt-0.5 text-green-600" />
           ) : (
             `level${todayLevels.length > 1 ? 's' : ''} ${joinNumbers(todayLevels)}`
           )}
