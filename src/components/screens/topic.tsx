@@ -1,4 +1,4 @@
-import { ChevronLeft, Trash } from 'lucide-react'
+import { Trash } from 'lucide-react'
 import { useEffect, useState, useRef } from 'react'
 import { useSearchParams } from 'react-router'
 
@@ -11,7 +11,8 @@ import {
   TestScreen,
   LevelRow,
   LevelScreen,
-  Week
+  Week,
+  BackButton
 } from '@/components'
 import { getToday } from '@/lib'
 import { Day } from '@/lib/helpers'
@@ -109,9 +110,7 @@ export default function TopicScreen({
         className={`${isOpen ? 'translate-x-0' : 'translate-x-full'} transition-transform duration-300 ease-in-out fixed inset-0 z-50 bg-background`}
       >
         <div className="relative w-full p-4 flex justify-between items-center border-b border-gray-200">
-          <Button onClick={onClose}>
-            <ChevronLeft />
-          </Button>
+          <BackButton onClick={onClose} />
           <span
             className={`
             font-bold

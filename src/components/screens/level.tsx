@@ -1,9 +1,8 @@
-import { ChevronLeft } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useState, useEffect, useRef } from 'react'
 
 import {
-  Button,
+  BackButton,
   LevelCard,
   SelectionModeHeader,
   SelectionModeFooter
@@ -67,9 +66,9 @@ export default function LevelScreen({
     setIsSelectionMode(isPressed)
   }
 
-  const handleSelectItem = (topicId: string, add: boolean = true): void => {
+  const handleSelectItem = (cardId: string, add: boolean = true): void => {
     setSelectedItems(prev =>
-      add ? [...prev, topicId] : prev.filter(tId => tId !== topicId)
+      add ? [...prev, cardId] : prev.filter(cId => cId !== cardId)
     )
   }
 
@@ -115,9 +114,7 @@ export default function LevelScreen({
       </AnimatePresence>
 
       <div className="relative w-full p-4 flex justify-between items-center border-b border-gray-200">
-        <Button onClick={handleClose}>
-          <ChevronLeft />
-        </Button>
+        <BackButton onClick={handleClose} />
         <span className="font-semibold">
           {levelId === '0' ? 'Draft' : `Level ${levelId}`}
         </span>
