@@ -63,8 +63,13 @@ export default function TopicItem({
     >
       <div className="flex flex-col gap-1.5 text-left w-3/4">
         <span className="text-black font-semibold truncate">{topic.title}</span>
-        <span className="text-sm text-gray-700">
-          {`Today's level${todayLevels.length > 1 ? 's' : ''}: ${joinNumbers(todayLevels)}`}
+        <span className="text-sm text-gray-700 flex items-center gap-1">
+          Today's test:{' '}
+          {topic.week[getToday()]?.isDone ? (
+            <Check size={18} className="-mt-0.5 text-green-500" />
+          ) : (
+            `level${todayLevels.length > 1 ? 's' : ''} ${joinNumbers(todayLevels)}`
+          )}
         </span>
         <span className="text-xs text-gray-500">
           {`Started on ${formatTimestamp(topic.pivot)}`}
