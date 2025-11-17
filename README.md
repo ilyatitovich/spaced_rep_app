@@ -4,8 +4,6 @@ A lightweight and mobile-friendly **spaced repetition learning app** designed to
 
 This project focuses on **fast UX**, **offline support via IndexedDB**, and a clean UI.
 
----
-
 ## 🚀 Features
 
 - 🧠 **Spaced repetition algorithm** based on week-by-week review logic
@@ -15,8 +13,6 @@ This project focuses on **fast UX**, **offline support via IndexedDB**, and a cl
 - 📅 Daily progress tracking
 - 🎨 Modern design with animations and icons
 - 🔄 URL search params–based navigation (Android-friendly back-button behavior)
-
----
 
 ## 🛠️ Tech Stack
 
@@ -33,15 +29,11 @@ This project focuses on **fast UX**, **offline support via IndexedDB**, and a cl
 
 - IndexedDB (custom wrapper + transactions)
 
----
-
 ## 💡 Inspiration
 
 The core concept is inspired by [Nicky Case’s interactive explanation of spaced repetition](https://ncase.me/remember/)
 
 The goal of this app is to bring that idea into a **practical, everyday tool**.
-
----
 
 ## 🏗️ Local Development
 
@@ -51,8 +43,6 @@ pnpm dev
 ```
 
 The app runs on `http://localhost:5173`.
-
----
 
 ## 📝 License
 
