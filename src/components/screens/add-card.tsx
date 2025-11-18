@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 
-import { Button, Content, Card } from '@/components'
+import { Button, Content, Card, BackButton } from '@/components'
 import { Card as CardModel } from '@/models'
 import { createCard } from '@/services'
 import type { CardHandle, CardData } from '@/types'
@@ -31,7 +31,8 @@ export default function AddCardScreen({
   const [isInitialRender, setIsInitialRender] = useState(true)
 
   const screenRef = useRef<HTMLDivElement>(null)
-  const cardRef = useRef<CardHandle>(null)
+  const currentCardRef = useRef<CardHandle>(null)
+  const secondCardRef = useRef<CardHandle>(null)
 
   useEffect(() => {
     if (!isOpen) {
@@ -44,7 +45,8 @@ export default function AddCardScreen({
         setIsDraft(true)
         setIsFirstCardActive(true)
         setIsInitialRender(true)
-        cardRef.current?.resetContent()
+        currentCardRef.current?.resetContent()
+        secondCardRef.current?.resetContent()
         node.removeEventListener('transitionend', handleEnd)
       }
 
@@ -103,8 +105,8 @@ export default function AddCardScreen({
   }
 
   function handleBlur(): void {
-    if (cardRef.current) {
-      const { front, back } = cardRef.current.getContent()
+    if (currentCardRef.current) {
+      const { front, back } = currentCardRef.current.getContent()
 
       if (!front || !back) {
         setIsDraft(true)
@@ -135,7 +137,7 @@ export default function AddCardScreen({
       className={`${isOpen ? 'translate-y-0' : 'translate-y-full'} h-full transition-transform duration-300 ease-in-out fixed inset-0 z-50 bg-background`}
     >
       <div className="relative w-full p-4 flex justify-between items-center border-b border-gray-200">
-        <Button onClick={handleClose}>Back</Button>
+        <BackButton onClick={handleClose} />
         <span className="font-bold absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
           {isFlipped ? 'Back' : 'Front'}
         </span>
@@ -143,7 +145,7 @@ export default function AddCardScreen({
       </div>
       <Content centered>
         <Card
-          ref={isFirstCardActive ? cardRef : null}
+          ref={isFirstCardActive ? currentCardRef : secondCardRef}
           className={`${isFirstCardActive ? 'scale-up' : 'move-right'}`}
           data={isFirstCardActive ? initialCardData : cardData}
           isFlipped={isFirstCardActive ? isFlipped : false}
@@ -152,7 +154,7 @@ export default function AddCardScreen({
           handleBlur={handleBlur}
         />
         <Card
-          ref={isFirstCardActive ? null : cardRef}
+          ref={isFirstCardActive ? secondCardRef : currentCardRef}
           className={`${isInitialRender ? 'hidden' : ''} ${isFirstCardActive ? 'move-right' : 'scale-up'}`.trim()}
           data={isFirstCardActive ? cardData : initialCardData}
           isFlipped={isFirstCardActive ? false : isFlipped}

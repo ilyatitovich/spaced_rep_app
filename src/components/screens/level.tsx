@@ -123,45 +123,47 @@ export default function LevelScreen({
         </span>
       </div>
 
-      <div className="w-full text-center p-4">
-        <p className="text-[16px] text-gray-900">
-          {`${cards.length} card${cards.length === 1 ? '' : 's'}${levelId === '0' ? '' : `, next review: ${getReviewMessage(startDate, Number(levelId))}`}`}
-        </p>
-      </div>
+      <div className="flex flex-col overflow-y-auto h-[calc(100vh-60px)]">
+        <div className="w-full text-center p-4">
+          <p className="text-[16px] text-gray-900">
+            {`${cards.length} card${cards.length === 1 ? '' : 's'}${levelId === '0' ? '' : `, next review: ${getReviewMessage(startDate, Number(levelId))}`}`}
+          </p>
+        </div>
 
-      {cards.length > 0 && (
-        <motion.div
-          className="grid grid-cols-3 gap-4 content-start p-4"
-          variants={listVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <AnimatePresence>
-            {cards.map(card => (
-              <motion.div
-                key={card.id}
-                variants={itemVariants}
-                layout
-                exit="exit"
-              >
-                <LevelCard
-                  card={card}
-                  isSelected={selectedItems.includes(card.id)}
-                  isSelectionMode={isSelectionMode}
-                  onPress={handlePress}
-                  onSelect={handleSelectItem}
-                  onOpen={() => onShowCardDatails(card.id)}
-                />
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </motion.div>
-      )}
+        {cards.length > 0 && (
+          <motion.div
+            className="grid grid-cols-3 gap-4 content-start p-4"
+            variants={listVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            <AnimatePresence>
+              {cards.map(card => (
+                <motion.div
+                  key={card.id}
+                  variants={itemVariants}
+                  layout
+                  exit="exit"
+                >
+                  <LevelCard
+                    card={card}
+                    isSelected={selectedItems.includes(card.id)}
+                    isSelectionMode={isSelectionMode}
+                    onPress={handlePress}
+                    onSelect={handleSelectItem}
+                    onOpen={() => onShowCardDatails(card.id)}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </motion.div>
+        )}
 
-      <div className="w-full p-4">
-        <p className="text-[12px] text-gray-600 whitespace-pre-line">
-          {getLevelDescription(levelId)}
-        </p>
+        <div className="w-full p-4">
+          <p className="text-[12px] text-gray-600 whitespace-pre-line">
+            {getLevelDescription(levelId)}
+          </p>
+        </div>
       </div>
 
       <AnimatePresence>

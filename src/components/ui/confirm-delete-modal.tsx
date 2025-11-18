@@ -31,9 +31,9 @@ export default function ConfirmDeleteModal({
           {/* Modal */}
           <motion.div
             className="fixed bottom-4 left-4 right-4 z-50 bg-white rounded-3xl p-6"
-            initial={{ y: '100%' }}
+            initial={{ y: '110%' }}
             animate={{ y: 0 }}
-            exit={{ y: '100%' }}
+            exit={{ y: '110%' }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
           >
             <h2 className="text-xl font-semibold text-center mb-2">
