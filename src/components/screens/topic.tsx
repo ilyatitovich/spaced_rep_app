@@ -193,6 +193,7 @@ export default function TopicScreen({
         isOpen={!!levelId}
         levelId={levelId}
         cards={levelId ? (cards[Number(levelId)] ?? []) : []}
+        startDate={topic.pivot}
         onDeleteCards={cards => {
           setCards(prev => ({
             ...prev,

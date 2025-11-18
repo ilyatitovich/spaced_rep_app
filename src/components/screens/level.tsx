@@ -7,6 +7,7 @@ import {
   SelectionModeHeader,
   SelectionModeFooter
 } from '@/components'
+import { getReviewMessage, getLevelDescription } from '@/lib'
 import { Card } from '@/models'
 import { deleteCardsBulk } from '@/services'
 
@@ -14,6 +15,7 @@ type LevelScreenProps = {
   isOpen: boolean
   levelId: string
   cards: Card[]
+  startDate: number
   onDeleteCards: (cards: Card[]) => void
   onShowCardDatails: (cardId: string) => void
   onClose: () => void
@@ -34,6 +36,7 @@ export default function LevelScreen({
   isOpen,
   levelId,
   cards,
+  startDate,
   onDeleteCards,
   onShowCardDatails,
   onClose
@@ -113,14 +116,20 @@ export default function LevelScreen({
         )}
       </AnimatePresence>
 
-      <div className="relative w-full p-4 flex justify-between items-center border-b border-gray-200">
+      <div className="relative w-full p-4 flex justify-between items-center">
         <BackButton onClick={handleClose} />
         <span className="font-semibold">
           {levelId === '0' ? 'Draft' : `Level ${levelId}`}
         </span>
       </div>
 
-      {cards.length > 0 ? (
+      <div className="w-full text-center p-4">
+        <p className="text-[16px] text-gray-900">
+          {`${cards.length} card${cards.length === 1 ? '' : 's'}${levelId === '0' ? '' : `, next review: ${getReviewMessage(startDate, Number(levelId))}`}`}
+        </p>
+      </div>
+
+      {cards.length > 0 && (
         <motion.div
           className="grid grid-cols-3 gap-4 content-start p-4"
           variants={listVariants}
@@ -147,11 +156,13 @@ export default function LevelScreen({
             ))}
           </AnimatePresence>
         </motion.div>
-      ) : (
-        <p className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-gray-500">
-          No cards
-        </p>
       )}
+
+      <div className="w-full p-4">
+        <p className="text-[12px] text-gray-600 whitespace-pre-line">
+          {getLevelDescription(levelId)}
+        </p>
+      </div>
 
       <AnimatePresence>
         {isSelectionMode && (
