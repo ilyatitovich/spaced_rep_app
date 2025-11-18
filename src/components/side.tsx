@@ -55,12 +55,12 @@ export default function Side({
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
     <div
-      className={`absolute w-full h-full p-4 backface-hidden ${isLongText ? 'overflow-y-auto' : 'flex justify-center items-center'} border-black border-6 rounded-4xl bg-white ${side === 'back' ? 'rotate-y-180' : ''}`.trim()}
+      className={`absolute w-full h-full p-4 backface-hidden ${isLongText ? 'overflow-y-auto scrollbar-hidden' : 'flex justify-center items-center'} border-black border-6 rounded-4xl bg-white ${side === 'back' ? 'rotate-y-180' : ''}`.trim()}
       onClick={handleContainerClick}
     >
       <div
         ref={innerRef}
-        className={`w-full outline-none whitespace-pre-wrap break-words text-center text-4xl ${isLongText ? '' : 'font-bold font-card leading-13'} `}
+        className={`w-full outline-none whitespace-pre-wrap break-words text-center ${isLongText ? 'text-3xl' : 'text-4xl font-bold font-card leading-13'} `}
         contentEditable={isEditable}
         suppressContentEditableWarning
         role="textbox"
