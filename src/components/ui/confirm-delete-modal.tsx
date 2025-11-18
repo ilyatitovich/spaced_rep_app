@@ -21,7 +21,7 @@ export default function ConfirmDeleteModal({
         <>
           {/* Background overlay */}
           <motion.div
-            className="fixed inset-0 bg-black/40 z-40"
+            className="fixed inset-0 bg-black/40 z-50"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -39,7 +39,7 @@ export default function ConfirmDeleteModal({
             <h2 className="text-xl font-semibold text-center mb-2">
               Delete{' '}
               {count
-                ? `${count} ${count > 1 ? itemName + 's' : itemName}`
+                ? `${count === 1 ? '' : count} ${count > 1 ? itemName + 's' : itemName}`
                 : itemName}
               ?
             </h2>

@@ -73,7 +73,9 @@ function renderToday(day: Day): JSX.Element {
 
   // today & NOT done
   return (
-    <div className="flex items-center justify-center h-7 w-7 my-2 border-2 border-black rounded-full" />
+    <div className="flex items-center justify-center h-7 w-7 my-2 border-2 border-black rounded-full">
+      <div className="h-3.5 w-3.5 rounded-full bg-gradient-to-br from-purple-500 to-purple-800" />
+    </div>
   )
 }
 

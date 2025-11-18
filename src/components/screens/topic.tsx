@@ -7,6 +7,7 @@ import {
   Button,
   CardDetailsScreen,
   Content,
+  ConfirmDeleteModal,
   TestButton,
   TestScreen,
   LevelRow,
@@ -34,6 +35,9 @@ export default function TopicScreen({
 }: TopicPageProps) {
   const [topic, setTopic] = useState<Topic | null>(null)
   const [cards, setCards] = useState<Record<number, Card[]>>({})
+
+  const [isConfirmDeleteModalOpen, setIsConfirmDeleteModalOpen] =
+    useState(false)
 
   const contentRef = useRef<HTMLDivElement>(null)
 
@@ -109,7 +113,7 @@ export default function TopicScreen({
       <div
         className={`${isOpen ? 'translate-x-0' : 'translate-x-full'} transition-transform duration-300 ease-in-out fixed inset-0 z-50 bg-background`}
       >
-        <div className="relative w-full p-4 flex justify-between items-center border-b border-gray-200">
+        <div className="relative w-full p-4 flex justify-between items-center">
           <BackButton onClick={onClose} />
           <span
             className={`
@@ -125,7 +129,7 @@ export default function TopicScreen({
           >
             {topic.title}
           </span>
-          <Button onClick={handleDeleteTopic}>
+          <Button onClick={() => setIsConfirmDeleteModalOpen(true)}>
             <Trash />
           </Button>
         </div>
@@ -230,6 +234,14 @@ export default function TopicScreen({
             return params
           })
         }
+      />
+
+      <ConfirmDeleteModal
+        isOpen={isConfirmDeleteModalOpen}
+        onConfirm={handleDeleteTopic}
+        onClose={() => setIsConfirmDeleteModalOpen(false)}
+        count={1}
+        itemName="topic"
       />
     </>
   )

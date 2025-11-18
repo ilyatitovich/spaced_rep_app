@@ -41,7 +41,7 @@ export class Topic {
   }
 
   private createLevelsList(): Level[] {
-    return new Array(8).fill(null).map((_, index) => new Level(index))
+    return new Array(9).fill(null).map((_, index) => new Level(index))
   }
 
   private getNextUpdateDate(): number {
