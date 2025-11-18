@@ -103,11 +103,11 @@ export default function HomePage() {
         )}
       </AnimatePresence>
 
-      <div className="p-4 pb-0 flex items-center justify-center">
+      <div className="p-4 flex items-center justify-center">
         <span>Topics</span>
       </div>
 
-      <div className="p-4 h-[96dvh]">
+      <div className="h-[calc(100dvh-100px)]">
         {isLoading ? (
           <Spinner />
         ) : topics.length === 0 ? (
@@ -122,7 +122,7 @@ export default function HomePage() {
             variants={listVariants}
             initial="hidden"
             animate="visible"
-            className="h-full pb-10 overflow-y-auto"
+            className="h-full px-4 pt-0 pb-10 overflow-y-auto"
           >
             <AnimatePresence>
               {topics.map(topic => (
