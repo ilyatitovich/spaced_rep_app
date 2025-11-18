@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 
-import { Button, Content, Card, BackButton } from '@/components'
+import { Button, Card, BackButton, CardButton } from '@/components'
 import { Card as CardModel } from '@/models'
 import { createCard } from '@/services'
 import type { CardHandle, CardData } from '@/types'
@@ -143,7 +143,7 @@ export default function AddCardScreen({
         </span>
         {rightBtn}
       </div>
-      <Content centered>
+      <div className="h-[70dvh] flex justify-center items-center">
         <Card
           ref={isFirstCardActive ? currentCardRef : secondCardRef}
           className={`${isFirstCardActive ? 'scale-up' : 'move-right'}`}
@@ -162,9 +162,10 @@ export default function AddCardScreen({
           handleFocus={() => setIsEdited(true)}
           handleBlur={handleBlur}
         />
-      </Content>
-      <div className="flex justify-center items-center p-4 border-t border-gray-200">
-        <Button onClick={() => setIsFlipped(!isFlipped)}>Flip</Button>
+      </div>
+      {/* Buttons */}
+      <div className="flex justify-center items-center gap-12">
+        <CardButton type="flip" onClick={() => setIsFlipped(prev => !prev)} />
       </div>
     </div>
   )
