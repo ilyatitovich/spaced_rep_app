@@ -136,7 +136,7 @@ export default function AddCardScreen({
       ref={screenRef}
       className={`${isOpen ? 'translate-y-0' : 'translate-y-full'} h-full transition-transform duration-300 ease-in-out fixed inset-0 z-50 bg-background`}
     >
-      <div className="relative w-full p-4 flex justify-between items-center border-b border-gray-200">
+      <div className="relative p-4 flex justify-between items-center">
         <BackButton onClick={handleClose} />
         <span className="font-bold absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
           {isFlipped ? 'Back' : 'Front'}

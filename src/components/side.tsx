@@ -1,5 +1,5 @@
-import type { FocusEventHandler, FocusEvent } from 'react'
-import { useCallback } from 'react'
+import type { FocusEventHandler, FocusEvent, FormEvent } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import type { CardSide } from '@/types'
 
@@ -20,6 +20,18 @@ export default function Side({
   handleBlur,
   innerRef
 }: SideProps) {
+  const [isLongText, setIsLongText] = useState(false)
+
+  const handleInput = useCallback((e: FormEvent<HTMLDivElement>) => {
+    setIsLongText(e.currentTarget.innerText.length > 80)
+  }, [])
+
+  useEffect(() => {
+    if (typeof content === 'string') {
+      setIsLongText(content.length > 80)
+    }
+  }, [content])
+
   const handleContainerClick = useCallback(() => {
     if (
       document.activeElement !== innerRef?.current &&
@@ -43,12 +55,12 @@ export default function Side({
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
     <div
-      className={`absolute w-full h-full p-4 backface-hidden flex justify-center items-center border-black border-6 rounded-4xl bg-white ${side === 'back' ? 'rotate-y-180' : ''}`.trim()}
+      className={`absolute w-full h-full p-4 backface-hidden ${isLongText ? 'overflow-y-auto' : 'flex justify-center items-center'} border-black border-6 rounded-4xl bg-white ${side === 'back' ? 'rotate-y-180' : ''}`.trim()}
       onClick={handleContainerClick}
     >
       <div
         ref={innerRef}
-        className="w-full outline-none whitespace-pre-wrap break-words text-center text-4xl font-bold font-card leading-13"
+        className={`w-full outline-none whitespace-pre-wrap break-words text-center text-4xl ${isLongText ? '' : 'font-bold font-card leading-13'} `}
         contentEditable={isEditable}
         suppressContentEditableWarning
         role="textbox"
@@ -59,6 +71,7 @@ export default function Side({
           placeCursorAtEnd(e)
         }}
         onBlur={handleBlur}
+        onInput={handleInput}
       >
         {typeof content === 'string' ? content : ''}
       </div>
