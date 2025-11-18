@@ -1,13 +1,12 @@
 const MS_PER_DAY = 24 * 60 * 60 * 1000
 
 const LEVEL_INTERVAL: Record<number, number> = {
-  1: 1,
-  2: 2,
-  3: 5,
-  4: 9,
-  5: 17,
-  6: 33,
-  7: 65
+  2: 1,
+  3: 4,
+  4: 8,
+  5: 16,
+  6: 32,
+  7: 64
 }
 
 function startOfDay(d: Date): Date {
@@ -58,6 +57,7 @@ function formatReviewDate(date: Date): string {
 }
 
 export function getReviewMessage(startDateTs: number, level: number): string {
+  if (level === 1) return 'today'
   const next = getNextReviewDate(startDateTs, level)
   return formatReviewDate(next)
 }
