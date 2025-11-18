@@ -32,7 +32,7 @@ export default function TopicItem({
       if (!isSelected) {
         onSelect(topic.id)
       }
-    }, 300) // long press threshold
+    }, 1000) // long press threshold
   }
 
   const handleTouchEnd = () => {
