@@ -29,7 +29,7 @@ export default function LevelCard({
       if (!isSelected) {
         onSelect(card.id)
       }
-    }, 600) // long press threshold
+    }, 700) // long press threshold
   }
 
   const handleTouchEnd = () => {
