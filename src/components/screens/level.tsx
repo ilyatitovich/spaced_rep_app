@@ -123,7 +123,7 @@ export default function LevelScreen({
         </span>
       </div>
 
-      <div className="flex flex-col overflow-y-auto h-[calc(100vh-60px)]">
+      <div className="flex flex-col overflow-y-auto h-[calc(100dvh-60px)]">
         <div className="w-full text-center p-4">
           <p className="text-[16px] text-gray-900">
             {`${cards.length} card${cards.length === 1 ? '' : 's'}${levelId === '0' ? '' : `, next review: ${getReviewMessage(startDate, Number(levelId))}`}`}
