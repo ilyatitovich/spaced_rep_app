@@ -144,7 +144,7 @@ export default function AddCardScreen({
       <Content centered>
         <Card
           ref={isFirstCardActive ? cardRef : null}
-          className={`${isFirstCardActive ? 'scale-up' : 'move-left'}`}
+          className={`${isFirstCardActive ? 'scale-up' : 'move-right'}`}
           data={isFirstCardActive ? initialCardData : cardData}
           isFlipped={isFirstCardActive ? isFlipped : false}
           isEditable={true}
@@ -153,7 +153,7 @@ export default function AddCardScreen({
         />
         <Card
           ref={isFirstCardActive ? null : cardRef}
-          className={`${isInitialRender ? 'hidden' : ''} ${isFirstCardActive ? 'move-left' : 'scale-up'}`.trim()}
+          className={`${isInitialRender ? 'hidden' : ''} ${isFirstCardActive ? 'move-right' : 'scale-up'}`.trim()}
           data={isFirstCardActive ? cardData : initialCardData}
           isFlipped={isFirstCardActive ? false : isFlipped}
           isEditable={true}
