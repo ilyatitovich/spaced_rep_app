@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router'
 
 import {
-  Content,
   CreateTopicScreen,
   SelectionModeHeader,
   SelectionModeFooter,
@@ -104,11 +103,11 @@ export default function HomePage() {
         )}
       </AnimatePresence>
 
-      <div className="p-4 border-b border-gray-200 flex items-center justify-center">
+      <div className="p-4 pb-0 flex items-center justify-center">
         <span>Topics</span>
       </div>
 
-      <Content>
+      <div className="p-4 h-[96dvh]">
         {isLoading ? (
           <Spinner />
         ) : topics.length === 0 ? (
@@ -119,7 +118,12 @@ export default function HomePage() {
             </div>
           </div>
         ) : (
-          <motion.ul variants={listVariants} initial="hidden" animate="visible">
+          <motion.ul
+            variants={listVariants}
+            initial="hidden"
+            animate="visible"
+            className="h-full pb-10 overflow-y-auto"
+          >
             <AnimatePresence>
               {topics.map(topic => (
                 <motion.li
@@ -141,7 +145,7 @@ export default function HomePage() {
             </AnimatePresence>
           </motion.ul>
         )}
-      </Content>
+      </div>
       <CreateTopicButton
         isHidden={isSelectionMode}
         onClick={() => setSearchParams({ create: 'true' })}
