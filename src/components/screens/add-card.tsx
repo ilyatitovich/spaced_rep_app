@@ -164,7 +164,7 @@ export default function AddCardScreen({
         />
       </div>
       {/* Buttons */}
-      <div className="flex justify-center items-center gap-12">
+      <div className="pt-1 flex justify-center items-center gap-12">
         <CardButton type="flip" onClick={() => setIsFlipped(prev => !prev)} />
       </div>
     </div>

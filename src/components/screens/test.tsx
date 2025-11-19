@@ -1,7 +1,7 @@
 import { X } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
-import { Button, Content, Card } from '@/components'
+import { Content, Card, CardsLeftBadge, TestDoneMessage } from '@/components'
 import { getToday } from '@/lib'
 import { Card as CardModel, Topic } from '@/models'
 import { updateCard, updateTopic } from '@/services'
@@ -26,14 +26,18 @@ export default function TestScreen({
   const [isInitialRender, setIsInitialRender] = useState(true)
   const [isCorrect, setIsCorrect] = useState(false)
 
+  const totalCardsRef = useRef(0)
+
   useEffect(() => {
     if (isOpen) {
       const result = topic.week[getToday()]!.todayLevels.flatMap(
         levelId => topicCards[levelId]
       ).filter(card => card !== undefined)
       setCards(result)
+      totalCardsRef.current = result.length
     } else {
       setCards(null)
+      totalCardsRef.current = 0
     }
   }, [topic.week, topicCards, isOpen])
 
@@ -98,22 +102,27 @@ export default function TestScreen({
     <div
       className={`${isOpen ? 'translate-y-0' : 'translate-y-full'} transition-transform duration-300 ease-in-out fixed inset-0 z-50 bg-background`}
     >
-      <div className="relative p-4 flex justify-between items-center border-b border-gray-200">
-        <Button onClick={handleClose}>
-          <X className="text-black" />
-        </Button>
+      <div className="relative p-4 flex justify-between items-center">
+        <button onClick={handleClose}>
+          <div className="w-8 h-8 flex items-center justify-center bg-black rounded-full">
+            <X className="w-4 h-4 text-white" strokeWidth={4} />
+          </div>
+        </button>
         <span className="font-semibold absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
           {isFlipped ? 'Back' : 'Front'}
         </span>
-        <div className="min-w-10 h-10 px-2 rounded-full bg-gray-300 flex items-center justify-center">
-          {cards && cards.length}
-        </div>
+        {cards && (
+          <CardsLeftBadge
+            current={cards.length}
+            total={totalCardsRef.current}
+          />
+        )}
       </div>
 
       {cards && (
         <Content centered>
           {isInitialRender && cards.length === 0 ? (
-            <p>No cards</p>
+            <TestDoneMessage />
           ) : (
             <>
               <Card
@@ -131,35 +140,37 @@ export default function TestScreen({
                   handleClick={() => setIsFlipped(prev => !prev)}
                 />
               ) : (
-                <p>No cards</p>
+                <TestDoneMessage />
               )}
             </>
           )}
         </Content>
       )}
 
-      <div className="w-full absolute bottom-4 flex justify-evenly gap-1.5 text-white font-semibold">
-        {isFlipped ? (
-          <>
-            <button
-              onClick={() => handleAnswer(false)}
-              className="bg-gradient-to-br from-red-400 to-red-600 py-3 px-10 rounded-full shadow-lg shadow-red-300/40 active:scale-95 transition-all duration-200"
-            >
-              Wrong
-            </button>
-            <button
-              onClick={() => handleAnswer(true)}
-              className="bg-gradient-to-br from-green-400 to-green-600 py-3 px-10 rounded-full shadow-lg shadow-green-300/40 active:scale-95 transition-all duration-200"
-            >
-              Correct
-            </button>
-          </>
-        ) : (
-          <span className="text-gray-400 text-sm">
-            tap on card to reweal answer
-          </span>
-        )}
-      </div>
+      {cards && cards.length > 0 ? (
+        <div className="w-full absolute bottom-4 flex justify-evenly gap-1.5 text-white font-semibold">
+          {isFlipped ? (
+            <>
+              <button
+                onClick={() => handleAnswer(false)}
+                className="bg-gradient-to-br from-red-400 to-red-600 py-3 px-10 rounded-full shadow-lg shadow-red-300/40 active:scale-95 transition-all duration-200"
+              >
+                Wrong
+              </button>
+              <button
+                onClick={() => handleAnswer(true)}
+                className="bg-gradient-to-br from-green-400 to-green-600 py-3 px-10 rounded-full shadow-lg shadow-green-300/40 active:scale-95 transition-all duration-200"
+              >
+                Correct
+              </button>
+            </>
+          ) : (
+            <span className="text-gray-400 text-sm">
+              tap on card to reweal answer
+            </span>
+          )}
+        </div>
+      ) : null}
     </div>
   )
 }
