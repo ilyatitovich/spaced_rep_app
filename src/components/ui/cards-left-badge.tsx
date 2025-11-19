@@ -41,16 +41,21 @@ export default function CardsLeftBadge({
           cx="16"
           cy="16"
           r={radius}
-          stroke="black"
           strokeWidth="3"
           fill="none"
           strokeDasharray={circumference}
+          strokeLinecap="round"
+          initial={{
+            strokeOpacity: 0,
+            strokeDashoffset: hiddenOffset
+          }}
           animate={{
             strokeDashoffset: progress === 0 ? hiddenOffset : offset,
             strokeOpacity: progress === 0 ? 0 : 1
           }}
           transition={{ duration: 0.45, ease: 'easeInOut' }}
           style={{ willChange: 'stroke-dashoffset, opacity' }}
+          className="stroke-black"
         />
       </svg>
 

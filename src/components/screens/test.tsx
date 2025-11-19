@@ -155,7 +155,7 @@ export default function TestScreen({
       {!isDone && (
         <div className="w-full mt-4 flex justify-evenly gap-1.5 text-white font-semibold">
           {isFlipped ? (
-            <div className="flex gap-4">
+            <div className="flex gap-6">
               <AnswerButton isCorrect={false} onAnswer={handleAnswer} />
               <AnswerButton isCorrect={true} onAnswer={handleAnswer} />
             </div>
