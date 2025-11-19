@@ -1,7 +1,12 @@
 import { X } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 
-import { Content, Card, CardsLeftBadge, TestDoneMessage } from '@/components'
+import {
+  Card,
+  CardsLeftBadge,
+  TestDoneMessage,
+  AnswerButton
+} from '@/components'
 import { getToday } from '@/lib'
 import { Card as CardModel, Topic } from '@/models'
 import { updateCard, updateTopic } from '@/services'
@@ -21,12 +26,13 @@ export default function TestScreen({
 }: TestScreenProps) {
   const [isFlipped, setIsFlipped] = useState(false)
   const [cards, setCards] = useState<CardModel[] | null>(null)
-  const [wrongCards, setWrongCards] = useState<CardModel[]>([])
   const [isFirstCardActive, setIsFirstCardActive] = useState(true)
   const [isInitialRender, setIsInitialRender] = useState(true)
   const [isCorrect, setIsCorrect] = useState(false)
 
   const totalCardsRef = useRef(0)
+
+  const isDone = cards && cards.length === 0
 
   useEffect(() => {
     if (isOpen) {
@@ -63,15 +69,10 @@ export default function TestScreen({
       const currentCard = updatedCards.shift()
 
       if (isCorrect) {
-        if (!wrongCards.includes(currentCard!)) {
-          currentCard!.level += 1
-        }
-
-        setWrongCards(prev => prev.filter(card => card.id !== currentCard!.id))
+        currentCard!.level += 1
       } else {
         currentCard!.level = 1
         updatedCards.push(currentCard!)
-        setWrongCards(prev => [...prev, currentCard!])
       }
 
       await updateCard(currentCard!)
@@ -108,9 +109,13 @@ export default function TestScreen({
             <X className="w-4 h-4 text-white" strokeWidth={4} />
           </div>
         </button>
-        <span className="font-semibold absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-          {isFlipped ? 'Back' : 'Front'}
-        </span>
+
+        {!isDone && (
+          <span className="font-semibold absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+            {isFlipped ? 'Back' : 'Front'}
+          </span>
+        )}
+
         {cards && (
           <CardsLeftBadge
             current={cards.length}
@@ -120,7 +125,7 @@ export default function TestScreen({
       </div>
 
       {cards && (
-        <Content centered>
+        <div className="h-[70dvh] flex justify-center items-center">
           {isInitialRender && cards.length === 0 ? (
             <TestDoneMessage />
           ) : (
@@ -144,33 +149,23 @@ export default function TestScreen({
               )}
             </>
           )}
-        </Content>
+        </div>
       )}
 
-      {cards && cards.length > 0 ? (
-        <div className="w-full absolute bottom-4 flex justify-evenly gap-1.5 text-white font-semibold">
+      {!isDone && (
+        <div className="w-full mt-4 flex justify-evenly gap-1.5 text-white font-semibold">
           {isFlipped ? (
-            <>
-              <button
-                onClick={() => handleAnswer(false)}
-                className="bg-gradient-to-br from-red-400 to-red-600 py-3 px-10 rounded-full shadow-lg shadow-red-300/40 active:scale-95 transition-all duration-200"
-              >
-                Wrong
-              </button>
-              <button
-                onClick={() => handleAnswer(true)}
-                className="bg-gradient-to-br from-green-400 to-green-600 py-3 px-10 rounded-full shadow-lg shadow-green-300/40 active:scale-95 transition-all duration-200"
-              >
-                Correct
-              </button>
-            </>
+            <div className="flex gap-4">
+              <AnswerButton isCorrect={false} onAnswer={handleAnswer} />
+              <AnswerButton isCorrect={true} onAnswer={handleAnswer} />
+            </div>
           ) : (
             <span className="text-gray-400 text-sm">
               tap on card to reweal answer
             </span>
           )}
         </div>
-      ) : null}
+      )}
     </div>
   )
 }

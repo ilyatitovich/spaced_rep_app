@@ -39,7 +39,7 @@ export default function HomePage() {
   useEffect(() => {
     const loadTopics = async (): Promise<void> => {
       try {
-        if (!isCreating) {
+        if (!isCreating && !currentTopic) {
           const topics = await getAllTopics()
           setTopics(topics)
         }
@@ -51,7 +51,7 @@ export default function HomePage() {
     }
 
     loadTopics()
-  }, [isCreating])
+  }, [isCreating, currentTopic])
 
   const handlePress = (isPressed: boolean): void => {
     setIsSelectionMode(isPressed)

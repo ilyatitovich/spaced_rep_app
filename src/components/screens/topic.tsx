@@ -65,7 +65,7 @@ export default function TopicScreen({
     if (!topicId) return
 
     fetchTopic()
-  }, [topicId])
+  }, [topicId, isTest])
 
   if (!topic) return null
 
