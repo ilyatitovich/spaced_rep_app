@@ -10,7 +10,7 @@ export default function AnswerButton({
   return (
     <button
       onClick={() => onAnswer(isCorrect)}
-      className={`w-full text-bold bg-gradient-to-br from-${isCorrect ? 'green' : 'red'}-400 to-${isCorrect ? 'green' : 'red'}-600 py-4 px-10 rounded-xl shadow-lg shadow-red-300/40 active:scale-95 transition-all duration-200`}
+      className={`w-full font-black bg-gradient-to-br ${isCorrect ? 'from-green-400 to-green-600' : 'from-red-400 to-red-600'} py-4 px-10 rounded-xl shadow-lg shadow-red-300/40 active:scale-95 transition-all duration-200`}
     >
       {isCorrect ? 'Correct' : 'Wrong'}
     </button>
