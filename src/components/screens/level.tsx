@@ -1,10 +1,11 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useCallback } from 'react'
 import { useSearchParams } from 'react-router'
 
 import {
   BackButton,
   LevelCard,
+  Screen,
   SelectionModeHeader,
   SelectionModeFooter
 } from '@/components'
@@ -42,36 +43,20 @@ export default function LevelScreen({
   const [selectedItems, setSelectedItems] = useState<string[]>([])
   const [levelCards, setLevelCards] = useState<Card[]>([])
   const [currentLevelId, setCurrentLevelId] = useState('')
-  const [isInitialRender, setIsInitialRender] = useState(true)
 
   const [_, setSearchParams] = useSearchParams()
 
-  const screenRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const node = screenRef.current
-    if (!node || isInitialRender) return
-
-    if (!isOpen) {
-      const handleEnd = () => {
-        setIsSelectionMode(false)
-        setSelectedItems([])
-        setLevelCards([])
-        setCurrentLevelId('')
-      }
-
-      node.addEventListener('transitionend', handleEnd, { once: true })
-    }
-  }, [isOpen, isInitialRender])
-
-  useEffect(() => {
-    if (!isOpen) return
+  const onOpen = useCallback(() => {
     setLevelCards(cards)
     setCurrentLevelId(levelId)
-    if (isInitialRender) {
-      setIsInitialRender(false)
-    }
-  }, [cards, levelId, isOpen, isInitialRender])
+  }, [cards, levelId])
+
+  const onHide = useCallback(() => {
+    setIsSelectionMode(false)
+    setSelectedItems([])
+    setLevelCards([])
+    setCurrentLevelId('')
+  }, [])
 
   const handlePress = (isPressed: boolean): void => {
     setIsSelectionMode(isPressed)
@@ -111,10 +96,7 @@ export default function LevelScreen({
   }
 
   return (
-    <div
-      ref={screenRef}
-      className={`${isOpen ? 'translate-x-0' : 'translate-x-full'} transition-transform duration-300 ease-in-out fixed inset-0 z-50 bg-background`}
-    >
+    <Screen isOpen={isOpen} onHide={onHide} onOpen={onOpen}>
       <AnimatePresence>
         {isSelectionMode && (
           <SelectionModeHeader
@@ -199,6 +181,6 @@ export default function LevelScreen({
           />
         )}
       </AnimatePresence>
-    </div>
+    </Screen>
   )
 }
