@@ -1,5 +1,3 @@
-/* eslint-disable jsx-a11y/click-events-have-key-events */
-/* eslint-disable jsx-a11y/no-static-element-interactions */
 import type { FocusEventHandler, Ref } from 'react'
 import { forwardRef, useRef, useImperativeHandle } from 'react'
 
@@ -44,10 +42,9 @@ export default forwardRef(function Card(
   }))
 
   return (
-    // eslint-disable-next-line jsx-a11y/click-events-have-key-events
     <div
-      className={`perspective-[1000px] w-[80vw] h-[60vh] absolute ${className}`.trim()}
-      onClick={handleClick}
+      className={`perspective-[1000px] w-[80vw] h-[60dvh] absolute ${className}`.trim()}
+      onTouchStart={handleClick}
     >
       <div
         className={`w-full h-full relative transform-style-preserve-3d transition-transform duration-600 ${

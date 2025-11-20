@@ -194,30 +194,16 @@ export default function TopicScreen({
       />
 
       <LevelScreen
-        isOpen={!!levelId}
+        isOpen={levelId !== ''}
         levelId={levelId}
         cards={levelId ? (cards[Number(levelId)] ?? []) : []}
         startDate={topic.pivot}
-        onDeleteCards={cards => {
+        onDeleteCards={(cards: Card[]) => {
           setCards(prev => ({
             ...prev,
             [Number(levelId)]: cards
           }))
         }}
-        onShowCardDatails={cardId =>
-          setSearchParams(prev => {
-            const params = new URLSearchParams(prev)
-            params.set('cardId', cardId)
-            return params
-          })
-        }
-        onClose={() =>
-          setSearchParams(prev => {
-            const params = new URLSearchParams(prev)
-            params.delete('levelId')
-            return params
-          })
-        }
       />
 
       <CardDetailsScreen

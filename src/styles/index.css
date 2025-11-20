@@ -167,7 +167,7 @@ footer {
   }
   99% {
     z-index: 20;
-    transform: rotate(-10deg) translateX(-150%);
+    transform: rotate(-10deg) translateX(-200%);
     opacity: 1;
   }
   100% {
@@ -185,7 +185,7 @@ footer {
   }
   99% {
     z-index: 20;
-    transform: rotate(10deg) translateX(150%);
+    transform: rotate(10deg) translateX(200%);
     opacity: 1;
   }
   100% {

@@ -47,10 +47,9 @@ export default function AddCardScreen({
         setIsInitialRender(true)
         currentCardRef.current?.resetContent()
         secondCardRef.current?.resetContent()
-        node.removeEventListener('transitionend', handleEnd)
       }
 
-      node.addEventListener('transitionend', handleEnd)
+      node.addEventListener('transitionend', handleEnd, { once: true })
     }
   }, [isOpen])
 

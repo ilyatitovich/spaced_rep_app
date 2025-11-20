@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useState, useEffect, useRef } from 'react'
+import { useSearchParams } from 'react-router'
 
 import {
   BackButton,
@@ -17,8 +18,6 @@ type LevelScreenProps = {
   cards: Card[]
   startDate: number
   onDeleteCards: (cards: Card[]) => void
-  onShowCardDatails: (cardId: string) => void
-  onClose: () => void
 }
 
 const listVariants = {
@@ -37,33 +36,42 @@ export default function LevelScreen({
   levelId,
   cards,
   startDate,
-  onDeleteCards,
-  onShowCardDatails,
-  onClose
+  onDeleteCards
 }: LevelScreenProps) {
   const [isSelectionMode, setIsSelectionMode] = useState(false)
   const [selectedItems, setSelectedItems] = useState<string[]>([])
+  const [levelCards, setLevelCards] = useState<Card[]>([])
+  const [currentLevelId, setCurrentLevelId] = useState('')
+  const [isInitialRender, setIsInitialRender] = useState(true)
+
+  const [_, setSearchParams] = useSearchParams()
 
   const screenRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (!isOpen) {
-      const node = screenRef.current
-      if (!node) return
+    const node = screenRef.current
+    if (!node || isInitialRender) return
 
+    if (!isOpen) {
       const handleEnd = () => {
         setIsSelectionMode(false)
         setSelectedItems([])
-        node.removeEventListener('transitionend', handleEnd)
+        setLevelCards([])
+        setCurrentLevelId('')
       }
 
-      node.addEventListener('transitionend', handleEnd)
+      node.addEventListener('transitionend', handleEnd, { once: true })
     }
-  }, [isOpen])
+  }, [isOpen, isInitialRender])
 
-  const handleClose = (): void => {
-    onClose()
-  }
+  useEffect(() => {
+    if (!isOpen) return
+    setLevelCards(cards)
+    setCurrentLevelId(levelId)
+    if (isInitialRender) {
+      setIsInitialRender(false)
+    }
+  }, [cards, levelId, isOpen, isInitialRender])
 
   const handlePress = (isPressed: boolean): void => {
     setIsSelectionMode(isPressed)
@@ -81,13 +89,15 @@ export default function LevelScreen({
   }
 
   const handleSelectAll = (isSelectAll: boolean): void => {
-    setSelectedItems(isSelectAll ? cards.map(c => c.id) : [])
+    setSelectedItems(isSelectAll ? levelCards.map(c => c.id) : [])
   }
 
   const handleDeleteSelectedItems = async (): Promise<void> => {
     try {
       await deleteCardsBulk(selectedItems)
-      const restCards = cards.filter(card => !selectedItems.includes(card.id))
+      const restCards = levelCards.filter(
+        card => !selectedItems.includes(card.id)
+      )
       onDeleteCards(restCards)
 
       if (restCards.length === 0) {
@@ -110,27 +120,35 @@ export default function LevelScreen({
           <SelectionModeHeader
             handleCancel={handleCancelSelectedMode}
             selectedItemsCount={selectedItems.length}
-            isAllSelected={selectedItems.length === cards.length}
+            isAllSelected={selectedItems.length === levelCards.length}
             handleSelectAll={handleSelectAll}
           />
         )}
       </AnimatePresence>
 
       <div className="relative w-full p-4 flex justify-between items-center">
-        <BackButton onClick={handleClose} />
+        <BackButton
+          onClick={() =>
+            setSearchParams(prev => {
+              const params = new URLSearchParams(prev)
+              params.delete('levelId')
+              return params
+            })
+          }
+        />
         <span className="font-semibold">
-          {levelId === '0' ? 'Draft' : `Level ${levelId}`}
+          {currentLevelId === '0' ? 'Draft' : `Level ${currentLevelId}`}
         </span>
       </div>
 
       <div className="flex flex-col overflow-y-auto h-[calc(100dvh-60px)]">
         <div className="w-full text-center p-4">
           <p className="text-[16px] text-gray-900">
-            {`${cards.length} card${cards.length === 1 ? '' : 's'}${levelId === '0' ? '' : `, next review: ${getReviewMessage(startDate, Number(levelId))}`}`}
+            {`${levelCards.length} card${levelCards.length === 1 ? '' : 's'}${['0', '8'].includes(currentLevelId) ? '' : `, next review: ${getReviewMessage(startDate, Number(currentLevelId))}`}`}
           </p>
         </div>
 
-        {cards.length > 0 && (
+        {levelCards.length > 0 && (
           <motion.div
             className="grid grid-cols-3 gap-4 content-start p-4"
             variants={listVariants}
@@ -138,7 +156,7 @@ export default function LevelScreen({
             animate="visible"
           >
             <AnimatePresence>
-              {cards.map(card => (
+              {levelCards.map(card => (
                 <motion.div
                   key={card.id}
                   variants={itemVariants}
@@ -151,7 +169,13 @@ export default function LevelScreen({
                     isSelectionMode={isSelectionMode}
                     onPress={handlePress}
                     onSelect={handleSelectItem}
-                    onOpen={() => onShowCardDatails(card.id)}
+                    onOpen={() => {
+                      setSearchParams(prev => {
+                        const params = new URLSearchParams(prev)
+                        params.set('cardId', card.id)
+                        return params
+                      })
+                    }}
                   />
                 </motion.div>
               ))}
@@ -161,7 +185,7 @@ export default function LevelScreen({
 
         <div className="w-full p-4">
           <p className="text-[12px] text-gray-600 whitespace-pre-line">
-            {getLevelDescription(levelId)}
+            {getLevelDescription(currentLevelId)}
           </p>
         </div>
       </div>
