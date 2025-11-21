@@ -35,7 +35,15 @@ export default function Screen({
 
   return (
     <div
-      className={`${isOpen ? `translate-${isVertical ? 'y' : 'x'}-0` : `translate-${isVertical ? 'y' : 'x'}-full`} transition-transform duration-300 ease-in-out fixed inset-0 z-50 bg-background`}
+      className={`${
+        isOpen
+          ? isVertical
+            ? 'translate-y-0'
+            : 'translate-x-0'
+          : isVertical
+            ? 'translate-y-[100vh]'
+            : 'translate-x-[100vw]'
+      } transition-transform duration-400 ease-in-out fixed inset-0 z-50 bg-background`}
       onTransitionEnd={handleTransitionEnd}
     >
       {!isInitialRender && children}

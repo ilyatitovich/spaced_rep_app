@@ -204,6 +204,19 @@ export default function TopicScreen({
                 ? cards[Number(levelId)].find(card => card.id === cardId)
                 : null
             }
+            onUpdate={card => {
+              if (levelId !== '0') return
+              setCards(prevCards => ({
+                ...prevCards,
+                [0]: prevCards[0].filter(c => c.id !== card.id),
+                [1]: [...(prevCards[1] || []), card]
+              }))
+              setSearchParams(prev => {
+                const params = new URLSearchParams(prev)
+                params.delete('cardId')
+                return params
+              })
+            }}
           />
           <ConfirmDeleteModal
             isOpen={isConfirmDeleteModalOpen}

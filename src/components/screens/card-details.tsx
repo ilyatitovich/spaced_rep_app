@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
+import { Toaster, toast } from 'react-hot-toast'
 
 import {
   Button,
@@ -15,15 +16,21 @@ import type { CardHandle } from '@/types'
 type CardDetailsScreen = {
   isOpen: boolean
   card: CardModel | null | undefined
+  onUpdate?: (card: CardModel) => void
 }
 
-export default function CardDetailsScreen({ isOpen, card }: CardDetailsScreen) {
+export default function CardDetailsScreen({
+  isOpen,
+  card,
+  onUpdate
+}: CardDetailsScreen) {
   const [isFlipped, setIsFlipped] = useState(false)
   const [cardData, setCardData] = useState({
     front: card?.data.front ?? '',
     back: card?.data.back ?? ''
   })
   const [isEdited, setIsEdited] = useState(false)
+  const [isNewCardData, setIsNewCardData] = useState(false)
 
   const cardRef = useRef<CardHandle>(null)
 
@@ -34,14 +41,14 @@ export default function CardDetailsScreen({ isOpen, card }: CardDetailsScreen) {
   ) : (
     <Button
       key="save"
-      onClick={handleSaveCard}
-      disabled={!cardData.front || !cardData.back}
+      onClick={() => handleSaveCard()}
+      disabled={!isNewCardData}
     >
       Save
     </Button>
   )
 
-  async function handleSaveCard() {
+  const handleSaveCard = async (): Promise<void> => {
     try {
       if (!card) return
 
@@ -53,6 +60,14 @@ export default function CardDetailsScreen({ isOpen, card }: CardDetailsScreen) {
 
       await updateCard(card)
       setIsEdited(false)
+      onUpdate?.(card)
+      setIsNewCardData(false)
+      toast.success('Card saved!', {
+        iconTheme: {
+          primary: '#05df72',
+          secondary: 'white'
+        }
+      })
     } catch (error) {
       console.error('Failed to save card:', error)
     }
@@ -81,10 +96,13 @@ export default function CardDetailsScreen({ isOpen, card }: CardDetailsScreen) {
     if (cardRef.current) {
       const { front, back } = cardRef.current.getContent()
 
-      setCardData({
-        front: front,
-        back: back
-      })
+      if (front !== card?.data.front || back !== card?.data.back) {
+        setIsNewCardData(true)
+      } else {
+        setIsNewCardData(false)
+      }
+
+      setCardData({ front, back })
     }
     setIsEdited(false)
   }
@@ -96,6 +114,7 @@ export default function CardDetailsScreen({ isOpen, card }: CardDetailsScreen) {
       onOpen={handleOpen}
       isVertical
     >
+      {isOpen && <Toaster position="top-center" reverseOrder={false} />}
       <div className="relative w-full p-4 flex justify-between items-center">
         <BackButton />
         <span className="font-bold absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
