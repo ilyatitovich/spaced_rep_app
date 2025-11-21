@@ -13,8 +13,7 @@ import {
   LevelRow,
   LevelScreen,
   Week,
-  BackButton,
-  Screen
+  BackButton
 } from '@/components'
 import { getToday } from '@/lib'
 import { Topic, Card } from '@/models'
@@ -98,7 +97,9 @@ export default function TopicScreen({
 
   return (
     <>
-      <Screen isOpen={isOpen} isVertical={false}>
+      <div
+        className={`${isOpen ? 'translate-x-0' : 'translate-x-full'} transition-transform duration-300 ease-in-out fixed inset-0 z-50 bg-background`}
+      >
         <div className="relative w-full p-4 flex justify-between items-center">
           <BackButton />
           <span
@@ -160,7 +161,7 @@ export default function TopicScreen({
             )}
           </Content>
         )}
-      </Screen>
+      </div>
 
       {topic && (
         <>
