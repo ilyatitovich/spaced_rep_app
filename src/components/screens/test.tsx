@@ -1,5 +1,4 @@
-import { X } from 'lucide-react'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 
 import {
   Card,
@@ -7,7 +6,8 @@ import {
   CardContainer,
   TestDoneMessage,
   AnswerButton,
-  Screen
+  Screen,
+  BackButton
 } from '@/components'
 import { getToday } from '@/lib'
 import { Card as CardModel, Topic } from '@/models'
@@ -17,37 +17,23 @@ type TestScreenProps = {
   isOpen: boolean
   topic: Topic
   topicCards: Record<number, CardModel[]>
-  onClose: () => void
 }
 
 export default function TestScreen({
   isOpen,
   topic,
-  topicCards,
-  onClose
+  topicCards
 }: TestScreenProps) {
   const [isFlipped, setIsFlipped] = useState(false)
   const [cards, setCards] = useState<CardModel[] | null>(null)
   const [isFirstCardActive, setIsFirstCardActive] = useState(true)
   const [isInitialRender, setIsInitialRender] = useState(true)
   const [isCorrect, setIsCorrect] = useState(false)
+  const [prevCard, setPrevCard] = useState<CardModel | null>(null)
 
   const totalCardsRef = useRef(0)
 
   const isDone = cards && cards.length === 0
-
-  useEffect(() => {
-    if (isOpen) {
-      const result = topic.week[getToday()]!.todayLevels.flatMap(
-        levelId => topicCards[levelId]
-      ).filter(card => card !== undefined)
-      setCards(result)
-      totalCardsRef.current = result.length
-    } else {
-      setCards(null)
-      totalCardsRef.current = 0
-    }
-  }, [topic.week, topicCards, isOpen])
 
   useEffect(() => {
     async function setTopic(): Promise<void> {
@@ -83,6 +69,7 @@ export default function TestScreen({
       setCards(updatedCards)
       setIsFlipped(false)
       setIsInitialRender(false)
+      setPrevCard(cards[0] ?? null)
 
       if (updatedCards.length === 0) {
         setIsFirstCardActive(false)
@@ -94,21 +81,33 @@ export default function TestScreen({
     }
   }
 
-  const handleClose = (): void => {
-    onClose()
+  const handleOpen = useCallback(() => {
+    const result = topic.week[getToday()]!.todayLevels.flatMap(
+      levelId => topicCards[levelId]
+    ).filter(card => card !== undefined)
+    setCards(result)
+    totalCardsRef.current = result.length
+  }, [topic.week, topicCards])
+
+  const handleClose = useCallback(() => {
     setIsFlipped(false)
     setIsFirstCardActive(true)
     setIsInitialRender(true)
-  }
+    setPrevCard(null)
+    setIsCorrect(false)
+    setCards(null)
+    totalCardsRef.current = 0
+  }, [])
 
   return (
-    <Screen isOpen={isOpen} onClose={handleClose} isVertical>
+    <Screen
+      isOpen={isOpen}
+      onClose={handleClose}
+      onOpen={handleOpen}
+      isVertical
+    >
       <div className="relative p-4 flex justify-between items-center">
-        <button onClick={handleClose}>
-          <div className="w-8 h-8 flex items-center justify-center bg-black rounded-full">
-            <X className="w-4 h-4 text-white" strokeWidth={4} />
-          </div>
-        </button>
+        <BackButton icon="x" />
 
         {!isDone && (
           <span className="font-semibold absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
@@ -132,7 +131,7 @@ export default function TestScreen({
             <>
               <Card
                 className={`${isFirstCardActive ? 'scale-up' : isCorrect ? 'move-right' : 'move-left'}`}
-                data={cards[0] ? cards[0].data : { front: '', back: '' }}
+                data={prevCard ? prevCard.data : cards[0].data}
                 isFlipped={isFirstCardActive ? isFlipped : false}
                 handleClick={() => setIsFlipped(prev => !prev)}
               />

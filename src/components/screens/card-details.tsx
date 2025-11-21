@@ -62,12 +62,16 @@ export default function CardDetailsScreen({
       setIsEdited(false)
       onUpdate?.(card)
       setIsNewCardData(false)
-      toast.success('Card saved!', {
-        iconTheme: {
-          primary: '#05df72',
-          secondary: 'white'
-        }
-      })
+
+      if (card.level > 0) {
+        toast.success('Card updated!', {
+          iconTheme: {
+            primary: '#05df72',
+            secondary: 'white'
+          }
+        })
+        return
+      }
     } catch (error) {
       console.error('Failed to save card:', error)
     }

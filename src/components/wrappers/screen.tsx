@@ -43,7 +43,7 @@ export default function Screen({
           : isVertical
             ? 'translate-y-[100vh]'
             : 'translate-x-[100vw]'
-      } transition-transform duration-400 ease-in-out fixed inset-0 z-50 bg-background`}
+      } transition-transform duration-300 ease-in-out fixed inset-0 z-50 bg-background`}
       onTransitionEnd={handleTransitionEnd}
     >
       {!isInitialRender && children}

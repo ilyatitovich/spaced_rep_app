@@ -176,13 +176,6 @@ export default function TopicScreen({
             }
             topicCards={cards}
             topic={topic}
-            onClose={() => {
-              setSearchParams(prev => {
-                const params = new URLSearchParams(prev)
-                params.delete('test')
-                return params
-              })
-            }}
           />
 
           <LevelScreen
