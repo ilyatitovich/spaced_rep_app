@@ -98,7 +98,7 @@ export default function TopicScreen({
 
   return (
     <>
-      <Screen isOpen={isOpen} onClose={onClose}>
+      <Screen isOpen={isOpen} isVertical={false}>
         <div className="relative w-full p-4 flex justify-between items-center">
           <BackButton />
           <span
