@@ -51,7 +51,7 @@ export default function LevelScreen({
     setCurrentLevelId(levelId)
   }, [cards, levelId])
 
-  const onHide = useCallback(() => {
+  const onClose = useCallback(() => {
     setIsSelectionMode(false)
     setSelectedItems([])
     setLevelCards([])
@@ -96,7 +96,7 @@ export default function LevelScreen({
   }
 
   return (
-    <Screen isOpen={isOpen} onHide={onHide} onOpen={onOpen}>
+    <Screen isOpen={isOpen} onClose={onClose} onOpen={onOpen}>
       <AnimatePresence>
         {isSelectionMode && (
           <SelectionModeHeader
@@ -109,15 +109,7 @@ export default function LevelScreen({
       </AnimatePresence>
 
       <div className="relative w-full p-4 flex justify-between items-center">
-        <BackButton
-          onClick={() =>
-            setSearchParams(prev => {
-              const params = new URLSearchParams(prev)
-              params.delete('levelId')
-              return params
-            })
-          }
-        />
+        <BackButton />
         <span className="font-semibold">
           {currentLevelId === '0' ? 'Draft' : `Level ${currentLevelId}`}
         </span>

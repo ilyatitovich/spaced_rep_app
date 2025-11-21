@@ -1,14 +1,18 @@
 import { ChevronLeft } from 'lucide-react'
+import { useSearchParams } from 'react-router'
 
 import Button from './button'
+import { removeLastSearchParam } from '@/lib'
 
-type BackButtonProps = {
-  onClick: () => void
-}
+export default function BackButton() {
+  const [, setSearchParams] = useSearchParams()
 
-export default function BackButton({ onClick }: BackButtonProps) {
   return (
-    <Button onClick={onClick}>
+    <Button
+      onClick={() => {
+        setSearchParams(prev => removeLastSearchParam(prev))
+      }}
+    >
       <ChevronLeft size={28} />
     </Button>
   )

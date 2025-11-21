@@ -1,6 +1,13 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 
-import { Button, Card, BackButton, CardButton } from '@/components'
+import {
+  Button,
+  Card,
+  BackButton,
+  CardButton,
+  CardContainer,
+  Screen
+} from '@/components'
 import { Card as CardModel } from '@/models'
 import { createCard } from '@/services'
 import type { CardHandle, CardData } from '@/types'
@@ -8,7 +15,6 @@ import type { CardHandle, CardData } from '@/types'
 type NewCardPageProps = {
   isOpen: boolean
   topicId: string
-  onClose: () => void
   onAdd: (payload: { level: number; card: CardModel }) => void
 }
 
@@ -20,7 +26,6 @@ const initialCardData: CardData = {
 export default function AddCardScreen({
   isOpen,
   topicId,
-  onClose,
   onAdd
 }: NewCardPageProps) {
   const [isFlipped, setIsFlipped] = useState(false)
@@ -30,28 +35,8 @@ export default function AddCardScreen({
   const [isFirstCardActive, setIsFirstCardActive] = useState(true)
   const [isInitialRender, setIsInitialRender] = useState(true)
 
-  const screenRef = useRef<HTMLDivElement>(null)
   const currentCardRef = useRef<CardHandle>(null)
   const secondCardRef = useRef<CardHandle>(null)
-
-  useEffect(() => {
-    if (!isOpen) {
-      const node = screenRef.current
-      if (!node) return
-
-      const handleEnd = () => {
-        setCardData(initialCardData)
-        setIsFlipped(false)
-        setIsDraft(true)
-        setIsFirstCardActive(true)
-        setIsInitialRender(true)
-        currentCardRef.current?.resetContent()
-        secondCardRef.current?.resetContent()
-      }
-
-      node.addEventListener('transitionend', handleEnd, { once: true })
-    }
-  }, [isOpen])
 
   let rightBtn
 
@@ -127,22 +112,25 @@ export default function AddCardScreen({
     if (isEdited) {
       setIsEdited(false)
     }
-    onClose()
+    setCardData(initialCardData)
+    setIsFlipped(false)
+    setIsDraft(true)
+    setIsFirstCardActive(true)
+    setIsInitialRender(true)
+    currentCardRef.current?.resetContent()
+    secondCardRef.current?.resetContent()
   }
 
   return (
-    <div
-      ref={screenRef}
-      className={`${isOpen ? 'translate-y-0' : 'translate-y-full'} h-full transition-transform duration-300 ease-in-out fixed inset-0 z-50 bg-background`}
-    >
+    <Screen isOpen={isOpen} onClose={handleClose} isVertical>
       <div className="relative p-4 flex justify-between items-center">
-        <BackButton onClick={handleClose} />
+        <BackButton />
         <span className="font-bold absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
           {isFlipped ? 'Back' : 'Front'}
         </span>
         {rightBtn}
       </div>
-      <div className="h-[70dvh] flex justify-center items-center">
+      <CardContainer>
         <Card
           ref={isFirstCardActive ? currentCardRef : secondCardRef}
           className={`${isFirstCardActive ? 'scale-up' : 'move-right'}`}
@@ -161,11 +149,11 @@ export default function AddCardScreen({
           handleFocus={() => setIsEdited(true)}
           handleBlur={handleBlur}
         />
-      </div>
+      </CardContainer>
       {/* Buttons */}
       <div className="pt-1 flex justify-center items-center gap-12">
         <CardButton type="flip" onClick={() => setIsFlipped(prev => !prev)} />
       </div>
-    </div>
+    </Screen>
   )
 }

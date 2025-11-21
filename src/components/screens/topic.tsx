@@ -13,10 +13,10 @@ import {
   LevelRow,
   LevelScreen,
   Week,
-  BackButton
+  BackButton,
+  Screen
 } from '@/components'
 import { getToday } from '@/lib'
-import { Day } from '@/lib/helpers'
 import { Topic, Card } from '@/models'
 import { getTopicById, deleteTopic } from '@/services'
 
@@ -67,10 +67,6 @@ export default function TopicScreen({
     fetchTopic()
   }, [topicId, isTest])
 
-  if (!topic) return null
-
-  const { isDone, todayLevels } = topic.week[getToday()] as Day
-
   const handleDeleteTopic = async (): Promise<void> => {
     if (!topic) return
     try {
@@ -90,14 +86,6 @@ export default function TopicScreen({
     })
   }
 
-  const handleCloseAddCard = (): void => {
-    setSearchParams(prev => {
-      const params = new URLSearchParams(prev)
-      params.delete('addCard')
-      return params
-    })
-  }
-
   const handleAddCard = (card: { level: number; card: Card }): void => {
     setCards(prevCards => {
       const levelCards = prevCards[card.level] || []
@@ -110,11 +98,9 @@ export default function TopicScreen({
 
   return (
     <>
-      <div
-        className={`${isOpen ? 'translate-x-0' : 'translate-x-full'} transition-transform duration-300 ease-in-out fixed inset-0 z-50 bg-background`}
-      >
+      <Screen isOpen={isOpen} onClose={onClose}>
         <div className="relative w-full p-4 flex justify-between items-center">
-          <BackButton onClick={onClose} />
+          <BackButton />
           <span
             className={`
             font-semibold
@@ -127,108 +113,106 @@ export default function TopicScreen({
             truncate
             `}
           >
-            {topic.title}
+            {topic?.title}
           </span>
           <Button onClick={() => setIsConfirmDeleteModalOpen(true)}>
             <Trash />
           </Button>
         </div>
 
-        <Content height={92} className="pb-30" ref={contentRef}>
-          <Week week={topic.week} />
+        {topic && (
+          <Content height={92} className="pb-30" ref={contentRef}>
+            <Week week={topic.week} />
 
-          <div className="flex items-center justify-between mt-10 py-2">
-            <span className="font-bold">Levels</span>
-            <Button onClick={handleOpenAddCard}>Add Card</Button>
-          </div>
+            <div className="flex items-center justify-between mt-10 py-2">
+              <span className="font-bold">Levels</span>
+              <Button onClick={handleOpenAddCard}>Add Card</Button>
+            </div>
 
-          <ul>
-            {topic.levels.map(level => (
-              <LevelRow
-                key={level.id}
-                levelId={level.id}
-                cardsNumber={cards[level.id]?.length ?? 0}
-                onLevelOpen={() =>
+            <ul>
+              {topic.levels.map(level => (
+                <LevelRow
+                  key={level.id}
+                  levelId={level.id}
+                  cardsNumber={cards[level.id]?.length ?? 0}
+                  onLevelOpen={() =>
+                    setSearchParams(prev => {
+                      const params = new URLSearchParams(prev)
+                      params.set('levelId', String(level.id))
+                      return params
+                    })
+                  }
+                />
+              ))}
+            </ul>
+
+            {!topic.week[getToday()]?.isDone && (
+              <TestButton
+                todayLevels={topic.week[getToday()]!.todayLevels}
+                onClick={() =>
                   setSearchParams(prev => {
                     const params = new URLSearchParams(prev)
-                    params.set('levelId', String(level.id))
+                    params.set('test', 'true')
                     return params
                   })
                 }
               />
-            ))}
-          </ul>
+            )}
+          </Content>
+        )}
+      </Screen>
 
-          {!isDone && (
-            <TestButton
-              todayLevels={todayLevels}
-              onClick={() =>
-                setSearchParams(prev => {
-                  const params = new URLSearchParams(prev)
-                  params.set('test', 'true')
-                  return params
-                })
-              }
-            />
-          )}
-        </Content>
-      </div>
+      {topic && (
+        <>
+          <AddCardScreen
+            isOpen={isAddingCard}
+            topicId={topicId}
+            onAdd={handleAddCard}
+          />
+          <TestScreen
+            isOpen={
+              topic?.week[getToday()]!.isDone ? false : !isAddingCard && isTest
+            }
+            topicCards={cards}
+            topic={topic}
+            onClose={() => {
+              setSearchParams(prev => {
+                const params = new URLSearchParams(prev)
+                params.delete('test')
+                return params
+              })
+            }}
+          />
 
-      <AddCardScreen
-        isOpen={isAddingCard}
-        topicId={topicId}
-        onClose={handleCloseAddCard}
-        onAdd={handleAddCard}
-      />
-      <TestScreen
-        isOpen={isDone ? false : !isAddingCard && isTest}
-        topicCards={cards}
-        topic={topic}
-        onClose={() => {
-          setSearchParams(prev => {
-            const params = new URLSearchParams(prev)
-            params.delete('test')
-            return params
-          })
-        }}
-      />
-
-      <LevelScreen
-        isOpen={levelId !== ''}
-        levelId={levelId}
-        cards={levelId ? (cards[Number(levelId)] ?? []) : []}
-        startDate={topic.pivot}
-        onDeleteCards={(cards: Card[]) => {
-          setCards(prev => ({
-            ...prev,
-            [Number(levelId)]: cards
-          }))
-        }}
-      />
-
-      <CardDetailsScreen
-        isOpen={!!cardId}
-        card={
-          cardId && levelId
-            ? cards[Number(levelId)].find(card => card.id === cardId)
-            : null
-        }
-        onClose={() =>
-          setSearchParams(prev => {
-            const params = new URLSearchParams(prev)
-            params.delete('cardId')
-            return params
-          })
-        }
-      />
-
-      <ConfirmDeleteModal
-        isOpen={isConfirmDeleteModalOpen}
-        onConfirm={handleDeleteTopic}
-        onClose={() => setIsConfirmDeleteModalOpen(false)}
-        count={1}
-        itemName="topic"
-      />
+          <LevelScreen
+            isOpen={levelId !== ''}
+            levelId={levelId}
+            cards={levelId ? (cards[Number(levelId)] ?? []) : []}
+            startDate={topic.pivot}
+            onDeleteCards={(cards: Card[]) => {
+              setCards(prev => ({
+                ...prev,
+                [Number(levelId)]: cards
+              }))
+            }}
+          />
+          <CardDetailsScreen
+            isOpen={!!cardId}
+            card={
+              cardId && levelId
+                ? cards[Number(levelId)].find(card => card.id === cardId)
+                : null
+            }
+          />
+          <ConfirmDeleteModal
+            isOpen={isConfirmDeleteModalOpen}
+            onConfirm={handleDeleteTopic}
+            onClose={() => setIsConfirmDeleteModalOpen(false)}
+            count={1}
+            itemName="topic"
+          />
+        </>
+      )}
     </>
   )
 }

@@ -1,6 +1,13 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useCallback } from 'react'
 
-import { Button, Content, Card } from '@/components'
+import {
+  Button,
+  Card,
+  Screen,
+  CardButton,
+  CardContainer,
+  BackButton
+} from '@/components'
 import { Card as CardModel } from '@/models'
 import { updateCard } from '@/services'
 import type { CardHandle } from '@/types'
@@ -8,14 +15,9 @@ import type { CardHandle } from '@/types'
 type CardDetailsScreen = {
   isOpen: boolean
   card: CardModel | null | undefined
-  onClose: () => void
 }
 
-export default function CardDetailsScreen({
-  isOpen,
-  card,
-  onClose
-}: CardDetailsScreen) {
+export default function CardDetailsScreen({ isOpen, card }: CardDetailsScreen) {
   const [isFlipped, setIsFlipped] = useState(false)
   const [cardData, setCardData] = useState({
     front: card?.data.front ?? '',
@@ -23,24 +25,7 @@ export default function CardDetailsScreen({
   })
   const [isEdited, setIsEdited] = useState(false)
 
-  const screenRef = useRef<HTMLDivElement>(null)
   const cardRef = useRef<CardHandle>(null)
-
-  useEffect(() => {
-    if (!isOpen) {
-      const node = screenRef.current
-      if (!node) return
-
-      const handleEnd = () => {
-        setIsFlipped(false)
-        cardRef.current?.resetContent()
-        node.removeEventListener('transitionend', handleEnd)
-      }
-
-      node.addEventListener('transitionend', handleEnd)
-      return
-    }
-  }, [isOpen])
 
   const rightBtn = isEdited ? (
     <Button key="done" onClick={() => setIsEdited(false)}>
@@ -73,12 +58,24 @@ export default function CardDetailsScreen({
     }
   }
 
-  const handleClose = (): void => {
+  const handleClose = useCallback(() => {
     if (isEdited) {
       setIsEdited(false)
     }
-    onClose()
-  }
+    setIsFlipped(false)
+    setCardData({
+      front: '',
+      back: ''
+    })
+    cardRef.current?.resetContent()
+  }, [isEdited])
+
+  const handleOpen = useCallback(() => {
+    setCardData({
+      front: card?.data.front ?? '',
+      back: card?.data.back ?? ''
+    })
+  }, [card])
 
   const handleBlur = (): void => {
     if (cardRef.current) {
@@ -93,33 +90,35 @@ export default function CardDetailsScreen({
   }
 
   return (
-    <div
-      ref={screenRef}
-      className={`${isOpen ? 'translate-y-0' : 'translate-y-full'} transition-transform duration-300 ease-in-out fixed inset-0 z-50 bg-background`}
+    <Screen
+      isOpen={isOpen}
+      onClose={handleClose}
+      onOpen={handleOpen}
+      isVertical
     >
-      <div className="relative w-full p-4 flex justify-between items-center border-b border-gray-200">
-        <Button onClick={handleClose}>Back</Button>
+      <div className="relative w-full p-4 flex justify-between items-center">
+        <BackButton />
         <span className="font-bold absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
           {isFlipped ? 'Back' : 'Front'}
         </span>
         {rightBtn}
       </div>
-      {card && (
-        <Content centered>
-          <Card
-            ref={cardRef}
-            data={card.data}
-            isFlipped={isFlipped}
-            isEditable={true}
-            handleFocus={() => setIsEdited(true)}
-            handleBlur={handleBlur}
-          />
-        </Content>
-      )}
 
-      <footer>
-        <Button onClick={() => setIsFlipped(!isFlipped)}>Flip</Button>
-      </footer>
-    </div>
+      <CardContainer>
+        <Card
+          ref={cardRef}
+          data={cardData}
+          isFlipped={isFlipped}
+          isEditable={true}
+          handleFocus={() => setIsEdited(true)}
+          handleBlur={handleBlur}
+        />
+      </CardContainer>
+
+      {/* Buttons */}
+      <div className="pt-1 flex justify-center items-center gap-12">
+        <CardButton type="flip" onClick={() => setIsFlipped(prev => !prev)} />
+      </div>
+    </Screen>
   )
 }

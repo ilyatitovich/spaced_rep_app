@@ -4,8 +4,10 @@ import { useState, useEffect, useRef } from 'react'
 import {
   Card,
   CardsLeftBadge,
+  CardContainer,
   TestDoneMessage,
-  AnswerButton
+  AnswerButton,
+  Screen
 } from '@/components'
 import { getToday } from '@/lib'
 import { Card as CardModel, Topic } from '@/models'
@@ -100,9 +102,7 @@ export default function TestScreen({
   }
 
   return (
-    <div
-      className={`${isOpen ? 'translate-y-0' : 'translate-y-full'} transition-transform duration-300 ease-in-out fixed inset-0 z-50 bg-background`}
-    >
+    <Screen isOpen={isOpen} onClose={handleClose} isVertical>
       <div className="relative p-4 flex justify-between items-center">
         <button onClick={handleClose}>
           <div className="w-8 h-8 flex items-center justify-center bg-black rounded-full">
@@ -125,7 +125,7 @@ export default function TestScreen({
       </div>
 
       {cards && (
-        <div className="h-[70dvh] flex justify-center items-center">
+        <CardContainer>
           {isInitialRender && cards.length === 0 ? (
             <TestDoneMessage />
           ) : (
@@ -149,7 +149,7 @@ export default function TestScreen({
               )}
             </>
           )}
-        </div>
+        </CardContainer>
       )}
 
       {!isDone && (
@@ -166,6 +166,6 @@ export default function TestScreen({
           )}
         </div>
       )}
-    </div>
+    </Screen>
   )
 }

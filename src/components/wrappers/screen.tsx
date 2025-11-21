@@ -1,49 +1,44 @@
 import type { ReactNode } from 'react'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 
 type ScreenProps = {
   isOpen: boolean
-  isHorizontal?: boolean
-  onHide: () => void
-  onOpen: () => void
+  isVertical?: boolean
+  onClose?: () => void
+  onOpen?: () => void
   children: ReactNode
 }
 
 export default function Screen({
   isOpen,
-  isHorizontal = true,
-  onHide,
+  isVertical = false,
+  onClose,
   onOpen,
   children
 }: ScreenProps) {
   const [isInitialRender, setIsInitialRender] = useState(true)
-  const screenRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const node = screenRef.current
-    if (!node || isInitialRender) return
-
-    if (!isOpen) {
-      node.addEventListener('transitionend', onHide, { once: true })
-    }
-  }, [isOpen, isInitialRender, onHide])
 
   useEffect(() => {
     if (!isOpen) return
 
-    onOpen()
+    onOpen?.()
 
     if (isInitialRender) {
       setIsInitialRender(false)
     }
-  }, [isOpen, isInitialRender, onOpen])
+  }, [isInitialRender, isOpen, onOpen])
+
+  const handleTransitionEnd = () => {
+    if (isOpen) return
+    onClose?.()
+  }
 
   return (
     <div
-      ref={screenRef}
-      className={`${isOpen ? `translate-${isHorizontal ? 'x' : 'y'}-0` : `translate-${isHorizontal ? 'x' : 'y'}-full`} transition-transform duration-300 ease-in-out fixed inset-0 z-50 bg-background`}
+      className={`${isOpen ? `translate-${isVertical ? 'y' : 'x'}-0` : `translate-${isVertical ? 'y' : 'x'}-full`} transition-transform duration-300 ease-in-out fixed inset-0 z-50 bg-background`}
+      onTransitionEnd={handleTransitionEnd}
     >
-      {children}
+      {!isInitialRender && children}
     </div>
   )
 }
