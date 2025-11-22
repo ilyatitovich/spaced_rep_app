@@ -160,10 +160,7 @@ export default function HomePage() {
         )}
       </AnimatePresence>
 
-      <CreateTopicScreen
-        isOpen={isCreating}
-        onClose={() => setSearchParams({})}
-      />
+      <CreateTopicScreen isOpen={isCreating} />
 
       <TopicScreen
         isOpen={currentTopic !== null}
