@@ -125,13 +125,19 @@ export default function TestScreen({
 
       {cards && (
         <CardContainer>
-          {isInitialRender && cards.length === 0 ? (
+          {cards.length === 0 ? (
             <TestDoneMessage />
           ) : (
             <>
               <Card
-                className={`${isFirstCardActive ? 'scale-up' : isCorrect ? 'move-right' : 'move-left'}`}
-                data={prevCard ? prevCard.data : cards[0].data}
+                className={`${isFirstCardActive ? 'scale-up' : isCorrect ? 'move-right' : 'move-left'}`.trim()}
+                data={
+                  prevCard
+                    ? isFirstCardActive
+                      ? cards[0].data
+                      : prevCard.data
+                    : cards[0].data
+                }
                 isFlipped={isFirstCardActive ? isFlipped : false}
                 handleClick={() => setIsFlipped(prev => !prev)}
               />
