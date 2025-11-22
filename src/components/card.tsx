@@ -2,6 +2,7 @@ import type { FocusEventHandler, Ref } from 'react'
 import { forwardRef, useRef, useImperativeHandle } from 'react'
 
 import Side from './side'
+import { useTap } from '@/hooks'
 import type { CardHandle, CardSide } from '@/types'
 
 type CardProps = {
@@ -30,6 +31,8 @@ export default forwardRef(function Card(
   const frontRef = useRef<HTMLDivElement>(null)
   const backRef = useRef<HTMLDivElement>(null)
 
+  const { onTouchStart, onTouchEnd } = useTap(handleClick)
+
   useImperativeHandle(ref, () => ({
     getContent: () => ({
       front: frontRef.current?.innerText.trim() || '',
@@ -44,7 +47,8 @@ export default forwardRef(function Card(
   return (
     <div
       className={`perspective-[1000px] w-[80vw] h-[60dvh] absolute ${className}`.trim()}
-      onTouchStart={handleClick}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
     >
       <div
         className={`w-full h-full relative transform-style-preserve-3d transition-transform duration-600 ${

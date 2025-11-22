@@ -3,14 +3,13 @@ import { useCallback, useState } from 'react'
 import { Toaster, toast } from 'react-hot-toast'
 
 import { BackButton, Button, Screen } from '@/components'
+import { TITLE_MAX_LENGTH } from '@/lib'
 import { Topic } from '@/models'
 import { createTopic } from '@/services'
 
 type CreateTopicProps = {
   isOpen: boolean
 }
-
-const CHARS_LIMIT = 50
 
 export default function CreateTopic({ isOpen }: CreateTopicProps) {
   const [title, setTitle] = useState('')
@@ -33,8 +32,8 @@ export default function CreateTopic({ isOpen }: CreateTopicProps) {
       return
     }
 
-    if (title.length > CHARS_LIMIT) {
-      setError(`Title must be less than ${CHARS_LIMIT} characters`)
+    if (title.length > TITLE_MAX_LENGTH) {
+      setError(`Title must be less than ${TITLE_MAX_LENGTH} characters`)
       return
     }
 

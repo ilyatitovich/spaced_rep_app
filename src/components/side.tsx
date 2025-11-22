@@ -1,6 +1,7 @@
 import type { FocusEventHandler, FocusEvent, FormEvent } from 'react'
 import { useCallback, useEffect, useState } from 'react'
 
+import { LONGTEXT_THRESHOLD } from '@/lib'
 import type { CardSide } from '@/types'
 
 type SideProps = {
@@ -23,16 +24,16 @@ export default function Side({
   const [isLongText, setIsLongText] = useState(false)
 
   const handleInput = useCallback((e: FormEvent<HTMLDivElement>) => {
-    setIsLongText(e.currentTarget.innerText.length > 80)
+    setIsLongText(e.currentTarget.innerText.length > LONGTEXT_THRESHOLD)
   }, [])
 
   useEffect(() => {
     if (typeof content === 'string') {
-      setIsLongText(content.length > 80)
+      setIsLongText(content.length > LONGTEXT_THRESHOLD)
     }
   }, [content])
 
-  const handleContainerClick = useCallback(() => {
+  const handleClick = useCallback(() => {
     if (
       document.activeElement !== innerRef?.current &&
       innerRef?.current &&
@@ -53,10 +54,9 @@ export default function Side({
   }, [])
 
   return (
-    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
     <div
       className={`absolute w-full h-full p-4 backface-hidden ${isLongText ? 'overflow-y-auto scrollbar-hidden' : 'flex justify-center items-center'} border-black border-6 rounded-4xl bg-white ${side === 'back' ? 'rotate-y-180' : ''}`.trim()}
-      onClick={handleContainerClick}
+      onTouchStart={handleClick}
     >
       <div
         ref={innerRef}
