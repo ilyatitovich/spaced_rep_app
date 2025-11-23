@@ -6,7 +6,6 @@ import {
   AddCardScreen,
   Button,
   CardDetailsScreen,
-  Content,
   ConfirmDeleteModal,
   TestButton,
   TestScreen,
@@ -122,7 +121,7 @@ export default function TopicScreen({
         </div>
 
         {topic && (
-          <Content height={92} className="pb-30" ref={contentRef}>
+          <div ref={contentRef} className="h-[92dvh] p-4 pb-30 overflow-y-auto">
             <Week week={topic.week} />
 
             <div className="flex items-center justify-between mt-10 py-2">
@@ -159,7 +158,7 @@ export default function TopicScreen({
                 }
               />
             )}
-          </Content>
+          </div>
         )}
       </div>
 
