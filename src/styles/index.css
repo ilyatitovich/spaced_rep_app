@@ -1,20 +1,16 @@
 @import 'tailwindcss';
 
 @font-face {
-  font-family: PatrickHand;
+  font-family: StampatelloFaceto;
   font-style: regular;
   src: url('/src/assets/fonts/StampatelloFaceto.woff2') format('woff2');
 }
 
 @theme {
-  --color-white: #ffffff;
   --color-black: #242424;
   --color-gray: #808080;
-  --color-light-gray: #dbdbdb;
   --color-purple: #800080;
-  --color-blue: #309bff;
-  --color-red: #c20404;
-  --color-green: #008000;
+  --color-background: #f7f7f7;
 
   /* Level colors */
   --color-lvl-1: #ee4035;
@@ -25,31 +21,10 @@
   --color-lvl-6: #673888;
   --color-lvl-7: #ef4f91;
 
-  --color-blue-gradient: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%);
-
-  /* New style */
-  --color-background: #f7f7f7;
-
-  --font-card: 'PatrickHand', sans-serif;
+  --font-card: 'StampatelloFaceto', sans-serif;
 }
 
 @layer utilities {
-  .h-dvh-8 {
-    height: calc(var(--vh, 1vh) * 8);
-  }
-
-  .h-dvh-84 {
-    height: calc(var(--vh, 1vh) * 80);
-  }
-
-  .h-dvh-92 {
-    height: calc(var(--vh, 1vh) * 92) !important;
-  }
-
-  .h-dvh-100 {
-    height: calc(var(--vh, 1vh) * 100) !important;
-  }
-
   .transform-style-preserve-3d {
     transform-style: preserve-3d;
   }
@@ -99,8 +74,7 @@
 }
 
 body {
-  height: calc(100 * 1vh);
-  height: calc(var(--vh, 1vh) * 100);
+  height: 100dvh;
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   font-size: clamp(1rem, 0.75rem + 4vw, 1.25rem);
   line-height: 1.2;
@@ -108,43 +82,10 @@ body {
   background-color: var(--color-background);
 }
 
-#desktop-message {
-  width: 100%;
-  height: 100%;
-  display: none;
-}
-
 @media screen and (min-width: 30em) {
   #root {
     display: none;
   }
-
-  #desktop-message {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-}
-
-h1 {
-  font-weight: bold;
-}
-
-nav,
-footer {
-  height: calc(10 * 1vh);
-  height: calc(var(--vh, 1vh) * 10);
-}
-
-footer {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-top: 1px solid var(--color-light-gray);
-}
-
-.gradient {
-  background-image: var(--color-blue-gradient);
 }
 
 .move-left {
