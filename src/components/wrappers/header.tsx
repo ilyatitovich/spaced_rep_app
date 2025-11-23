@@ -1,21 +1,16 @@
 import type { ReactNode } from 'react'
 import { Children, CSSProperties } from 'react'
 
-type NavbarProps = {
+type HeaderProps = {
   children: ReactNode | ReactNode[]
   className?: string
-  ariaLabel?: string
 }
 
-export default function Navbar({
-  children,
-  className = '',
-  ariaLabel = 'Main navigation'
-}: NavbarProps) {
+export default function Header({ children, className = '' }: HeaderProps) {
   const childrenArray = Children.toArray(children).slice(0, 3)
   const childrenCount = childrenArray.length
 
-  const baseClasses = `flex items-center w-full p-4 border-b border-light-gray
+  const baseClasses = `flex items-center w-full p-4
     ${childrenCount === 3 ? 'relative' : ''}
   `
 
@@ -35,22 +30,25 @@ export default function Navbar({
         position: 'absolute',
         top: '50%',
         left: '50%',
-        transform: 'translate(-50%, -50%)'
+        transform: 'translate(-50%, -50%)',
+        maxWidth: '160px',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+        textAlign: 'center',
+        fontWeight: 'bold'
       },
       {}
     ]
   }
 
   return (
-    <nav
-      className={`${combinedClasses} ${justifyClass}`}
-      aria-label={ariaLabel}
-    >
+    <div className={`${combinedClasses} ${justifyClass}`}>
       {childrenArray.map((child, index) => (
         <span key={index} style={childrenStyles[index]}>
           {child}
         </span>
       ))}
-    </nav>
+    </div>
   )
 }

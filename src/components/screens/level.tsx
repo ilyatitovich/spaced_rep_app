@@ -7,7 +7,8 @@ import {
   LevelCard,
   Screen,
   SelectionModeHeader,
-  SelectionModeFooter
+  SelectionModeFooter,
+  Header
 } from '@/components'
 import { getReviewMessage, getLevelDescription } from '@/lib'
 import { Card } from '@/models'
@@ -108,12 +109,12 @@ export default function LevelScreen({
         )}
       </AnimatePresence>
 
-      <div className="relative w-full p-4 flex justify-between items-center">
+      <Header>
         <BackButton />
         <span className="font-semibold">
           {currentLevelId === '0' ? 'Draft' : `Level ${currentLevelId}`}
         </span>
-      </div>
+      </Header>
 
       <div className="flex flex-col overflow-y-auto h-[calc(100dvh-60px)]">
         <div className="w-full text-center p-4">

@@ -2,7 +2,7 @@ import type { ChangeEvent, FormEvent } from 'react'
 import { useCallback, useState } from 'react'
 import { Toaster, toast } from 'react-hot-toast'
 
-import { BackButton, Button, Screen } from '@/components'
+import { BackButton, Button, Header, Screen } from '@/components'
 import { TITLE_MAX_LENGTH } from '@/lib'
 import { Topic } from '@/models'
 import { createTopic } from '@/services'
@@ -65,12 +65,12 @@ export default function CreateTopic({ isOpen }: CreateTopicProps) {
     <Screen isOpen={isOpen} onClose={handleClose} isVertical>
       {isOpen && <Toaster position="top-center" reverseOrder={false} />}
       <div className="h-full bg-background flex flex-col overflow-hidden">
-        <div className="flex justify-between items-center p-4">
+        <Header>
           <BackButton />
           <Button disabled={!title} onClick={handleSave}>
             Save
           </Button>
-        </div>
+        </Header>
 
         <form onSubmit={handleSave} className="flex flex-col gap-6 mt-8 px-6">
           <div className="flex flex-col gap-2">

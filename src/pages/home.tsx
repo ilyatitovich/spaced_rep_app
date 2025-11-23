@@ -9,7 +9,8 @@ import {
   Spinner,
   TopicItem,
   TopicScreen,
-  CreateTopicButton
+  CreateTopicButton,
+  Header
 } from '@/components'
 import { Topic } from '@/models'
 import { getAllTopics, deleteTopic } from '@/services'
@@ -103,9 +104,9 @@ export default function HomePage() {
         )}
       </AnimatePresence>
 
-      <div className="p-4 flex items-center justify-center">
+      <Header>
         <span>Topics</span>
-      </div>
+      </Header>
 
       <div className="h-[calc(100dvh-60px)]">
         {isLoading ? (

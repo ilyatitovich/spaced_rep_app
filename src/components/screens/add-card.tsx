@@ -6,7 +6,8 @@ import {
   BackButton,
   CardButton,
   CardContainer,
-  Screen
+  Screen,
+  Header
 } from '@/components'
 import { Card as CardModel } from '@/models'
 import { createCard } from '@/services'
@@ -123,13 +124,11 @@ export default function AddCardScreen({
 
   return (
     <Screen isOpen={isOpen} onClose={handleClose} isVertical>
-      <div className="relative p-4 flex justify-between items-center">
+      <Header>
         <BackButton />
-        <span className="font-bold absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-          {isFlipped ? 'Back' : 'Front'}
-        </span>
+        <span>{isFlipped ? 'Back' : 'Front'}</span>
         {rightBtn}
-      </div>
+      </Header>
       <CardContainer>
         <Card
           ref={isFirstCardActive ? currentCardRef : secondCardRef}

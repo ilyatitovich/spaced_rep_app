@@ -12,7 +12,8 @@ import {
   LevelRow,
   LevelScreen,
   Week,
-  BackButton
+  BackButton,
+  Header
 } from '@/components'
 import { getToday } from '@/lib'
 import { Topic, Card } from '@/models'
@@ -99,26 +100,13 @@ export default function TopicScreen({
       <div
         className={`${isOpen ? 'translate-x-0' : 'translate-x-full'} transition-transform duration-300 ease-in-out fixed inset-0 z-50 bg-background`}
       >
-        <div className="relative w-full p-4 flex justify-between items-center">
+        <Header>
           <BackButton />
-          <span
-            className={`
-            font-semibold
-            absolute
-            top-1/2
-            left-1/2
-            -translate-x-1/2
-            -translate-y-1/2
-            max-w-[160px]
-            truncate
-            `}
-          >
-            {topic?.title}
-          </span>
+          <span>{topic?.title}</span>
           <Button onClick={() => setIsConfirmDeleteModalOpen(true)}>
             <Trash />
           </Button>
-        </div>
+        </Header>
 
         {topic && (
           <div ref={contentRef} className="h-[92dvh] p-4 pb-30 overflow-y-auto">

@@ -7,7 +7,8 @@ import {
   TestDoneMessage,
   AnswerButton,
   Screen,
-  BackButton
+  BackButton,
+  Header
 } from '@/components'
 import { getToday } from '@/lib'
 import { Card as CardModel, Topic } from '@/models'
@@ -106,22 +107,16 @@ export default function TestScreen({
       onOpen={handleOpen}
       isVertical
     >
-      <div className="relative p-4 flex justify-between items-center">
+      <Header>
         <BackButton icon="x" />
-
-        {!isDone && (
-          <span className="font-semibold absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-            {isFlipped ? 'Back' : 'Front'}
-          </span>
-        )}
-
+        {!isDone && <span>{isFlipped ? 'Back' : 'Front'}</span>}
         {cards && (
           <CardsLeftBadge
             current={cards.length}
             total={totalCardsRef.current}
           />
         )}
-      </div>
+      </Header>
 
       {cards && (
         <CardContainer>
