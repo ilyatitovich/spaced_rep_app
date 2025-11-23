@@ -1,19 +1,17 @@
 import { Link } from 'react-router'
 
-import { Content } from '@/components'
-
 export default function NotFoundPage() {
   return (
     <main>
-      <Content className="h-dvh-100 flex flex-col items-center justify-center gap-4">
+      <div className="h-dvh flex flex-col items-center justify-center gap-4">
         <h1 className="font-bold text-2xl">404 - Page Not Found</h1>
         <div>
           Go back to{' '}
-          <Link className="text-blue" to="/">
+          <Link className="text-purple-600" to="/">
             Start screen
           </Link>
         </div>
-      </Content>
+      </div>
     </main>
   )
 }

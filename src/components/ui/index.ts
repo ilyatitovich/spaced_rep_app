@@ -1,6 +1,5 @@
 export { default as Button } from './button'
 export { default as Navbar } from './navbar'
-export { default as Content } from './content'
 export { default as Spinner } from './spinner'
 export { default as TopicItem } from './topic-item'
 export { default as SelectionModeHeader } from './selection-mode-header'
