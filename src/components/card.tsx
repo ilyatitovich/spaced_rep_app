@@ -46,7 +46,7 @@ export default forwardRef(function Card(
 
   return (
     <div
-      className={`perspective-[1000px] w-[80vw] h-[60dvh] absolute ${className}`.trim()}
+      className={`perspective-[1000px] w-[80vw] max-w-[300px] h-[60dvh] absolute ${className}`.trim()}
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
