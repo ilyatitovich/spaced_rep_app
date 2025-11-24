@@ -6,41 +6,39 @@ import type { VitePWAOptions } from 'vite-plugin-pwa'
 import { VitePWA } from 'vite-plugin-pwa'
 import svgr from 'vite-plugin-svgr'
 
+const isDev = process.env.NODE_ENV === 'development'
+
 const pwaOptions: Partial<VitePWAOptions> = {
   registerType: 'autoUpdate',
-  mode: 'development',
   base: '/',
-  includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+  includeAssets: ['/favicon.ico', '/apple-touch-icon.png'],
   manifest: {
     name: 'Spaced Repetition',
     short_name: 'Spaced Repetition',
     description:
       'An app for memorizing information using spaced repetition techniques',
     theme_color: '#ffffff',
+    background_color: '#ffffff',
+    display: 'standalone',
     icons: [
       {
-        src: 'pwa-64x64.png',
+        src: '/pwa-64x64.png',
         sizes: '64x64',
         type: 'image/png'
       },
       {
-        src: 'pwa-192x192.png',
+        src: '/pwa-192x192.png',
         sizes: '192x192',
         type: 'image/png'
       },
       {
         src: '/pwa-512x512.png',
         sizes: '512x512',
-        type: 'image/png'
-      },
-      {
-        src: 'pwa-512x512.png',
-        sizes: '512x512',
         type: 'image/png',
         purpose: 'any'
       },
       {
-        src: 'pwa-512x512.png',
+        src: '/pwa-512x512.png',
         sizes: '512x512',
         type: 'image/png',
         purpose: 'maskable'
@@ -48,7 +46,7 @@ const pwaOptions: Partial<VitePWAOptions> = {
     ]
   },
   devOptions: {
-    enabled: true
+    enabled: isDev
   }
 }
 
