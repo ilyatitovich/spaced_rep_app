@@ -82,12 +82,6 @@ body {
   background-color: var(--color-background);
 }
 
-@media screen and (min-width: 30em) {
-  #root {
-    display: none;
-  }
-}
-
 .move-left {
   animation: move-left 0.5s ease-out forwards;
 }
