@@ -54,10 +54,12 @@ export default function Side({
   }, [])
 
   return (
-    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
     <div
       className={`absolute w-full h-full p-4 backface-hidden ${isLongText ? 'overflow-y-auto scrollbar-hidden' : 'flex justify-center items-center'} border-black border-6 rounded-4xl bg-white ${side === 'back' ? 'rotate-y-180' : ''}`.trim()}
       onClick={handleClick}
+      tabIndex={0}
+      role="button"
+      onKeyDown={() => {}}
     >
       <div
         ref={innerRef}
