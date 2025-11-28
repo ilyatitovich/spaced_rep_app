@@ -61,7 +61,7 @@ export default function Side({
     >
       <div
         ref={innerRef}
-        className={`w-full outline-none whitespace-pre-wrap break-words ${isLongText ? 'text-left text-2xl' : 'text-center text-3xl font-bold font-card leading-13'}`}
+        className={`w-full outline-none whitespace-pre-wrap break-words ${isLongText ? 'text-left text-2xl' : 'text-center text-3xl font-bold font-card leading-12'}`}
         contentEditable={isEditable}
         suppressContentEditableWarning
         role="textbox"
