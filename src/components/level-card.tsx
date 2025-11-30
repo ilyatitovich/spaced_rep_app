@@ -22,12 +22,18 @@ export default function LevelCard({
 }: LevelCardProps) {
   const timerRef = useRef<NodeJS.Timeout | null>(null)
 
-  const textPreview =
-    typeof card.data.front === 'string'
-      ? card.data.front.length > 50
-        ? card.data.front.slice(0, 50) + '...'
-        : card.data.front
-      : ''
+  const { content: frontContent } = card.data.front
+
+  const preview =
+    typeof frontContent === 'string' ? (
+      frontContent.length > 50 ? (
+        <p>{frontContent.slice(0, 50) + '...'}</p>
+      ) : (
+        <p>{frontContent}</p>
+      )
+    ) : (
+      <img src={URL.createObjectURL(frontContent)} alt="front pic" />
+    )
 
   const handleTouchStart = () => {
     timerRef.current = setTimeout(() => {
@@ -64,7 +70,7 @@ export default function LevelCard({
       onClick={handleClick}
     >
       <span className="font-bold font-card break-all w-full h-full flex justify-center items-center overflow-hidden">
-        {textPreview}
+        {preview}
       </span>
 
       <div

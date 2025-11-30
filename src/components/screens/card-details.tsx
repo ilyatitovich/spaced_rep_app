@@ -12,12 +12,25 @@ import {
 } from '@/components'
 import { Card as CardModel } from '@/models'
 import { updateCard } from '@/services'
-import type { CardHandle } from '@/types'
+import type { CardData, CardHandle, SideContentType, SideName } from '@/types'
 
 type CardDetailsScreen = {
   isOpen: boolean
   card: CardModel | null | undefined
   onUpdate?: (card: CardModel) => void
+}
+
+const initialCardData: CardData = {
+  front: { side: 'front', type: 'text', content: '' },
+  back: { side: 'back', type: 'text', content: '' }
+}
+
+const initialSidesContentType: {
+  front: SideContentType
+  back: SideContentType
+} = {
+  front: 'text',
+  back: 'text'
 }
 
 export default function CardDetailsScreen({
@@ -26,12 +39,25 @@ export default function CardDetailsScreen({
   onUpdate
 }: CardDetailsScreen) {
   const [isFlipped, setIsFlipped] = useState(false)
-  const [cardData, setCardData] = useState({
-    front: card?.data.front ?? '',
-    back: card?.data.back ?? ''
+  const [cardData, setCardData] = useState<CardData>({
+    front: {
+      side: 'front',
+      content: card?.data.front.content ?? '',
+      type: card?.data.front.type ?? 'text'
+    },
+    back: {
+      side: 'back',
+      content: card?.data.back.content ?? '',
+      type: card?.data.back.type ?? 'text'
+    }
   })
   const [isEdited, setIsEdited] = useState(false)
   const [isNewCardData, setIsNewCardData] = useState(false)
+
+  const [sidesContentType, setSidesContentType] = useState({
+    front: card?.data.front.type ?? 'text',
+    back: card?.data.back.type ?? 'text'
+  })
 
   const cardRef = useRef<CardHandle>(null)
 
@@ -83,17 +109,23 @@ export default function CardDetailsScreen({
       setIsEdited(false)
     }
     setIsFlipped(false)
-    setCardData({
-      front: '',
-      back: ''
-    })
+    setCardData(initialCardData)
+    setSidesContentType(initialSidesContentType)
     cardRef.current?.resetContent()
   }, [isEdited])
 
   const handleOpen = useCallback(() => {
     setCardData({
-      front: card?.data.front ?? '',
-      back: card?.data.back ?? ''
+      front: {
+        side: 'front',
+        content: card?.data.front.content ?? '',
+        type: card?.data.front.type ?? 'text'
+      },
+      back: {
+        side: 'back',
+        content: card?.data.back.content ?? '',
+        type: card?.data.back.type ?? 'text'
+      }
     })
   }, [card])
 
@@ -110,6 +142,29 @@ export default function CardDetailsScreen({
       setCardData({ front, back })
     }
     setIsEdited(false)
+  }
+
+  const handleChangeSideContentType = (type: SideContentType = 'text') => {
+    const side = isFlipped ? 'back' : 'front'
+    setSidesContentType(prev => ({
+      ...prev,
+      [side]: type
+    }))
+  }
+
+  const handleChangeSideContent = (
+    value: string | Blob,
+    type: SideContentType,
+    side: SideName
+  ) => {
+    setCardData(prev => ({
+      ...prev,
+      [side]: {
+        ...prev[side],
+        type,
+        content: value
+      }
+    }))
   }
 
   return (
@@ -131,15 +186,25 @@ export default function CardDetailsScreen({
         <Card
           ref={cardRef}
           data={cardData}
+          sidesContentType={sidesContentType}
           isFlipped={isFlipped}
           isEditable={true}
           handleFocus={() => setIsEdited(true)}
           handleBlur={handleBlur}
+          handleChange={handleChangeSideContent}
         />
       </CardContainer>
 
       {/* Buttons */}
       <div className="pt-1 flex justify-center items-center gap-12">
+        <CardButton
+          type="text"
+          onClick={() => handleChangeSideContentType('text')}
+        />
+        <CardButton
+          type="image"
+          onClick={() => handleChangeSideContentType('image')}
+        />
         <CardButton type="flip" onClick={() => setIsFlipped(prev => !prev)} />
       </div>
     </Screen>

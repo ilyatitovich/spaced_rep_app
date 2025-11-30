@@ -3,28 +3,38 @@ import { forwardRef, useRef, useImperativeHandle } from 'react'
 
 import Side from './side'
 import { useTap } from '@/hooks'
-import type { CardHandle, CardSide } from '@/types'
+import type { CardData, CardHandle, SideContentType, SideName } from '@/types'
 
 type CardProps = {
-  data: { front: File | string; back: File | string }
+  data: CardData
+  sidesContentType?: {
+    front: SideContentType
+    back: SideContentType
+  }
   isFlipped: boolean
   isEditable?: boolean
   className?: string
   handleFocus?: FocusEventHandler<HTMLElement>
   handleBlur?: FocusEventHandler<HTMLElement>
   handleClick?: () => void
-  handleChange?: (data: string, side: CardSide) => void
+  handleChange?: (
+    value: string | Blob,
+    type: SideContentType,
+    side: SideName
+  ) => void
 }
 
 export default forwardRef(function Card(
   {
     data,
+    sidesContentType,
     isFlipped,
     className = '',
     isEditable = false,
     handleClick,
     handleBlur,
-    handleFocus
+    handleFocus,
+    handleChange
   }: CardProps,
   ref: Ref<CardHandle>
 ) {
@@ -35,8 +45,16 @@ export default forwardRef(function Card(
 
   useImperativeHandle(ref, () => ({
     getContent: () => ({
-      front: frontRef.current?.innerText.trim() || '',
-      back: backRef.current?.innerText.trim() || ''
+      front: {
+        side: 'front',
+        type: sidesContentType?.front ?? 'text',
+        content: frontRef.current?.innerText.trim() || ''
+      },
+      back: {
+        side: 'back',
+        type: sidesContentType?.back ?? 'text',
+        content: backRef.current?.innerText.trim() || ''
+      }
     }),
     resetContent: () => {
       if (frontRef.current) frontRef.current.innerText = ''
@@ -56,20 +74,22 @@ export default forwardRef(function Card(
         }`.trim()}
       >
         <Side
-          side="front"
-          content={data['front']}
+          data={data.front}
+          contentType={sidesContentType?.front}
           isEditable={isEditable}
           innerRef={frontRef}
           handleBlur={handleBlur}
           handleFocus={handleFocus}
+          onChange={handleChange}
         />
         <Side
-          side="back"
-          content={data['back']}
+          data={data.back}
+          contentType={sidesContentType?.back}
           isEditable={isEditable}
           innerRef={backRef}
           handleBlur={handleBlur}
           handleFocus={handleFocus}
+          onChange={handleChange}
         />
       </div>
     </div>

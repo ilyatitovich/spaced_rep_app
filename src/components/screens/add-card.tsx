@@ -9,9 +9,10 @@ import {
   Screen,
   Header
 } from '@/components'
+import { isContentEmpty } from '@/lib'
 import { Card as CardModel } from '@/models'
 import { createCard } from '@/services'
-import type { CardHandle, CardData } from '@/types'
+import type { CardHandle, CardData, SideContentType, SideName } from '@/types'
 
 type NewCardPageProps = {
   isOpen: boolean
@@ -20,8 +21,16 @@ type NewCardPageProps = {
 }
 
 const initialCardData: CardData = {
-  front: '',
-  back: ''
+  front: { side: 'front', type: 'text', content: '' },
+  back: { side: 'back', type: 'text', content: '' }
+}
+
+const initialSidesContentType: {
+  front: SideContentType
+  back: SideContentType
+} = {
+  front: 'text',
+  back: 'text'
 }
 
 export default function AddCardScreen({
@@ -35,6 +44,10 @@ export default function AddCardScreen({
   const [isDraft, setIsDraft] = useState(true)
   const [isFirstCardActive, setIsFirstCardActive] = useState(true)
   const [isInitialRender, setIsInitialRender] = useState(true)
+
+  const [sidesContentType, setSidesContentType] = useState(
+    initialSidesContentType
+  )
 
   const currentCardRef = useRef<CardHandle>(null)
   const secondCardRef = useRef<CardHandle>(null)
@@ -52,7 +65,7 @@ export default function AddCardScreen({
       <Button
         key="save-draft"
         onClick={() => handleSaveCard('draft')}
-        disabled={!cardData.front}
+        disabled={!cardData.front.content}
       >
         Save Draft
       </Button>
@@ -84,29 +97,51 @@ export default function AddCardScreen({
       setIsDraft(true)
       setIsFirstCardActive(prev => !prev)
       setIsInitialRender(false)
+      setSidesContentType(initialSidesContentType)
     } catch (error) {
       console.error('Failed to save card:', error)
     }
   }
 
   function handleBlur(): void {
-    if (currentCardRef.current) {
-      const { front, back } = currentCardRef.current.getContent()
-
-      if (!front || !back) {
-        setIsDraft(true)
-      }
-
-      if (front && back) {
-        setIsDraft(false)
-      }
-
-      setCardData({
-        front: front,
-        back: back
-      })
+    if (
+      isContentEmpty(cardData.front.content) ||
+      isContentEmpty(cardData.back.content)
+    ) {
+      setIsDraft(true)
     }
+
+    if (
+      !isContentEmpty(cardData.front.content) &&
+      !isContentEmpty(cardData.back.content)
+    ) {
+      setIsDraft(false)
+    }
+
     setIsEdited(false)
+  }
+
+  const handleChangeSideContentType = (type: SideContentType = 'text') => {
+    const side = isFlipped ? 'back' : 'front'
+    setSidesContentType(prev => ({
+      ...prev,
+      [side]: type
+    }))
+  }
+
+  const handleChangeSideContent = (
+    value: string | Blob,
+    type: SideContentType,
+    side: SideName
+  ) => {
+    setCardData(prev => ({
+      ...prev,
+      [side]: {
+        ...prev[side],
+        type,
+        content: value
+      }
+    }))
   }
 
   const handleClose = (): void => {
@@ -118,6 +153,7 @@ export default function AddCardScreen({
     setIsDraft(true)
     setIsFirstCardActive(true)
     setIsInitialRender(true)
+    setSidesContentType(initialSidesContentType)
     currentCardRef.current?.resetContent()
     secondCardRef.current?.resetContent()
   }
@@ -134,23 +170,35 @@ export default function AddCardScreen({
           ref={isFirstCardActive ? currentCardRef : secondCardRef}
           className={`${isFirstCardActive ? 'scale-up' : 'move-right'}`}
           data={isFirstCardActive ? initialCardData : cardData}
+          sidesContentType={sidesContentType}
           isFlipped={isFirstCardActive ? isFlipped : false}
           isEditable={true}
           handleFocus={() => setIsEdited(true)}
           handleBlur={handleBlur}
+          handleChange={handleChangeSideContent}
         />
         <Card
           ref={isFirstCardActive ? secondCardRef : currentCardRef}
           className={`${isInitialRender ? 'hidden' : ''} ${isFirstCardActive ? 'move-right' : 'scale-up'}`.trim()}
           data={isFirstCardActive ? cardData : initialCardData}
+          sidesContentType={sidesContentType}
           isFlipped={isFirstCardActive ? false : isFlipped}
           isEditable={true}
           handleFocus={() => setIsEdited(true)}
           handleBlur={handleBlur}
+          handleChange={handleChangeSideContent}
         />
       </CardContainer>
       {/* Buttons */}
       <div className="pt-1 flex justify-center items-center gap-12">
+        <CardButton
+          type="text"
+          onClick={() => handleChangeSideContentType('text')}
+        />
+        <CardButton
+          type="image"
+          onClick={() => handleChangeSideContentType('image')}
+        />
         <CardButton type="flip" onClick={() => setIsFlipped(prev => !prev)} />
       </div>
     </Screen>

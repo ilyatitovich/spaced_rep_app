@@ -1,37 +1,55 @@
-import type { FocusEventHandler, FocusEvent, FormEvent } from 'react'
+import type { FocusEventHandler, FormEvent } from 'react'
 import { useCallback, useEffect, useState } from 'react'
 
+import ImageUploader from './image-uploader'
 import { LONGTEXT_THRESHOLD } from '@/lib'
-import type { CardSide } from '@/types'
+import type { CardSideData, SideContentType, SideName } from '@/types'
 
 type SideProps = {
-  side: CardSide
-  content?: string | File
+  data: CardSideData
+  contentType?: SideContentType
   isEditable?: boolean
   handleFocus?: FocusEventHandler<HTMLDivElement>
   handleBlur?: FocusEventHandler<HTMLDivElement>
   innerRef?: React.RefObject<HTMLDivElement>
+  onChange?: (
+    value: string | Blob,
+    type: SideContentType,
+    side: SideName
+  ) => void
 }
 
 export default function Side({
-  side,
-  content,
+  data,
+  contentType,
   isEditable,
   handleFocus,
   handleBlur,
+  onChange,
   innerRef
 }: SideProps) {
   const [isLongText, setIsLongText] = useState(false)
 
-  const handleInput = useCallback((e: FormEvent<HTMLDivElement>) => {
-    setIsLongText(e.currentTarget.innerText.length > LONGTEXT_THRESHOLD)
-  }, [])
-
   useEffect(() => {
-    if (typeof content === 'string') {
-      setIsLongText(content.length > LONGTEXT_THRESHOLD)
+    if (data.type === 'text' && typeof data.content === 'string') {
+      setIsLongText(data.content.length > LONGTEXT_THRESHOLD)
     }
-  }, [content])
+  }, [data.content, data.type])
+
+  const handleInput = useCallback(
+    (e: FormEvent<HTMLDivElement>) => {
+      setIsLongText(e.currentTarget.innerText.length > LONGTEXT_THRESHOLD)
+      onChange?.(e.currentTarget.innerText, 'text', data.side)
+    },
+    [data.side, onChange]
+  )
+
+  const handleChangeImage = useCallback(
+    (file: Blob) => {
+      onChange?.(file, 'image', data.side)
+    },
+    [data.side, onChange]
+  )
 
   const handleClick = useCallback(() => {
     if (
@@ -43,41 +61,62 @@ export default function Side({
     }
   }, [innerRef, isEditable])
 
-  const placeCursorAtEnd = useCallback((event: FocusEvent<HTMLDivElement>) => {
+  const placeCursorAtEnd = useCallback((event: FormEvent<HTMLDivElement>) => {
     const range = document.createRange()
     const sel = window.getSelection()
     if (!sel) return
-    range.selectNodeContents(event.target)
+    range.selectNodeContents(event.target as Node)
     range.collapse(false)
     sel.removeAllRanges()
     sel.addRange(range)
   }, [])
 
   return (
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
     <div
-      className={`absolute w-full h-full p-4 backface-hidden ${isLongText ? 'overflow-y-auto scrollbar-hidden' : 'flex justify-center items-center'} border-black border-6 rounded-4xl bg-white ${side === 'back' ? 'rotate-y-180' : ''}`.trim()}
+      className={`absolute w-full h-full p-4 backface-hidden ${isLongText ? 'overflow-y-auto scrollbar-hidden' : 'flex justify-center items-center'} border-black border-6 rounded-4xl bg-white ${data.side === 'back' ? 'rotate-y-180' : ''}`.trim()}
       onClick={handleClick}
-      tabIndex={0}
-      role="button"
-      onKeyDown={() => {}}
     >
-      <div
-        ref={innerRef}
-        className={`w-full outline-none whitespace-pre-wrap break-words ${isLongText ? 'text-left text-2xl' : 'text-center text-3xl font-bold font-card leading-12'}`}
-        contentEditable={isEditable}
-        suppressContentEditableWarning
-        role="textbox"
-        aria-multiline="true"
-        tabIndex={0}
-        onFocus={e => {
-          handleFocus?.(e)
-          placeCursorAtEnd(e)
-        }}
-        onBlur={handleBlur}
-        onInput={handleInput}
-      >
-        {typeof content === 'string' ? content : ''}
-      </div>
+      {(contentType && contentType === 'image') ||
+      (data.type === 'image' && data.content instanceof Blob) ? (
+        isEditable ? (
+          <ImageUploader
+            onChange={handleChangeImage}
+            initialPreview={
+              data.content instanceof Blob
+                ? URL.createObjectURL(data.content as Blob)
+                : ''
+            }
+          />
+        ) : (
+          <img
+            src={URL.createObjectURL(data.content as Blob)}
+            alt={`${data.side} side`}
+            className="max-w-full max-h-full object-contain"
+          />
+        )
+      ) : (
+        <div
+          ref={innerRef}
+          className={`w-full outline-none whitespace-pre-wrap break-words ${isLongText ? 'text-left text-2xl' : 'text-center text-3xl font-bold font-card leading-12'}`}
+          contentEditable={isEditable}
+          suppressContentEditableWarning
+          role="textbox"
+          aria-multiline="true"
+          tabIndex={0}
+          onFocus={e => {
+            handleFocus?.(e)
+            placeCursorAtEnd(e)
+          }}
+          onBlur={handleBlur}
+          onInput={e => {
+            handleInput(e)
+            placeCursorAtEnd(e)
+          }}
+        >
+          {typeof data.content === 'string' ? data.content : ''}
+        </div>
+      )}
     </div>
   )
 }

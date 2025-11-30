@@ -1,9 +1,6 @@
 import { nanoid } from 'nanoid'
 
-export type CardData = {
-  front: File | string
-  back: File | string
-}
+import type { CardData } from '@/types'
 
 export class Card {
   id: string
