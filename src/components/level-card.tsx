@@ -1,5 +1,5 @@
 import { Check } from 'lucide-react'
-import { useRef } from 'react'
+import { useRef, useEffect, useState } from 'react'
 
 import { Card } from '@/models'
 
@@ -20,14 +20,34 @@ export default function LevelCard({
   onPress,
   onSelect
 }: LevelCardProps) {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
 
-  const textPreview =
-    typeof card.data.front === 'string'
-      ? card.data.front.length > 50
-        ? card.data.front.slice(0, 50) + '...'
-        : card.data.front
-      : ''
+  const { content: frontContent } = card.data.front
+
+  const preview =
+    typeof frontContent === 'string' ? (
+      frontContent.length > 50 ? (
+        <p>{frontContent.slice(0, 50) + '...'}</p>
+      ) : (
+        <p>{frontContent}</p>
+      )
+    ) : (
+      previewUrl && <img src={previewUrl} alt="front pic" />
+    )
+
+  useEffect(() => {
+    if (typeof frontContent !== 'string') {
+      const url = URL.createObjectURL(frontContent)
+      setPreviewUrl(url)
+
+      return () => {
+        URL.revokeObjectURL(url)
+      }
+    } else {
+      setPreviewUrl(null)
+    }
+  }, [frontContent])
 
   const handleTouchStart = () => {
     timerRef.current = setTimeout(() => {
@@ -64,7 +84,7 @@ export default function LevelCard({
       onClick={handleClick}
     >
       <span className="font-bold font-card break-all w-full h-full flex justify-center items-center overflow-hidden">
-        {textPreview}
+        {preview}
       </span>
 
       <div

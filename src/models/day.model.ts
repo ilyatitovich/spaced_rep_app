@@ -1,5 +1,3 @@
-import { Card } from '@/models'
-
 /*
 
 Card's levels:
@@ -16,16 +14,6 @@ Card's levels:
 
 */
 
-export class Level {
-  id: number
-  cards: Card[]
-
-  constructor(id: number) {
-    this.id = id
-    this.cards = []
-  }
-}
-
 export class Day {
   date: number
   todayLevels: number[]
@@ -37,7 +25,7 @@ export class Day {
     this.isDone = false
   }
 
-  setLevelList(pivot: number) {
+  public setLevelList(pivot: number): void {
     const numOfDays = Math.floor((this.date - pivot) / 86400000 + 1)
 
     const levelConditions = [

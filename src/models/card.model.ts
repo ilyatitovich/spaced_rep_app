@@ -1,9 +1,4 @@
-import { nanoid } from 'nanoid'
-
-export type CardData = {
-  front: File | string
-  back: File | string
-}
+import type { CardData } from '@/types'
 
 export class Card {
   id: string
@@ -12,7 +7,7 @@ export class Card {
   data: CardData
 
   constructor(data: CardData, topicId: string, level: number = 0) {
-    this.id = nanoid()
+    this.id = crypto.randomUUID()
     this.topicId = topicId
     this.level = level
     this.data = data

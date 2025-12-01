@@ -61,3 +61,54 @@ export async function deleteCardsBulk(cardIds: string[]): Promise<void> {
     })
   })
 }
+
+export async function updateCardsBulk(): Promise<void> {
+  return withTransaction([STORES.CARDS], 'readwrite', async stores => {
+    return new Promise<void>((resolve, reject) => {
+      const request = stores[STORES.CARDS].getAll() as IDBRequest<Card[]>
+
+      request.onsuccess = () => {
+        const oldCards = request.result
+
+        let remaining = oldCards.length
+
+        for (let card of oldCards) {
+          if (
+            typeof card.data.front !== 'string' &&
+            typeof card.data.front !== 'string'
+          )
+            continue
+
+          card = {
+            id: card.id,
+            topicId: card.topicId,
+            level: card.level,
+            data: {
+              front: {
+                type: 'text',
+                side: 'front',
+                content: card.data.front as unknown as string
+              },
+              back: {
+                type: 'text',
+                side: 'back',
+                content: card.data.back as unknown as string
+              }
+            }
+          }
+
+          const req = stores[STORES.CARDS].put(card)
+
+          req.onerror = () => {
+            reject(req.error ?? new Error(`Failed to update card ${card.id}`))
+          }
+
+          req.onsuccess = () => {
+            remaining -= 1
+            if (remaining === 0) resolve()
+          }
+        }
+      }
+    })
+  })
+}
