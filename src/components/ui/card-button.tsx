@@ -6,9 +6,14 @@ import type { SideContentType } from '@/types'
 type CardButtonProps = {
   type: 'flip' | SideContentType
   onClick: () => void
+  isDisabled?: boolean
 }
 
-export default function CardButton({ type, onClick }: CardButtonProps) {
+export default function CardButton({
+  type,
+  isDisabled,
+  onClick
+}: CardButtonProps) {
   let Icon: ElementType | null = null
   let label = ''
 
@@ -37,7 +42,8 @@ export default function CardButton({ type, onClick }: CardButtonProps) {
   return (
     <button
       onClick={onClick}
-      className="flex flex-col justify-center items-center gap-1"
+      className="flex flex-col justify-center items-center gap-1 disabled:opacity-50"
+      disabled={isDisabled}
     >
       <span className="w-8 h-8 flex justify-center items-center border-2 rounded-full">
         <Icon className="w-4 h-4 text-black" strokeWidth={3} />

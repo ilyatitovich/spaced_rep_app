@@ -52,7 +52,7 @@ export default function CardDetailsScreen({
     }
   })
   const [isEdited, setIsEdited] = useState(false)
-  const [isNewCardData, setIsNewCardData] = useState(false)
+  // const [isNewCardData, setIsNewCardData] = useState(false)
 
   const [sidesContentType, setSidesContentType] = useState({
     front: card?.data.front.type ?? 'text',
@@ -69,7 +69,7 @@ export default function CardDetailsScreen({
     <Button
       key="save"
       onClick={() => handleSaveCard()}
-      disabled={!isNewCardData}
+      // disabled={!isNewCardData}
     >
       Save
     </Button>
@@ -88,7 +88,7 @@ export default function CardDetailsScreen({
       await updateCard(card)
       setIsEdited(false)
       onUpdate?.(card)
-      setIsNewCardData(false)
+      // setIsNewCardData(false)
 
       if (card.level > 0) {
         toast.success('Card updated!', {
@@ -130,38 +130,48 @@ export default function CardDetailsScreen({
   }, [card])
 
   const handleBlur = (): void => {
-    if (cardRef.current) {
-      const { front, back } = cardRef.current.getContent()
+    // if (cardRef.current) {
+    //   const { front, back } = cardRef.current.getContent()
 
-      if (front !== card?.data.front || back !== card?.data.back) {
-        setIsNewCardData(true)
-      } else {
-        setIsNewCardData(false)
-      }
-
-      setCardData({ front, back })
-    }
+    //   // if (front !== card?.data.front || back !== card?.data.back) {
+    //   //   setIsNewCardData(true)
+    //   // } else {
+    //   //   setIsNewCardData(false)
+    //   // }
+    // }
     setIsEdited(false)
   }
 
   const handleChangeSideContentType = (type: SideContentType = 'text') => {
     const side = isFlipped ? 'back' : 'front'
+
+    console.log(cardData)
     setSidesContentType(prev => ({
       ...prev,
       [side]: type
     }))
-  }
 
-  const handleChangeSideContent = (
-    value: string | Blob,
-    type: SideContentType,
-    side: SideName
-  ) => {
     setCardData(prev => ({
       ...prev,
       [side]: {
         ...prev[side],
         type,
+        content: ''
+      }
+    }))
+
+    if (type === 'text') {
+      requestAnimationFrame(() => {
+        cardRef.current?.focusContent(side)
+      })
+    }
+  }
+
+  const handleChangeSideContent = (value: string | Blob, side: SideName) => {
+    setCardData(prev => ({
+      ...prev,
+      [side]: {
+        ...prev[side],
         content: value
       }
     }))
@@ -200,10 +210,14 @@ export default function CardDetailsScreen({
         <CardButton
           type="text"
           onClick={() => handleChangeSideContentType('text')}
+          isDisabled={sidesContentType[isFlipped ? 'back' : 'front'] === 'text'}
         />
         <CardButton
           type="image"
           onClick={() => handleChangeSideContentType('image')}
+          isDisabled={
+            sidesContentType[isFlipped ? 'back' : 'front'] === 'image'
+          }
         />
         <CardButton type="flip" onClick={() => setIsFlipped(prev => !prev)} />
       </div>

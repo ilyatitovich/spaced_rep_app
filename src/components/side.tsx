@@ -1,8 +1,8 @@
-import type { FocusEventHandler, FormEvent } from 'react'
+import type { FocusEventHandler, FormEvent, RefObject } from 'react'
 import { useCallback, useEffect, useState } from 'react'
 
 import ImageUploader from './image-uploader'
-import { LONGTEXT_THRESHOLD } from '@/lib'
+import { LONGTEXT_THRESHOLD, placeCursorAtEnd } from '@/lib'
 import type { CardSideData, SideContentType, SideName } from '@/types'
 
 type SideProps = {
@@ -11,12 +11,8 @@ type SideProps = {
   isEditable?: boolean
   handleFocus?: FocusEventHandler<HTMLDivElement>
   handleBlur?: FocusEventHandler<HTMLDivElement>
-  innerRef?: React.RefObject<HTMLDivElement>
-  onChange?: (
-    value: string | Blob,
-    type: SideContentType,
-    side: SideName
-  ) => void
+  innerRef?: RefObject<HTMLDivElement>
+  onChange?: (value: string | Blob, side: SideName) => void
 }
 
 export default function Side({
@@ -39,14 +35,14 @@ export default function Side({
   const handleInput = useCallback(
     (e: FormEvent<HTMLDivElement>) => {
       setIsLongText(e.currentTarget.innerText.length > LONGTEXT_THRESHOLD)
-      onChange?.(e.currentTarget.innerText, 'text', data.side)
+      onChange?.(e.currentTarget.innerText, data.side)
     },
     [data.side, onChange]
   )
 
   const handleChangeImage = useCallback(
     (file: Blob) => {
-      onChange?.(file, 'image', data.side)
+      onChange?.(file, data.side)
     },
     [data.side, onChange]
   )
@@ -60,16 +56,6 @@ export default function Side({
       innerRef.current.focus()
     }
   }, [innerRef, isEditable])
-
-  const placeCursorAtEnd = useCallback((event: FormEvent<HTMLDivElement>) => {
-    const range = document.createRange()
-    const sel = window.getSelection()
-    if (!sel) return
-    range.selectNodeContents(event.target as Node)
-    range.collapse(false)
-    sel.removeAllRanges()
-    sel.addRange(range)
-  }, [])
 
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions

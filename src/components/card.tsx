@@ -17,11 +17,7 @@ type CardProps = {
   handleFocus?: FocusEventHandler<HTMLElement>
   handleBlur?: FocusEventHandler<HTMLElement>
   handleClick?: () => void
-  handleChange?: (
-    value: string | Blob,
-    type: SideContentType,
-    side: SideName
-  ) => void
+  handleChange?: (value: string | Blob, side: SideName) => void
 }
 
 export default forwardRef(function Card(
@@ -59,6 +55,10 @@ export default forwardRef(function Card(
     resetContent: () => {
       if (frontRef.current) frontRef.current.innerText = ''
       if (backRef.current) backRef.current.innerText = ''
+    },
+    focusContent: (side: SideName) => {
+      if (side === 'front' && frontRef.current) frontRef.current.click()
+      if (side === 'back' && backRef.current) backRef.current.click()
     }
   }))
 

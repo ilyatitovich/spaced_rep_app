@@ -3,6 +3,7 @@ export type SideName = 'front' | 'back'
 export type CardHandle = {
   getContent: () => CardData
   resetContent: () => void
+  focusContent: (side: SideName) => void
 }
 
 export type SideContentType = 'text' | 'image' | 'code'

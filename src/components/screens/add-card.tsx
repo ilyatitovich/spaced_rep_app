@@ -65,7 +65,7 @@ export default function AddCardScreen({
       <Button
         key="save-draft"
         onClick={() => handleSaveCard('draft')}
-        disabled={!cardData.front.content}
+        disabled={!cardData.front.content && !cardData.back.content}
       >
         Save Draft
       </Button>
@@ -127,21 +127,40 @@ export default function AddCardScreen({
       ...prev,
       [side]: type
     }))
-  }
 
-  const handleChangeSideContent = (
-    value: string | Blob,
-    type: SideContentType,
-    side: SideName
-  ) => {
     setCardData(prev => ({
       ...prev,
       [side]: {
         ...prev[side],
         type,
+        content: ''
+      }
+    }))
+
+    if (type === 'text') {
+      requestAnimationFrame(() => {
+        currentCardRef.current?.focusContent(side)
+      })
+    }
+  }
+
+  const handleChangeSideContent = (value: string | Blob, side: SideName) => {
+    setCardData(prev => ({
+      ...prev,
+      [side]: {
+        ...prev[side],
         content: value
       }
     }))
+
+    if (value instanceof Blob) {
+      if (
+        (side === 'front' && !isContentEmpty(cardData.back.content)) ||
+        (side === 'back' && !isContentEmpty(cardData.front.content))
+      ) {
+        setIsDraft(false)
+      }
+    }
   }
 
   const handleClose = (): void => {
@@ -194,10 +213,14 @@ export default function AddCardScreen({
         <CardButton
           type="text"
           onClick={() => handleChangeSideContentType('text')}
+          isDisabled={sidesContentType[isFlipped ? 'back' : 'front'] === 'text'}
         />
         <CardButton
           type="image"
           onClick={() => handleChangeSideContentType('image')}
+          isDisabled={
+            sidesContentType[isFlipped ? 'back' : 'front'] === 'image'
+          }
         />
         <CardButton type="flip" onClick={() => setIsFlipped(prev => !prev)} />
       </div>
