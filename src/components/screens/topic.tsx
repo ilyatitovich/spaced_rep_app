@@ -15,7 +15,7 @@ import {
   BackButton,
   Header
 } from '@/components'
-import { getToday } from '@/lib'
+import { getToday, LEVELS } from '@/lib'
 import { Topic, Card } from '@/models'
 import { getTopicById, deleteTopic } from '@/services'
 
@@ -118,15 +118,15 @@ export default function TopicScreen({
             </div>
 
             <ul>
-              {topic.levels.map(level => (
+              {LEVELS.map(level => (
                 <LevelRow
-                  key={level.id}
-                  levelId={level.id}
-                  cardsNumber={cards[level.id]?.length ?? 0}
+                  key={level}
+                  levelId={level}
+                  cardsNumber={cards[level]?.length ?? 0}
                   onLevelOpen={() =>
                     setSearchParams(prev => {
                       const params = new URLSearchParams(prev)
-                      params.set('levelId', String(level.id))
+                      params.set('levelId', String(level))
                       return params
                     })
                   }

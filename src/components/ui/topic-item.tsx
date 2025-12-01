@@ -2,8 +2,7 @@ import { Check } from 'lucide-react'
 import { useRef } from 'react'
 
 import { formatTimestamp, getToday, joinNumbers } from '@/lib'
-import { Day } from '@/lib/helpers'
-import { Topic } from '@/models'
+import { Topic, Day } from '@/models'
 
 type TopicItemProps = {
   topic: Topic

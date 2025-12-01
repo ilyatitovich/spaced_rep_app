@@ -1,7 +1,7 @@
 import { Check, X } from 'lucide-react'
 
 import { getToday } from '@/lib'
-import { Day } from '@/lib/helpers'
+import { Day } from '@/models'
 
 type WeekProps = {
   week: Array<Day | null>

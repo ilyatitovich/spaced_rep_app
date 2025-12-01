@@ -1,21 +1,17 @@
-import { nanoid } from 'nanoid'
-
-import { Day, Level } from '@/lib/helpers'
+import { Day } from './day.model'
 
 export class Topic {
   id: string
   title: string
   pivot: number
   week: Array<Day | null>
-  levels: Level[]
   nextUpdateDate: number
 
   constructor(title: string) {
-    this.id = nanoid()
+    this.id = crypto.randomUUID()
     this.title = title
     this.pivot = Date.now()
     this.week = this.setStartWeek(this.pivot)
-    this.levels = this.createLevelsList()
     this.nextUpdateDate = this.getNextUpdateDate()
   }
 
@@ -38,10 +34,6 @@ export class Topic {
     }
 
     return week
-  }
-
-  private createLevelsList(): Level[] {
-    return new Array(9).fill(null).map((_, index) => new Level(index))
   }
 
   private getNextUpdateDate(): number {

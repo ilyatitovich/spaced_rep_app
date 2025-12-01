@@ -127,6 +127,11 @@ export default function CardDetailsScreen({
         type: card?.data.back.type ?? 'text'
       }
     })
+
+    setSidesContentType({
+      front: card?.data.front.type ?? 'text',
+      back: card?.data.back.type ?? 'text'
+    })
   }, [card])
 
   const handleBlur = (): void => {
