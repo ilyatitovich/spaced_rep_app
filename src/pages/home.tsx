@@ -13,7 +13,7 @@ import {
   Header
 } from '@/components'
 import { Topic } from '@/models'
-import { getAllTopics, deleteTopic, updateCardsBulk } from '@/services'
+import { getAllTopics, deleteTopic } from '@/services'
 
 const listVariants = {
   hidden: { opacity: 0 },
@@ -44,7 +44,6 @@ export default function HomePage() {
           const topics = await getAllTopics()
           setTopics(topics)
         }
-        await updateCardsBulk()
       } catch (err) {
         console.error('Failed to load topics:', err)
       } finally {
