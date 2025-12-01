@@ -145,7 +145,6 @@ export default function CardDetailsScreen({
   const handleChangeSideContentType = (type: SideContentType = 'text') => {
     const side = isFlipped ? 'back' : 'front'
 
-    console.log(cardData)
     setSidesContentType(prev => ({
       ...prev,
       [side]: type
