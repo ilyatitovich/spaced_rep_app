@@ -1,14 +1,8 @@
 import type { ChangeEvent } from 'react'
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 
+import { Spinner } from './ui'
 import { processImage } from '@/lib'
-
-// Add image size restriction and validation as needed
-// For example, limit to 5MB and specific formats
-// Add error handling for unsupported formats
-// and display appropriate messages to the user
-// Loaders can be added for better UX during conversion
-// Add photo support
 
 type ImageUploaderProps = {
   onChange?: (file: Blob) => void
@@ -19,18 +13,29 @@ export default function ImageUploader({
   onChange,
   initialPreview
 }: ImageUploaderProps) {
-  const inputRef = useRef<HTMLInputElement | null>(null)
   const [preview, setPreview] = useState(initialPreview)
   const [isConverting, setIsConverting] = useState(false)
+
+  const inputRef = useRef<HTMLInputElement | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (preview) {
+        URL.revokeObjectURL(preview)
+      }
+    }
+  }, [preview])
 
   const handleSelect = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    console.log(file.size)
+    setIsConverting(true)
 
     try {
-      setIsConverting(true)
+      if (preview) {
+        URL.revokeObjectURL(preview)
+      }
 
       const webpBlob = await processImage(file)
       const previewUrl = URL.createObjectURL(webpBlob)
@@ -44,32 +49,16 @@ export default function ImageUploader({
     }
   }
 
+  if (isConverting) return <Spinner />
+
   return (
-    <div className="flex flex-col items-center gap-3">
-      {!preview && (
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          className="px-6 py-3 rounded-xl border border-gray-400 text-gray-600 bg-white hover:bg-gray-50 transition"
-        >
-          {isConverting ? 'Processing...' : 'Click to upload image'}
-        </button>
-      )}
-
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={handleSelect}
-      />
-
-      {preview && (
+    <>
+      {preview ? (
         <div className="flex flex-col items-center">
           <img
             src={preview}
             alt="preview"
-            className="w-60 max-h-[48dvh] rounded-xl"
+            className="w-60 max-h-[48dvh] rounded-xl object-contain"
           />
 
           <button
@@ -80,7 +69,23 @@ export default function ImageUploader({
             Change
           </button>
         </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className="px-6 py-3 border border-purple-500 rounded-xl text-purple-600"
+        >
+          Click to upload image
+        </button>
       )}
-    </div>
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleSelect}
+      />
+    </>
   )
 }
