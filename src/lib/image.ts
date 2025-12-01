@@ -1,6 +1,6 @@
 export async function processImage(file: File): Promise<Blob> {
-  const maxWidth = 300,
-    maxHeight = 500
+  const maxWidth = 500,
+    maxHeight = 700
 
   const img = await createImageBitmap(file)
 
