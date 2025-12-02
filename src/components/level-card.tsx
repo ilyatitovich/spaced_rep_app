@@ -1,7 +1,7 @@
 import { Check } from 'lucide-react'
 import { useRef, useEffect, useState, ReactNode } from 'react'
 
-import { iosLog, isCodeBlock, isRecord, recordToBlob } from '@/lib'
+import { isCodeBlock, isRecord, recordToBlob } from '@/lib'
 import { Card } from '@/models'
 
 type LevelCardProps = {
@@ -61,14 +61,7 @@ export default function LevelCard({
   }
 
   if (previewUrl) {
-    preview = (
-      <img
-        src={previewUrl}
-        alt="front pic"
-        onLoad={() => iosLog('Изображение отобразилось!')}
-        onError={e => iosLog('Ошибка загрузки изображения:', e)}
-      />
-    )
+    preview = <img src={previewUrl} alt="front pic" />
   }
 
   const handleTouchStart = () => {
