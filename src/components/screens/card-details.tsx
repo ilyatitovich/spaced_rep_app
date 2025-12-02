@@ -13,7 +13,13 @@ import {
 import { isContentEmpty } from '@/lib'
 import { Card as CardModel } from '@/models'
 import { updateCard } from '@/services'
-import type { CardData, CardHandle, SideContentType, SideName } from '@/types'
+import type {
+  CardData,
+  CardHandle,
+  SideContent,
+  SideContentType,
+  SideName
+} from '@/types'
 
 type CardDetailsScreen = {
   isOpen: boolean
@@ -185,7 +191,7 @@ export default function CardDetailsScreen({
     }
   }
 
-  const handleChangeSideContent = (value: string | Blob, side: SideName) => {
+  const handleChangeSideContent = (value: SideContent, side: SideName) => {
     setCardData(prev => ({
       ...prev,
       [side]: {

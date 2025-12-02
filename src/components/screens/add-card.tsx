@@ -12,7 +12,13 @@ import {
 import { isContentEmpty } from '@/lib'
 import { Card as CardModel } from '@/models'
 import { createCard } from '@/services'
-import type { CardHandle, CardData, SideContentType, SideName } from '@/types'
+import type {
+  CardHandle,
+  CardData,
+  SideContentType,
+  SideName,
+  SideContent
+} from '@/types'
 
 type NewCardPageProps = {
   isOpen: boolean
@@ -175,7 +181,7 @@ export default function AddCardScreen({
     }
   }
 
-  const handleChangeSideContent = (value: string | Blob, side: SideName) => {
+  const handleChangeSideContent = (value: SideContent, side: SideName) => {
     setCardData(prev => ({
       ...prev,
       [side]: {
@@ -184,13 +190,11 @@ export default function AddCardScreen({
       }
     }))
 
-    if (value instanceof Blob) {
-      if (
-        (side === 'front' && !isContentEmpty(cardData.back.content)) ||
-        (side === 'back' && !isContentEmpty(cardData.front.content))
-      ) {
-        setIsDraft(false)
-      }
+    if (
+      (side === 'front' && !isContentEmpty(cardData.back.content)) ||
+      (side === 'back' && !isContentEmpty(cardData.front.content))
+    ) {
+      setIsDraft(false)
     }
   }
 
@@ -240,18 +244,21 @@ export default function AddCardScreen({
         />
       </CardContainer>
       {/* Buttons */}
-      <div className="pt-1 flex justify-center items-center gap-12">
+      <div className="pt-1 flex justify-center items-center gap-10">
         <CardButton
           type="text"
           onClick={() => handleChangeSideContentType('text')}
-          isDisabled={sidesContentType[isFlipped ? 'back' : 'front'] === 'text'}
+          isDisabled={sidesContentType[side] === 'text'}
         />
         <CardButton
           type="image"
           onClick={() => handleChangeSideContentType('image')}
-          isDisabled={
-            sidesContentType[isFlipped ? 'back' : 'front'] === 'image'
-          }
+          isDisabled={sidesContentType[side] === 'image'}
+        />
+        <CardButton
+          type="code"
+          onClick={() => handleChangeSideContentType('code')}
+          isDisabled={sidesContentType[side] === 'code'}
         />
         <CardButton type="flip" onClick={() => setIsFlipped(prev => !prev)} />
       </div>

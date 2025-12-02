@@ -1,4 +1,4 @@
-import { RefreshCw, ImagePlus, Type } from 'lucide-react'
+import { RefreshCw, ImagePlus, Type, CodeXml } from 'lucide-react'
 import type { ElementType } from 'react'
 
 import type { SideContentType } from '@/types'
@@ -31,7 +31,9 @@ export default function CardButton({
       label = 'Image'
       break
     case 'code':
-      return null
+      Icon = CodeXml
+      label = 'Code'
+      break
 
     default:
       return null

@@ -1,19 +1,31 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { CodeBlock } from '@/types'
+
 export function isContentEmpty(
-  content: string | Blob | null | undefined
+  content: string | Blob | null | undefined | CodeBlock
 ): boolean {
   if (content == null) return true
 
-  // String case
   if (typeof content === 'string') {
-    // Remove whitespace, tabs, newlines, invisible characters
     return content.trim().length === 0
   }
 
-  // Blob or File case
   if (content instanceof Blob) {
     return content.size === 0
   }
 
-  // Fallback → treat unknown types as empty
+  if (isCodeBlock(content)) {
+    return content.code.trim().length === 0
+  }
+
   return true
+}
+
+export function isCodeBlock(value: unknown): value is CodeBlock {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as any).lang === 'string' &&
+    typeof (value as any).code === 'string'
+  )
 }

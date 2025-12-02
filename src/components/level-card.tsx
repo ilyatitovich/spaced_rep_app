@@ -1,6 +1,7 @@
 import { Check } from 'lucide-react'
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, ReactNode } from 'react'
 
+import { isCodeBlock } from '@/lib'
 import { Card } from '@/models'
 
 type LevelCardProps = {
@@ -25,19 +26,33 @@ export default function LevelCard({
 
   const { content: frontContent } = card.data.front
 
-  const preview =
-    typeof frontContent === 'string' ? (
+  let preview: ReactNode | null = null
+
+  if (typeof frontContent === 'string') {
+    preview =
       frontContent.length > 50 ? (
         <p>{frontContent.slice(0, 50) + '...'}</p>
       ) : (
         <p>{frontContent}</p>
       )
-    ) : (
-      previewUrl && <img src={previewUrl} alt="front pic" />
+  }
+
+  if (isCodeBlock(frontContent)) {
+    preview = (
+      <p className="font-mono text-[10px]">
+        {frontContent.code.length > 50
+          ? frontContent.code.slice(0, 50) + '...'
+          : frontContent.code}
+      </p>
     )
+  }
+
+  if (frontContent instanceof Blob) {
+    preview = previewUrl && <img src={previewUrl} alt="front pic" />
+  }
 
   useEffect(() => {
-    if (typeof frontContent !== 'string') {
+    if (typeof frontContent !== 'string' && !isCodeBlock(frontContent)) {
       const url = URL.createObjectURL(frontContent)
       setPreviewUrl(url)
 
