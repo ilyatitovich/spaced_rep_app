@@ -1,5 +1,3 @@
-import { iosLog } from './ios-log'
-
 export async function processImage(file: File): Promise<Blob> {
   const maxWidth = 500,
     maxHeight = 700
@@ -24,16 +22,13 @@ export async function processImage(file: File): Promise<Blob> {
   ctx!.fillRect(0, 0, width, height)
   ctx?.drawImage(img, 0, 0, width, height)
 
-  const format = (await supportsWebP()) ? 'image/webp' : 'image/jpeg'
-  iosLog(format)
-
   return await new Promise((resolve, reject) => {
     canvas.toBlob(
       blob => {
-        if (!blob) return reject(`Failed to convert to ${format}`)
+        if (!blob) return reject('Failed to convert to jpeg')
         resolve(blob)
       },
-      format,
+      'image/jpeg',
       0.85
     )
   })
