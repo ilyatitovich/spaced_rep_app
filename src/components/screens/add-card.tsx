@@ -52,6 +52,8 @@ export default function AddCardScreen({
   const currentCardRef = useRef<CardHandle>(null)
   const secondCardRef = useRef<CardHandle>(null)
 
+  const side = isFlipped ? 'back' : 'front'
+
   let rightBtn
 
   if (isEdited) {
@@ -103,26 +105,55 @@ export default function AddCardScreen({
     }
   }
 
-  function handleBlur(): void {
-    if (
-      isContentEmpty(cardData.front.content) ||
-      isContentEmpty(cardData.back.content)
-    ) {
-      setIsDraft(true)
-    }
+  const handleBlur = (): void => {
+    if (currentCardRef.current) {
+      const data = currentCardRef.current.getContent()
 
-    if (
-      !isContentEmpty(cardData.front.content) &&
-      !isContentEmpty(cardData.back.content)
-    ) {
-      setIsDraft(false)
+      if (side === 'front') {
+        if (
+          isContentEmpty(data.front.content) ||
+          isContentEmpty(cardData.back.content)
+        ) {
+          setIsDraft(true)
+        }
+
+        if (
+          !isContentEmpty(data.front.content) &&
+          !isContentEmpty(cardData.back.content)
+        ) {
+          setIsDraft(false)
+        }
+      }
+
+      if (side === 'back') {
+        if (
+          isContentEmpty(data.back.content) ||
+          isContentEmpty(cardData.front.content)
+        ) {
+          setIsDraft(true)
+        }
+
+        if (
+          !isContentEmpty(data.back.content) &&
+          !isContentEmpty(cardData.front.content)
+        ) {
+          setIsDraft(false)
+        }
+      }
+
+      setCardData(prev => ({
+        ...prev,
+        [side]: {
+          ...prev[side],
+          content: data[side].content
+        }
+      }))
     }
 
     setIsEdited(false)
   }
 
   const handleChangeSideContentType = (type: SideContentType = 'text') => {
-    const side = isFlipped ? 'back' : 'front'
     setSidesContentType(prev => ({
       ...prev,
       [side]: type

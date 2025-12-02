@@ -10,6 +10,7 @@ import {
   BackButton,
   Header
 } from '@/components'
+import { isContentEmpty } from '@/lib'
 import { Card as CardModel } from '@/models'
 import { updateCard } from '@/services'
 import type { CardData, CardHandle, SideContentType, SideName } from '@/types'
@@ -61,6 +62,8 @@ export default function CardDetailsScreen({
 
   const cardRef = useRef<CardHandle>(null)
 
+  const side = isFlipped ? 'back' : 'front'
+
   const rightBtn = isEdited ? (
     <Button key="done" onClick={() => setIsEdited(false)}>
       Done
@@ -81,13 +84,18 @@ export default function CardDetailsScreen({
 
       card.data = cardData
 
-      if (card.level === 0 && cardData.front && cardData.back) {
+      if (
+        card.level === 0 &&
+        !isContentEmpty(cardData.front.content) &&
+        !isContentEmpty(cardData.back.content)
+      ) {
         card.level += 1
+        onUpdate?.(card)
       }
 
       await updateCard(card)
       setIsEdited(false)
-      onUpdate?.(card)
+
       // setIsNewCardData(false)
 
       if (card.level > 0) {
@@ -135,21 +143,27 @@ export default function CardDetailsScreen({
   }, [card])
 
   const handleBlur = (): void => {
-    // if (cardRef.current) {
-    //   const { front, back } = cardRef.current.getContent()
+    if (cardRef.current) {
+      const data = cardRef.current.getContent()
 
-    //   // if (front !== card?.data.front || back !== card?.data.back) {
-    //   //   setIsNewCardData(true)
-    //   // } else {
-    //   //   setIsNewCardData(false)
-    //   // }
-    // }
+      // if (front !== card?.data.front || back !== card?.data.back) {
+      //   setIsNewCardData(true)
+      // } else {
+      //   setIsNewCardData(false)
+      // }
+
+      setCardData(prev => ({
+        ...prev,
+        [side]: {
+          ...prev[side],
+          content: data[side].content
+        }
+      }))
+    }
     setIsEdited(false)
   }
 
   const handleChangeSideContentType = (type: SideContentType = 'text') => {
-    const side = isFlipped ? 'back' : 'front'
-
     setSidesContentType(prev => ({
       ...prev,
       [side]: type

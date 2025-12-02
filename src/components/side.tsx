@@ -32,13 +32,9 @@ export default function Side({
     }
   }, [data.content, data.type])
 
-  const handleInput = useCallback(
-    (e: FormEvent<HTMLDivElement>) => {
-      setIsLongText(e.currentTarget.innerText.length > LONGTEXT_THRESHOLD)
-      onChange?.(e.currentTarget.innerText, data.side)
-    },
-    [data.side, onChange]
-  )
+  const handleInput = useCallback((e: FormEvent<HTMLDivElement>) => {
+    setIsLongText(e.currentTarget.innerText.length > LONGTEXT_THRESHOLD)
+  }, [])
 
   const handleChangeImage = useCallback(
     (file: Blob) => {
@@ -95,10 +91,7 @@ export default function Side({
             placeCursorAtEnd(e)
           }}
           onBlur={handleBlur}
-          onInput={e => {
-            handleInput(e)
-            placeCursorAtEnd(e)
-          }}
+          onInput={handleInput}
         >
           {typeof data.content === 'string' ? data.content : ''}
         </div>
