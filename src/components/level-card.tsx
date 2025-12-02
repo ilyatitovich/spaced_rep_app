@@ -1,7 +1,7 @@
 import { Check } from 'lucide-react'
 import { useRef, useEffect, useState, ReactNode } from 'react'
 
-import { isCodeBlock } from '@/lib'
+import { iosLog, isCodeBlock } from '@/lib'
 import { Card } from '@/models'
 
 type LevelCardProps = {
@@ -60,6 +60,7 @@ export default function LevelCard({
   }
 
   if (frontContent instanceof Blob) {
+    iosLog(frontContent)
     preview = previewUrl && <img src={previewUrl} alt="front pic" />
   }
 
