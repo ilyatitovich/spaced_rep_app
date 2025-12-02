@@ -2,10 +2,11 @@ import type { ChangeEvent } from 'react'
 import { useRef, useState, useEffect } from 'react'
 
 import { Spinner } from './ui'
-import { processImage } from '@/lib'
+import { blobToRecord, processImage } from '@/lib'
+import { ImageDBRecord } from '@/types'
 
 type ImageUploaderProps = {
-  onChange?: (file: Blob) => void
+  onChange?: (file: ImageDBRecord) => void
   initialPreview?: string
 }
 
@@ -43,9 +44,10 @@ export default function ImageUploader({
 
       const webpBlob = await processImage(file)
       const previewUrl = URL.createObjectURL(webpBlob)
+      const record = await blobToRecord(webpBlob)
 
       setPreview(previewUrl)
-      onChange?.(webpBlob)
+      onChange?.(record)
     } catch (err) {
       console.error('Failed to convert image:', err)
     } finally {

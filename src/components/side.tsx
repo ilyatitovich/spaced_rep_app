@@ -3,10 +3,16 @@ import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 
 import ImageUploader from './image-uploader'
 import { Spinner } from './ui'
-import { LONGTEXT_THRESHOLD, placeCursorAtEnd } from '@/lib'
+import {
+  isRecord,
+  LONGTEXT_THRESHOLD,
+  placeCursorAtEnd,
+  recordToBlob
+} from '@/lib'
 import type {
   CardSideData,
   CodeBlock,
+  ImageDBRecord,
   SideContent,
   SideContentType,
   SideName
@@ -46,7 +52,7 @@ export default function Side({
   }, [])
 
   const handleChangeImage = useCallback(
-    (file: Blob) => {
+    (file: ImageDBRecord) => {
       onChange?.(file, data.side)
     },
     [data.side, onChange]
@@ -86,20 +92,20 @@ export default function Side({
 
   if (
     (contentType && contentType === 'image') ||
-    (data.type === 'image' && data.content instanceof Blob)
+    (data.type === 'image' && isRecord(data.content))
   ) {
     mode = isEditable ? (
       <ImageUploader
         onChange={handleChangeImage}
         initialPreview={
-          data.content instanceof Blob
-            ? URL.createObjectURL(data.content as Blob)
+          isRecord(data.content)
+            ? URL.createObjectURL(recordToBlob(data.content))
             : ''
         }
       />
     ) : (
       <img
-        src={URL.createObjectURL(data.content as Blob)}
+        src={URL.createObjectURL(recordToBlob(data.content as ImageDBRecord))}
         alt={`${data.side} side`}
         className="max-w-full max-h-full object-contain"
       />

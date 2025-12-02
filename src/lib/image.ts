@@ -28,7 +28,7 @@ export async function processImage(file: File): Promise<Blob> {
         if (!blob) return reject('Failed to convert to jpeg')
         resolve(blob)
       },
-      'image/jpeg',
+      'image/webp',
       0.85
     )
   })
@@ -63,12 +63,11 @@ export async function webpBlobToDataURL(blob: Blob): Promise<string> {
   return canvas.toDataURL('image/jpeg', 0.92)
 }
 
-export async function supportsWebP(): Promise<boolean> {
-  return new Promise(resolve => {
-    const img = new Image()
-    img.onload = () => resolve(img.width === 1)
-    img.onerror = () => resolve(false)
-    img.src =
-      'data:image/webp;base64,UklGRiIAAABXRUJQVlA4IC4AAADwAQCdASoEAAQAAVAfCWkA'
-  })
+export async function blobToRecord(blob: Blob) {
+  const buffer = await blob.arrayBuffer()
+  return { buffer, type: blob.type }
+}
+
+export function recordToBlob(record: { buffer: ArrayBuffer; type: string }) {
+  return new Blob([record.buffer], { type: record.type })
 }
