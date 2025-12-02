@@ -1,3 +1,5 @@
+import { iosLog } from './ios-log'
+
 export async function processImage(file: File): Promise<Blob> {
   const maxWidth = 500,
     maxHeight = 700
@@ -23,6 +25,7 @@ export async function processImage(file: File): Promise<Blob> {
   ctx?.drawImage(img, 0, 0, width, height)
 
   const format = (await supportsWebP()) ? 'image/webp' : 'image/jpeg'
+  iosLog(format)
 
   return await new Promise((resolve, reject) => {
     canvas.toBlob(
