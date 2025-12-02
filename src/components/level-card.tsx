@@ -60,7 +60,7 @@ export default function LevelCard({
   }
 
   if (frontContent instanceof Blob) {
-    iosLog(frontContent)
+    iosLog(previewUrl)
     preview = previewUrl && <img src={previewUrl} alt="front pic" />
   }
 
