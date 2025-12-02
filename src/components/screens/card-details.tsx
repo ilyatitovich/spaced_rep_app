@@ -230,18 +230,21 @@ export default function CardDetailsScreen({
       </CardContainer>
 
       {/* Buttons */}
-      <div className="pt-1 flex justify-center items-center gap-12">
+      <div className="pt-1 flex justify-center items-center gap-10">
         <CardButton
           type="text"
           onClick={() => handleChangeSideContentType('text')}
-          isDisabled={sidesContentType[isFlipped ? 'back' : 'front'] === 'text'}
+          isDisabled={sidesContentType[side] === 'text'}
         />
         <CardButton
           type="image"
           onClick={() => handleChangeSideContentType('image')}
-          isDisabled={
-            sidesContentType[isFlipped ? 'back' : 'front'] === 'image'
-          }
+          isDisabled={sidesContentType[side] === 'image'}
+        />
+        <CardButton
+          type="code"
+          onClick={() => handleChangeSideContentType('code')}
+          isDisabled={sidesContentType[side] === 'code'}
         />
         <CardButton type="flip" onClick={() => setIsFlipped(prev => !prev)} />
       </div>

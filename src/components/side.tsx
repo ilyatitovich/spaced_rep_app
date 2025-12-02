@@ -76,6 +76,7 @@ export default function Side({
       <Suspense fallback={<Spinner />}>
         <CodeEditor
           onChange={handleChangeCode}
+          onFocus={handleFocus}
           initialValue={data.content as CodeBlock}
           isEditable={isEditable}
         />

@@ -1,5 +1,5 @@
 import CodeMirror, { EditorView, type Extension } from '@uiw/react-codemirror'
-import { useEffect, useState } from 'react'
+import { FocusEventHandler, useEffect, useState } from 'react'
 import { useDebouncedCallback } from 'use-debounce'
 
 import { getLanguageExtension, placeCursorAtEnd, type CodeLang } from '@/lib'
@@ -7,6 +7,7 @@ import type { CodeBlock } from '@/types'
 
 type CodeEditorProps = {
   onChange?: (value: CodeBlock) => void
+  onFocus?: FocusEventHandler<HTMLDivElement>
   initialValue?: CodeBlock
   isEditable?: boolean
 }
@@ -14,6 +15,7 @@ type CodeEditorProps = {
 export default function CodeEditor({
   initialValue,
   isEditable,
+  onFocus,
   onChange
 }: CodeEditorProps) {
   const [lang, setLang] = useState<CodeLang>('sh')
@@ -69,7 +71,10 @@ export default function CodeEditor({
           highlightSpecialChars: false
         }}
         onChange={v => debouncedOnChange(v)}
-        onFocus={placeCursorAtEnd}
+        onFocus={e => {
+          onFocus?.(e)
+          placeCursorAtEnd(e)
+        }}
         style={{
           fontSize: '12px', // Prevents iOS zooming on input focus
           lineHeight: '1.4',
