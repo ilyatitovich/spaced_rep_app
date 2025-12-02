@@ -13,18 +13,22 @@ export default function ImageUploader({
   onChange,
   initialPreview
 }: ImageUploaderProps) {
-  const [preview, setPreview] = useState(initialPreview)
+  const [preview, setPreview] = useState('')
   const [isConverting, setIsConverting] = useState(false)
 
   const inputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
+    if (initialPreview) {
+      setPreview(initialPreview)
+    }
+
     return () => {
       if (preview) {
         URL.revokeObjectURL(preview)
       }
     }
-  }, [preview])
+  }, [initialPreview, preview])
 
   const handleSelect = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]

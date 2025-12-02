@@ -62,7 +62,7 @@ export async function deleteCardsBulk(cardIds: string[]): Promise<void> {
   })
 }
 
-export async function updateCardsBulk(): Promise<void> {
+export async function migrateCardsToNewSchema(): Promise<void> {
   return withTransaction([STORES.CARDS], 'readwrite', async stores => {
     return new Promise<void>((resolve, reject) => {
       const request = stores[STORES.CARDS].getAll() as IDBRequest<Card[]>
@@ -73,12 +73,7 @@ export async function updateCardsBulk(): Promise<void> {
         let remaining = oldCards.length
 
         for (let card of oldCards) {
-          if (
-            typeof card.data.front !== 'string' &&
-            typeof card.data.front !== 'string'
-          )
-            continue
-
+          // Set new schema
           card = {
             id: card.id,
             topicId: card.topicId,

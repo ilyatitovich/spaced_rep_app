@@ -21,20 +21,32 @@ export default function LevelCard({
   onPress,
   onSelect
 }: LevelCardProps) {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [previewUrl, setPreviewUrl] = useState('')
   const timerRef = useRef<NodeJS.Timeout | null>(null)
 
   const { content: frontContent } = card.data.front
 
   let preview: ReactNode | null = null
 
+  useEffect(() => {
+    if (typeof frontContent !== 'string' && !isCodeBlock(frontContent)) {
+      const url = URL.createObjectURL(frontContent)
+      setPreviewUrl(url)
+
+      return () => {
+        URL.revokeObjectURL(url)
+      }
+    }
+  }, [frontContent])
+
   if (typeof frontContent === 'string') {
-    preview =
-      frontContent.length > 50 ? (
-        <p>{frontContent.slice(0, 50) + '...'}</p>
-      ) : (
-        <p>{frontContent}</p>
-      )
+    preview = (
+      <p>
+        {frontContent.length > 50
+          ? frontContent.slice(0, 50) + '...'
+          : frontContent}
+      </p>
+    )
   }
 
   if (isCodeBlock(frontContent)) {
@@ -50,19 +62,6 @@ export default function LevelCard({
   if (frontContent instanceof Blob) {
     preview = previewUrl && <img src={previewUrl} alt="front pic" />
   }
-
-  useEffect(() => {
-    if (typeof frontContent !== 'string' && !isCodeBlock(frontContent)) {
-      const url = URL.createObjectURL(frontContent)
-      setPreviewUrl(url)
-
-      return () => {
-        URL.revokeObjectURL(url)
-      }
-    } else {
-      setPreviewUrl(null)
-    }
-  }, [frontContent])
 
   const handleTouchStart = () => {
     timerRef.current = setTimeout(() => {
