@@ -42,3 +42,23 @@ export function blobToDataURL(blob: Blob): Promise<string> {
     reader.readAsDataURL(blob)
   })
 }
+
+export async function webpBlobToDataURL(blob: Blob): Promise<string> {
+  const img = document.createElement('img')
+  img.src = URL.createObjectURL(blob)
+
+  await new Promise<void>((resolve, reject) => {
+    img.onload = () => resolve()
+    img.onerror = () => reject('Safari cannot load WebP')
+  })
+
+  const canvas = document.createElement('canvas')
+  canvas.width = img.width
+  canvas.height = img.height
+
+  const ctx = canvas.getContext('2d')!
+  ctx.drawImage(img, 0, 0)
+
+  // Safari гарантированно поддерживает JPEG/PNG
+  return canvas.toDataURL('image/jpeg', 0.92)
+}

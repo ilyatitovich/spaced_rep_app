@@ -1,7 +1,7 @@
 import { Check } from 'lucide-react'
 import { useRef, useEffect, useState, ReactNode } from 'react'
 
-import { blobToDataURL, iosLog, isCodeBlock } from '@/lib'
+import { iosLog, isCodeBlock, webpBlobToDataURL } from '@/lib'
 import { Card } from '@/models'
 
 type LevelCardProps = {
@@ -50,7 +50,7 @@ export default function LevelCard({
           frontContent.size
         )
 
-        const dataUrl = await blobToDataURL(frontContent)
+        const dataUrl = await webpBlobToDataURL(frontContent)
 
         if (!aborted) {
           iosLog('Data URL готов, длина:', dataUrl.length)
