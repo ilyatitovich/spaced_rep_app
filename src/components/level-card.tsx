@@ -1,7 +1,7 @@
 import { Check } from 'lucide-react'
 import { useRef, useEffect, useState, ReactNode } from 'react'
 
-import { iosLog, isCodeBlock } from '@/lib'
+import { blobToDataURL, iosLog, isCodeBlock } from '@/lib'
 import { Card } from '@/models'
 
 type LevelCardProps = {
@@ -29,13 +29,46 @@ export default function LevelCard({
   let preview: ReactNode | null = null
 
   useEffect(() => {
-    if (typeof frontContent !== 'string' && !isCodeBlock(frontContent)) {
-      const url = URL.createObjectURL(frontContent)
-      setPreviewUrl(url)
+    // Сбрасываем предыдущее превью
+    setPreviewUrl('')
 
-      return () => {
-        URL.revokeObjectURL(url)
+    let aborted = false
+
+    const convertBlobToDataURL = async () => {
+      if (typeof frontContent === 'string' || isCodeBlock(frontContent)) {
+        return // ничего не делаем для строк и код-блоков
       }
+
+      if (!(frontContent instanceof Blob)) {
+        iosLog('frontContent не Blob:', typeof frontContent)
+        return
+      }
+
+      try {
+        iosLog(
+          'Начинаем конвертацию Blob → data: URL, размер:',
+          frontContent.size
+        )
+
+        const dataUrl = await blobToDataURL(frontContent)
+
+        if (!aborted) {
+          iosLog('Data URL готов, длина:', dataUrl.length)
+          setPreviewUrl(dataUrl)
+        }
+      } catch (err) {
+        if (!aborted) {
+          iosLog('Ошибка конвертации Blob:', err)
+        }
+      }
+    }
+
+    convertBlobToDataURL()
+
+    // Очистка при размонтировании или смене frontContent
+    return () => {
+      aborted = true
+      setPreviewUrl('') // сразу убираем старое превью
     }
   }, [frontContent])
 
