@@ -42,7 +42,7 @@ export default function CodeEditor({
           <select
             value={lang}
             onChange={e => setLang(e.target.value as CodeLang)}
-            className="text-sm outline-0"
+            className="text-sm outline-0 border border-gray-300"
           >
             <option value="ts">TypeScript</option>
             <option value="py">Python</option>
@@ -52,9 +52,10 @@ export default function CodeEditor({
         </div>
       )}
       <CodeMirror
-        className="mt-4"
+        className="mt-4 border border-gray-200"
         value={initialValue?.code ?? ''}
         height="auto"
+        minHeight="50px"
         theme="light"
         extensions={extensions}
         editable={!!isEditable}
@@ -70,7 +71,7 @@ export default function CodeEditor({
         onChange={v => debouncedOnChange(v)}
         onFocus={placeCursorAtEnd}
         style={{
-          fontSize: '16px', // Prevents iOS zooming on input focus
+          fontSize: '12px', // Prevents iOS zooming on input focus
           lineHeight: '1.4',
           overflow: 'hidden'
         }}
