@@ -1,3 +1,5 @@
+import type { ImageDBRecord } from '@/types'
+
 export async function processImage(file: File): Promise<Blob> {
   const maxWidth = 500,
     maxHeight = 700
@@ -34,40 +36,11 @@ export async function processImage(file: File): Promise<Blob> {
   })
 }
 
-export function blobToDataURL(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result as string)
-    reader.onerror = () => reject(reader.error || new Error('FileReader error'))
-    reader.readAsDataURL(blob)
-  })
-}
-
-export async function webpBlobToDataURL(blob: Blob): Promise<string> {
-  const img = document.createElement('img')
-  img.src = URL.createObjectURL(blob)
-
-  await new Promise<void>((resolve, reject) => {
-    img.onload = () => resolve()
-    img.onerror = () => reject('Safari cannot load WebP')
-  })
-
-  const canvas = document.createElement('canvas')
-  canvas.width = img.width
-  canvas.height = img.height
-
-  const ctx = canvas.getContext('2d')!
-  ctx.drawImage(img, 0, 0)
-
-  // Safari гарантированно поддерживает JPEG/PNG
-  return canvas.toDataURL('image/jpeg', 0.92)
-}
-
-export async function blobToRecord(blob: Blob) {
+export async function blobToRecord(blob: Blob): Promise<ImageDBRecord> {
   const buffer = await blob.arrayBuffer()
   return { buffer, type: blob.type }
 }
 
-export function recordToBlob(record: { buffer: ArrayBuffer; type: string }) {
+export function recordToBlob(record: ImageDBRecord): Blob {
   return new Blob([record.buffer], { type: record.type })
 }
