@@ -22,13 +22,15 @@ export async function processImage(file: File): Promise<Blob> {
   ctx!.fillRect(0, 0, width, height)
   ctx?.drawImage(img, 0, 0, width, height)
 
+  const format = (await supportsWebP()) ? 'image/webp' : 'image/jpeg'
+
   return await new Promise((resolve, reject) => {
     canvas.toBlob(
       blob => {
-        if (!blob) return reject('Failed to convert to WebP')
+        if (!blob) return reject(`Failed to convert to ${format}`)
         resolve(blob)
       },
-      'image/webp',
+      format,
       0.85
     )
   })
@@ -61,4 +63,14 @@ export async function webpBlobToDataURL(blob: Blob): Promise<string> {
 
   // Safari гарантированно поддерживает JPEG/PNG
   return canvas.toDataURL('image/jpeg', 0.92)
+}
+
+export async function supportsWebP(): Promise<boolean> {
+  return new Promise(resolve => {
+    const img = new Image()
+    img.onload = () => resolve(img.width === 1)
+    img.onerror = () => resolve(false)
+    img.src =
+      'data:image/webp;base64,UklGRiIAAABXRUJQVlA4IC4AAADwAQCdASoEAAQAAVAfCWkA'
+  })
 }
