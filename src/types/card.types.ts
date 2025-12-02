@@ -1,4 +1,13 @@
+import type { CodeLang } from '@/lib'
+
 export type SideName = 'front' | 'back'
+
+export type SideContent = string | Blob | CodeBlock
+
+export type CodeBlock = {
+  lang: CodeLang
+  code: string
+}
 
 export type CardHandle = {
   getContent: () => CardData
@@ -11,7 +20,7 @@ export type SideContentType = 'text' | 'image' | 'code'
 export type CardSideData = {
   side: SideName
   type: SideContentType
-  content: string | Blob
+  content: string | Blob | CodeBlock
 }
 
 export type CardData = {

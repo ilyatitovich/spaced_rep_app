@@ -13,7 +13,13 @@ import {
 import { isContentEmpty } from '@/lib'
 import { Card as CardModel } from '@/models'
 import { updateCard } from '@/services'
-import type { CardData, CardHandle, SideContentType, SideName } from '@/types'
+import type {
+  CardData,
+  CardHandle,
+  SideContent,
+  SideContentType,
+  SideName
+} from '@/types'
 
 type CardDetailsScreen = {
   isOpen: boolean
@@ -185,7 +191,7 @@ export default function CardDetailsScreen({
     }
   }
 
-  const handleChangeSideContent = (value: string | Blob, side: SideName) => {
+  const handleChangeSideContent = (value: SideContent, side: SideName) => {
     setCardData(prev => ({
       ...prev,
       [side]: {
@@ -224,18 +230,21 @@ export default function CardDetailsScreen({
       </CardContainer>
 
       {/* Buttons */}
-      <div className="pt-1 flex justify-center items-center gap-12">
+      <div className="pt-1 flex justify-center items-center gap-10">
         <CardButton
           type="text"
           onClick={() => handleChangeSideContentType('text')}
-          isDisabled={sidesContentType[isFlipped ? 'back' : 'front'] === 'text'}
+          isDisabled={sidesContentType[side] === 'text'}
         />
         <CardButton
           type="image"
           onClick={() => handleChangeSideContentType('image')}
-          isDisabled={
-            sidesContentType[isFlipped ? 'back' : 'front'] === 'image'
-          }
+          isDisabled={sidesContentType[side] === 'image'}
+        />
+        <CardButton
+          type="code"
+          onClick={() => handleChangeSideContentType('code')}
+          isDisabled={sidesContentType[side] === 'code'}
         />
         <CardButton type="flip" onClick={() => setIsFlipped(prev => !prev)} />
       </div>

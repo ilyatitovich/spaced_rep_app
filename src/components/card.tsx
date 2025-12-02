@@ -3,7 +3,13 @@ import { forwardRef, useRef, useImperativeHandle } from 'react'
 
 import Side from './side'
 import { useTap } from '@/hooks'
-import type { CardData, CardHandle, SideContentType, SideName } from '@/types'
+import type {
+  CardData,
+  CardHandle,
+  SideContent,
+  SideContentType,
+  SideName
+} from '@/types'
 
 type CardProps = {
   data: CardData
@@ -17,7 +23,7 @@ type CardProps = {
   handleFocus?: FocusEventHandler<HTMLElement>
   handleBlur?: FocusEventHandler<HTMLElement>
   handleClick?: () => void
-  handleChange?: (value: string | Blob, side: SideName) => void
+  handleChange?: (value: SideContent, side: SideName) => void
 }
 
 export default forwardRef(function Card(
