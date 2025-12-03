@@ -1,4 +1,4 @@
-import { withTransaction, STORES } from '../lib/db'
+import { withTransaction, STORES, arrayBufferToBase64, isRecord } from '@/lib'
 import { Topic, Card } from '@/models'
 
 export async function createTopic(topic: Topic): Promise<void> {
@@ -149,4 +149,77 @@ export async function updateTopic(topic: Topic): Promise<void> {
         reject(request.error ?? new Error('Failed to update topic'))
     })
   })
+}
+
+export async function exportTopic(
+  topicId: string
+): Promise<Record<string, string>> {
+  return withTransaction(
+    [STORES.TOPICS, STORES.CARDS],
+    'readonly',
+    async stores => {
+      const topicStore = stores[STORES.TOPICS]
+      const cardStore = stores[STORES.CARDS]
+
+      const topicRequest = topicStore.get(topicId)
+
+      const topic = await new Promise<Topic | undefined>((resolve, reject) => {
+        topicRequest.onsuccess = () => resolve(topicRequest.result)
+        topicRequest.onerror = () =>
+          reject(topicRequest.error ?? new Error('Failed to fetch topic'))
+      })
+
+      if (!topic) {
+        throw new Error(`Topic with ID ${topicId} not found`)
+      }
+
+      const cardsIndex = cardStore.index('topicId')
+      const cardsRequest = cardsIndex.getAll(IDBKeyRange.only(topicId))
+
+      const cards = await new Promise<Card[]>((resolve, reject) => {
+        cardsRequest.onsuccess = () => resolve(cardsRequest.result)
+        cardsRequest.onerror = () =>
+          reject(cardsRequest.error ?? new Error('Failed to fetch cards'))
+      })
+
+      const processedCards = cards.map((card: Card) => ({
+        ...card,
+        data: {
+          front: {
+            ...card.data.front,
+            content: isRecord(card.data.front.content)
+              ? arrayBufferToBase64(card.data.front.content)
+              : card.data.front.content
+          },
+          back: {
+            ...card.data.back,
+            content: isRecord(card.data.back.content)
+              ? arrayBufferToBase64(card.data.back.content)
+              : card.data.back.content
+          }
+        }
+      }))
+
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        topic: {
+          id: topic.id,
+          title: topic.title,
+          pivot: topic.pivot
+        },
+        cards: processedCards
+      }
+
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {
+        type: 'application/json'
+      })
+
+      const url = URL.createObjectURL(blob)
+
+      return {
+        fileUrl: url,
+        fileName: `topic-${topic.title}-${topic.id}-${payload.exportedAt}.json`
+      }
+    }
+  )
 }

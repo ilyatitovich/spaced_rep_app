@@ -27,7 +27,7 @@ export async function processImage(file: File): Promise<Blob> {
   return await new Promise((resolve, reject) => {
     canvas.toBlob(
       blob => {
-        if (!blob) return reject('Failed to convert to jpeg')
+        if (!blob) return reject('Failed to convert to Webp')
         resolve(blob)
       },
       'image/webp',
@@ -43,4 +43,18 @@ export async function blobToRecord(blob: Blob): Promise<ImageDBRecord> {
 
 export function recordToBlob(record: ImageDBRecord): Blob {
   return new Blob([record.buffer], { type: record.type })
+}
+
+export function arrayBufferToBase64(
+  record: ImageDBRecord
+): Record<string, string> {
+  let binary = ''
+  const bytes = new Uint8Array(record.buffer)
+  const len = bytes.byteLength
+
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i])
+  }
+
+  return { buffer: btoa(binary), type: record.type }
 }

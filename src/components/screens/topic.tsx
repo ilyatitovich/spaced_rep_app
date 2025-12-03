@@ -1,4 +1,4 @@
-import { Trash } from 'lucide-react'
+import { Settings } from 'lucide-react'
 import { useEffect, useState, useRef } from 'react'
 import { useSearchParams } from 'react-router'
 
@@ -6,18 +6,18 @@ import {
   AddCardScreen,
   Button,
   CardDetailsScreen,
-  ConfirmDeleteModal,
   TestButton,
   TestScreen,
   LevelRow,
   LevelScreen,
   Week,
   BackButton,
-  Header
+  Header,
+  TopicSettingsScreen
 } from '@/components'
 import { getToday, LEVELS } from '@/lib'
 import { Topic, Card } from '@/models'
-import { getTopicById, deleteTopic } from '@/services'
+import { getTopicById } from '@/services'
 
 type TopicPageProps = {
   isOpen: boolean
@@ -35,9 +35,6 @@ export default function TopicScreen({
   const [topic, setTopic] = useState<Topic | null>(null)
   const [cards, setCards] = useState<Record<number, Card[]>>({})
 
-  const [isConfirmDeleteModalOpen, setIsConfirmDeleteModalOpen] =
-    useState(false)
-
   const contentRef = useRef<HTMLDivElement>(null)
 
   const [searchParams, setSearchParams] = useSearchParams()
@@ -45,6 +42,7 @@ export default function TopicScreen({
   const isTest = searchParams.get('test') === 'true'
   const levelId = searchParams.get('levelId') ?? ''
   const cardId = searchParams.get('cardId') ?? ''
+  const isSettingsOpen = searchParams.get('topicSettings') === 'true'
 
   useEffect(() => {
     async function fetchTopic(): Promise<void> {
@@ -65,17 +63,6 @@ export default function TopicScreen({
 
     fetchTopic()
   }, [topicId, isTest])
-
-  const handleDeleteTopic = async (): Promise<void> => {
-    if (!topic) return
-    try {
-      await deleteTopic(topic.id)
-      onDelete()
-      onClose()
-    } catch (error) {
-      console.error('Failed to delete topic.', error)
-    }
-  }
 
   const handleOpenAddCard = (): void => {
     setSearchParams(prev => {
@@ -103,8 +90,16 @@ export default function TopicScreen({
         <Header>
           <BackButton />
           <span>{topic?.title}</span>
-          <Button onClick={() => setIsConfirmDeleteModalOpen(true)}>
-            <Trash />
+          <Button
+            onClick={() =>
+              setSearchParams(prev => {
+                const params = new URLSearchParams(prev)
+                params.set('topicSettings', 'true')
+                return params
+              })
+            }
+          >
+            <Settings />
           </Button>
         </Header>
 
@@ -198,12 +193,12 @@ export default function TopicScreen({
               })
             }}
           />
-          <ConfirmDeleteModal
-            isOpen={isConfirmDeleteModalOpen}
-            onConfirm={handleDeleteTopic}
-            onClose={() => setIsConfirmDeleteModalOpen(false)}
-            count={1}
-            itemName="topic"
+
+          <TopicSettingsScreen
+            isOpen={isSettingsOpen}
+            topic={topic}
+            onClose={onClose}
+            onDelete={onDelete}
           />
         </>
       )}
