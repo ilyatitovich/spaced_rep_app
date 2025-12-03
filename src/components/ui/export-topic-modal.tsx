@@ -60,6 +60,7 @@ export default function ExportTopicModal({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: '20%' }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        onClick={e => e.stopPropagation()}
       >
         <h2 className="text-xl font-bold text-center">Export Topic</h2>
 

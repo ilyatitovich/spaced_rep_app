@@ -1,4 +1,4 @@
-import type { ImageDBRecord } from '@/types'
+import type { ImageBase64Record, ImageDBRecord } from '@/types'
 
 export async function processImage(file: File): Promise<Blob> {
   const maxWidth = 500,
@@ -57,4 +57,27 @@ export function arrayBufferToBase64(
   }
 
   return { buffer: btoa(binary), type: record.type }
+}
+
+export function base64ToArrayBuffer({
+  buffer,
+  type
+}: ImageBase64Record): ImageDBRecord {
+  const binaryString = atob(buffer)
+  const len = binaryString.length
+  const bytes = new Uint8Array(len)
+
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i)
+  }
+  return { buffer: bytes.buffer, type }
+}
+
+export function isBase64Image(record: unknown): boolean {
+  return (
+    typeof record === 'object' &&
+    record !== null &&
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    typeof (record as any).buffer === 'string'
+  )
 }

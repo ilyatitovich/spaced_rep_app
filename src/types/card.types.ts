@@ -4,6 +4,8 @@ export type SideName = 'front' | 'back'
 
 export type ImageDBRecord = { buffer: ArrayBuffer; type: string }
 
+export type ImageBase64Record = { buffer: string; type: string }
+
 export type SideContent = string | Blob | CodeBlock | ImageDBRecord
 
 export type CodeBlock = {

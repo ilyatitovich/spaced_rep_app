@@ -8,6 +8,7 @@ import {
   BackButton,
   ConfirmDeleteModal,
   ExportTopicModal,
+  ImportCardsModal,
   Header,
   Screen
 } from '@/components'
@@ -20,19 +21,22 @@ type TopicSettingsProps = {
   topic: Topic
   onClose: () => void
   onDelete: () => void
+  onCardsImport: () => Promise<void>
 }
 
 export default function TopicSettings({
   isOpen,
   topic,
   onClose,
-  onDelete
+  onDelete,
+  onCardsImport
 }: TopicSettingsProps) {
   const [title, setTitle] = useState('')
   const [error, setError] = useState('')
   const [isConfirmDeleteModalOpen, setIsConfirmDeleteModalOpen] =
     useState(false)
   const [isExportModalOpen, setIsExportModalOpen] = useState(false)
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false)
 
   useEffect(() => {
     if (isOpen) {
@@ -138,7 +142,10 @@ export default function TopicSettings({
           </form>
 
           {/* Export/import buttons */}
-          <button className="border border-gray-300 p-4 rounded-xl flex gap-2 justify-center items-center">
+          <button
+            className="border border-gray-300 p-4 rounded-xl flex gap-2 justify-center items-center"
+            onClick={() => setIsImportModalOpen(true)}
+          >
             <Download />
             <span>Import cards</span>
           </button>
@@ -170,6 +177,15 @@ export default function TopicSettings({
         count={1}
         itemName="topic"
       />
+      <AnimatePresence>
+        {isImportModalOpen && (
+          <ImportCardsModal
+            onClose={() => setIsImportModalOpen(false)}
+            topicId={topic.id}
+            onCardsImport={onCardsImport}
+          />
+        )}
+      </AnimatePresence>
       <AnimatePresence>
         {isExportModalOpen && (
           <ExportTopicModal

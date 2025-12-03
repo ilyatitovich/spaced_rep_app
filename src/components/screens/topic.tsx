@@ -1,5 +1,5 @@
 import { Settings } from 'lucide-react'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useSearchParams } from 'react-router'
 
 import {
@@ -44,25 +44,25 @@ export default function TopicScreen({
   const cardId = searchParams.get('cardId') ?? ''
   const isSettingsOpen = searchParams.get('topicSettings') === 'true'
 
-  useEffect(() => {
-    async function fetchTopic(): Promise<void> {
-      try {
-        const { topic, cards } = await getTopicById(topicId)
-        setTopic(topic)
-        setCards(cards)
-        const contentEl = contentRef.current
-        if (contentEl) {
-          contentEl.scrollTop = 0
-        }
-      } catch (error) {
-        console.error('Failed to fetch topic:', error)
+  const fetchTopic = useCallback(async (): Promise<void> => {
+    try {
+      const { topic, cards } = await getTopicById(topicId)
+      setTopic(topic)
+      setCards(cards)
+      const contentEl = contentRef.current
+      if (contentEl) {
+        contentEl.scrollTop = 0
       }
+    } catch (error) {
+      console.error('Failed to fetch topic:', error)
     }
+  }, [topicId])
 
+  useEffect(() => {
     if (!topicId) return
 
     fetchTopic()
-  }, [topicId, isTest])
+  }, [topicId, isTest, fetchTopic])
 
   const handleOpenAddCard = (): void => {
     setSearchParams(prev => {
@@ -199,6 +199,7 @@ export default function TopicScreen({
             topic={topic}
             onClose={onClose}
             onDelete={onDelete}
+            onCardsImport={fetchTopic}
           />
         </>
       )}

@@ -1,5 +1,7 @@
+import { base64ToArrayBuffer, isBase64Image } from '@/lib'
 import { withTransaction, STORES } from '@/lib/db'
 import { Card } from '@/models'
+import { ImageBase64Record } from '@/types'
 
 export async function createCard(card: Card): Promise<void> {
   try {
@@ -106,4 +108,75 @@ export async function migrateCardsToNewSchema(): Promise<void> {
       }
     })
   })
+}
+
+export async function importCards(
+  file: File,
+  topicId: string
+): Promise<number> {
+  const text = await file.text()
+  let data
+
+  try {
+    data = JSON.parse(text)
+  } catch (e) {
+    throw new Error('Invalid JSON in import file')
+  }
+
+  if (!data.cards || !Array.isArray(data.cards)) {
+    throw new Error('Invalid import file: missing or invalid cards[]')
+  }
+
+  const cardsToImport: Card[] = data.cards.map((card: Card) => ({
+    ...card,
+    topicId,
+    data: {
+      front: {
+        ...card.data.front,
+        content: isBase64Image(card.data.front.content)
+          ? base64ToArrayBuffer(
+              card.data.front.content as unknown as ImageBase64Record
+            )
+          : card.data.front.content
+      },
+      back: {
+        ...card.data.back,
+        content: isBase64Image(card.data.back.content)
+          ? base64ToArrayBuffer(
+              card.data.back.content as unknown as ImageBase64Record
+            )
+          : card.data.back.content
+      }
+    }
+  }))
+
+  let successCount = 0
+
+  await withTransaction([STORES.CARDS], 'readwrite', async stores => {
+    const results = await Promise.allSettled(
+      cardsToImport.map(
+        card =>
+          new Promise<void>((resolve, reject) => {
+            const req = stores[STORES.CARDS].put(card)
+            req.onsuccess = () => resolve()
+            req.onerror = () => reject(req.error)
+          })
+      )
+    )
+
+    successCount = results.filter(r => r.status === 'fulfilled').length
+
+    // Log failed ones
+    results.forEach((result, i) => {
+      if (result.status === 'rejected') {
+        console.warn(
+          'Failed to import card:',
+          cardsToImport[i].id,
+          result.reason
+        )
+      }
+    })
+  })
+
+  return successCount
 }
