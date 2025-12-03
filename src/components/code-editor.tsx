@@ -2,6 +2,7 @@ import CodeMirror, { EditorView, type Extension } from '@uiw/react-codemirror'
 import { FocusEventHandler, useEffect, useState } from 'react'
 import { useDebouncedCallback } from 'use-debounce'
 
+import { LangSelect } from './ui'
 import { getLanguageExtension, placeCursorAtEnd, type CodeLang } from '@/lib'
 import type { CodeBlock } from '@/types'
 
@@ -18,6 +19,7 @@ export default function CodeEditor({
   onFocus,
   onChange
 }: CodeEditorProps) {
+  const [code, setCode] = useState('')
   const [lang, setLang] = useState<CodeLang>('sh')
   const [extensions, setExtensions] = useState<Extension[]>([])
 
@@ -34,23 +36,20 @@ export default function CodeEditor({
   }, [lang])
 
   const debouncedOnChange = useDebouncedCallback((code: string) => {
+    setCode(code)
     onChange?.({ code, lang })
   }, 300)
+
+  const handleLangChange = (lang: CodeLang): void => {
+    setLang(lang)
+    onChange?.({ code, lang })
+  }
 
   return (
     <div className="h-full w-full pt-4 overflow-y-auto">
       {isEditable && (
         <div className="flex justify-center">
-          <select
-            value={lang}
-            onChange={e => setLang(e.target.value as CodeLang)}
-            className="text-sm outline-0 border border-gray-300"
-          >
-            <option value="ts">TypeScript</option>
-            <option value="py">Python</option>
-            <option value="sql">SQL</option>
-            <option value="sh">Bash</option>
-          </select>
+          <LangSelect lang={lang} onChange={handleLangChange} />
         </div>
       )}
       <CodeMirror
