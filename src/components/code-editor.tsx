@@ -3,6 +3,7 @@ import { FocusEventHandler, useEffect, useState } from 'react'
 import { useDebouncedCallback } from 'use-debounce'
 
 import { LangSelect } from './ui'
+import { useFontSize } from '@/hooks'
 import { getLanguageExtension, placeCursorAtEnd, type CodeLang } from '@/lib'
 import type { CodeBlock } from '@/types'
 
@@ -23,11 +24,14 @@ export default function CodeEditor({
   const [lang, setLang] = useState<CodeLang>('sh')
   const [extensions, setExtensions] = useState<Extension[]>([])
 
+  const fontSize = useFontSize(code)
+
   useEffect(() => {
-    if (initialValue?.lang) {
+    if (initialValue) {
+      setCode(initialValue.code)
       setLang(initialValue.lang)
     }
-  }, [initialValue?.lang])
+  }, [initialValue])
 
   useEffect(() => {
     getLanguageExtension(lang).then(ext => {
@@ -75,7 +79,7 @@ export default function CodeEditor({
           placeCursorAtEnd(e)
         }}
         style={{
-          fontSize: '12px', // Prevents iOS zooming on input focus
+          fontSize, // Prevents iOS zooming on input focus
           lineHeight: '1.4',
           overflow: 'hidden'
         }}
