@@ -82,6 +82,11 @@ body {
   background-color: var(--color-background);
 }
 
+button,
+select {
+  cursor: pointer;
+}
+
 .move-left {
   animation: move-left 0.5s ease-out forwards;
 }

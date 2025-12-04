@@ -86,15 +86,14 @@ export function iosLog(...args: any[]) {
   consoleEl.style.display = 'block'
 }
 
-// Чтобы включать/выключать консоль — три тапа по экрану
-let taps = 0
-document.addEventListener('touchend', () => {
-  taps++
-  if (taps === 3) {
-    taps = 0
-    const el = document.getElementById('ios-debug-console')
-    if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none'
-  } else {
-    setTimeout(() => (taps = 0), 1000)
-  }
-})
+// let taps = 0
+// document.addEventListener('touchend', () => {
+//   taps++
+//   if (taps === 3) {
+//     taps = 0
+//     const el = document.getElementById('ios-debug-console')
+//     if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none'
+//   } else {
+//     setTimeout(() => (taps = 0), 1000)
+//   }
+// })

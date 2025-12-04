@@ -1,6 +1,5 @@
 import type { FocusEventHandler, FormEvent, ReactNode, RefObject } from 'react'
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
-import { useDebouncedCallback } from 'use-debounce'
 
 import ImageUploader from './image-uploader'
 import { Spinner } from './ui'
@@ -48,9 +47,9 @@ export default function Side({
     }
   }, [data.content, data.type])
 
-  const handleInput = useDebouncedCallback((e: FormEvent<HTMLDivElement>) => {
+  const handleInput = useCallback((e: FormEvent<HTMLDivElement>) => {
     setIsLongText(e.currentTarget.innerText.length > LONGTEXT_THRESHOLD)
-  }, 300)
+  }, [])
 
   const handleChangeImage = useCallback(
     (file: ImageDBRecord) => {
@@ -124,7 +123,7 @@ export default function Side({
       ) : (
         <div
           ref={innerRef}
-          className={`w-full outline-none whitespace-pre-wrap break-words ${isLongText ? 'text-left text-2xl' : 'text-center text-3xl font-bold font-card leading-10'}`}
+          className={`w-full outline-none whitespace-pre-wrap break-words ${isLongText ? 'text-left text-lg' : 'text-center text-3xl font-bold font-card leading-10'}`}
           contentEditable={isEditable}
           suppressContentEditableWarning
           role="textbox"
