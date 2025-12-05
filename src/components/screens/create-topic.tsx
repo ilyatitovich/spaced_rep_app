@@ -6,7 +6,6 @@ import { BackButton, Button, Header, Screen } from '@/components'
 import { useTopic } from '@/contexts'
 import { TITLE_MAX_LENGTH } from '@/lib'
 import { Topic } from '@/models'
-import { createTopic } from '@/services'
 
 type CreateTopicProps = {
   isOpen: boolean
@@ -16,10 +15,10 @@ export default function CreateTopic({ isOpen }: CreateTopicProps) {
   const [title, setTitle] = useState('')
   const [error, setError] = useState('')
 
-  const { fetchAllTopics } = useTopic()
+  const { addNewTopic } = useTopic()
 
   const handleTitleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setTitle(e.target.value)
+    setTitle(e.target.value.trim())
     if (error) setError('')
   }
 
@@ -41,9 +40,7 @@ export default function CreateTopic({ isOpen }: CreateTopicProps) {
     }
 
     try {
-      const topic = new Topic(title.trim())
-      await createTopic(topic)
-      await fetchAllTopics()
+      await addNewTopic(new Topic(title))
       toast.success('Topic created!', {
         iconTheme: {
           primary: 'green',

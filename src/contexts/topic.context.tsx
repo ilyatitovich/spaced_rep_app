@@ -9,7 +9,7 @@ import {
 } from 'react'
 
 import { Topic, Card } from '@/models'
-import { getAllTopics, getTopicById } from '@/services'
+import { createTopic, getAllTopics, getTopicById } from '@/services'
 
 type CardsMap = Record<number, Card[]>
 
@@ -19,6 +19,7 @@ type TopicContextType = {
   allTopics: Topic[]
   setAllTopics: Dispatch<SetStateAction<Topic[]>>
   fetchAllTopics: () => Promise<void>
+  addNewTopic: (topic: Topic) => Promise<void>
 
   topic: Topic | null
   setTopic: (topic: Topic | null) => void
@@ -43,7 +44,7 @@ export const TopicProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true)
     try {
       const topics = await getAllTopics()
-      setAllTopics(topics)
+      setAllTopics(topics.sort((a, b) => b.pivot - a.pivot))
     } catch (err) {
       console.error('Failed to load topics:', err)
     } finally {
@@ -59,12 +60,15 @@ export const TopicProvider = ({ children }: { children: ReactNode }) => {
         setCards(cards)
       } catch (error) {
         console.error('Failed to fetch topic:', error)
-      } finally {
-        setIsLoading(false)
       }
     },
     [setCards, setTopic]
   )
+
+  const addNewTopic = useCallback(async (topic: Topic) => {
+    await createTopic(topic)
+    setAllTopics(prev => [topic, ...prev])
+  }, [])
 
   const updateCardsForTopic = (topicId: number, newCards: Card[]) => {
     setCards(prev => ({ ...prev, [topicId]: newCards }))
@@ -84,6 +88,7 @@ export const TopicProvider = ({ children }: { children: ReactNode }) => {
         allTopics,
         setAllTopics,
         fetchAllTopics,
+        addNewTopic,
         topic,
         setTopic,
         cards,
