@@ -9,6 +9,7 @@ import {
   Screen,
   Header
 } from '@/components'
+import { useTopic } from '@/contexts'
 import { isContentEmpty } from '@/lib'
 import { Card as CardModel } from '@/models'
 import { createCard } from '@/services'
@@ -22,8 +23,6 @@ import type {
 
 type NewCardPageProps = {
   isOpen: boolean
-  topicId: string
-  onAdd: (payload: { level: number; card: CardModel }) => void
 }
 
 const initialCardData: CardData = {
@@ -39,11 +38,7 @@ const initialSidesContentType: {
   back: 'text'
 }
 
-export default function AddCardScreen({
-  isOpen,
-  topicId,
-  onAdd
-}: NewCardPageProps) {
+export default function AddCardScreen({ isOpen }: NewCardPageProps) {
   const [isFlipped, setIsFlipped] = useState(false)
   const [cardData, setCardData] = useState(initialCardData)
   const [isEdited, setIsEdited] = useState(false)
@@ -54,6 +49,8 @@ export default function AddCardScreen({
   const [sidesContentType, setSidesContentType] = useState(
     initialSidesContentType
   )
+
+  const { topic, setCards } = useTopic()
 
   const currentCardRef = useRef<CardHandle>(null)
   const secondCardRef = useRef<CardHandle>(null)
@@ -88,6 +85,7 @@ export default function AddCardScreen({
 
   async function handleSaveCard(cardStatus: 'new' | 'draft'): Promise<void> {
     try {
+      const topicId = topic?.id
       if (!topicId) {
         console.error('Topic ID is required to save the card.')
         return
@@ -99,7 +97,13 @@ export default function AddCardScreen({
         cardStatus === 'new' ? 1 : 0
       )
       await createCard(card)
-      onAdd({ level: card.level, card })
+      setCards(prev => {
+        const levelCards = prev[card.level] ?? []
+        return {
+          ...prev,
+          [card.level]: [...levelCards, card]
+        }
+      })
       setCardData(initialCardData)
       setIsFlipped(false)
       setIsDraft(true)

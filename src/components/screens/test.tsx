@@ -10,6 +10,7 @@ import {
   BackButton,
   Header
 } from '@/components'
+import { useTopic } from '@/contexts'
 import { getToday } from '@/lib'
 import { Card as CardModel, Topic } from '@/models'
 import { updateCard, updateTopic } from '@/services'
@@ -32,6 +33,8 @@ export default function TestScreen({
   const [isCorrect, setIsCorrect] = useState(false)
   const [prevCard, setPrevCard] = useState<CardModel | null>(null)
 
+  const { setAllTopics } = useTopic()
+
   const totalCardsRef = useRef(0)
 
   const isDone = cards && cards.length === 0
@@ -41,6 +44,7 @@ export default function TestScreen({
       try {
         topic.week[getToday()]!.isDone = true
         await updateTopic(topic)
+        setAllTopics(prev => prev.map(t => (t.id === topic.id ? topic : t)))
       } catch (error) {
         console.error(error)
       }
@@ -49,7 +53,7 @@ export default function TestScreen({
     if (Array.isArray(cards) && cards.length === 0) {
       setTopic()
     }
-  }, [cards, topic])
+  }, [cards, setAllTopics, topic])
 
   async function handleAnswer(isCorrect: boolean): Promise<void> {
     try {

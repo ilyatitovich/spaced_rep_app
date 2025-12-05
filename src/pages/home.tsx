@@ -12,8 +12,8 @@ import {
   CreateTopicButton,
   Header
 } from '@/components'
-import { Topic } from '@/models'
-import { getAllTopics, deleteTopic } from '@/services'
+import { useTopic } from '@/contexts'
+import { deleteTopic } from '@/services'
 
 const listVariants = {
   hidden: { opacity: 0 },
@@ -27,8 +27,12 @@ const itemVariants = {
 }
 
 export default function HomePage() {
-  const [topics, setTopics] = useState<Topic[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const {
+    allTopics: topics,
+    fetchAllTopics,
+    setAllTopics,
+    isLoading
+  } = useTopic()
 
   const [isSelectionMode, setIsSelectionMode] = useState(false)
   const [selectedItems, setSelectedItems] = useState<string[]>([])
@@ -38,21 +42,8 @@ export default function HomePage() {
   const currentTopic = searchParams.get('topicId')
 
   useEffect(() => {
-    const loadTopics = async (): Promise<void> => {
-      try {
-        if (!isCreating && !currentTopic) {
-          const topics = await getAllTopics()
-          setTopics(topics)
-        }
-      } catch (err) {
-        console.error('Failed to load topics:', err)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    loadTopics()
-  }, [isCreating, currentTopic])
+    fetchAllTopics()
+  }, [fetchAllTopics])
 
   const handlePress = (isPressed: boolean): void => {
     setIsSelectionMode(isPressed)
@@ -79,7 +70,7 @@ export default function HomePage() {
       const restTopics = topics.filter(
         topic => !selectedItems.includes(topic.id)
       )
-      setTopics(restTopics)
+      setAllTopics(restTopics)
 
       if (restTopics.length === 0) {
         setIsSelectionMode(false)
@@ -167,9 +158,6 @@ export default function HomePage() {
         isOpen={currentTopic !== null}
         topicId={currentTopic ?? ''}
         onClose={() => setSearchParams({})}
-        onDelete={() =>
-          setTopics(prev => prev.filter(t => t.id !== currentTopic))
-        }
       />
     </main>
   )

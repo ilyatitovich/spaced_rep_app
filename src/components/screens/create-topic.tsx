@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react'
 import { Toaster, toast } from 'react-hot-toast'
 
 import { BackButton, Button, Header, Screen } from '@/components'
+import { useTopic } from '@/contexts'
 import { TITLE_MAX_LENGTH } from '@/lib'
 import { Topic } from '@/models'
 import { createTopic } from '@/services'
@@ -14,6 +15,8 @@ type CreateTopicProps = {
 export default function CreateTopic({ isOpen }: CreateTopicProps) {
   const [title, setTitle] = useState('')
   const [error, setError] = useState('')
+
+  const { fetchAllTopics } = useTopic()
 
   const handleTitleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setTitle(e.target.value)
@@ -40,6 +43,7 @@ export default function CreateTopic({ isOpen }: CreateTopicProps) {
     try {
       const topic = new Topic(title.trim())
       await createTopic(topic)
+      await fetchAllTopics()
       toast.success('Topic created!', {
         iconTheme: {
           primary: 'green',

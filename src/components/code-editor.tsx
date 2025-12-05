@@ -3,8 +3,12 @@ import { FocusEventHandler, useEffect, useState } from 'react'
 import { useDebouncedCallback } from 'use-debounce'
 
 import { LangSelect } from './ui'
-import { useFontSize } from '@/hooks'
-import { getLanguageExtension, placeCursorAtEnd, type CodeLang } from '@/lib'
+import {
+  getFontSize,
+  getLanguageExtension,
+  placeCursorAtEnd,
+  type CodeLang
+} from '@/lib'
 import type { CodeBlock } from '@/types'
 
 type CodeEditorProps = {
@@ -23,8 +27,6 @@ export default function CodeEditor({
   const [code, setCode] = useState('')
   const [lang, setLang] = useState<CodeLang>('sh')
   const [extensions, setExtensions] = useState<Extension[]>([])
-
-  const fontSize = useFontSize(code)
 
   useEffect(() => {
     if (initialValue) {
@@ -50,7 +52,7 @@ export default function CodeEditor({
   }
 
   return (
-    <div className="h-full w-full pt-4 overflow-y-auto">
+    <div className="h-full w-full pt-4 overflow-y-auto scrollbar-hidden">
       {isEditable && (
         <div className="flex justify-center">
           <LangSelect lang={lang} onChange={handleLangChange} />
@@ -79,7 +81,7 @@ export default function CodeEditor({
           placeCursorAtEnd(e)
         }}
         style={{
-          fontSize, // Prevents iOS zooming on input focus
+          fontSize: getFontSize(code), // Prevents iOS zooming on input focus
           lineHeight: '1.4',
           overflow: 'hidden'
         }}

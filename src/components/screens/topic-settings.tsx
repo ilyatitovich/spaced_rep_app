@@ -3,34 +3,25 @@ import { AnimatePresence } from 'motion/react'
 import type { ChangeEvent, FormEvent } from 'react'
 import { useCallback, useEffect, useState } from 'react'
 import { Toaster, toast } from 'react-hot-toast'
+import { useSearchParams } from 'react-router'
 
 import {
   BackButton,
   ConfirmDeleteModal,
   ExportTopicModal,
-  ImportCardsModal,
   Header,
+  ImportCardsModal,
   Screen
 } from '@/components'
+import { useTopic } from '@/contexts'
 import { TITLE_MAX_LENGTH } from '@/lib'
-import { Topic } from '@/models'
 import { deleteTopic, updateTopic } from '@/services'
 
 type TopicSettingsProps = {
   isOpen: boolean
-  topic: Topic
-  onClose: () => void
-  onDelete: () => void
-  onCardsImport: () => Promise<void>
 }
 
-export default function TopicSettings({
-  isOpen,
-  topic,
-  onClose,
-  onDelete,
-  onCardsImport
-}: TopicSettingsProps) {
+export default function TopicSettings({ isOpen }: TopicSettingsProps) {
   const [title, setTitle] = useState('')
   const [error, setError] = useState('')
   const [isConfirmDeleteModalOpen, setIsConfirmDeleteModalOpen] =
@@ -38,11 +29,15 @@ export default function TopicSettings({
   const [isExportModalOpen, setIsExportModalOpen] = useState(false)
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
 
+  const { topic, setAllTopics } = useTopic()
+
+  const [_, setSearchParams] = useSearchParams()
+
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && topic?.title) {
       setTitle(topic.title)
     }
-  }, [isOpen, topic.title])
+  }, [isOpen, topic?.title])
 
   const handleTitleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setTitle(e.target.value)
@@ -50,6 +45,7 @@ export default function TopicSettings({
   }
 
   const handleSave = async (e: FormEvent): Promise<void> => {
+    if (!topic) return
     if (typeof e !== 'undefined') {
       e.preventDefault()
     }
@@ -69,6 +65,7 @@ export default function TopicSettings({
     try {
       topic.title = title
       await updateTopic(topic)
+      setAllTopics(prev => prev.map(t => (t.id === topic.id ? topic : t)))
       toast.success('Title updated!', {
         iconTheme: {
           primary: 'green',
@@ -91,15 +88,15 @@ export default function TopicSettings({
   }, [])
 
   const isDisabled = (): boolean => {
-    return !title || title === topic.title
+    return !title || title === topic?.title
   }
 
   const handleDeleteTopic = async (): Promise<void> => {
     if (!topic) return
     try {
       await deleteTopic(topic.id)
-      onDelete()
-      onClose()
+      setAllTopics(prev => prev.filter(t => t.id !== topic.id))
+      setSearchParams({})
     } catch (error) {
       console.error('Failed to delete topic.', error)
     }
@@ -141,7 +138,6 @@ export default function TopicSettings({
             </div>
           </form>
 
-          {/* Export/import buttons */}
           <button
             className="border border-gray-300 p-4 rounded-xl flex gap-2 justify-center items-center"
             onClick={() => setIsImportModalOpen(true)}
@@ -149,6 +145,7 @@ export default function TopicSettings({
             <Download />
             <span>Import cards</span>
           </button>
+
           <button
             className="border border-gray-300 p-4 rounded-xl flex gap-2 justify-center items-center"
             onClick={() => setIsExportModalOpen(true)}
@@ -177,21 +174,16 @@ export default function TopicSettings({
         count={1}
         itemName="topic"
       />
+
       <AnimatePresence>
         {isImportModalOpen && (
-          <ImportCardsModal
-            onClose={() => setIsImportModalOpen(false)}
-            topicId={topic.id}
-            onCardsImport={onCardsImport}
-          />
+          <ImportCardsModal onClose={() => setIsImportModalOpen(false)} />
         )}
       </AnimatePresence>
+
       <AnimatePresence>
         {isExportModalOpen && (
-          <ExportTopicModal
-            onClose={() => setIsExportModalOpen(false)}
-            topicId={topic.id}
-          />
+          <ExportTopicModal onClose={() => setIsExportModalOpen(false)} />
         )}
       </AnimatePresence>
     </Screen>

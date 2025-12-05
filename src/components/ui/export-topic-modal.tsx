@@ -2,24 +2,27 @@ import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 
 import Spinner from './spinner'
+import { useTopic } from '@/contexts'
 import { exportTopic } from '@/services'
 
 type ExportTopicModalProps = {
-  topicId: string
   onClose: () => void
 }
 
-export default function ExportTopicModal({
-  topicId,
-  onClose
-}: ExportTopicModalProps) {
+export default function ExportTopicModal({ onClose }: ExportTopicModalProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
   const [fileName, setFileName] = useState('')
   const [error, setError] = useState<string | null>(null)
 
+  const { topic } = useTopic()
+  const topicId = topic?.id
+
   useEffect(() => {
+    if (!topicId) return
+
     let urlToRevoke: string | null = null
+
     const handleExport = async () => {
       try {
         const { fileUrl, fileName } = await exportTopic(topicId)
