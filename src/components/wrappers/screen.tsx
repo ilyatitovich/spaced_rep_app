@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 
 type ScreenProps = {
   isOpen: boolean
@@ -16,17 +16,11 @@ export default function Screen({
   onOpen,
   children
 }: ScreenProps) {
-  const [isInitialRender, setIsInitialRender] = useState(true)
-
   useEffect(() => {
     if (!isOpen) return
 
     onOpen?.()
-
-    if (isInitialRender) {
-      setIsInitialRender(false)
-    }
-  }, [isInitialRender, isOpen, onOpen])
+  }, [isOpen, onOpen])
 
   const handleTransitionEnd = () => {
     if (isOpen) return
@@ -46,7 +40,7 @@ export default function Screen({
       } transition-transform duration-300 ease-in-out fixed inset-0 z-50 bg-background`}
       onTransitionEnd={handleTransitionEnd}
     >
-      {!isInitialRender && children}
+      {children}
     </div>
   )
 }

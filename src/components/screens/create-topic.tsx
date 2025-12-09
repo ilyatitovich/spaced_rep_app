@@ -1,18 +1,20 @@
 import type { ChangeEvent, FormEvent } from 'react'
 import { useCallback, useState } from 'react'
 import { toast } from 'react-hot-toast'
+import { useSearchParams } from 'react-router'
 
 import { BackButton, Button, Header, Screen } from '@/components'
 import { TITLE_MAX_LENGTH } from '@/lib'
 import { Topic } from '@/models'
-import { useScreenStore } from '@/stores'
+// import { useScreenStore } from '@/stores'
 import { useTopicStore } from '@/stores/topic.store'
 
 export default function CreateTopic() {
   const [title, setTitle] = useState('')
   const [error, setError] = useState('')
 
-  const isOpen = useScreenStore(s => s.isCreateOpen)
+  const [searchParams] = useSearchParams()
+  const isOpen = searchParams.get('createTopic') === 'true'
 
   const handleTitleChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
