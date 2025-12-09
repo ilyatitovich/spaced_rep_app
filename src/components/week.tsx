@@ -46,7 +46,7 @@ export default function Week({ week }: WeekProps) {
   )
 }
 
-function renderPast(day: Day): JSX.Element {
+function renderPast(day: Day) {
   return (
     <div
       className="
@@ -61,7 +61,7 @@ function renderPast(day: Day): JSX.Element {
   )
 }
 
-function renderToday(day: Day): JSX.Element {
+function renderToday(day: Day) {
   // today & done
   if (day.isDone) {
     return (
@@ -79,10 +79,10 @@ function renderToday(day: Day): JSX.Element {
   )
 }
 
-function renderFuture(): JSX.Element {
+function renderFuture() {
   return <div className="h-7 w-7 my-2 border-2 rounded-full border-black" />
 }
 
-function renderPastUnactiveDays(): JSX.Element {
+function renderPastUnactiveDays() {
   return <div className="h-7 w-7 my-2 border-2 rounded-full border-gray-300" />
 }
