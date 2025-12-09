@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { useState, useCallback, memo } from 'react'
+import { useState, useCallback } from 'react'
 
 import {
   BackButton,
@@ -25,7 +25,7 @@ const itemVariants = {
   exit: { opacity: 0, y: -20, transition: { duration: 0.25 } }
 }
 
-export default memo(function LevelScreen() {
+export default function LevelScreen() {
   const [isSelectionMode, setIsSelectionMode] = useState(false)
   const [selectedItems, setSelectedItems] = useState<string[]>([])
   const [levelCards, setLevelCards] = useState<Card[]>([])
@@ -159,4 +159,4 @@ export default memo(function LevelScreen() {
       </AnimatePresence>
     </Screen>
   )
-})
+}

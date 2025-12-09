@@ -1,5 +1,5 @@
 import { Settings } from 'lucide-react'
-import { memo, useRef } from 'react'
+import { useRef } from 'react'
 
 import {
   TestButton,
@@ -13,7 +13,7 @@ import { OpenButton } from '@/components'
 import { getToday, LEVELS } from '@/lib'
 import { useTopicStore, useScreenStore } from '@/stores'
 
-export default memo(function TopicScreen() {
+export default function TopicScreen() {
   const topic = useTopicStore(s => s.topic)
   const cards = useTopicStore(s => s.cards)
   const isOpen = useScreenStore(s => s.isTopicOpen)
@@ -56,4 +56,4 @@ export default memo(function TopicScreen() {
       )}
     </Screen>
   )
-})
+}

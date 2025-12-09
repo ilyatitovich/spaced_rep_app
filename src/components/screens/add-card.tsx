@@ -1,4 +1,4 @@
-import { useState, useRef, memo } from 'react'
+import { useState, useRef } from 'react'
 
 import {
   Button,
@@ -33,7 +33,7 @@ const initialSidesContentType: {
   back: 'text'
 }
 
-export default memo(function AddCardScreen() {
+export default function AddCardScreen() {
   const [isFlipped, setIsFlipped] = useState(false)
   const [cardData, setCardData] = useState(initialCardData)
   const [isEdited, setIsEdited] = useState(false)
@@ -257,4 +257,4 @@ export default memo(function AddCardScreen() {
       </div>
     </Screen>
   )
-})
+}

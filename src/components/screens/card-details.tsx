@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, memo } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { toast } from 'react-hot-toast'
 
 import {
@@ -33,7 +33,7 @@ const initialSidesContentType: {
   back: 'text'
 }
 
-export default memo(function CardDetailsScreen() {
+export default function CardDetailsScreen() {
   const card = useTopicStore(s => s.editCard)
   const isOpen = useScreenStore(s => s.isCardDetailsOpen)
 
@@ -234,4 +234,4 @@ export default memo(function CardDetailsScreen() {
       </div>
     </Screen>
   )
-})
+}

@@ -1,5 +1,5 @@
 import type { ChangeEvent, FormEvent } from 'react'
-import { memo, useCallback, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { toast } from 'react-hot-toast'
 
 import { BackButton, Button, Header, Screen } from '@/components'
@@ -8,7 +8,7 @@ import { Topic } from '@/models'
 import { useScreenStore } from '@/stores'
 import { useTopicStore } from '@/stores/topic.store'
 
-export default memo(function CreateTopic() {
+export default function CreateTopic() {
   const [title, setTitle] = useState('')
   const [error, setError] = useState('')
 
@@ -85,4 +85,4 @@ export default memo(function CreateTopic() {
       </div>
     </Screen>
   )
-})
+}

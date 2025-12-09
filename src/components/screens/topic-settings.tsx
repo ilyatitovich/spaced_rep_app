@@ -1,7 +1,7 @@
 import { ArrowUpFromLine, Download, Pencil, Trash } from 'lucide-react'
 import { AnimatePresence } from 'motion/react'
 import type { ChangeEvent, FormEvent } from 'react'
-import { memo, useCallback, useState } from 'react'
+import {  useCallback, useState } from 'react'
 import { toast } from 'react-hot-toast'
 
 import {
@@ -15,7 +15,7 @@ import {
 import { TITLE_MAX_LENGTH } from '@/lib'
 import { useScreenStore, useTopicStore } from '@/stores'
 
-export default memo(function TopicSettings() {
+export default function TopicSettings() {
   const [title, setTitle] = useState('')
   const [error, setError] = useState('')
   const [isConfirmDeleteModalOpen, setIsConfirmDeleteModalOpen] =
@@ -167,4 +167,4 @@ export default memo(function TopicSettings() {
       </AnimatePresence>
     </Screen>
   )
-})
+}

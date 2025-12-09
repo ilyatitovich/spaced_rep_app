@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, memo } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 
 import {
   Card,
@@ -14,7 +14,7 @@ import { getToday } from '@/lib'
 import { Card as CardModel } from '@/models'
 import { useScreenStore, useTopicStore } from '@/stores'
 
-export default memo(function TestScreen() {
+export default function TestScreen() {
   const [isFlipped, setIsFlipped] = useState(false)
   const [cards, setCards] = useState<CardModel[] | null>(null)
   const [isFirstCardActive, setIsFirstCardActive] = useState(true)
@@ -171,4 +171,4 @@ export default memo(function TestScreen() {
       )}
     </Screen>
   )
-})
+}
