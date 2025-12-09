@@ -1,5 +1,13 @@
 import { Day } from './day.model'
 
+type StripMethods<T> = {
+  [K in keyof T as T[K] extends (...args: unknown[]) => unknown
+    ? never
+    : K]: T[K]
+}
+
+export type TopicPlain = StripMethods<InstanceType<typeof Topic>>
+
 export class Topic {
   id: string
   title: string

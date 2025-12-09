@@ -1,16 +1,19 @@
 import { ChevronRight } from 'lucide-react'
+import { memo, useCallback } from 'react'
+
+import { useScreenStore, useTopicStore } from '@/stores'
 
 type LevelRowProps = {
   levelId: number
   cardsNumber: number
-  onLevelOpen: () => void
 }
 
-export default function LevelRow({
-  levelId,
-  cardsNumber,
-  onLevelOpen
-}: LevelRowProps) {
+export default memo(function LevelRow({ levelId, cardsNumber }: LevelRowProps) {
+  const handleClick = useCallback(() => {
+    useTopicStore.getState().setLevel(levelId)
+    useScreenStore.getState().openScreen('level')
+  }, [levelId])
+
   let leftContent = (
     <>
       <span className={`w-2 h-2 rounded-full bg-lvl-${levelId}`}></span>
@@ -42,7 +45,7 @@ export default function LevelRow({
   return (
     <li className="py-3.5 border-b border-gray-200 last:border-b-0">
       <button
-        onClick={onLevelOpen}
+        onClick={handleClick}
         className="w-full flex justify-between items-center"
       >
         <span className="flex items-center gap-3 text-lg">{leftContent}</span>
@@ -53,4 +56,4 @@ export default function LevelRow({
       </button>
     </li>
   )
-}
+})

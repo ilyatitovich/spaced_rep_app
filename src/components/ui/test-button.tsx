@@ -1,14 +1,14 @@
 import { joinNumbers } from '@/lib'
+import { useScreenStore } from '@/stores'
 
 type TestButtonProps = {
   todayLevels: number[]
-  onClick: () => void
 }
 
-export default function TestButton({ todayLevels, onClick }: TestButtonProps) {
+export default function TestButton({ todayLevels }: TestButtonProps) {
   return (
     <button
-      onClick={onClick}
+      onClick={() => useScreenStore.getState().openScreen('test')}
       className={`
         absolute left-1/2 bottom-4 -translate-x-1/2
         w-2/3

@@ -3,8 +3,8 @@ import type { ChangeEvent } from 'react'
 import { useState } from 'react'
 
 import { Spinner } from '@/components'
-import { useTopic } from '@/contexts'
 import { importCards } from '@/services'
+import { useTopicStore } from '@/stores'
 
 type ImportCardsModal = {
   onClose: () => void
@@ -15,10 +15,8 @@ export default function ImportCardsModal({ onClose }: ImportCardsModal) {
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const { topic, fetchTopic } = useTopic()
-  const topicId = topic?.id
-
   const handleFileSelect = async (e: ChangeEvent<HTMLInputElement>) => {
+    const topicId = useTopicStore.getState().topic?.id
     const file = e.target.files?.[0]
     if (!file || !topicId) return
 
@@ -28,7 +26,7 @@ export default function ImportCardsModal({ onClose }: ImportCardsModal) {
 
     try {
       const count = await importCards(file, topicId)
-      await fetchTopic(topicId)
+      await useTopicStore.getState().fetchTopic(topicId)
       setMessage(`${count} cards imported successfully`)
     } catch (err) {
       if (err instanceof Error) {

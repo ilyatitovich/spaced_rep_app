@@ -1,6 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { useState, useCallback } from 'react'
-import { useSearchParams } from 'react-router'
+import { useState, useCallback, memo } from 'react'
 
 import {
   BackButton,
@@ -13,14 +12,7 @@ import {
 import { getReviewMessage, getLevelDescription } from '@/lib'
 import { Card } from '@/models'
 import { deleteCardsBulk } from '@/services'
-
-type LevelScreenProps = {
-  isOpen: boolean
-  levelId: string
-  cards: Card[]
-  startDate: number
-  onDeleteCards: (cards: Card[]) => void
-}
+import { useScreenStore, useTopicStore } from '@/stores'
 
 const listVariants = {
   hidden: { opacity: 0 },
@@ -33,30 +25,25 @@ const itemVariants = {
   exit: { opacity: 0, y: -20, transition: { duration: 0.25 } }
 }
 
-export default function LevelScreen({
-  isOpen,
-  levelId,
-  cards,
-  startDate,
-  onDeleteCards
-}: LevelScreenProps) {
+export default memo(function LevelScreen() {
   const [isSelectionMode, setIsSelectionMode] = useState(false)
   const [selectedItems, setSelectedItems] = useState<string[]>([])
   const [levelCards, setLevelCards] = useState<Card[]>([])
-  const [currentLevelId, setCurrentLevelId] = useState('')
 
-  const [_, setSearchParams] = useSearchParams()
+  const isOpen = useScreenStore(s => s.isLevelOpen)
+  const levelId = useTopicStore(s => s.level) ?? 0
+  const cards = useTopicStore(s => s.cards)
+
+  const startDate = useTopicStore.getState().topic?.pivot
 
   const onOpen = useCallback(() => {
-    setLevelCards(cards)
-    setCurrentLevelId(levelId)
+    setLevelCards(levelId !== undefined ? (cards[levelId] ?? []) : [])
   }, [cards, levelId])
 
   const onClose = useCallback(() => {
     setIsSelectionMode(false)
     setSelectedItems([])
     setLevelCards([])
-    setCurrentLevelId('')
   }, [])
 
   const handlePress = (isPressed: boolean): void => {
@@ -84,7 +71,10 @@ export default function LevelScreen({
       const restCards = levelCards.filter(
         card => !selectedItems.includes(card.id)
       )
-      onDeleteCards(restCards)
+      useTopicStore.getState().setCards(prev => ({
+        ...prev,
+        [Number(levelId)]: restCards
+      }))
 
       if (restCards.length === 0) {
         setIsSelectionMode(false)
@@ -112,14 +102,14 @@ export default function LevelScreen({
       <Header>
         <BackButton />
         <span className="font-semibold">
-          {currentLevelId === '0' ? 'Draft' : `Level ${currentLevelId}`}
+          {levelId?.toString() === '0' ? 'Draft' : `Level ${levelId}`}
         </span>
       </Header>
 
       <div className="flex flex-col overflow-y-auto h-[calc(100dvh-60px)]">
         <div className="w-full text-center p-4">
           <p className="text-[16px] text-gray-900">
-            {`${levelCards.length} card${levelCards.length === 1 ? '' : 's'}${['0', '8'].includes(currentLevelId) ? '' : `, next review: ${getReviewMessage(startDate, Number(currentLevelId))}`}`}
+            {`${levelCards.length} card${levelCards.length === 1 ? '' : 's'}${['0', '8'].includes(levelId.toString()) ? '' : `, next review: ${getReviewMessage(startDate ?? 0, Number(levelId))}`}`}
           </p>
         </div>
 
@@ -144,13 +134,6 @@ export default function LevelScreen({
                     isSelectionMode={isSelectionMode}
                     onPress={handlePress}
                     onSelect={handleSelectItem}
-                    onOpen={() => {
-                      setSearchParams(prev => {
-                        const params = new URLSearchParams(prev)
-                        params.set('cardId', card.id)
-                        return params
-                      })
-                    }}
                   />
                 </motion.div>
               ))}
@@ -160,7 +143,7 @@ export default function LevelScreen({
 
         <div className="w-full p-4">
           <p className="text-[12px] text-gray-600 whitespace-pre-line">
-            {getLevelDescription(currentLevelId)}
+            {getLevelDescription(levelId.toString())}
           </p>
         </div>
       </div>
@@ -176,4 +159,4 @@ export default function LevelScreen({
       </AnimatePresence>
     </Screen>
   )
-}
+})

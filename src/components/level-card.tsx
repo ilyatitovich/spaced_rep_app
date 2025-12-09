@@ -3,6 +3,7 @@ import { useRef, useEffect, useState, ReactNode } from 'react'
 
 import { isCodeBlock, isRecord, recordToBlob } from '@/lib'
 import { Card } from '@/models'
+import { useScreenStore, useTopicStore } from '@/stores'
 
 type LevelCardProps = {
   card: Card
@@ -10,14 +11,12 @@ type LevelCardProps = {
   isSelectionMode: boolean
   onPress: (isPressed: boolean) => void
   onSelect: (cardId: string, add?: boolean) => void
-  onOpen: () => void
 }
 
 export default function LevelCard({
   card,
   isSelected,
   isSelectionMode,
-  onOpen,
   onPress,
   onSelect
 }: LevelCardProps) {
@@ -87,7 +86,8 @@ export default function LevelCard({
       return
     }
 
-    onOpen()
+    useScreenStore.getState().openScreen('cardDetails')
+    useTopicStore.getState().setEditCard(card.id)
   }
 
   return (

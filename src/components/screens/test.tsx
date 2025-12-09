@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, memo } from 'react'
 
 import {
   Card,
@@ -10,22 +10,11 @@ import {
   BackButton,
   Header
 } from '@/components'
-import { useTopic } from '@/contexts'
 import { getToday } from '@/lib'
-import { Card as CardModel, Topic } from '@/models'
-import { updateCard, updateTopic } from '@/services'
+import { Card as CardModel } from '@/models'
+import { useScreenStore, useTopicStore } from '@/stores'
 
-type TestScreenProps = {
-  isOpen: boolean
-  topic: Topic
-  topicCards: Record<number, CardModel[]>
-}
-
-export default function TestScreen({
-  isOpen,
-  topic,
-  topicCards
-}: TestScreenProps) {
+export default memo(function TestScreen() {
   const [isFlipped, setIsFlipped] = useState(false)
   const [cards, setCards] = useState<CardModel[] | null>(null)
   const [isFirstCardActive, setIsFirstCardActive] = useState(true)
@@ -33,7 +22,8 @@ export default function TestScreen({
   const [isCorrect, setIsCorrect] = useState(false)
   const [prevCard, setPrevCard] = useState<CardModel | null>(null)
 
-  const { setAllTopics } = useTopic()
+  const isOpen = useScreenStore(s => s.isTestOpen)
+  const topic = useTopicStore.getState().topic
 
   const totalCardsRef = useRef(0)
 
@@ -41,25 +31,26 @@ export default function TestScreen({
 
   useEffect(() => {
     async function setTopic(): Promise<void> {
+      if (!topic) return
       try {
         topic.week[getToday()]!.isDone = true
-        await updateTopic(topic)
-        setAllTopics(prev => prev.map(t => (t.id === topic.id ? topic : t)))
+        await useTopicStore.getState().updateTopic(topic)
       } catch (error) {
         console.error(error)
       }
     }
 
-    if (Array.isArray(cards) && cards.length === 0) {
+    if (isDone) {
       setTopic()
     }
-  }, [cards, setAllTopics, topic])
+  }, [isDone, topic])
 
   async function handleAnswer(isCorrect: boolean): Promise<void> {
     try {
-      if (!cards) return
+      if (!cards || !topic) return
       const updatedCards = [...cards]
       const currentCard = updatedCards.shift()
+      const prevLevel = currentCard?.level
 
       if (isCorrect) {
         currentCard!.level += 1
@@ -68,7 +59,7 @@ export default function TestScreen({
         updatedCards.push(currentCard!)
       }
 
-      await updateCard(currentCard!)
+      await useTopicStore.getState().moveCardToLevel(currentCard!, prevLevel!)
 
       setIsCorrect(isCorrect)
       setCards(updatedCards)
@@ -87,12 +78,14 @@ export default function TestScreen({
   }
 
   const handleOpen = useCallback(() => {
+    if (!topic) return
+    const cards = useTopicStore.getState().cards
     const result = topic.week[getToday()]!.todayLevels.flatMap(
-      levelId => topicCards[levelId]
+      levelId => cards[levelId]
     ).filter(card => card !== undefined)
     setCards(result)
     totalCardsRef.current = result.length
-  }, [topic.week, topicCards])
+  }, [topic])
 
   const handleClose = useCallback(() => {
     setIsFlipped(false)
@@ -178,4 +171,4 @@ export default function TestScreen({
       )}
     </Screen>
   )
-}
+})

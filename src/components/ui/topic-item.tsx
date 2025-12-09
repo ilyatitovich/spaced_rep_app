@@ -2,15 +2,15 @@ import { Check } from 'lucide-react'
 import { useRef } from 'react'
 
 import { formatTimestamp, getToday, joinNumbers } from '@/lib'
-import { Topic, Day } from '@/models'
+import { Topic, Day, TopicPlain } from '@/models'
+import { useTopicStore, useScreenStore } from '@/stores'
 
 type TopicItemProps = {
-  topic: Topic
+  topic: Topic | TopicPlain
   isSelectionMode?: boolean
   isSelected: boolean
   onPress: (isPressed: boolean) => void
   onSelect: (topicId: string, add?: boolean) => void
-  onOpen: () => void
 }
 
 export default function TopicItem({
@@ -18,8 +18,7 @@ export default function TopicItem({
   isSelectionMode = false,
   isSelected = false,
   onPress,
-  onSelect,
-  onOpen
+  onSelect
 }: TopicItemProps) {
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const { todayLevels } = topic.week[getToday()] as Day
@@ -41,13 +40,14 @@ export default function TopicItem({
     }
   }
 
-  const handleClick = () => {
+  const handleClick = async () => {
     if (isSelectionMode) {
       onSelect(topic.id, !isSelected)
       return
     }
 
-    onOpen()
+    await useTopicStore.getState().fetchTopic(topic.id)
+    useScreenStore.getState().openScreen('topic')
   }
 
   return (

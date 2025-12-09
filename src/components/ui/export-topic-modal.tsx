@@ -2,8 +2,8 @@ import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 
 import Spinner from './spinner'
-import { useTopic } from '@/contexts'
 import { exportTopic } from '@/services'
+import { useTopicStore } from '@/stores'
 
 type ExportTopicModalProps = {
   onClose: () => void
@@ -15,10 +15,8 @@ export default function ExportTopicModal({ onClose }: ExportTopicModalProps) {
   const [fileName, setFileName] = useState('')
   const [error, setError] = useState<string | null>(null)
 
-  const { topic } = useTopic()
-  const topicId = topic?.id
-
   useEffect(() => {
+    const topicId = useTopicStore.getState().topic?.id
     if (!topicId) return
 
     let urlToRevoke: string | null = null
@@ -43,7 +41,7 @@ export default function ExportTopicModal({ onClose }: ExportTopicModalProps) {
         URL.revokeObjectURL(urlToRevoke)
       }
     }
-  }, [topicId])
+  }, [])
 
   return (
     <>

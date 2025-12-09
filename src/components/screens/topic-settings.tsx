@@ -1,9 +1,8 @@
 import { ArrowUpFromLine, Download, Pencil, Trash } from 'lucide-react'
 import { AnimatePresence } from 'motion/react'
 import type { ChangeEvent, FormEvent } from 'react'
-import { useCallback, useEffect, useState } from 'react'
-import { Toaster, toast } from 'react-hot-toast'
-import { useSearchParams } from 'react-router'
+import { memo, useCallback, useState } from 'react'
+import { toast } from 'react-hot-toast'
 
 import {
   BackButton,
@@ -13,15 +12,10 @@ import {
   ImportCardsModal,
   Screen
 } from '@/components'
-import { useTopic } from '@/contexts'
 import { TITLE_MAX_LENGTH } from '@/lib'
-import { deleteTopic, updateTopic } from '@/services'
+import { useScreenStore, useTopicStore } from '@/stores'
 
-type TopicSettingsProps = {
-  isOpen: boolean
-}
-
-export default function TopicSettings({ isOpen }: TopicSettingsProps) {
+export default memo(function TopicSettings() {
   const [title, setTitle] = useState('')
   const [error, setError] = useState('')
   const [isConfirmDeleteModalOpen, setIsConfirmDeleteModalOpen] =
@@ -29,15 +23,8 @@ export default function TopicSettings({ isOpen }: TopicSettingsProps) {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false)
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
 
-  const { topic, setAllTopics } = useTopic()
-
-  const [_, setSearchParams] = useSearchParams()
-
-  useEffect(() => {
-    if (isOpen && topic?.title) {
-      setTitle(topic.title)
-    }
-  }, [isOpen, topic?.title])
+  const topic = useTopicStore(s => s.topic)
+  const isOpen = useScreenStore(s => s.isTopicSettingsOpen)
 
   const handleTitleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setTitle(e.target.value)
@@ -64,14 +51,8 @@ export default function TopicSettings({ isOpen }: TopicSettingsProps) {
 
     try {
       topic.title = title
-      await updateTopic(topic)
-      setAllTopics(prev => prev.map(t => (t.id === topic.id ? topic : t)))
-      toast.success('Title updated!', {
-        iconTheme: {
-          primary: 'green',
-          secondary: 'white'
-        }
-      })
+      await useTopicStore.getState().updateTopic(topic)
+      toast.success('Title updated!')
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message)
@@ -94,9 +75,8 @@ export default function TopicSettings({ isOpen }: TopicSettingsProps) {
   const handleDeleteTopic = async (): Promise<void> => {
     if (!topic) return
     try {
-      await deleteTopic(topic.id)
-      setAllTopics(prev => prev.filter(t => t.id !== topic.id))
-      setSearchParams({})
+      await useTopicStore.getState().deleteTopic(topic.id)
+      useScreenStore.getState().closeAllScreens()
     } catch (error) {
       console.error('Failed to delete topic.', error)
     }
@@ -104,7 +84,6 @@ export default function TopicSettings({ isOpen }: TopicSettingsProps) {
 
   return (
     <Screen isOpen={isOpen} onClose={handleClose}>
-      {isOpen && <Toaster position="top-center" reverseOrder={false} />}
       <div className="h-full bg-background flex flex-col overflow-hidden">
         <Header>
           <BackButton />
@@ -120,7 +99,7 @@ export default function TopicSettings({ isOpen }: TopicSettingsProps) {
               <div className="flex gap-2">
                 <input
                   id="title"
-                  value={title}
+                  value={title !== '' ? title : topic?.title}
                   onChange={handleTitleChange}
                   placeholder="e.g. Spanish Basics"
                   className="w-full p-4 rounded-xl border border-gray-300 focus:border-purple-600 focus:outline-none transition"
@@ -188,4 +167,4 @@ export default function TopicSettings({ isOpen }: TopicSettingsProps) {
       </AnimatePresence>
     </Screen>
   )
-}
+})

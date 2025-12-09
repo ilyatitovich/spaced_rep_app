@@ -1,61 +1,50 @@
 import type { ChangeEvent, FormEvent } from 'react'
-import { useCallback, useState } from 'react'
-import { Toaster, toast } from 'react-hot-toast'
+import { memo, useCallback, useState } from 'react'
+import { toast } from 'react-hot-toast'
 
 import { BackButton, Button, Header, Screen } from '@/components'
-import { useTopic } from '@/contexts'
 import { TITLE_MAX_LENGTH } from '@/lib'
 import { Topic } from '@/models'
+import { useScreenStore } from '@/stores'
+import { useTopicStore } from '@/stores/topic.store'
 
-type CreateTopicProps = {
-  isOpen: boolean
-}
-
-export default function CreateTopic({ isOpen }: CreateTopicProps) {
+export default memo(function CreateTopic() {
   const [title, setTitle] = useState('')
   const [error, setError] = useState('')
 
-  const { addNewTopic } = useTopic()
+  const isOpen = useScreenStore(s => s.isCreateOpen)
 
-  const handleTitleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setTitle(e.target.value.trim())
-    if (error) setError('')
-  }
+  const handleTitleChange = useCallback(
+    (e: ChangeEvent<HTMLInputElement>) => {
+      setTitle(e.target.value)
+      if (error) setError('')
+    },
+    [error]
+  )
 
-  const handleSave = async (e: FormEvent): Promise<void> => {
-    if (typeof e !== 'undefined') {
+  const handleSave = useCallback(
+    async (e: FormEvent) => {
       e.preventDefault()
-    }
+      setError('')
 
-    setError('')
+      const trimmed = title.trim()
+      if (!trimmed) return setError('Please enter a title for the topic')
+      if (trimmed.length > TITLE_MAX_LENGTH)
+        return setError(
+          `Title must be less than ${TITLE_MAX_LENGTH} characters`
+        )
 
-    if (!title) {
-      setError('Please enter a title for the topic')
-      return
-    }
-
-    if (title.length > TITLE_MAX_LENGTH) {
-      setError(`Title must be less than ${TITLE_MAX_LENGTH} characters`)
-      return
-    }
-
-    try {
-      await addNewTopic(new Topic(title))
-      toast.success('Topic created!', {
-        iconTheme: {
-          primary: 'green',
-          secondary: 'white'
-        }
-      })
-      setTitle('')
-    } catch (error) {
-      if (error instanceof Error) {
-        setError(error.message)
+      try {
+        await useTopicStore.getState().addNewTopic(new Topic(trimmed))
+        toast.success('Topic created!')
+        setTitle('')
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Please try again')
+        toast.error('Please try again')
       }
-      toast.error('Please try again')
-    }
-  }
-
+    },
+    [title]
+  )
   const handleClose = useCallback(() => {
     setTitle('')
     setError('')
@@ -64,7 +53,6 @@ export default function CreateTopic({ isOpen }: CreateTopicProps) {
 
   return (
     <Screen isOpen={isOpen} onClose={handleClose} isVertical>
-      {isOpen && <Toaster position="top-center" reverseOrder={false} />}
       <div className="h-full bg-background flex flex-col overflow-hidden">
         <Header>
           <BackButton />
@@ -97,4 +85,4 @@ export default function CreateTopic({ isOpen }: CreateTopicProps) {
       </div>
     </Screen>
   )
-}
+})

@@ -1,5 +1,5 @@
 import { withTransaction, STORES, arrayBufferToBase64, isRecord } from '@/lib'
-import { Topic, Card } from '@/models'
+import { Topic, Card, TopicPlain } from '@/models'
 
 export async function createTopic(topic: Topic): Promise<void> {
   try {
@@ -138,7 +138,7 @@ export async function deleteTopic(topicId: string): Promise<void> {
   )
 }
 
-export async function updateTopic(topic: Topic): Promise<void> {
+export async function updateTopic(topic: TopicPlain): Promise<void> {
   await withTransaction([STORES.TOPICS], 'readwrite', async stores => {
     const store = stores[STORES.TOPICS]
 

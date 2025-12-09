@@ -1,11 +1,11 @@
+import { useScreenStore } from '@/stores'
+
 type CreateTopicButtonProps = {
   isHidden: boolean
-  onClick: () => void
 }
 
 export default function CreateTopicButton({
-  isHidden,
-  onClick
+  isHidden
 }: CreateTopicButtonProps) {
   return (
     <div
@@ -13,7 +13,7 @@ export default function CreateTopicButton({
     >
       <button
         className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-purple-600 text-white text-4xl shadow-lg flex items-center justify-center active:scale-90"
-        onClick={onClick}
+        onClick={() => useScreenStore.getState().openScreen('createTopic')}
       >
         <div className="relative w-6 h-6 flex items-center justify-center">
           <div className="absolute w-5 h-1 bg-white rounded-full"></div>

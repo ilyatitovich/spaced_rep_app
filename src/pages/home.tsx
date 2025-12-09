@@ -1,6 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router'
 
 import {
   CreateTopicScreen,
@@ -10,10 +9,15 @@ import {
   TopicItem,
   TopicScreen,
   CreateTopicButton,
-  Header
+  Header,
+  TopicSettingsScreen,
+  AddCardScreen,
+  TestScreen,
+  LevelScreen,
+  CardDetailsScreen
 } from '@/components'
-import { useTopic } from '@/contexts'
 import { deleteTopic } from '@/services'
+import { useTopicStore } from '@/stores'
 
 const listVariants = {
   hidden: { opacity: 0 },
@@ -27,23 +31,15 @@ const itemVariants = {
 }
 
 export default function HomePage() {
-  const {
-    allTopics: topics,
-    fetchAllTopics,
-    setAllTopics,
-    isLoading
-  } = useTopic()
+  const isLoading = useTopicStore(s => s.isLoading)
+  const topics = useTopicStore(s => s.allTopics)
 
   const [isSelectionMode, setIsSelectionMode] = useState(false)
   const [selectedItems, setSelectedItems] = useState<string[]>([])
 
-  const [searchParams, setSearchParams] = useSearchParams()
-  const isCreating = searchParams.get('create') === 'true'
-  const currentTopic = searchParams.get('topicId')
-
   useEffect(() => {
-    fetchAllTopics()
-  }, [fetchAllTopics])
+    useTopicStore.getState().fetchAllTopics()
+  }, [])
 
   const handlePress = (isPressed: boolean): void => {
     setIsSelectionMode(isPressed)
@@ -70,7 +66,7 @@ export default function HomePage() {
       const restTopics = topics.filter(
         topic => !selectedItems.includes(topic.id)
       )
-      setAllTopics(restTopics)
+      // setAllTopics(restTopics)
 
       if (restTopics.length === 0) {
         setIsSelectionMode(false)
@@ -130,7 +126,6 @@ export default function HomePage() {
                     isSelected={selectedItems.includes(topic.id)}
                     onPress={handlePress}
                     onSelect={handleSelectItem}
-                    onOpen={() => setSearchParams({ topicId: topic.id })}
                   />
                 </motion.li>
               ))}
@@ -138,10 +133,7 @@ export default function HomePage() {
           </motion.ul>
         )}
       </div>
-      <CreateTopicButton
-        isHidden={isSelectionMode}
-        onClick={() => setSearchParams({ create: 'true' })}
-      />
+      <CreateTopicButton isHidden={isSelectionMode} />
       <AnimatePresence>
         {isSelectionMode && (
           <SelectionModeFooter
@@ -152,13 +144,13 @@ export default function HomePage() {
         )}
       </AnimatePresence>
 
-      <CreateTopicScreen isOpen={isCreating} />
-
-      <TopicScreen
-        isOpen={currentTopic !== null}
-        topicId={currentTopic ?? ''}
-        onClose={() => setSearchParams({})}
-      />
+      <CreateTopicScreen />
+      <TopicScreen />
+      <TopicSettingsScreen />
+      <AddCardScreen />
+      <TestScreen />
+      <LevelScreen />
+      <CardDetailsScreen />
     </main>
   )
 }

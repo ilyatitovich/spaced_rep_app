@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, memo } from 'react'
 
 import {
   Button,
@@ -9,10 +9,9 @@ import {
   Screen,
   Header
 } from '@/components'
-import { useTopic } from '@/contexts'
 import { isContentEmpty } from '@/lib'
 import { Card as CardModel } from '@/models'
-import { createCard } from '@/services'
+import { useScreenStore, useTopicStore } from '@/stores'
 import type {
   CardHandle,
   CardData,
@@ -20,10 +19,6 @@ import type {
   SideName,
   SideContent
 } from '@/types'
-
-type NewCardPageProps = {
-  isOpen: boolean
-}
 
 const initialCardData: CardData = {
   front: { side: 'front', type: 'text', content: '' },
@@ -38,7 +33,7 @@ const initialSidesContentType: {
   back: 'text'
 }
 
-export default function AddCardScreen({ isOpen }: NewCardPageProps) {
+export default memo(function AddCardScreen() {
   const [isFlipped, setIsFlipped] = useState(false)
   const [cardData, setCardData] = useState(initialCardData)
   const [isEdited, setIsEdited] = useState(false)
@@ -50,7 +45,7 @@ export default function AddCardScreen({ isOpen }: NewCardPageProps) {
     initialSidesContentType
   )
 
-  const { topic, setCards } = useTopic()
+  const isOpen = useScreenStore(s => s.isAddCardOpen)
 
   const currentCardRef = useRef<CardHandle>(null)
   const secondCardRef = useRef<CardHandle>(null)
@@ -85,7 +80,7 @@ export default function AddCardScreen({ isOpen }: NewCardPageProps) {
 
   async function handleSaveCard(cardStatus: 'new' | 'draft'): Promise<void> {
     try {
-      const topicId = topic?.id
+      const topicId = useTopicStore.getState().topic?.id
       if (!topicId) {
         console.error('Topic ID is required to save the card.')
         return
@@ -96,14 +91,8 @@ export default function AddCardScreen({ isOpen }: NewCardPageProps) {
         topicId,
         cardStatus === 'new' ? 1 : 0
       )
-      await createCard(card)
-      setCards(prev => {
-        const levelCards = prev[card.level] ?? []
-        return {
-          ...prev,
-          [card.level]: [...levelCards, card]
-        }
-      })
+      await useTopicStore.getState().addCard(card)
+
       setCardData(initialCardData)
       setIsFlipped(false)
       setIsDraft(true)
@@ -268,4 +257,4 @@ export default function AddCardScreen({ isOpen }: NewCardPageProps) {
       </div>
     </Screen>
   )
-}
+})

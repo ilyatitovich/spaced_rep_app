@@ -1,22 +1,15 @@
 import { ChevronLeft, X } from 'lucide-react'
-import { useSearchParams } from 'react-router'
 
 import Button from './button'
-import { removeLastSearchParam } from '@/lib'
+import { useScreenStore } from '@/stores'
 
 type BackButtonProps = {
   icon?: 'chevron' | 'x'
 }
 
 export default function BackButton({ icon = 'chevron' }: BackButtonProps) {
-  const [, setSearchParams] = useSearchParams()
-
   return (
-    <Button
-      onClick={() => {
-        setSearchParams(prev => removeLastSearchParam(prev))
-      }}
-    >
+    <Button onClick={useScreenStore.getState().closeScreen}>
       {icon === 'chevron' ? (
         <ChevronLeft size={28} />
       ) : (

@@ -1,5 +1,5 @@
-import { useState, useRef, useCallback } from 'react'
-import { Toaster, toast } from 'react-hot-toast'
+import { useState, useRef, useCallback, memo } from 'react'
+import { toast } from 'react-hot-toast'
 
 import {
   Button,
@@ -11,8 +11,7 @@ import {
   Header
 } from '@/components'
 import { isContentEmpty } from '@/lib'
-import { Card as CardModel } from '@/models'
-import { updateCard } from '@/services'
+import { useScreenStore, useTopicStore } from '@/stores'
 import type {
   CardData,
   CardHandle,
@@ -20,12 +19,6 @@ import type {
   SideContentType,
   SideName
 } from '@/types'
-
-type CardDetailsScreen = {
-  isOpen: boolean
-  card: CardModel | null | undefined
-  onUpdate?: (card: CardModel) => void
-}
 
 const initialCardData: CardData = {
   front: { side: 'front', type: 'text', content: '' },
@@ -40,11 +33,10 @@ const initialSidesContentType: {
   back: 'text'
 }
 
-export default function CardDetailsScreen({
-  isOpen,
-  card,
-  onUpdate
-}: CardDetailsScreen) {
+export default memo(function CardDetailsScreen() {
+  const card = useTopicStore(s => s.editCard)
+  const isOpen = useScreenStore(s => s.isCardDetailsOpen)
+
   const [isFlipped, setIsFlipped] = useState(false)
   const [cardData, setCardData] = useState<CardData>({
     front: {
@@ -96,21 +88,15 @@ export default function CardDetailsScreen({
         !isContentEmpty(cardData.back.content)
       ) {
         card.level += 1
-        onUpdate?.(card)
       }
 
-      await updateCard(card)
+      await useTopicStore.getState().updateCard(card)
       setIsEdited(false)
 
       // setIsNewCardData(false)
 
       if (card.level > 0) {
-        toast.success('Card updated!', {
-          iconTheme: {
-            primary: '#05df72',
-            secondary: 'white'
-          }
-        })
+        toast.success('Card updated!')
         return
       }
     } catch (error) {
@@ -208,8 +194,6 @@ export default function CardDetailsScreen({
       onOpen={handleOpen}
       isVertical
     >
-      {isOpen && <Toaster position="top-center" reverseOrder={false} />}
-
       <Header>
         <BackButton />
         <span>{isFlipped ? 'Back' : 'Front'}</span>
@@ -250,4 +234,4 @@ export default function CardDetailsScreen({
       </div>
     </Screen>
   )
-}
+})
