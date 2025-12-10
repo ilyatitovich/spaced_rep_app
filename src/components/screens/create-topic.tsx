@@ -58,7 +58,7 @@ export default function CreateTopic() {
 
   return (
     // <Screen isOpen={isOpen} onClose={handleClose} isVertical>
-    <div className="h-full bg-background flex flex-col overflow-hidden">
+    <div className="h-full flex flex-col overflow-hidden">
       <Header>
         <BackButton />
         <Button disabled={!title} onClick={handleSave}>
