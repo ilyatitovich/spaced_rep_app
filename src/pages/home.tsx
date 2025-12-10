@@ -1,13 +1,20 @@
-import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useState } from 'react'
+// import {
+//   AnimatePresence,
+//   // motion
+
+// } from 'motion/react'
+import {
+  useEffect
+  // useState
+} from 'react'
 import { useSearchParams } from 'react-router'
 
 import {
   CreateTopicScreen,
-  SelectionModeHeader,
-  SelectionModeFooter,
-  Spinner,
-  TopicItem,
+  // SelectionModeHeader,
+  // SelectionModeFooter,
+  // Spinner,
+  // TopicItem,
   // TopicScreen,
   CreateTopicButton,
   Header,
@@ -18,26 +25,26 @@ import {
   // CardDetailsScreen,
   Screen
 } from '@/components'
-import { deleteTopic } from '@/services'
+// import { deleteTopic } from '@/services'
 import { useTopicStore } from '@/stores'
 
-const listVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.05 } }
-}
+// const listVariants = {
+//   hidden: { opacity: 0 },
+//   visible: { opacity: 1, transition: { staggerChildren: 0.05 } }
+// }
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -20, transition: { duration: 0.25 } }
-}
+// const itemVariants = {
+//   hidden: { opacity: 0, y: 20 },
+//   visible: { opacity: 1, y: 0 },
+//   exit: { opacity: 0, y: -20, transition: { duration: 0.25 } }
+// }
 
 export default function HomePage() {
-  const isLoading = useTopicStore(s => s.isLoading)
-  const topics = useTopicStore(s => s.allTopics)
+  // const isLoading = useTopicStore(s => s.isLoading)
+  // const topics = useTopicStore(s => s.allTopics)
 
-  const [isSelectionMode, setIsSelectionMode] = useState(false)
-  const [selectedItems, setSelectedItems] = useState<string[]>([])
+  // const [isSelectionMode, setIsSelectionMode] = useState(false)
+  // const [selectedItems, setSelectedItems] = useState<string[]>([])
 
   const [searchParams] = useSearchParams()
   const isCreateOpen = searchParams.get('createTopic') === 'true'
@@ -46,46 +53,46 @@ export default function HomePage() {
     useTopicStore.getState().fetchAllTopics()
   }, [])
 
-  const handlePress = (isPressed: boolean): void => {
-    setIsSelectionMode(isPressed)
-  }
+  // const handlePress = (isPressed: boolean): void => {
+  //   setIsSelectionMode(isPressed)
+  // }
 
-  const handleSelectItem = (topicId: string, add: boolean = true): void => {
-    setSelectedItems(prev =>
-      add ? [...prev, topicId] : prev.filter(tId => tId !== topicId)
-    )
-  }
+  // const handleSelectItem = (topicId: string, add: boolean = true): void => {
+  //   setSelectedItems(prev =>
+  //     add ? [...prev, topicId] : prev.filter(tId => tId !== topicId)
+  //   )
+  // }
 
-  const handleCancelSelectedMode = (): void => {
-    setIsSelectionMode(false)
-    setSelectedItems([])
-  }
+  // const handleCancelSelectedMode = (): void => {
+  //   setIsSelectionMode(false)
+  //   setSelectedItems([])
+  // }
 
-  const handleSelectAll = (isSelectAll: boolean): void => {
-    setSelectedItems(isSelectAll ? topics.map(topic => topic.id) : [])
-  }
+  // const handleSelectAll = (isSelectAll: boolean): void => {
+  //   setSelectedItems(isSelectAll ? topics.map(topic => topic.id) : [])
+  // }
 
-  const handleDeleteSelectedItems = async (): Promise<void> => {
-    try {
-      await Promise.all(selectedItems.map(topicId => deleteTopic(topicId)))
-      const restTopics = topics.filter(
-        topic => !selectedItems.includes(topic.id)
-      )
-      // setAllTopics(restTopics)
+  // const handleDeleteSelectedItems = async (): Promise<void> => {
+  //   try {
+  //     await Promise.all(selectedItems.map(topicId => deleteTopic(topicId)))
+  //     const restTopics = topics.filter(
+  //       topic => !selectedItems.includes(topic.id)
+  //     )
+  //     // setAllTopics(restTopics)
 
-      if (restTopics.length === 0) {
-        setIsSelectionMode(false)
-      }
+  //     if (restTopics.length === 0) {
+  //       setIsSelectionMode(false)
+  //     }
 
-      setSelectedItems([])
-    } catch (error) {
-      console.error('Failed to delete some topics:', error)
-    }
-  }
+  //     setSelectedItems([])
+  //   } catch (error) {
+  //     console.error('Failed to delete some topics:', error)
+  //   }
+  // }
 
   return (
     <main>
-      <AnimatePresence>
+      {/* <AnimatePresence>
         {isSelectionMode && (
           <SelectionModeHeader
             handleCancel={handleCancelSelectedMode}
@@ -94,13 +101,13 @@ export default function HomePage() {
             handleSelectAll={handleSelectAll}
           />
         )}
-      </AnimatePresence>
+      </AnimatePresence> */}
 
       <Header>
         <span>Topics</span>
       </Header>
 
-      <div className="h-[calc(100dvh-60px)]">
+      {/* <div className="h-[calc(100dvh-60px)]">
         {isLoading ? (
           <Spinner />
         ) : topics.length === 0 ? (
@@ -137,9 +144,9 @@ export default function HomePage() {
             </AnimatePresence>
           </motion.ul>
         )}
-      </div>
-      <CreateTopicButton isHidden={isSelectionMode} />
-      <AnimatePresence>
+      </div> */}
+      <CreateTopicButton isHidden={false} />
+      {/* <AnimatePresence>
         {isSelectionMode && (
           <SelectionModeFooter
             countItemsForDelete={selectedItems.length}
@@ -147,7 +154,7 @@ export default function HomePage() {
             handleDelete={handleDeleteSelectedItems}
           />
         )}
-      </AnimatePresence>
+      </AnimatePresence> */}
 
       <Screen isOpen={isCreateOpen} isVertical>
         <CreateTopicScreen />
