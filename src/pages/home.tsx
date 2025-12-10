@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router'
 
 import {
   CreateTopicScreen,
@@ -7,14 +8,15 @@ import {
   SelectionModeFooter,
   Spinner,
   TopicItem,
-  TopicScreen,
+  // TopicScreen,
   CreateTopicButton,
   Header,
-  TopicSettingsScreen,
-  AddCardScreen,
-  TestScreen,
-  LevelScreen,
-  CardDetailsScreen
+  // TopicSettingsScreen,
+  // AddCardScreen,
+  // TestScreen,
+  // LevelScreen,
+  // CardDetailsScreen,
+  Screen
 } from '@/components'
 import { deleteTopic } from '@/services'
 import { useTopicStore } from '@/stores'
@@ -36,6 +38,9 @@ export default function HomePage() {
 
   const [isSelectionMode, setIsSelectionMode] = useState(false)
   const [selectedItems, setSelectedItems] = useState<string[]>([])
+
+  const [searchParams] = useSearchParams()
+  const isCreateOpen = searchParams.get('createTopic') === 'true'
 
   useEffect(() => {
     useTopicStore.getState().fetchAllTopics()
@@ -144,13 +149,16 @@ export default function HomePage() {
         )}
       </AnimatePresence>
 
-      <CreateTopicScreen />
-      <TopicScreen />
+      <Screen isOpen={isCreateOpen} isVertical>
+        <CreateTopicScreen />
+      </Screen>
+
+      {/* <TopicScreen />
       <TopicSettingsScreen />
       <AddCardScreen />
       <TestScreen />
       <LevelScreen />
-      <CardDetailsScreen />
+      <CardDetailsScreen /> */}
     </main>
   )
 }
