@@ -36,7 +36,7 @@ export async function getAllTopics(): Promise<Topic[]> {
           return t
         })
 
-        resolve(topics)
+        resolve(topics.sort((a, b) => b.pivot - a.pivot))
       }
 
       request.onerror = () => {
