@@ -10,7 +10,7 @@ import {
   BackButton,
   Header
 } from '@/components'
-import { getToday } from '@/lib'
+import { getToday, isAnotherDay } from '@/lib'
 import { Card as CardModel, Topic } from '@/models'
 import { updateCard, updateTopic } from '@/services'
 
@@ -46,33 +46,34 @@ export default function TestScreen({
       }
     }
 
-    if (Array.isArray(cards) && cards.length === 0) {
+    if (isDone) {
       setTopic()
     }
-  }, [cards, topic])
+  }, [isDone, topic])
 
   async function handleAnswer(isCorrect: boolean): Promise<void> {
     try {
       if (!cards) return
-      const updatedCards = [...cards]
-      const currentCard = updatedCards.shift()
+      const currentCard = cards.shift()
+      if (!currentCard) return
 
       if (isCorrect) {
-        currentCard!.level += 1
+        currentCard.level += 1
       } else {
-        currentCard!.level = 1
-        updatedCards.push(currentCard!)
+        currentCard.level = 1
       }
+
+      currentCard.reviewDate = Date.now()
 
       await updateCard(currentCard!)
 
       setIsCorrect(isCorrect)
-      setCards(updatedCards)
+      setCards(cards)
       setIsFlipped(false)
       setIsInitialRender(false)
       setPrevCard(cards[0] ?? null)
 
-      if (updatedCards.length === 0) {
+      if (cards.length === 0) {
         setIsFirstCardActive(false)
       } else {
         setIsFirstCardActive(prev => !prev)
@@ -83,11 +84,15 @@ export default function TestScreen({
   }
 
   const handleOpen = useCallback(() => {
-    const result = topic.week[getToday()]!.todayLevels.flatMap(
+    const testCards = topic.week[getToday()]!.todayLevels.flatMap(
       levelId => topicCards[levelId]
-    ).filter(card => card !== undefined)
-    setCards(result)
-    totalCardsRef.current = result.length
+    ).filter(
+      card =>
+        card !== undefined &&
+        (!card.reviewDate || isAnotherDay(card.reviewDate))
+    )
+    setCards(testCards)
+    totalCardsRef.current = testCards.length
   }, [topic.week, topicCards])
 
   const handleClose = useCallback(() => {

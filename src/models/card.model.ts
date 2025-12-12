@@ -5,6 +5,7 @@ export class Card {
   topicId: string
   level: number
   data: CardData
+  reviewDate?: number
 
   constructor(data: CardData, topicId: string, level: number = 0) {
     this.id = crypto.randomUUID()
