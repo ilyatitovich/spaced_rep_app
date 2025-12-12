@@ -2,7 +2,7 @@ import { ArrowUpFromLine, Download, Pencil, Trash } from 'lucide-react'
 import { AnimatePresence } from 'motion/react'
 import type { ChangeEvent, FormEvent } from 'react'
 import { useCallback, useEffect, useState } from 'react'
-import { Toaster, toast } from 'react-hot-toast'
+import { toast } from 'react-hot-toast'
 
 import {
   BackButton,
@@ -69,12 +69,7 @@ export default function TopicSettings({
     try {
       topic.title = title
       await updateTopic(topic)
-      toast.success('Title updated!', {
-        iconTheme: {
-          primary: 'green',
-          secondary: 'white'
-        }
-      })
+      toast.success('Title updated!')
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message)
@@ -107,7 +102,6 @@ export default function TopicSettings({
 
   return (
     <Screen isOpen={isOpen} onClose={handleClose}>
-      {isOpen && <Toaster position="top-center" reverseOrder={false} />}
       <div className="h-full bg-background flex flex-col overflow-hidden">
         <Header>
           <BackButton />

@@ -1,6 +1,6 @@
 import type { ChangeEvent, FormEvent } from 'react'
 import { useCallback, useState } from 'react'
-import { Toaster, toast } from 'react-hot-toast'
+import { toast } from 'react-hot-toast'
 
 import { BackButton, Button, Header, Screen } from '@/components'
 import { TITLE_MAX_LENGTH } from '@/lib'
@@ -40,12 +40,7 @@ export default function CreateTopic({ isOpen }: CreateTopicProps) {
     try {
       const topic = new Topic(title.trim())
       await createTopic(topic)
-      toast.success('Topic created!', {
-        iconTheme: {
-          primary: 'green',
-          secondary: 'white'
-        }
-      })
+      toast.success('Topic created!')
       setTitle('')
     } catch (error) {
       if (error instanceof Error) {
@@ -63,7 +58,6 @@ export default function CreateTopic({ isOpen }: CreateTopicProps) {
 
   return (
     <Screen isOpen={isOpen} onClose={handleClose} isVertical>
-      {isOpen && <Toaster position="top-center" reverseOrder={false} />}
       <div className="h-full bg-background flex flex-col overflow-hidden">
         <Header>
           <BackButton />

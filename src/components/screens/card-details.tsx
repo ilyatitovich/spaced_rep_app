@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
-import { Toaster, toast } from 'react-hot-toast'
+import { toast } from 'react-hot-toast'
 
 import {
   Button,
@@ -105,12 +105,7 @@ export default function CardDetailsScreen({
       // setIsNewCardData(false)
 
       if (card.level > 0) {
-        toast.success('Card updated!', {
-          iconTheme: {
-            primary: '#05df72',
-            secondary: 'white'
-          }
-        })
+        toast.success('Card updated!')
         return
       }
     } catch (error) {
@@ -208,8 +203,6 @@ export default function CardDetailsScreen({
       onOpen={handleOpen}
       isVertical
     >
-      {isOpen && <Toaster position="top-center" reverseOrder={false} />}
-
       <Header>
         <BackButton />
         <span>{isFlipped ? 'Back' : 'Front'}</span>
