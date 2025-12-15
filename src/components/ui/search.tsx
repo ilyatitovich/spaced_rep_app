@@ -28,7 +28,7 @@ export default function Search({
 
   return (
     <div className="relative w-full px-4 py-2">
-      <div className="absolute h-full flex items-center justify-center left-6 top-1/2 -translate-y-1/2 text-gray-500">
+      <div className="absolute h-full flex items-center justify-center left-8 top-1/2 -translate-y-1/2 text-gray-500">
         <SearchIcon />
       </div>
       <input
@@ -36,7 +36,7 @@ export default function Search({
         value={internalValue}
         onChange={handleChange}
         placeholder={placeholder}
-        className="w-full py-3 px-10 rounded-xl border border-gray-300 focus:border-purple-600 focus:outline-none transition [&::-webkit-search-cancel-button]:hidden"
+        className="w-full py-3 pr-12 pl-14 rounded-xl border border-gray-300 focus:border-purple-600 focus:outline-none transition [&::-webkit-search-cancel-button]:hidden"
       />
 
       {internalValue.length > 0 && (
@@ -45,7 +45,7 @@ export default function Search({
           onClick={handleClear}
           aria-label="Clear search"
           className="
-              absolute right-6 top-1/2 -translate-y-1/2
+              absolute right-8 top-1/2 -translate-y-1/2
               rounded-md p-1
             "
         >
