@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState, useRef } from 'react'
 import { useSearchParams } from 'react-router'
+import { useDebouncedCallback } from 'use-debounce'
 
 import {
   CreateTopicScreen,
@@ -95,14 +96,20 @@ export default function HomePage() {
     }
   }
 
-  const handleSearch = (value: string): void => {
+  const handleSearch = useDebouncedCallback((value: string) => {
     const topics = allTopics.current
-    if (!topics) return
+
+    if (!value.trim()) {
+      setTopics(topics)
+      return
+    }
+
     const matchedTopics = topics.filter(t =>
       t.title.toLowerCase().includes(value.toLowerCase())
     )
+
     setTopics(matchedTopics)
-  }
+  }, 300)
 
   return (
     <main>
