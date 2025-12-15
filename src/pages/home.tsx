@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useSearchParams } from 'react-router'
 
 import {
@@ -10,7 +10,8 @@ import {
   TopicItem,
   TopicScreen,
   CreateTopicButton,
-  Header
+  Header,
+  Search
 } from '@/components'
 import { Topic } from '@/models'
 import { getAllTopics, deleteTopic } from '@/services'
@@ -33,6 +34,8 @@ export default function HomePage() {
   const [isSelectionMode, setIsSelectionMode] = useState(false)
   const [selectedItems, setSelectedItems] = useState<string[]>([])
 
+  const allTopics = useRef<Topic[]>(null)
+
   const [searchParams, setSearchParams] = useSearchParams()
   const isCreating = searchParams.get('create') === 'true'
   const currentTopic = searchParams.get('topicId')
@@ -43,6 +46,7 @@ export default function HomePage() {
         if (!isCreating && !currentTopic) {
           const topics = await getAllTopics()
           setTopics(topics)
+          allTopics.current = topics
         }
       } catch (err) {
         console.error('Failed to load topics:', err)
@@ -52,6 +56,10 @@ export default function HomePage() {
     }
 
     loadTopics()
+
+    return () => {
+      allTopics.current = null
+    }
   }, [isCreating, currentTopic])
 
   const handlePress = (isPressed: boolean): void => {
@@ -91,6 +99,15 @@ export default function HomePage() {
     }
   }
 
+  const handleSearch = (value: string): void => {
+    const topics = allTopics.current
+    if (!topics) return
+    const matchedTopics = topics.filter(t =>
+      t.title.toLowerCase().includes(value.toLowerCase())
+    )
+    setTopics(matchedTopics)
+  }
+
   return (
     <main>
       <AnimatePresence>
@@ -105,8 +122,9 @@ export default function HomePage() {
       </AnimatePresence>
 
       <Header>
-        <span>Topics</span>
+        <span className="font-bold">Topics</span>
       </Header>
+      <Search onChange={handleSearch} placeholder="Search topics" />
 
       <div className="h-[calc(100dvh-60px)]">
         {isLoading ? (
