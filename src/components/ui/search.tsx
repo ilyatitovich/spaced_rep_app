@@ -36,7 +36,7 @@ export default function Search({
         value={internalValue}
         onChange={handleChange}
         placeholder={placeholder}
-        className="w-full py-3 pr-12 pl-14 rounded-xl border border-gray-300 focus:border-purple-600 focus:outline-none transition [&::-webkit-search-cancel-button]:hidden"
+        className="w-full py-3 pr-12 pl-13 rounded-xl border border-gray-300 focus:border-purple-600 focus:outline-none transition [&::-webkit-search-cancel-button]:hidden"
       />
 
       {internalValue.length > 0 && (
