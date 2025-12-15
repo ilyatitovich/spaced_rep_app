@@ -40,8 +40,8 @@ export default forwardRef(function Card(
   }: CardProps,
   ref: Ref<CardHandle>
 ) {
-  const frontRef = useRef<HTMLDivElement | null>(null)
-  const backRef = useRef<HTMLDivElement | null>(null)
+  const frontRef = useRef<HTMLDivElement>(null!)
+  const backRef = useRef<HTMLDivElement>(null!)
 
   const { onTouchStart, onTouchEnd } = useTap(handleClick)
 
