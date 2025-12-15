@@ -26,7 +26,7 @@ type SideProps = {
   isEditable?: boolean
   handleFocus?: FocusEventHandler<HTMLDivElement>
   handleBlur?: FocusEventHandler<HTMLDivElement>
-  innerRef?: RefObject<HTMLDivElement>
+  innerRef?: RefObject<HTMLDivElement | null>
   onChange?: (value: SideContent, side: SideName) => void
 }
 
