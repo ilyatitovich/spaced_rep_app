@@ -34,7 +34,7 @@ export default function HomePage() {
   const [isSelectionMode, setIsSelectionMode] = useState(false)
   const [selectedItems, setSelectedItems] = useState<string[]>([])
 
-  const allTopics = useRef<Topic[]>(null)
+  const allTopics = useRef<Topic[]>([])
 
   const [searchParams, setSearchParams] = useSearchParams()
   const isCreating = searchParams.get('create') === 'true'
@@ -56,10 +56,6 @@ export default function HomePage() {
     }
 
     loadTopics()
-
-    return () => {
-      allTopics.current = null
-    }
   }, [isCreating, currentTopic])
 
   const handlePress = (isPressed: boolean): void => {
