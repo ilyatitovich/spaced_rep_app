@@ -65,13 +65,13 @@ export default function TestScreen({
 
       currentCard.reviewDate = Date.now()
 
-      await updateCard(currentCard!)
+      await updateCard(currentCard)
 
       setIsCorrect(isCorrect)
       setCards(cards)
       setIsFlipped(false)
       setIsInitialRender(false)
-      setPrevCard(cards[0] ?? null)
+      setPrevCard(currentCard)
 
       if (cards.length === 0) {
         setIsFirstCardActive(false)
