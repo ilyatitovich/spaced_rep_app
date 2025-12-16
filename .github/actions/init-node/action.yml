@@ -1,0 +1,25 @@
+name: Initialize Node.js, pnpm, and dependencies
+description: Base for most of workflows
+inputs:
+  cache:
+    required: false
+    default: 'pnpm'
+    description: Allow to disable pnpm cache for better security
+  install:
+    required: false
+    default: ''
+    description: Allow to disable `pnpm install` call
+runs:
+  using: composite
+  steps:
+    - name: Install pnpm
+      uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4.2.0
+    - name: Install Node.js
+      uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+      with:
+        node-version-file: .node-version
+        cache: ${{ inputs.cache && 'pnpm' || '' }}
+    - name: Install pnpm dependencies
+      if: ${{ inputs.install != 'false' }}
+      shell: bash
+      run: pnpm install ${{ inputs.install }}

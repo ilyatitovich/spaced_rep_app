@@ -1,0 +1,32 @@
+name: Tests
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**/*.md'
+      - '.vscode/**'
+      - '.husky/**'
+      - '.devcontainer/**'
+  pull_request:
+    paths-ignore:
+      - '**/*.md'
+      - '.vscode/**'
+      - '.husky/**'
+      - '.devcontainer/**'
+jobs:
+  test:
+    name: General Tests
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - name: Initialize Node.js & dependencies
+        uses: ./.github/actions/init-node
+      - name: Run tests
+        run: pnpm test
+        env:
+          FORCE_COLOR: 1
+          STAGING: 1

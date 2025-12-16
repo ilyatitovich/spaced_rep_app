@@ -1,7 +1,7 @@
 export { default as CreateTopicScreen } from './create-topic'
 export { default as TopicScreen } from './topic'
 export { default as AddCardScreen } from './add-card'
-export { default as TestScreen } from './test'
+export { default as TestScreen } from './topic-test'
 export { default as LevelScreen } from './level'
 export { default as CardDetailsScreen } from './card-details'
 export { default as TopicSettingsScreen } from './topic-settings'
