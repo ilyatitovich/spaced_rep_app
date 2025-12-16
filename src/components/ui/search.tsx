@@ -1,34 +1,29 @@
 import { X, Search as SearchIcon } from 'lucide-react'
-import { useRef, useState, type ChangeEvent } from 'react'
+import { useState, type ChangeEvent } from 'react'
 
 type SearchProps = {
   value?: string
-  onChange: (value: string) => void
+  onSearch: (value: string) => void
   placeholder?: string
   debounceMs?: number
 }
 
 export default function Search({
   value = '',
-  onChange,
+  onSearch,
   placeholder = 'Search…'
 }: SearchProps) {
   const [internalValue, setInternalValue] = useState(value)
 
-  const inputRef = useRef<HTMLInputElement>(null)
-
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const nextValue = e.target.value
     setInternalValue(nextValue)
-    onChange(nextValue)
+    onSearch(nextValue)
   }
 
   const handleClear = () => {
     setInternalValue('')
-    onChange('')
-    if (inputRef.current) {
-      inputRef.current.focus()
-    }
+    onSearch('')
   }
 
   return (
@@ -37,7 +32,6 @@ export default function Search({
         <SearchIcon />
       </div>
       <input
-        ref={inputRef}
         type="search"
         value={internalValue}
         onChange={handleChange}
@@ -55,7 +49,7 @@ export default function Search({
               rounded-md p-1
             "
         >
-          <X className="text-gray-600" strokeWidth={2} />
+          <X className="text-gray-600" />
         </button>
       )}
     </div>

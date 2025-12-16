@@ -127,7 +127,7 @@ export default function HomePage() {
       <Header>
         <span className="font-bold">Topics</span>
       </Header>
-      <Search onChange={handleSearch} placeholder="Search topics" />
+      <Search onSearch={handleSearch} placeholder="Search topics" />
 
       <div className="h-[calc(100dvh-60px)]">
         {isLoading ? (
