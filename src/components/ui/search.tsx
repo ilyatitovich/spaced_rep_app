@@ -5,7 +5,6 @@ type SearchProps = {
   value?: string
   onSearch: (value: string) => void
   placeholder?: string
-  debounceMs?: number
 }
 
 export default function Search({
