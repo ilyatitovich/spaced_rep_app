@@ -68,7 +68,7 @@ export function iosLog(...args: any[]) {
       if (typeof arg === 'object') {
         try {
           return JSON.stringify(arg, null, 2)
-        } catch (e) {
+        } catch {
           return arg.toString()
         }
       }

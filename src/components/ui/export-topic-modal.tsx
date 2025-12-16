@@ -26,7 +26,7 @@ export default function ExportTopicModal({
         setDownloadUrl(fileUrl)
         setFileName(fileName)
         urlToRevoke = fileUrl
-      } catch (err) {
+      } catch {
         setError('Failed to export topic')
       } finally {
         setIsLoading(false)

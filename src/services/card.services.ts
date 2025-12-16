@@ -119,7 +119,7 @@ export async function importCards(
 
   try {
     data = JSON.parse(text)
-  } catch (e) {
+  } catch {
     throw new Error('Invalid JSON in import file')
   }
 
