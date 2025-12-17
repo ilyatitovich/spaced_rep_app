@@ -129,7 +129,8 @@ export default function HomePage() {
       </Header>
       <Search onSearch={handleSearch} placeholder="Search topics" />
 
-      <div className="h-[calc(100dvh-60px)]">
+      <div className="relative h-[calc(100dvh-60px)]">
+        <div className="absolute w-full h-4 bg-linear-to-b from-background to-background/30" />
         {isLoading ? (
           <Spinner />
         ) : topics.length === 0 ? (

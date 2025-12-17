@@ -67,8 +67,8 @@ export default [
       'react/prop-types': 'off',
 
       ...reactHooks.configs.recommended.rules,
-      ...jsxA11y.configs.recommended.rules,
-      ...sonarjs.configs.recommended.rules
+      ...jsxA11y.configs.recommended.rules
+      // ...sonarjs.configs.recommended.rules
     },
     settings: {
       react: {

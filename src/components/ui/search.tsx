@@ -26,16 +26,16 @@ export default function Search({
   }
 
   return (
-    <div className="relative w-full px-4 py-2">
-      <div className="absolute h-full flex items-center justify-center left-8 top-1/2 -translate-y-1/2 text-gray-500">
-        <SearchIcon />
+    <div className="relative w-full px-4">
+      <div className="absolute h-full flex items-center justify-center left-7 top-1/2 -translate-y-1/2 text-gray-500">
+        <SearchIcon size={18} />
       </div>
       <input
         type="search"
         value={internalValue}
         onChange={handleChange}
         placeholder={placeholder}
-        className="w-full py-3 pr-12 pl-13 rounded-xl border border-gray-300 focus:border-purple-600 focus:outline-none transition [&::-webkit-search-cancel-button]:hidden"
+        className="w-full py-2 px-10 rounded-lg border border-gray-300 focus:border-purple-600 focus:outline-none transition [&::-webkit-search-cancel-button]:hidden text-sm"
       />
 
       {internalValue.length > 0 && (
@@ -44,11 +44,10 @@ export default function Search({
           onClick={handleClear}
           aria-label="Clear search"
           className="
-              absolute right-8 top-1/2 -translate-y-1/2
-              rounded-md p-1
+              absolute right-7 top-1/2 -translate-y-1/2
             "
         >
-          <X className="text-gray-600" />
+          <X size={18} className="text-gray-600" />
         </button>
       )}
     </div>
