@@ -83,7 +83,14 @@ export default function Side({
         <CodeEditor
           onChange={handleChangeCode}
           onFocus={handleFocus}
-          initialValue={data.content as CodeBlock}
+          initialValue={
+            data.content
+              ? (data.content as CodeBlock)
+              : {
+                  lang: 'sh',
+                  code: ''
+                }
+          }
           isEditable={isEditable}
         />
       </Suspense>
@@ -123,7 +130,7 @@ export default function Side({
       ) : (
         <div
           ref={innerRef}
-          className={`w-full outline-none whitespace-pre-wrap break-words ${isLongText ? 'text-left text-lg' : 'text-center text-3xl font-bold font-card leading-10'}`}
+          className={`w-full outline-none whitespace-pre-wrap wrap-break-word ${isLongText ? 'text-left text-lg' : 'text-center text-3xl font-bold font-card leading-10'}`}
           contentEditable={isEditable}
           suppressContentEditableWarning
           role="textbox"

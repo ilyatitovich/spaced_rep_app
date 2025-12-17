@@ -4,7 +4,7 @@ export async function getLanguageExtension(lang: CodeLang) {
   switch (lang) {
     case 'ts': {
       const mod = await import('@codemirror/lang-javascript')
-      return mod.javascript({ typescript: lang === 'ts' })
+      return mod.javascript({ typescript: true })
     }
 
     case 'py': {

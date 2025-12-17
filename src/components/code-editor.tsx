@@ -10,7 +10,7 @@ import type { CodeBlock } from '@/types'
 type CodeEditorProps = {
   onChange?: (value: CodeBlock) => void
   onFocus?: FocusEventHandler<HTMLDivElement>
-  initialValue?: CodeBlock
+  initialValue: CodeBlock
   isEditable?: boolean
 }
 
@@ -20,18 +20,11 @@ export default function CodeEditor({
   onFocus,
   onChange
 }: CodeEditorProps) {
-  const [code, setCode] = useState('')
-  const [lang, setLang] = useState<CodeLang>('sh')
+  const [code, setCode] = useState(initialValue.code)
+  const [lang, setLang] = useState<CodeLang>(initialValue.lang)
   const [extensions, setExtensions] = useState<Extension[]>([])
 
   const fontSize = useFontSize(code)
-
-  useEffect(() => {
-    if (initialValue) {
-      setCode(initialValue.code)
-      setLang(initialValue.lang)
-    }
-  }, [initialValue])
 
   useEffect(() => {
     getLanguageExtension(lang).then(ext => {

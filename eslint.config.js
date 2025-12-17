@@ -4,6 +4,7 @@ import jsxA11y from 'eslint-plugin-jsx-a11y'
 import perfectionist from 'eslint-plugin-perfectionist'
 import reactPlugin from 'eslint-plugin-react'
 import reactHooks from 'eslint-plugin-react-hooks'
+import sonarjs from 'eslint-plugin-sonarjs'
 
 export default [
   {
@@ -17,6 +18,7 @@ export default [
     },
     plugins: {
       perfectionist,
+      sonarjs,
       '@typescript-eslint': tsPlugin,
       'react': reactPlugin,
       'react-hooks': reactHooks,
@@ -65,7 +67,8 @@ export default [
       'react/prop-types': 'off',
 
       ...reactHooks.configs.recommended.rules,
-      ...jsxA11y.configs.recommended.rules
+      ...jsxA11y.configs.recommended.rules,
+      ...sonarjs.configs.recommended.rules
     },
     settings: {
       react: {
