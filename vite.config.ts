@@ -11,7 +11,14 @@ const isDev = process.env.NODE_ENV === 'development'
 const pwaOptions: Partial<VitePWAOptions> = {
   registerType: 'autoUpdate',
   base: '/',
-  includeAssets: ['/favicon.ico', '/apple-touch-icon.png'],
+  includeAssets: [
+    '/favicon.ico',
+    '/apple-touch-icon.png',
+    'assets/fonts/*.woff2'
+  ],
+  workbox: {
+    globPatterns: ['**/*.{js,css,html,woff2}']
+  },
   manifest: {
     name: 'Spaced Repetition',
     short_name: 'Spaced Repetition',
@@ -45,6 +52,7 @@ const pwaOptions: Partial<VitePWAOptions> = {
       }
     ]
   },
+
   devOptions: {
     enabled: isDev
   }
