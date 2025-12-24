@@ -4,7 +4,7 @@ import { useDebouncedCallback } from 'use-debounce'
 
 import { LangSelect } from './ui'
 import { useFontSize } from '@/hooks'
-import { getLanguageExtension, placeCursorAtEnd, type CodeLang } from '@/lib'
+import { getLanguageExtension, isMobileDevice, placeCursorAtEnd, type CodeLang } from '@/lib'
 import type { CodeBlock } from '@/types'
 
 type CodeEditorProps = {
@@ -69,7 +69,9 @@ export default function CodeEditor({
         onChange={v => debouncedOnChange(v)}
         onFocus={e => {
           onFocus?.(e)
-          placeCursorAtEnd(e)
+          if (isMobileDevice()) {
+            placeCursorAtEnd(e)
+          }
         }}
         style={{
           fontSize, // Prevents iOS zooming on input focus
