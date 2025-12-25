@@ -1,9 +1,9 @@
-import { FormEvent } from 'react'
+import type { FormEvent } from 'react'
 
 export function placeCursorAtEnd(event: FormEvent<HTMLDivElement>): void {
-  const range = document.createRange()
   const sel = window.getSelection()
-  if (!sel) return
+  if (!sel || sel.anchorOffset > 0) return
+  const range = document.createRange()
   range.selectNodeContents(event.target as Node)
   range.collapse(false)
   sel.removeAllRanges()

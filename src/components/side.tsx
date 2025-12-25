@@ -4,7 +4,6 @@ import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import ImageUploader from './image-uploader'
 import { Spinner } from './ui'
 import {
-  isMobileDevice,
   isRecord,
   LONGTEXT_THRESHOLD,
   placeCursorAtEnd,
@@ -139,10 +138,7 @@ export default function Side({
           tabIndex={0}
           onFocus={e => {
             handleFocus?.(e)
-
-            if (isMobileDevice()) {
-              placeCursorAtEnd(e)
-            }
+            placeCursorAtEnd(e)
           }}
           onBlur={handleBlur}
           onInput={handleInput}
