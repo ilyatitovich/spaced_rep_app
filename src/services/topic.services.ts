@@ -22,28 +22,39 @@ export async function createTopic(topic: Topic): Promise<void> {
 }
 
 export async function getAllTopics(): Promise<Topic[]> {
-  return withTransaction(STORES.TOPICS, 'readonly', async stores => {
-    return new Promise((resolve, reject) => {
-      const request = stores[STORES.TOPICS].getAll()
+  const topics = await withTransaction(
+    STORES.TOPICS,
+    'readonly',
+    async stores => {
+      return new Promise<Topic[]>((resolve, reject) => {
+        const request = stores[STORES.TOPICS].getAll()
 
-      request.onsuccess = () => {
-        let topics = (request.result as Topic[]).map(t => Topic.fromRaw(t))
+        request.onsuccess = () => {
+          const topics = (request.result as Topic[]).map(t => Topic.fromRaw(t))
+          resolve(topics)
+        }
 
-        topics = topics.map(t => {
-          if (t.nextUpdateDate <= Date.now()) {
-            t.updateWeek()
-          }
-          return t
-        })
+        request.onerror = () => {
+          reject(request.error ?? new Error('Failed to fetch topics'))
+        }
+      })
+    }
+  )
 
-        resolve(topics.sort((a, b) => b.pivot - a.pivot))
-      }
+  const updated: Topic[] = []
 
-      request.onerror = () => {
-        reject(request.error ?? new Error('Failed to fetch topics'))
-      }
-    })
-  })
+  for (const topic of topics) {
+    if (topic.nextUpdateDate <= Date.now()) {
+      topic.updateWeek()
+      updated.push(topic)
+    }
+  }
+
+  if (updated.length > 0) {
+    await updateTopics(updated)
+  }
+
+  return topics.sort((a, b) => b.pivot - a.pivot)
 }
 
 export async function getTopicById(
@@ -69,11 +80,6 @@ export async function getTopicById(
       }
 
       topic = Topic.fromRaw(topic)
-
-      if (topic.nextUpdateDate <= Date.now()) {
-        topic.updateWeek()
-        await updateTopic(topic)
-      }
 
       const cardsIndex = cardStore.index('topicId')
       const cardsRequest = cardsIndex.getAll(IDBKeyRange.only(topicId))
@@ -148,6 +154,24 @@ export async function updateTopic(topic: Topic): Promise<void> {
       request.onerror = () =>
         reject(request.error ?? new Error('Failed to update topic'))
     })
+  })
+}
+
+export async function updateTopics(topics: Topic[]): Promise<void> {
+  await withTransaction([STORES.TOPICS], 'readwrite', async stores => {
+    const store = stores[STORES.TOPICS]
+
+    await Promise.all(
+      topics.map(
+        topic =>
+          new Promise<void>((resolve, reject) => {
+            const request = store.put(topic)
+            request.onsuccess = () => resolve()
+            request.onerror = () =>
+              reject(request.error ?? new Error('Failed to update topic'))
+          })
+      )
+    )
   })
 }
 
