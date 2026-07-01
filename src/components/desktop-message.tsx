@@ -1,4 +1,5 @@
-import { openNarrowWindow } from '@/lib'
+import QrCode from './qrcode'
+import { APP_URL, openNarrowWindow } from '@/lib'
 
 export default function DesktopMessage() {
   return (
@@ -13,13 +14,21 @@ export default function DesktopMessage() {
             This app is for mobile
           </h1>
           <p className="text-sm text-slate-500">
-            Please open it on your phone, or resize this window to continue.
+            Scan the QR code with your phone, or resize this window to continue.
           </p>
+        </div>
+
+        <QrCode url={APP_URL} />
+
+        <div className="flex w-full items-center gap-3 text-xs text-slate-400">
+          <div className="h-px flex-1 bg-slate-200" />
+          or
+          <div className="h-px flex-1 bg-slate-200" />
         </div>
 
         <button
           onClick={openNarrowWindow}
-          className="mt-2 w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-slate-700 active:bg-slate-800"
+          className="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-slate-700 active:bg-slate-800"
         >
           Open in narrow window
         </button>
