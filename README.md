@@ -6,13 +6,12 @@ This project focuses on **fast UX**, **offline support via IndexedDB**, and a cl
 
 ## 🚀 Features
 
-- 🧠 **Spaced repetition algorithm** based on week-by-week review logic
-- 📱 **Mobile-first UI** with smooth transitions and gestures
-- ⚡ **Instant offline storage** using IndexedDB
-- 🗂️ Create, edit, and delete topics and flashcards
-- 📅 Daily progress tracking
-- 🎨 Modern design with animations and icons
-- 🔄 URL search params–based navigation (Android-friendly back-button behavior)
+- **Spaced repetition algorithm** based on week-by-week review logic
+- **Mobile-first UI** with smooth transitions and gestures
+- **Instant offline storage** using IndexedDB
+- Create, edit, and delete topics and flashcards
+- Flashcards supports text, images, and code snippets
+- Portable JSON-based backup and restore system for data migration between devices
 
 ## 🛠️ Tech Stack
 
