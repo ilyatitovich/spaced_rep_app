@@ -174,11 +174,8 @@ export default function TopicScreen({
           />
           <CardDetailsScreen
             isOpen={!!cardId}
-            card={
-              cardId && levelId
-                ? cards[Number(levelId)].find(card => card.id === cardId)
-                : null
-            }
+            cards={levelId ? (cards[Number(levelId)] ?? []) : []}
+            cardId={cardId}
             onUpdate={card => {
               if (levelId !== '0') return
               setCards(prevCards => ({

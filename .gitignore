@@ -26,3 +26,4 @@ dev-dist/
 vite.svg
 
 coverage/
+.pnpm-store
