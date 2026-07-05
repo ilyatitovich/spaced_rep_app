@@ -328,6 +328,7 @@ export default function CardDetailsScreen({
           <div style={{ flex: '0 0 33.3333%' }}>
             <CardContainer>
               <Card
+                key={card?.id ?? currentIndex} // force re-render when card changes by index
                 ref={cardRef}
                 data={cardData}
                 sidesContentType={sidesContentType}
