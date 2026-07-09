@@ -58,7 +58,6 @@ export default function CardDetailsScreen({
   cardId,
   onUpdate
 }: CardDetailsScreenProps) {
-
   const total = cards?.length ?? 0
 
   const cardIndex = cards?.findIndex(card => card.id === cardId) ?? 0
@@ -72,12 +71,9 @@ export default function CardDetailsScreen({
     getSidesContentType(card)
   )
 
-
-
   const cardRef = useRef<CardHandle>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
-
 
   const isDragging = useRef(false)
   const isAnimating = useRef(false)
@@ -135,18 +131,16 @@ export default function CardDetailsScreen({
     setIsEdited(false)
   }
 
-
   const snapTrackToCenter = useCallback(() => {
     const track = trackRef.current
     const width = containerRef.current?.offsetWidth ?? 0
     if (!track) return
     track.style.transition = 'none'
     track.style.transform = `translateX(${-width}px)`
-    void track.offsetHeight 
+    void track.offsetHeight
     track.style.transition = ''
   }, [])
 
- 
   useLayoutEffect(() => {
     snapTrackToCenter()
     isAnimating.current = false
@@ -194,12 +188,9 @@ export default function CardDetailsScreen({
     }))
   }
 
-
-
   const finishSwipe = useCallback(
     (direction: 1 | -1) => {
       if (total < 2) return
-
 
       if (isEdited) {
         const latest = cardRef.current?.getContent() ?? cardData
@@ -284,10 +275,15 @@ export default function CardDetailsScreen({
   }
 
   return (
-    <Screen isOpen={isOpen} onClose={handleClose} onOpen={handleOpen} isVertical>
+    <Screen
+      isOpen={isOpen}
+      onClose={handleClose}
+      onOpen={handleOpen}
+      isVertical
+    >
       <Header>
         <BackButton />
-          <span>{isFlipped ? 'Back' : 'Front'}</span>
+        <span>{isFlipped ? 'Back' : 'Front'}</span>
         {isEdited ? (
           <Button key="done" onClick={() => setIsEdited(false)}>
             Done
@@ -308,9 +304,16 @@ export default function CardDetailsScreen({
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
       >
-        <div ref={trackRef} className="flex" style={{ width: '300%', willChange: 'transform' }}>
+        <div
+          ref={trackRef}
+          className="flex"
+          style={{ width: '300%', willChange: 'transform' }}
+        >
           {/* Previous preview card */}
-          <div style={{ flex: '0 0 33.3333%', pointerEvents: 'none' }} aria-hidden>
+          <div
+            style={{ flex: '0 0 33.3333%', pointerEvents: 'none' }}
+            aria-hidden
+          >
             <CardContainer>
               <Card
                 data={getCardData(prevCard)}
@@ -342,7 +345,10 @@ export default function CardDetailsScreen({
           </div>
 
           {/* Next preview card */}
-          <div style={{ flex: '0 0 33.3333%', pointerEvents: 'none' }} aria-hidden>
+          <div
+            style={{ flex: '0 0 33.3333%', pointerEvents: 'none' }}
+            aria-hidden
+          >
             <CardContainer>
               <Card
                 data={getCardData(nextCard)}

@@ -22,9 +22,6 @@ function openDatabase(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(STORES.CARDS)) {
         const cardStore = db.createObjectStore(STORES.CARDS, { keyPath: 'id' })
         cardStore.createIndex('topicId', 'topicId', { unique: false })
-        // cardStore.createIndex('nextReviewDate', 'nextReviewDate', {
-        //   unique: false
-        // })
       }
     }
 
