@@ -1,3 +1,4 @@
+import { enqueueSync, triggerSync } from './sync.service'
 import { withTransaction, STORES, arrayBufferToBase64, isRecord } from '@/lib'
 import { Topic, Card } from '@/models'
 
@@ -10,6 +11,8 @@ export async function createTopic(topic: Topic): Promise<void> {
         request.onerror = () => reject(request.error)
       })
     })
+    await enqueueSync(STORES.TOPICS, topic.id, 'upsert')
+    triggerSync()
   } catch (error) {
     if ((error as Error).name === 'ConstraintError') {
       throw new Error(
@@ -105,7 +108,7 @@ export async function getTopicById(
 }
 
 export async function deleteTopic(topicId: string): Promise<void> {
-  await withTransaction(
+  const deletedCardIds = await withTransaction(
     [STORES.TOPICS, STORES.CARDS],
     'readwrite',
     async stores => {
@@ -123,17 +126,19 @@ export async function deleteTopic(topicId: string): Promise<void> {
       // Delete all cards for that topic using index
       const index = cardStore.index('topicId')
       const range = IDBKeyRange.only(topicId)
+      const cardIds: string[] = []
 
-      return new Promise<void>((resolve, reject) => {
+      return new Promise<string[]>((resolve, reject) => {
         const request = index.openCursor(range)
 
         request.onsuccess = () => {
           const cursor = request.result
           if (cursor) {
+            cardIds.push((cursor.value as Card).id)
             cursor.delete()
             cursor.continue()
           } else {
-            resolve()
+            resolve(cardIds)
           }
         }
 
@@ -142,9 +147,17 @@ export async function deleteTopic(topicId: string): Promise<void> {
       })
     }
   )
+
+  await enqueueSync(STORES.TOPICS, topicId, 'delete')
+  for (const cardId of deletedCardIds) {
+    await enqueueSync(STORES.CARDS, cardId, 'delete')
+  }
+  triggerSync()
 }
 
 export async function updateTopic(topic: Topic): Promise<void> {
+  topic.updatedAt = Date.now()
+
   await withTransaction([STORES.TOPICS], 'readwrite', async stores => {
     const store = stores[STORES.TOPICS]
 
@@ -155,9 +168,16 @@ export async function updateTopic(topic: Topic): Promise<void> {
         reject(request.error ?? new Error('Failed to update topic'))
     })
   })
+
+  await enqueueSync(STORES.TOPICS, topic.id, 'upsert')
+  triggerSync()
 }
 
 export async function updateTopics(topics: Topic[]): Promise<void> {
+  topics.forEach(topic => {
+    topic.updatedAt = Date.now()
+  })
+
   await withTransaction([STORES.TOPICS], 'readwrite', async stores => {
     const store = stores[STORES.TOPICS]
 
@@ -173,6 +193,11 @@ export async function updateTopics(topics: Topic[]): Promise<void> {
       )
     )
   })
+
+  for (const topic of topics) {
+    await enqueueSync(STORES.TOPICS, topic.id, 'upsert')
+  }
+  triggerSync()
 }
 
 export async function exportTopic(

@@ -1,3 +1,4 @@
+import { enqueueSync, triggerSync } from './sync.service'
 import { base64ToArrayBuffer, isBase64Image } from '@/lib'
 import { withTransaction, STORES } from '@/lib/db'
 import { Card } from '@/models'
@@ -12,6 +13,8 @@ export async function createCard(card: Card): Promise<void> {
         request.onerror = () => reject(request.error)
       })
     })
+    await enqueueSync(STORES.CARDS, card.id, 'upsert')
+    triggerSync()
   } catch (error) {
     console.error('Failed to save card:', error)
     throw error
@@ -20,6 +23,8 @@ export async function createCard(card: Card): Promise<void> {
 
 export async function updateCard(card: Card): Promise<void> {
   try {
+    card.updatedAt = Date.now()
+
     await withTransaction([STORES.CARDS], 'readwrite', async stores => {
       await new Promise<void>((resolve, reject) => {
         const request = stores[STORES.CARDS].put(card)
@@ -27,24 +32,29 @@ export async function updateCard(card: Card): Promise<void> {
         request.onerror = () => reject(request.error)
       })
     })
+    await enqueueSync(STORES.CARDS, card.id, 'upsert')
+    triggerSync()
   } catch (error) {
     console.error('Failed to update card:', error)
     throw error
   }
 }
 
-export function deleteCardById(cardId: string): Promise<void> {
-  return withTransaction([STORES.CARDS], 'readwrite', stores => {
-    return new Promise((resolve, reject) => {
+export async function deleteCardById(cardId: string): Promise<void> {
+  await withTransaction([STORES.CARDS], 'readwrite', stores => {
+    return new Promise<void>((resolve, reject) => {
       const req = stores[STORES.CARDS].delete(cardId)
       req.onsuccess = () => resolve()
       req.onerror = () => reject(req.error)
     })
   })
+
+  await enqueueSync(STORES.CARDS, cardId, 'delete')
+  triggerSync()
 }
 
 export async function deleteCardsBulk(cardIds: string[]): Promise<void> {
-  return withTransaction([STORES.CARDS], 'readwrite', async stores => {
+  await withTransaction([STORES.CARDS], 'readwrite', async stores => {
     return new Promise<void>((resolve, reject) => {
       let remaining = cardIds.length
 
@@ -62,6 +72,11 @@ export async function deleteCardsBulk(cardIds: string[]): Promise<void> {
       }
     })
   })
+
+  for (const id of cardIds) {
+    await enqueueSync(STORES.CARDS, id, 'delete')
+  }
+  triggerSync()
 }
 
 export async function migrateCardsToNewSchema(): Promise<void> {
@@ -80,6 +95,7 @@ export async function migrateCardsToNewSchema(): Promise<void> {
             id: card.id,
             topicId: card.topicId,
             level: card.level,
+            updatedAt: Date.now(),
             data: {
               front: {
                 type: 'text',
@@ -130,6 +146,7 @@ export async function importCards(
   const cardsToImport: Card[] = data.cards.map((card: Card) => ({
     ...card,
     topicId,
+    updatedAt: Date.now(),
     data: {
       front: {
         ...card.data.front,
@@ -151,6 +168,7 @@ export async function importCards(
   }))
 
   let successCount = 0
+  const importedIds: string[] = []
 
   await withTransaction([STORES.CARDS], 'readwrite', async stores => {
     const results = await Promise.allSettled(
@@ -166,9 +184,10 @@ export async function importCards(
 
     successCount = results.filter(r => r.status === 'fulfilled').length
 
-    // Log failed ones
     results.forEach((result, i) => {
-      if (result.status === 'rejected') {
+      if (result.status === 'fulfilled') {
+        importedIds.push(cardsToImport[i].id)
+      } else {
         console.warn(
           'Failed to import card:',
           cardsToImport[i].id,
@@ -177,6 +196,11 @@ export async function importCards(
       }
     })
   })
+
+  for (const id of importedIds) {
+    await enqueueSync(STORES.CARDS, id, 'upsert')
+  }
+  triggerSync()
 
   return successCount
 }

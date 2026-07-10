@@ -6,6 +6,7 @@ export class Topic {
   pivot: number
   week: Array<Day | null>
   nextUpdateDate: number
+  updatedAt: number
 
   constructor(title: string) {
     this.id = crypto.randomUUID()
@@ -13,6 +14,7 @@ export class Topic {
     this.pivot = Date.now()
     this.week = this.setStartWeek(this.pivot)
     this.nextUpdateDate = this.getNextUpdateDate()
+    this.updatedAt = Date.now()
   }
 
   static fromRaw(raw: Topic): Topic {
@@ -66,5 +68,6 @@ export class Topic {
     }
 
     this.nextUpdateDate = this.getNextUpdateDate()
+    this.updatedAt = Date.now()
   }
 }

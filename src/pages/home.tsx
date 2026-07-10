@@ -1,9 +1,12 @@
+import { CircleUserRound } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState, useRef } from 'react'
 import { useSearchParams } from 'react-router'
 import { useDebouncedCallback } from 'use-debounce'
 
 import {
+  AccountScreen,
+  Button,
   CreateTopicScreen,
   SelectionModeHeader,
   SelectionModeFooter,
@@ -40,6 +43,7 @@ export default function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const isCreating = searchParams.get('create') === 'true'
   const currentTopic = searchParams.get('topicId')
+  const isAccountOpen = searchParams.get('account') === 'true'
 
   useEffect(() => {
     const loadTopics = async (): Promise<void> => {
@@ -125,7 +129,14 @@ export default function HomePage() {
       </AnimatePresence>
 
       <Header>
+        <span className="w-6" />
         <span className="font-bold">Topics</span>
+        <Button
+          ariaLabel="Account"
+          onClick={() => setSearchParams({ account: 'true' })}
+        >
+          <CircleUserRound />
+        </Button>
       </Header>
       <Search onSearch={handleSearch} placeholder="Search topics" />
 
@@ -184,6 +195,8 @@ export default function HomePage() {
       </AnimatePresence>
 
       <CreateTopicScreen isOpen={isCreating} />
+
+      <AccountScreen isOpen={isAccountOpen} />
 
       <TopicScreen
         isOpen={currentTopic !== null}
