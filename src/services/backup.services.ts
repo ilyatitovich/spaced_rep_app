@@ -11,6 +11,12 @@ import { Card, Topic } from '@/models'
 import type { CardSideData, ImageBase64Record } from '@/types'
 
 const BACKUP_VERSION = 1
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+function ensureUuid(id: string): string {
+  return UUID_RE.test(id) ? id : crypto.randomUUID()
+}
 
 function encodeSide(side: CardSideData): CardSideData {
   return isRecord(side.content)
@@ -92,9 +98,18 @@ export async function importAppData(
     throw new Error('Invalid backup file: missing topics[] or cards[]')
   }
 
-  const topics = data.topics as Topic[]
+  // Old nanoid IDs fail Supabase uuid columns — remapped here so sync can upsert.
+  const topicIdMap = new Map<string, string>()
+  const topics = (data.topics as Topic[]).map(topic => {
+    const id = ensureUuid(topic.id)
+    if (id !== topic.id) topicIdMap.set(topic.id, id)
+    return id === topic.id ? topic : { ...topic, id }
+  })
+
   const cards = (data.cards as Card[]).map(card => ({
     ...card,
+    id: ensureUuid(card.id),
+    topicId: topicIdMap.get(card.topicId) ?? card.topicId,
     data: {
       front: decodeSide(card.data.front),
       back: decodeSide(card.data.back)
