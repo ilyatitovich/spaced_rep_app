@@ -1,6 +1,23 @@
-import { Cloud, CloudOff, LogOut, RefreshCw } from 'lucide-react'
+import {
+  ArrowUpFromLine,
+  Cloud,
+  CloudOff,
+  Download,
+  LogOut,
+  RefreshCw
+} from 'lucide-react'
+import { AnimatePresence } from 'motion/react'
+import { useState } from 'react'
 
-import { AuthMethods, BackButton, Header, Screen, Spinner } from '@/components'
+import {
+  AuthMethods,
+  BackButton,
+  ExportAppDataModal,
+  Header,
+  ImportAppDataModal,
+  Screen,
+  Spinner
+} from '@/components'
 import { useAuth, useSync } from '@/contexts'
 
 type AccountScreenProps = {
@@ -19,6 +36,8 @@ function formatSyncTime(timestamp: number | null): string {
 export default function AccountScreen({ isOpen }: AccountScreenProps) {
   const { user, isLoading, isConfigured, signOut } = useAuth()
   const { status, lastSyncedAt, isOnline, syncNow } = useSync()
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false)
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false)
 
   const statusLabel = !isOnline
     ? 'Offline'
@@ -90,8 +109,37 @@ export default function AccountScreen({ isOpen }: AccountScreenProps) {
           ) : (
             <AuthMethods />
           )}
+
+          <div className="flex flex-col gap-4">
+            <span className="font-bold">Data</span>
+            <button
+              className="border border-gray-300 p-4 rounded-xl flex gap-2 justify-center items-center"
+              onClick={() => setIsImportModalOpen(true)}
+            >
+              <Download />
+              <span>Import all data</span>
+            </button>
+            <button
+              className="border border-gray-300 p-4 rounded-xl flex gap-2 justify-center items-center"
+              onClick={() => setIsExportModalOpen(true)}
+            >
+              <ArrowUpFromLine />
+              <span>Export all data</span>
+            </button>
+          </div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {isImportModalOpen && (
+          <ImportAppDataModal onClose={() => setIsImportModalOpen(false)} />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {isExportModalOpen && (
+          <ExportAppDataModal onClose={() => setIsExportModalOpen(false)} />
+        )}
+      </AnimatePresence>
     </Screen>
   )
 }
