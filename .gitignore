@@ -31,3 +31,5 @@ vite.svg
 coverage/
 .pnpm-store
 *.txt
+
+.cursor/plans/*
