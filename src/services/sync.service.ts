@@ -32,6 +32,13 @@ export type SyncState = {
 const EPOCH_ISO = new Date(0).toISOString()
 const TRIGGER_DEBOUNCE_MS = 1500
 
+// A device counts as active if it has synced within this window. Tombstones are
+// GC'd once every active device has pulled past them, or once older than this
+// window (safety net so a lost device can't block cleanup forever).
+const ACTIVE_WINDOW_MS = 30 * 24 * 60 * 60 * 1000
+const DEVICE_ID_KEY = 'deviceId'
+const LAST_SYNC_AT_KEY = 'lastSyncAt'
+
 let currentUserId: string | null = null
 let state: SyncState = { status: 'idle', lastSyncedAt: null }
 let triggerTimer: ReturnType<typeof setTimeout> | null = null
@@ -144,6 +151,15 @@ async function setMeta(key: string, value: string): Promise<void> {
   })
 }
 
+async function getDeviceId(): Promise<string> {
+  let id = await getMeta(DEVICE_ID_KEY)
+  if (!id) {
+    id = crypto.randomUUID()
+    await setMeta(DEVICE_ID_KEY, id)
+  }
+  return id
+}
+
 // --- Queue ---
 
 export async function enqueueSync(
@@ -180,19 +196,31 @@ async function removeQueueItem(id: string): Promise<void> {
 
 // --- Push / pull ---
 
-async function pushChanges(userId: string): Promise<void> {
+async function pushChanges(userId: string, hardDelete: boolean): Promise<void> {
   const queue = await getQueue()
 
   for (const item of queue) {
     if (item.operation === 'delete') {
-      const now = new Date().toISOString()
-      const { error } = await supabase
-        .from(item.table)
-        .update({ deleted_at: now, updated_at: now })
-        .eq('id', item.recordId)
-        .eq('user_id', userId)
+      if (hardDelete) {
+        // Only this device is active, so no other device needs the tombstone.
+        // Deleting a topic cascades to its cards; leftover card deletes no-op.
+        const { error } = await supabase
+          .from(item.table)
+          .delete()
+          .eq('id', item.recordId)
+          .eq('user_id', userId)
 
-      if (error) throw error
+        if (error) throw error
+      } else {
+        const now = new Date().toISOString()
+        const { error } = await supabase
+          .from(item.table)
+          .update({ deleted_at: now, updated_at: now })
+          .eq('id', item.recordId)
+          .eq('user_id', userId)
+
+        if (error) throw error
+      }
     } else {
       if (item.table === STORES.TOPICS) {
         const topic = await getLocalRecord<Topic>(STORES.TOPICS, item.recordId)
@@ -286,6 +314,89 @@ async function pullChanges(userId: string): Promise<void> {
   }
 }
 
+// --- Device registry & tombstone GC ---
+
+async function countOtherActiveDevices(
+  userId: string,
+  deviceId: string
+): Promise<number> {
+  const cutoff = new Date(Date.now() - ACTIVE_WINDOW_MS).toISOString()
+  const { count, error } = await supabase
+    .from('sync_devices')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .neq('id', deviceId)
+    .gt('last_seen_at', cutoff)
+
+  if (error) throw error
+  return count ?? 0
+}
+
+async function reportDevice(userId: string, deviceId: string): Promise<void> {
+  const lastPulledAt = (await getMeta('lastPulledAt')) ?? EPOCH_ISO
+  const { error } = await supabase.from('sync_devices').upsert({
+    id: deviceId,
+    user_id: userId,
+    last_pulled_at: lastPulledAt,
+    last_seen_at: new Date().toISOString(),
+    user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null
+  })
+  if (error) throw error
+}
+
+async function purgeTombstones(): Promise<void> {
+  const { error } = await supabase.rpc('purge_synced_tombstones')
+  if (error) throw error
+}
+
+// After a long absence, tombstones this device never saw may already be GC'd,
+// so an incremental pull can't learn about them. Drop local rows that are no
+// longer live remotely (unless a local mutation for them is still pending).
+async function reconcile(userId: string): Promise<void> {
+  const [topicsResult, cardsResult] = await Promise.all([
+    supabase
+      .from(STORES.TOPICS)
+      .select('id')
+      .eq('user_id', userId)
+      .is('deleted_at', null),
+    supabase
+      .from(STORES.CARDS)
+      .select('id')
+      .eq('user_id', userId)
+      .is('deleted_at', null)
+  ])
+
+  if (topicsResult.error) throw topicsResult.error
+  if (cardsResult.error) throw cardsResult.error
+
+  const liveTopics = new Set((topicsResult.data ?? []).map(row => row.id))
+  const liveCards = new Set((cardsResult.data ?? []).map(row => row.id))
+
+  const pending = new Set((await getQueue()).map(item => item.recordId))
+  const [localTopics, localCards] = await Promise.all([
+    getAllLocal<Topic>(STORES.TOPICS),
+    getAllLocal<Card>(STORES.CARDS)
+  ])
+
+  let didMutateLocal = false
+
+  for (const topic of localTopics) {
+    if (!liveTopics.has(topic.id) && !pending.has(topic.id)) {
+      await deleteLocalTopic(topic.id)
+      didMutateLocal = true
+    }
+  }
+
+  for (const card of localCards) {
+    if (!liveCards.has(card.id) && !pending.has(card.id)) {
+      await deleteLocalCard(card.id)
+      didMutateLocal = true
+    }
+  }
+
+  if (didMutateLocal) emitSyncData()
+}
+
 export async function syncAll(userId: string): Promise<void> {
   if (!isSupabaseConfigured) return
 
@@ -297,8 +408,23 @@ export async function syncAll(userId: string): Promise<void> {
   setState({ status: 'syncing' })
 
   try {
-    await pushChanges(userId)
+    const deviceId = await getDeviceId()
+
+    const lastSyncAt = await getMeta(LAST_SYNC_AT_KEY)
+    if (
+      lastSyncAt !== undefined &&
+      Date.now() - Number(lastSyncAt) > ACTIVE_WINDOW_MS
+    ) {
+      await reconcile(userId)
+    }
+
+    const otherActive = await countOtherActiveDevices(userId, deviceId)
+    await pushChanges(userId, otherActive === 0)
     await pullChanges(userId)
+    await reportDevice(userId, deviceId)
+    await purgeTombstones()
+
+    await setMeta(LAST_SYNC_AT_KEY, String(Date.now()))
     setState({ status: 'idle', lastSyncedAt: Date.now() })
   } catch (error) {
     console.error('Sync failed:', error)
