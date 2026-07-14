@@ -151,7 +151,8 @@ export async function enqueueSync(
   recordId: string,
   operation: SyncOperation
 ): Promise<void> {
-  if (!currentUserId || !isSupabaseConfigured) return
+  // Local-first: queue mutations even while logged out so they push on login.
+  if (!isSupabaseConfigured) return
 
   const item: QueueItem = {
     id: `${table}:${recordId}`,
