@@ -4,14 +4,16 @@ import { toast } from 'react-hot-toast'
 
 import { BackButton, Button, Header, Screen } from '@/components'
 import { TITLE_MAX_LENGTH } from '@/lib'
-import { Topic } from '@/models'
+
 import { createTopic } from '@/services'
+import { getNextUpdateDate, setStartWeek, type Topic } from '@/models'
 
 type CreateTopicProps = {
   isOpen: boolean
+  onCreate: (topic: Topic) => void
 }
 
-export default function CreateTopic({ isOpen }: CreateTopicProps) {
+export default function CreateTopic({ isOpen, onCreate }: CreateTopicProps) {
   const [title, setTitle] = useState('')
   const [error, setError] = useState('')
 
@@ -38,8 +40,20 @@ export default function CreateTopic({ isOpen }: CreateTopicProps) {
     }
 
     try {
-      const topic = new Topic(title.trim())
+      const pivot = Date.now()
+
+      const topic = {
+        id: crypto.randomUUID(),
+        title: title.trim(),
+        pivot: pivot,
+        week: setStartWeek(pivot),
+        nextUpdateDate: getNextUpdateDate(),
+        updatedAt: pivot,
+        deletedAt: null
+      }
+
       await createTopic(topic)
+      onCreate(topic)
       toast.success('Topic created!')
       setTitle('')
     } catch (error) {

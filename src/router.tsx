@@ -1,7 +1,18 @@
 import { createBrowserRouter } from 'react-router'
 
 import { NotFoundPage, HomePage, Root } from '@/pages'
+import { StartScreen } from './components'
+import { isOnboardingComplete } from './lib'
+import { useState } from 'react'
 
+function IndexRoute() {
+  const [complete, setComplete] = useState(isOnboardingComplete)
+  return complete ? (
+    <HomePage />
+  ) : (
+    <StartScreen onStart={() => setComplete(true)} />
+  )
+}
 export default createBrowserRouter([
   {
     path: '/',
@@ -10,7 +21,7 @@ export default createBrowserRouter([
     children: [
       {
         index: true,
-        element: <HomePage />
+        element: <IndexRoute />
       }
     ]
   }

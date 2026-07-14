@@ -17,7 +17,7 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy'
-  }
+  },
 
-  // setupFilesAfterEnv: ['./src/setupTests.js']
+  setupFilesAfterEnv: ['<rootDir>/setupTests.cjs']
 }

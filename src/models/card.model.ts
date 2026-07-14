@@ -6,11 +6,13 @@ export class Card {
   level: number
   data: CardData
   reviewDate?: number
+  updatedAt: number
 
   constructor(data: CardData, topicId: string, level: number = 0) {
     this.id = crypto.randomUUID()
     this.topicId = topicId
     this.level = level
     this.data = data
+    this.updatedAt = Date.now()
   }
 }

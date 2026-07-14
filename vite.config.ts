@@ -20,13 +20,22 @@ const pwaOptions: Partial<VitePWAOptions> = {
     globPatterns: ['**/*.{js,css,html,woff2}']
   },
   manifest: {
+    id: '/',
     name: 'Spaced Repetition',
     short_name: 'Spaced Repetition',
     description:
       'An app for memorizing information using spaced repetition techniques',
+    start_url: '/?utm_source=pwa',
+    scope: '/',
     theme_color: '#ffffff',
     background_color: '#ffffff',
     display: 'standalone',
+    related_applications: [
+      {
+        platform: 'webapp',
+        url: '/manifest.webmanifest'
+      }
+    ],
     icons: [
       {
         src: '/pwa-64x64.png',

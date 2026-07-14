@@ -1,9 +1,12 @@
+import { CircleUserRound } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { useDebouncedCallback } from 'use-debounce'
 
 import {
+  AccountScreen,
+  Button,
   CreateTopicScreen,
   SelectionModeHeader,
   SelectionModeFooter,
@@ -14,8 +17,9 @@ import {
   Header,
   Search
 } from '@/components'
+import { useSync } from '@/contexts'
 import { Topic } from '@/models'
-import { getAllTopics, deleteTopic } from '@/services'
+import { useTopicsStore } from '@/store'
 
 const listVariants = {
   hidden: { opacity: 0 },
@@ -29,35 +33,32 @@ const itemVariants = {
 }
 
 export default function HomePage() {
-  const [topics, setTopics] = useState<Topic[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const topics = useTopicsStore(state => state.topics)
+  const isLoading = useTopicsStore(state => state.isLoading)
+  const loadTopics = useTopicsStore(state => state.loadTopics)
+  const addTopic = useTopicsStore(state => state.addTopic)
+  const deleteTopics = useTopicsStore(state => state.deleteTopics)
+  const searchTopics = useTopicsStore(state => state.searchTopics)
+
+  const { status } = useSync()
 
   const [isSelectionMode, setIsSelectionMode] = useState(false)
   const [selectedItems, setSelectedItems] = useState<string[]>([])
 
-  const allTopics = useRef<Topic[]>([])
-
   const [searchParams, setSearchParams] = useSearchParams()
   const isCreating = searchParams.get('create') === 'true'
   const currentTopic = searchParams.get('topicId')
+  const isAccountOpen = searchParams.get('account') === 'true'
 
   useEffect(() => {
-    const loadTopics = async (): Promise<void> => {
-      try {
-        if (!isCreating && !currentTopic) {
-          const topics = await getAllTopics()
-          setTopics(topics)
-          allTopics.current = topics
-        }
-      } catch (err) {
-        console.error('Failed to load topics:', err)
-      } finally {
-        setIsLoading(false)
-      }
+    if (!isCreating && !currentTopic) {
+      void loadTopics()
     }
+  }, [isCreating, currentTopic, loadTopics])
 
-    loadTopics()
-  }, [isCreating, currentTopic])
+  const handleCreateTopic = (topic: Topic): void => {
+    addTopic(topic)
+  }
 
   const handlePress = (isPressed: boolean): void => {
     setIsSelectionMode(isPressed)
@@ -80,13 +81,9 @@ export default function HomePage() {
 
   const handleDeleteSelectedItems = async (): Promise<void> => {
     try {
-      await Promise.all(selectedItems.map(topicId => deleteTopic(topicId)))
-      const restTopics = topics.filter(
-        topic => !selectedItems.includes(topic.id)
-      )
-      setTopics(restTopics)
+      await deleteTopics(selectedItems)
 
-      if (restTopics.length === 0) {
+      if (useTopicsStore.getState().topics.length === 0) {
         setIsSelectionMode(false)
       }
 
@@ -97,18 +94,7 @@ export default function HomePage() {
   }
 
   const handleSearch = useDebouncedCallback((value: string) => {
-    const topics = allTopics.current
-
-    if (!value.trim()) {
-      setTopics(topics)
-      return
-    }
-
-    const matchedTopics = topics.filter(t =>
-      t.title.toLowerCase().includes(value.toLowerCase())
-    )
-
-    setTopics(matchedTopics)
+    searchTopics(value)
   }, 300)
 
   return (
@@ -125,13 +111,20 @@ export default function HomePage() {
       </AnimatePresence>
 
       <Header>
+        <span className="w-6" />
         <span className="font-bold">Topics</span>
+        <Button
+          ariaLabel="Account"
+          onClick={() => setSearchParams({ account: 'true' })}
+        >
+          <CircleUserRound />
+        </Button>
       </Header>
       <Search onSearch={handleSearch} placeholder="Search topics" />
 
       <div className="relative h-[calc(100dvh-60px)]">
         <div className="absolute w-full h-4 bg-linear-to-b from-background to-background/30" />
-        {isLoading ? (
+        {isLoading || (status === 'syncing' && topics.length === 0) ? (
           <Spinner />
         ) : topics.length === 0 ? (
           <div className="h-full flex items-center justify-center">
@@ -183,15 +176,14 @@ export default function HomePage() {
         )}
       </AnimatePresence>
 
-      <CreateTopicScreen isOpen={isCreating} />
+      <CreateTopicScreen isOpen={isCreating} onCreate={handleCreateTopic} />
+
+      <AccountScreen isOpen={isAccountOpen} />
 
       <TopicScreen
         isOpen={currentTopic !== null}
         topicId={currentTopic ?? ''}
         onClose={() => setSearchParams({})}
-        onDelete={() =>
-          setTopics(prev => prev.filter(t => t.id !== currentTopic))
-        }
       />
     </main>
   )

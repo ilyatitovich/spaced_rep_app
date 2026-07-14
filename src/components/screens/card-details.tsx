@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useLayoutEffect } from 'react'
-import { toast } from 'react-hot-toast'
 import type { PointerEvent as ReactPointerEvent } from 'react'
+import { toast } from 'react-hot-toast'
 
 import {
   Button,

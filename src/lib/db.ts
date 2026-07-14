@@ -1,8 +1,10 @@
 const DB_NAME = 'spacedRepApp'
-const DB_VERSION = 1
+const DB_VERSION = 2
 export const STORES = {
   TOPICS: 'topics',
-  CARDS: 'cards'
+  CARDS: 'cards',
+  SYNC_QUEUE: 'sync_queue',
+  SYNC_META: 'sync_meta'
 }
 
 function openDatabase(): Promise<IDBDatabase> {
@@ -22,6 +24,14 @@ function openDatabase(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(STORES.CARDS)) {
         const cardStore = db.createObjectStore(STORES.CARDS, { keyPath: 'id' })
         cardStore.createIndex('topicId', 'topicId', { unique: false })
+      }
+
+      if (!db.objectStoreNames.contains(STORES.SYNC_QUEUE)) {
+        db.createObjectStore(STORES.SYNC_QUEUE, { keyPath: 'id' })
+      }
+
+      if (!db.objectStoreNames.contains(STORES.SYNC_META)) {
+        db.createObjectStore(STORES.SYNC_META, { keyPath: 'key' })
       }
     }
 

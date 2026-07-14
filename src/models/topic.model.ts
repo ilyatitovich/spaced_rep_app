@@ -1,70 +1,75 @@
 import { Day } from './day.model'
 
-export class Topic {
+export interface Topic {
   id: string
   title: string
   pivot: number
   week: Array<Day | null>
   nextUpdateDate: number
+  updatedAt: number
+  deletedAt: number | null
+}
 
-  constructor(title: string) {
-    this.id = crypto.randomUUID()
-    this.title = title
-    this.pivot = Date.now()
-    this.week = this.setStartWeek(this.pivot)
-    this.nextUpdateDate = this.getNextUpdateDate()
+export function createTopic(title: string): Topic {
+  const pivot = Date.now()
+
+  return {
+    id: crypto.randomUUID(),
+    title: title.trim(),
+    pivot: pivot,
+    week: setStartWeek(pivot),
+    nextUpdateDate: getNextUpdateDate(),
+    updatedAt: pivot,
+    deletedAt: null
   }
+}
 
-  static fromRaw(raw: Topic): Topic {
-    return Object.assign(new Topic(''), raw)
-  }
+export function setStartWeek(timestamp: number): Array<Day | null> {
+  const week: Array<Day | null> = []
+  const dayOfTheWeek = new Date(timestamp).getDay()
 
-  private setStartWeek(timestamp: number): Array<Day | null> {
-    const week: Array<Day | null> = []
-    const dayOfTheWeek = new Date(timestamp).getDay()
-
-    for (let d = 0; d < 7; d++) {
-      if (dayOfTheWeek > d) {
-        week.push(null)
-      } else {
-        const day = new Day(timestamp + 86400000 * (d - dayOfTheWeek))
-        day.setLevelList(timestamp)
-        week.push(day)
-      }
+  for (let d = 0; d < 7; d++) {
+    if (dayOfTheWeek > d) {
+      week.push(null)
+    } else {
+      const day = new Day(timestamp + 86400000 * (d - dayOfTheWeek))
+      day.setLevelList(timestamp)
+      week.push(day)
     }
-
-    return week
   }
 
-  private getNextUpdateDate(): number {
-    const today = new Date()
-    const currentDay = today.getDay()
+  return week
+}
 
-    // Calculate the number of days until the next Sunday
-    const daysUntilSunday = 7 - currentDay
+export function getNextUpdateDate(): number {
+  const today = new Date()
+  const currentDay = today.getDay()
 
-    // Set the date to the next Sunday
-    const nextSunday = new Date(today)
-    nextSunday.setDate(today.getDate() + daysUntilSunday)
+  // Calculate the number of days until the next Sunday
+  const daysUntilSunday = 7 - currentDay
 
-    // Set the time to midnight (00:00:00)
-    nextSunday.setHours(0, 0, 0, 0)
+  // Set the date to the next Sunday
+  const nextSunday = new Date(today)
+  nextSunday.setDate(today.getDate() + daysUntilSunday)
 
-    // Return the timestamp for the next Sunday at midnight
-    return nextSunday.getTime()
+  // Set the time to midnight (00:00:00)
+  nextSunday.setHours(0, 0, 0, 0)
+
+  // Return the timestamp for the next Sunday at midnight
+  return nextSunday.getTime()
+}
+
+export function updateWeek(topic: Topic): void {
+  const dayOfTheWeek = new Date().getDay()
+
+  topic.week = []
+
+  for (let d = 0; d < 7; d++) {
+    const day = new Day(Date.now() + 86400000 * (d - dayOfTheWeek))
+    day.setLevelList(topic.pivot)
+    topic.week.push(day)
   }
 
-  public updateWeek(): void {
-    const dayOfTheWeek = new Date().getDay()
-
-    this.week = []
-
-    for (let d = 0; d < 7; d++) {
-      const day = new Day(Date.now() + 86400000 * (d - dayOfTheWeek))
-      day.setLevelList(this.pivot)
-      this.week.push(day)
-    }
-
-    this.nextUpdateDate = this.getNextUpdateDate()
-  }
+  topic.nextUpdateDate = getNextUpdateDate()
+  topic.updatedAt = Date.now()
 }
