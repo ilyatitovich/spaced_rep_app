@@ -23,14 +23,12 @@ type TopicPageProps = {
   isOpen: boolean
   topicId: string
   onClose: () => void
-  onDelete: () => void
 }
 
 export default function TopicScreen({
   isOpen,
   topicId,
-  onClose,
-  onDelete
+  onClose
 }: TopicPageProps) {
   const [topic, setTopic] = useState<Topic | null>(null)
   const [cards, setCards] = useState<Record<number, Card[]>>({})
@@ -195,7 +193,6 @@ export default function TopicScreen({
             isOpen={isSettingsOpen}
             topic={topic}
             onClose={onClose}
-            onDelete={onDelete}
             onCardsImport={fetchTopic}
           />
         </>

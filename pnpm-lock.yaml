@@ -47,6 +47,9 @@ importers:
       use-debounce:
         specifier: ^10.0.6
         version: 10.0.6(react@18.3.1)
+      zustand:
+        specifier: ^5.0.14
+        version: 5.0.14(@types/react@18.3.27)(react@18.3.1)
     devDependencies:
       '@tailwindcss/vite':
         specifier: ^4.1.7
@@ -4294,6 +4297,24 @@ packages:
 
   zod@4.2.1:
     resolution: {integrity: sha512-0wZ1IRqGGhMP76gLqz8EyfBXKk0J2qo2+H3fi4mcUP/KtTocoX08nmIAHl1Z2kJIZbZee8KOpBCSNPRgauucjw==}
+
+  zustand@5.0.14:
+    resolution: {integrity: sha512-/8tAspM5LMPr28b3fwLYrtdj77ECpfZviaP75CMTnwO8ISyaE4GDIG/9rDDYq/cH9D2Xw2A2RXglLInmVBQB/g==}
+    engines: {node: '>=12.20.0'}
+    peerDependencies:
+      '@types/react': '>=18.0.0'
+      immer: '>=9.0.6'
+      react: '>=18.0.0'
+      use-sync-external-store: '>=1.2.0'
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      immer:
+        optional: true
+      react:
+        optional: true
+      use-sync-external-store:
+        optional: true
 
 snapshots:
 
@@ -9154,3 +9175,8 @@ snapshots:
       zod: 4.2.1
 
   zod@4.2.1: {}
+
+  zustand@5.0.14(@types/react@18.3.27)(react@18.3.1):
+    optionalDependencies:
+      '@types/react': 18.3.27
+      react: 18.3.1

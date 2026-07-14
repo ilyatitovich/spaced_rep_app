@@ -1,8 +1,17 @@
 import { isRecord } from './check-content'
-import { arrayBufferToBase64, base64ToArrayBuffer, isBase64Image } from './image'
+import {
+  arrayBufferToBase64,
+  base64ToArrayBuffer,
+  isBase64Image
+} from './image'
 import { Card, Topic } from '@/models'
 import type { Day } from '@/models'
-import type { CardData, CardSideData, ImageBase64Record, SideContent } from '@/types'
+import type {
+  CardData,
+  CardSideData,
+  ImageBase64Record,
+  SideContent
+} from '@/types'
 
 export type TopicRow = {
   id: string
@@ -56,13 +65,15 @@ export function topicToRow(topic: Topic, userId: string): TopicRow {
 }
 
 export function rowToTopic(row: TopicRow): Topic {
-  const topic = new Topic(row.title)
-  topic.id = row.id
-  topic.pivot = row.pivot
-  topic.week = row.week
-  topic.nextUpdateDate = row.next_update_date
-  topic.updatedAt = new Date(row.updated_at).getTime()
-  return topic
+  return {
+    id: row.id,
+    title: row.title,
+    pivot: row.pivot,
+    week: row.week,
+    nextUpdateDate: row.next_update_date,
+    updatedAt: new Date(row.updated_at).getTime(),
+    deletedAt: new Date(row.deleted_at ?? Date.now()).getTime() ?? null
+  }
 }
 
 export function cardToRow(card: Card, userId: string): CardRow {

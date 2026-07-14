@@ -1,6 +1,6 @@
 import { enqueueSync, triggerSync } from './sync.service'
 import { withTransaction, STORES, arrayBufferToBase64, isRecord } from '@/lib'
-import { Topic, Card } from '@/models'
+import { Topic, Card, updateWeek } from '@/models'
 
 export async function createTopic(topic: Topic): Promise<void> {
   try {
@@ -33,8 +33,7 @@ export async function getAllTopics(): Promise<Topic[]> {
         const request = stores[STORES.TOPICS].getAll()
 
         request.onsuccess = () => {
-          const topics = (request.result as Topic[]).map(t => Topic.fromRaw(t))
-          resolve(topics)
+          resolve(request.result as Topic[])
         }
 
         request.onerror = () => {
@@ -48,7 +47,7 @@ export async function getAllTopics(): Promise<Topic[]> {
 
   for (const topic of topics) {
     if (topic.nextUpdateDate <= Date.now()) {
-      topic.updateWeek()
+      updateWeek(topic)
       updated.push(topic)
     }
   }
@@ -81,8 +80,6 @@ export async function getTopicById(
       if (!topic) {
         throw new Error(`Topic with ID ${topicId} not found`)
       }
-
-      topic = Topic.fromRaw(topic)
 
       const cardsIndex = cardStore.index('topicId')
       const cardsRequest = cardsIndex.getAll(IDBKeyRange.only(topicId))

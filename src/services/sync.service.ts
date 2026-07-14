@@ -38,18 +38,33 @@ let triggerTimer: ReturnType<typeof setTimeout> | null = null
 
 const listeners = new Set<(state: SyncState) => void>()
 
+// Notifies subscribers whenever the local database is mutated by a remote pull,
+// so the state manager layer can refresh itself and re-render the UI.
+const dataListeners = new Set<() => void>()
+
 function setState(next: Partial<SyncState>): void {
   state = { ...state, ...next }
   listeners.forEach(listener => listener(state))
 }
 
-export function subscribeSync(listener: (state: SyncState) => void): () => void {
+export function subscribeSync(
+  listener: (state: SyncState) => void
+): () => void {
   listeners.add(listener)
   return () => listeners.delete(listener)
 }
 
 export function getSyncState(): SyncState {
   return state
+}
+
+export function subscribeSyncData(listener: () => void): () => void {
+  dataListeners.add(listener)
+  return () => dataListeners.delete(listener)
+}
+
+function emitSyncData(): void {
+  dataListeners.forEach(listener => listener())
 }
 
 // --- IndexedDB helpers (write directly, never re-enqueue) ---
@@ -224,6 +239,7 @@ async function pullChanges(userId: string): Promise<void> {
   const cardRows = (cardsResult.data ?? []) as CardRow[]
 
   let maxUpdatedAt = new Date(lastPulledAt).getTime()
+  let didMutateLocal = false
 
   for (const row of topicRows) {
     const remoteMs = new Date(row.updated_at).getTime()
@@ -231,12 +247,14 @@ async function pullChanges(userId: string): Promise<void> {
 
     if (row.deleted_at) {
       await deleteLocalTopic(row.id)
+      didMutateLocal = true
       continue
     }
 
     const local = await getLocalRecord<Topic>(STORES.TOPICS, row.id)
     if (shouldApplyRemote(local?.updatedAt, remoteMs)) {
       await putLocal(STORES.TOPICS, rowToTopic(row))
+      didMutateLocal = true
     }
   }
 
@@ -246,17 +264,24 @@ async function pullChanges(userId: string): Promise<void> {
 
     if (row.deleted_at) {
       await deleteLocalCard(row.id)
+      didMutateLocal = true
       continue
     }
 
     const local = await getLocalRecord<Card>(STORES.CARDS, row.id)
     if (shouldApplyRemote(local?.updatedAt, remoteMs)) {
       await putLocal(STORES.CARDS, rowToCard(row))
+      didMutateLocal = true
     }
   }
 
   if (topicRows.length > 0 || cardRows.length > 0) {
     await setMeta('lastPulledAt', new Date(maxUpdatedAt).toISOString())
+  }
+
+  // Let the state manager layer know the local DB changed so it can refresh.
+  if (didMutateLocal) {
+    emitSyncData()
   }
 }
 

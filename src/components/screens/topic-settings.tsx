@@ -13,14 +13,13 @@ import {
   Screen
 } from '@/components'
 import { TITLE_MAX_LENGTH } from '@/lib'
-import { Topic } from '@/models'
-import { deleteTopic, updateTopic } from '@/services'
+import type { Topic } from '@/models'
+import { useTopicsStore } from '@/store'
 
 type TopicSettingsProps = {
   isOpen: boolean
   topic: Topic
   onClose: () => void
-  onDelete: () => void
   onCardsImport: () => Promise<void>
 }
 
@@ -28,7 +27,6 @@ export default function TopicSettings({
   isOpen,
   topic,
   onClose,
-  onDelete,
   onCardsImport
 }: TopicSettingsProps) {
   const [title, setTitle] = useState('')
@@ -37,6 +35,8 @@ export default function TopicSettings({
     useState(false)
   const [isExportModalOpen, setIsExportModalOpen] = useState(false)
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
+  const deleteTopics = useTopicsStore(state => state.deleteTopics)
+  const updateTopic = useTopicsStore(state => state.updateTopic)
 
   useEffect(() => {
     if (isOpen) {
@@ -92,8 +92,7 @@ export default function TopicSettings({
   const handleDeleteTopic = async (): Promise<void> => {
     if (!topic) return
     try {
-      await deleteTopic(topic.id)
-      onDelete()
+      await deleteTopics(topic.id)
       onClose()
     } catch (error) {
       console.error('Failed to delete topic.', error)
