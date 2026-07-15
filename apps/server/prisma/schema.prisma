@@ -9,14 +9,52 @@ datasource db {
   provider = "postgresql"
 }
 
+enum AuthMethod {
+  EMAIL_OTP
+  PASSKEY
+  OAUTH
+}
+
+enum OtpPurpose {
+  LOGIN
+}
+
+enum AuthChallengeType {
+  WEBAUTHN_REGISTER
+  WEBAUTHN_ASSERT
+}
+
+enum SecurityEventType {
+  OTP_REQUESTED
+  OTP_FAILED
+  OTP_SUCCEEDED
+  PASSKEY_REGISTERED
+  PASSKEY_ASSERT_FAILED
+  PASSKEY_ASSERTED
+  SESSION_CREATED
+  SESSION_REVOKED
+  REFRESH_SUCCEEDED
+  REFRESH_REUSE_DETECTED
+  USER_DISABLED
+}
+
 model User {
-  id          String       @id @default(uuid()) @db.Uuid
-  email       String       @unique
-  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt   DateTime     @updatedAt @map("updated_at") @db.Timestamptz
-  topics      Topic[]
-  cards       Card[]
-  syncDevices SyncDevice[]
+  id              String    @id @default(uuid()) @db.Uuid
+  email           String    @unique // always store lowercased
+  emailVerifiedAt DateTime? @map("email_verified_at") @db.Timestamptz
+  disabledAt      DateTime? @map("disabled_at") @db.Timestamptz
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  topics           Topic[]
+  cards            Card[]
+  syncDevices      SyncDevice[]
+  sessions         Session[]
+  passkeys         Passkey[]
+  oauthIdentities  OAuthIdentity[]
+  otpCodes         OtpCode[]
+  authChallenges   AuthChallenge[]
+  securityEvents   SecurityEvent[]
 
   @@map("users")
 }
@@ -66,4 +104,134 @@ model SyncDevice {
 
   @@index([userId, lastSeenAt])
   @@map("sync_devices")
+}
+
+model Session {
+  id           String     @id @default(uuid()) @db.Uuid
+  userId       String     @map("user_id") @db.Uuid
+  authMethod   AuthMethod @map("auth_method")
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  lastActiveAt DateTime   @default(now()) @map("last_active_at") @db.Timestamptz
+  expiresAt    DateTime   @map("expires_at") @db.Timestamptz
+  revokedAt    DateTime?  @map("revoked_at") @db.Timestamptz
+  ipAddress    String?    @map("ip_address") @db.Inet
+  userAgent    String?    @map("user_agent")
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokens  RefreshToken[]
+  securityEvents SecurityEvent[]
+
+  @@index([userId, revokedAt])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model RefreshToken {
+  id                String    @id @default(uuid()) @db.Uuid
+  sessionId         String    @map("session_id") @db.Uuid
+  tokenHash         String    @unique @map("token_hash")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  expiresAt         DateTime  @map("expires_at") @db.Timestamptz
+  revokedAt         DateTime? @map("revoked_at") @db.Timestamptz
+  replacedByTokenId String?   @unique @map("replaced_by_token_id") @db.Uuid
+
+  session    Session       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  replacedBy RefreshToken? @relation("TokenRotation", fields: [replacedByTokenId], references: [id])
+  replaces   RefreshToken? @relation("TokenRotation")
+
+  @@index([sessionId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+model OtpCode {
+  id          String     @id @default(uuid()) @db.Uuid
+  email       String
+  userId      String?    @map("user_id") @db.Uuid
+  purpose     OtpPurpose
+  codeHash    String     @map("code_hash")
+  expiresAt   DateTime   @map("expires_at") @db.Timestamptz
+  consumedAt  DateTime?  @map("consumed_at") @db.Timestamptz
+  attempts    Int        @default(0)
+  maxAttempts Int        @default(5) @map("max_attempts")
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  requestIp   String?    @map("request_ip") @db.Inet
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([email, purpose, createdAt])
+  @@index([expiresAt])
+  @@map("otp_codes")
+}
+
+model Passkey {
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  credentialId String    @unique @map("credential_id")
+  publicKey    Bytes     @map("public_key")
+  counter      BigInt    @default(0)
+  transports   String[]  @default([])
+  deviceType   String?   @map("device_type")
+  backedUp     Boolean   @default(false) @map("backed_up")
+  aaguid       String?
+  name         String?
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  lastUsedAt   DateTime? @map("last_used_at") @db.Timestamptz
+  revokedAt    DateTime? @map("revoked_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("passkeys")
+}
+
+model AuthChallenge {
+  id         String            @id @default(uuid()) @db.Uuid
+  userId     String?           @map("user_id") @db.Uuid
+  type       AuthChallengeType
+  challenge  String
+  expiresAt  DateTime          @map("expires_at") @db.Timestamptz
+  consumedAt DateTime?         @map("consumed_at") @db.Timestamptz
+  createdAt  DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  metadata   Json?
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type, createdAt])
+  @@index([expiresAt])
+  @@map("auth_challenges")
+}
+
+model OAuthIdentity {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  provider       String
+  providerUserId String   @map("provider_user_id")
+  email          String?
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerUserId])
+  @@index([userId])
+  @@map("oauth_identities")
+}
+
+model SecurityEvent {
+  id        String            @id @default(uuid()) @db.Uuid
+  userId    String?           @map("user_id") @db.Uuid
+  sessionId String?           @map("session_id") @db.Uuid
+  type      SecurityEventType
+  ipAddress String?           @map("ip_address") @db.Inet
+  userAgent String?           @map("user_agent")
+  metadata  Json?
+  createdAt DateTime          @default(now()) @map("created_at") @db.Timestamptz
+
+  user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  session Session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([type, createdAt])
+  @@map("security_events")
 }
