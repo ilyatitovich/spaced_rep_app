@@ -22,7 +22,7 @@ export default function LevelCard({
   onSelect
 }: LevelCardProps) {
   const [previewUrl, setPreviewUrl] = useState('')
-  const timerRef = useRef<NodeJS.Timeout | null>(null)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const { content: frontContent } = card.data.front
 
