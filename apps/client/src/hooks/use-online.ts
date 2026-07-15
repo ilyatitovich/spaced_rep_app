@@ -39,7 +39,7 @@ export type UseOnlineVerifiedOptions = {
 }
 
 export function useOnlineVerified({
-  pingUrl = '/favicon.ico',
+  pingUrl = '/health',
   interval = 30_000,
   timeout = 5_000
 }: UseOnlineVerifiedOptions = {}): boolean {
@@ -63,7 +63,7 @@ export function useOnlineVerified({
       const timer = setTimeout(() => controller.abort(), timeout)
 
       try {
-        await fetch(pingUrl, {
+        await fetch(`${import.meta.env.VITE_API_URL}${pingUrl}`, {
           method: 'HEAD',
           cache: 'no-store',
           signal: controller.signal

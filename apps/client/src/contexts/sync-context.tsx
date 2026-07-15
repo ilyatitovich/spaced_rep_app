@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 
-import { useAuth } from './auth-context'
 import { useOnlineVerified } from '@/hooks'
 import {
   getSyncState,
@@ -18,27 +17,13 @@ type SyncContextValue = SyncState & {
 const SyncContext = createContext<SyncContextValue | undefined>(undefined)
 
 export function SyncProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth()
   const isOnline = useOnlineVerified()
   const [syncState, setSyncState] = useState<SyncState>(getSyncState())
 
   useEffect(() => subscribeSync(setSyncState), [])
 
-  useEffect(() => {
-    if (isOnline && user) syncNow()
-  }, [isOnline, user])
-
-  useEffect(() => {
-    if (!user) return
-
-    const handleVisibility = () => {
-      if (document.visibilityState === 'visible') syncNow()
-    }
-
-    document.addEventListener('visibilitychange', handleVisibility)
-    return () =>
-      document.removeEventListener('visibilitychange', handleVisibility)
-  }, [user])
+  // TODO: re-enable auto sync-on-login / visibility when server sync is ready
+  // (previously used useAuth().user + syncNow())
 
   const value: SyncContextValue = { ...syncState, isOnline, syncNow }
 

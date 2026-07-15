@@ -69,7 +69,11 @@ export default function AuthMethods() {
 
   const handleGoogle = () => {
     setLastUsedAuthMethod('google')
-    signInWithGoogle()
+    void signInWithGoogle().catch(err => {
+      toast.error(
+        err instanceof Error ? err.message : 'Google sign-in failed.'
+      )
+    })
   }
 
   const handleEmail = () => {

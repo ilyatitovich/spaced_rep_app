@@ -1,14 +1,37 @@
-import type { Provider, Session, User } from '@supabase/supabase-js'
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
-import type { ReactNode } from 'react'
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode
+} from 'react'
+import type { User as SupabaseUser } from '@supabase/supabase-js'
 
-import { completeOnboarding } from '@/lib'
+import {
+  ensureFreshSession,
+  isAuthConfigured,
+  logoutAuthSession
+} from '@/lib/api'
+import {
+  clearAuthSession,
+  getAuthSession,
+  setPkcePending,
+  type AuthSession,
+  type AuthUser
+} from '@/lib/auth-storage'
+import { completeOnboarding } from '@/lib/onboarding'
+import {
+  buildGoogleAuthorizeUrl,
+  createPkcePair,
+  googleRedirectUri
+} from '@/lib/pkce'
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
-import { initialSync, setSyncUser } from '@/services'
+import { setSyncUser } from '@/services'
 
 type AuthContextValue = {
-  session: Session | null
-  user: User | null
+  session: AuthSession | null
+  user: AuthUser | null
   isLoading: boolean
   isConfigured: boolean
   signInWithGoogle: () => Promise<void>
@@ -16,85 +39,141 @@ type AuthContextValue = {
   sendEmailOtp: (email: string) => Promise<void>
   verifyEmailOtp: (email: string, token: string) => Promise<void>
   signOut: () => Promise<void>
+  /** Used by OAuth callback route after exchanging the code. */
+  completeGoogleLogin: (session: AuthSession) => void
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
+function toAuthUser(user: SupabaseUser): AuthUser | null {
+  if (!user.email) return null
+  return { id: user.id, email: user.email }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null)
-  const [isLoading, setIsLoading] = useState(isSupabaseConfigured)
+  const [session, setSession] = useState<AuthSession | null>(() =>
+    getAuthSession()
+  )
+  const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null)
+  const [isLoading, setIsLoading] = useState(
+    () => isAuthConfigured() || isSupabaseConfigured
+  )
 
   useEffect(() => {
-    if (!isSupabaseConfigured) return
+    let cancelled = false
 
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session)
-      setIsLoading(false)
-    })
+    async function bootstrap() {
+      if (isAuthConfigured()) {
+        const fresh = await ensureFreshSession()
+        if (!cancelled) setSession(fresh)
+      }
+
+      if (isSupabaseConfigured) {
+        const { data } = await supabase.auth.getSession()
+        if (!cancelled) setSupabaseUser(data.session?.user ?? null)
+      }
+
+      if (!cancelled) setIsLoading(false)
+    }
+
+    void bootstrap()
+
+    if (!isSupabaseConfigured) {
+      return () => {
+        cancelled = true
+      }
+    }
 
     const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession)
+      setSupabaseUser(nextSession?.user ?? null)
     })
 
-    return () => data.subscription.unsubscribe()
+    return () => {
+      cancelled = true
+      data.subscription.unsubscribe()
+    }
   }, [])
 
-  const userId = session?.user.id ?? null
+  const user = session?.user ?? (supabaseUser ? toAuthUser(supabaseUser) : null)
+  const userId = user?.id ?? null
 
   useEffect(() => {
     setSyncUser(userId)
-    if (userId) {
-      void initialSync(userId)
-    }
+    // TODO: re-enable when server sync is ready
+    // if (userId) {
+    //   void initialSync(userId)
+    // }
   }, [userId])
 
   const value = useMemo<AuthContextValue>(() => {
-    const signIn = async (provider: Provider): Promise<void> => {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: { redirectTo: window.location.origin }
-      })
-      if (error) throw error
-      completeOnboarding()
-    }
-
-    const sendEmailOtp = async (email: string): Promise<void> => {
-      if (!isSupabaseConfigured) return
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: { shouldCreateUser: true }
-      })
-      if (error) throw error
-    }
-
-    const verifyEmailOtp = async (
-      email: string,
-      token: string
-    ): Promise<void> => {
-      if (!isSupabaseConfigured) return
-      const { error } = await supabase.auth.verifyOtp({
-        email,
-        token,
-        type: 'email'
-      })
-      if (error) throw error
-      completeOnboarding()
-    }
-
     return {
       session,
-      user: session?.user ?? null,
+      user,
       isLoading,
-      isConfigured: isSupabaseConfigured,
-      signInWithGoogle: () => signIn('google'),
-      signInWithApple: () => signIn('apple'),
-      sendEmailOtp,
-      verifyEmailOtp,
+      isConfigured: isAuthConfigured() || isSupabaseConfigured,
+      signInWithGoogle: async () => {
+        const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
+        if (!clientId || !isAuthConfigured()) {
+          throw new Error('Google sign-in is not configured')
+        }
+
+        const { codeVerifier, codeChallenge, state } = await createPkcePair()
+        const redirectUri = googleRedirectUri()
+        setPkcePending({ codeVerifier, state })
+        window.location.assign(
+          buildGoogleAuthorizeUrl({
+            clientId,
+            redirectUri,
+            codeChallenge,
+            state
+          })
+        )
+      },
+      signInWithApple: async () => {
+        if (!isSupabaseConfigured) return
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'apple',
+          options: { redirectTo: window.location.origin }
+        })
+        if (error) throw error
+        completeOnboarding()
+      },
+      sendEmailOtp: async (email: string) => {
+        if (!isSupabaseConfigured) return
+        const { error } = await supabase.auth.signInWithOtp({
+          email,
+          options: { shouldCreateUser: true }
+        })
+        if (error) throw error
+      },
+      verifyEmailOtp: async (email: string, token: string) => {
+        if (!isSupabaseConfigured) return
+        const { error } = await supabase.auth.verifyOtp({
+          email,
+          token,
+          type: 'email'
+        })
+        if (error) throw error
+        completeOnboarding()
+      },
       signOut: async () => {
-        await supabase.auth.signOut()
+        const accessToken = getAuthSession()?.accessToken
+        if (accessToken) {
+          await logoutAuthSession(accessToken)
+        } else {
+          clearAuthSession()
+        }
+        setSession(null)
+        if (isSupabaseConfigured) {
+          await supabase.auth.signOut()
+        }
+      },
+      completeGoogleLogin: (next: AuthSession) => {
+        setSession(next)
+        completeOnboarding()
       }
     }
-  }, [session, isLoading])
+  }, [session, user, isLoading])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

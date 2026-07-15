@@ -65,13 +65,6 @@ export default function AccountScreen({ isOpen }: AccountScreenProps) {
           ) : user ? (
             <>
               <div className="flex flex-col items-center gap-2">
-                {user.user_metadata?.avatar_url && (
-                  <img
-                    src={user.user_metadata.avatar_url as string}
-                    alt=""
-                    className="w-16 h-16 rounded-full"
-                  />
-                )}
                 <span className="font-bold">{user.email}</span>
               </div>
 
