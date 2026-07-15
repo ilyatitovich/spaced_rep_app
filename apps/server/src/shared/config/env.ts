@@ -39,7 +39,17 @@ const envSchema = z.object({
     .number()
     .int()
     .positive()
-    .default(60 * 60 * 24 * 30)
+    .default(60 * 60 * 24 * 30),
+  REDIS_URL: z.string().min(1, 'REDIS_URL is required'),
+  OTP_PEPPER: z.string().min(32, 'OTP_PEPPER must be at least 32 characters'),
+  OTP_TTL_SECONDS: z.coerce.number().int().positive().default(600),
+  OTP_RESEND_COOLDOWN_SECONDS: z.coerce.number().int().positive().default(60),
+  OTP_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
+  TURNSTILE_SECRET_KEY: z
+    .string()
+    .min(1, 'TURNSTILE_SECRET_KEY is required'),
+  RESEND_API_KEY: z.string().min(1, 'RESEND_API_KEY is required'),
+  EMAIL_FROM: z.string().min(1, 'EMAIL_FROM is required')
 })
 
 const parsed = envSchema.safeParse(process.env)

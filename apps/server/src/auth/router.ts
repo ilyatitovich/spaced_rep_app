@@ -4,12 +4,16 @@ import {
   googleCallbackHandler,
   meHandler,
   logoutHandler,
-  refreshTokenHandler
+  refreshTokenHandler,
+  emailRequestHandler,
+  emailVerifyHandler
 } from './handlers/index.js'
 
 export const authRouter = Router()
 
 authRouter.post('/oauth/google/callback', googleCallbackHandler)
+authRouter.post('/email/request', emailRequestHandler)
+authRouter.post('/email/verify', emailVerifyHandler)
 authRouter.post('/token/refresh', refreshTokenHandler)
 authRouter.post('/logout', requireAuth, logoutHandler)
 authRouter.get('/me', requireAuth, meHandler)

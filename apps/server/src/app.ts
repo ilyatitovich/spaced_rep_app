@@ -11,6 +11,9 @@ import { errorHandler } from './shared/middleware/error-handler.js'
 export function createApp() {
   const app = express()
 
+  // Real client IP behind reverse proxies (needed for OTP rate limits).
+  app.set('trust proxy', 1)
+
   app.use(helmet())
   app.use(cors({ origin: env.CORS_ORIGIN }))
   app.use(compression())

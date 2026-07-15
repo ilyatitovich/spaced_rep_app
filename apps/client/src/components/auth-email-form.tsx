@@ -1,10 +1,11 @@
 import type { ChangeEvent, FormEvent } from 'react'
 import { useState } from 'react'
 
+import TurnstileWidget from './turnstile-widget'
 import { getAuthErrorMessage, validateEmail } from '@/lib'
 
 type AuthEmailFormProps = {
-  onSubmit: (email: string) => Promise<void>
+  onSubmit: (email: string, turnstileToken: string) => Promise<void>
   onBack: () => void
 }
 
@@ -15,6 +16,8 @@ export default function AuthEmailForm({
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
+  const [turnstileKey, setTurnstileKey] = useState(0)
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value)
@@ -31,11 +34,18 @@ export default function AuthEmailForm({
       return
     }
 
+    if (!turnstileToken) {
+      setError('Please complete the bot check.')
+      return
+    }
+
     setIsLoading(true)
     try {
-      await onSubmit(result.email)
+      await onSubmit(result.email, turnstileToken)
     } catch (err) {
       setError(getAuthErrorMessage(err))
+      setTurnstileToken(null)
+      setTurnstileKey(key => key + 1)
     } finally {
       setIsLoading(false)
     }
@@ -79,9 +89,14 @@ export default function AuthEmailForm({
           )}
         </div>
 
+        <TurnstileWidget
+          key={turnstileKey}
+          onToken={setTurnstileToken}
+        />
+
         <button
           type="submit"
-          disabled={isLoading}
+          disabled={isLoading || !turnstileToken}
           className="w-full bg-black active:bg-purple-700 font-medium py-4 rounded-xl flex items-center justify-center gap-3 transition-all text-base text-white disabled:opacity-50"
         >
           {isLoading ? (

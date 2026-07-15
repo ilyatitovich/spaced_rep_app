@@ -2,6 +2,7 @@ import { ArrowLeft } from 'lucide-react'
 import type { ChangeEvent, FormEvent } from 'react'
 import { useEffect, useState } from 'react'
 
+import TurnstileWidget from './turnstile-widget'
 import { getAuthErrorMessage } from '@/lib'
 
 const OTP_LENGTH = 6
@@ -10,7 +11,7 @@ const RESEND_COOLDOWN_SECONDS = 60
 type AuthOtpFormProps = {
   email: string
   onVerify: (token: string) => Promise<void>
-  onResend: () => Promise<void>
+  onResend: (turnstileToken: string) => Promise<void>
   onBack: () => void
 }
 
@@ -32,6 +33,8 @@ export default function AuthOtpForm({
   const [isLoading, setIsLoading] = useState(false)
   const [isResending, setIsResending] = useState(false)
   const [resendCooldown, setResendCooldown] = useState(RESEND_COOLDOWN_SECONDS)
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
+  const [turnstileKey, setTurnstileKey] = useState(0)
 
   useEffect(() => {
     if (resendCooldown <= 0) return
@@ -68,13 +71,21 @@ export default function AuthOtpForm({
 
   const handleResend = async () => {
     if (resendCooldown > 0 || isResending) return
+    if (!turnstileToken) {
+      setError('Please complete the bot check before resending.')
+      return
+    }
     setError('')
     setIsResending(true)
     try {
-      await onResend()
+      await onResend(turnstileToken)
       setResendCooldown(RESEND_COOLDOWN_SECONDS)
+      setTurnstileToken(null)
+      setTurnstileKey(key => key + 1)
     } catch (err) {
       setError(getAuthErrorMessage(err))
+      setTurnstileToken(null)
+      setTurnstileKey(key => key + 1)
     } finally {
       setIsResending(false)
     }
@@ -131,11 +142,19 @@ export default function AuthOtpForm({
         </button>
       </form>
 
-      <div className="mt-4 text-center">
+      <div className="mt-4 flex flex-col items-center gap-3">
+        {resendCooldown <= 0 && (
+          <TurnstileWidget
+            key={turnstileKey}
+            onToken={setTurnstileToken}
+          />
+        )}
         <button
           type="button"
           onClick={handleResend}
-          disabled={resendCooldown > 0 || isResending}
+          disabled={
+            resendCooldown > 0 || isResending || (resendCooldown <= 0 && !turnstileToken)
+          }
           className="text-sm font-medium text-purple-600 active:text-purple-700 transition-colors disabled:text-slate-400"
         >
           {resendCooldown > 0

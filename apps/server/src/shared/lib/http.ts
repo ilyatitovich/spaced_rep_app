@@ -25,6 +25,8 @@ export function statusToErrorCode(statusCode: number): string {
       return 'FORBIDDEN'
     case 404:
       return 'NOT_FOUND'
+    case 429:
+      return 'RATE_LIMITED'
     case 502:
       return 'BAD_GATEWAY'
     default:

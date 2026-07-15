@@ -161,6 +161,27 @@ export function ensureFreshSession(): Promise<AuthSession | null> {
   return refreshInFlight
 }
 
+export async function requestEmailOtp(input: {
+  email: string
+  turnstileToken: string
+}): Promise<void> {
+  await postJson<{ ok: true }>('/auth/email/request', input)
+}
+
+export async function verifyEmailOtp(input: {
+  email: string
+  code: string
+}): Promise<AuthSession> {
+  const data = await postJson<AuthTokenResponse>('/auth/email/verify', input)
+  const session = sessionFromTokenResponse(data)
+  setAuthSession(session)
+  return session
+}
+
 export function isAuthConfigured(): boolean {
+  return Boolean(apiUrl)
+}
+
+export function isGoogleAuthConfigured(): boolean {
   return Boolean(apiUrl && import.meta.env.VITE_GOOGLE_CLIENT_ID)
 }

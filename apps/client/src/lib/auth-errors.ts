@@ -1,20 +1,40 @@
+import { ApiError } from './api'
+
 export function getAuthErrorMessage(error: unknown): string {
   if (!(error instanceof Error)) {
     return 'Something went wrong. Please try again.'
   }
 
-  const code = (error as { code?: string }).code ?? ''
+  const code =
+    error instanceof ApiError
+      ? (error.code ?? '')
+      : ((error as { code?: string }).code ?? '')
   const message = error.message.toLowerCase()
 
-  if (code === 'over_email_send_rate_limit' || message.includes('rate limit')) {
+  if (code === 'RATE_LIMITED' || code === 'over_email_send_rate_limit') {
     return 'Too many attempts. Please wait a minute and try again.'
   }
 
-  if (code === 'otp_expired' || message.includes('expired')) {
+  if (message.includes('rate limit')) {
+    return 'Too many attempts. Please wait a minute and try again.'
+  }
+
+  if (code === 'TURNSTILE_FAILED') {
+    return 'Bot verification failed. Please try again.'
+  }
+
+  if (code === 'OTP_INVALID' || code === 'otp_expired') {
+    return 'Invalid or expired code. Request a new one.'
+  }
+
+  if (message.includes('expired')) {
     return 'Code expired. Request a new one.'
   }
 
-  if (message.includes('invalid') && message.includes('token')) {
+  if (
+    (message.includes('invalid') && message.includes('token')) ||
+    (message.includes('invalid') && message.includes('code'))
+  ) {
     return 'Invalid code. Check the email and try again.'
   }
 

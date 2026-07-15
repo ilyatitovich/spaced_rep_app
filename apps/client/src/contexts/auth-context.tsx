@@ -11,7 +11,10 @@ import type { User as SupabaseUser } from '@supabase/supabase-js'
 import {
   ensureFreshSession,
   isAuthConfigured,
-  logoutAuthSession
+  isGoogleAuthConfigured,
+  logoutAuthSession,
+  requestEmailOtp,
+  verifyEmailOtp as verifyEmailOtpApi
 } from '@/lib/api'
 import {
   clearAuthSession,
@@ -36,7 +39,7 @@ type AuthContextValue = {
   isConfigured: boolean
   signInWithGoogle: () => Promise<void>
   signInWithApple: () => Promise<void>
-  sendEmailOtp: (email: string) => Promise<void>
+  sendEmailOtp: (email: string, turnstileToken: string) => Promise<void>
   verifyEmailOtp: (email: string, token: string) => Promise<void>
   signOut: () => Promise<void>
   /** Used by OAuth callback route after exchanging the code. */
@@ -113,7 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isConfigured: isAuthConfigured() || isSupabaseConfigured,
       signInWithGoogle: async () => {
         const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
-        if (!clientId || !isAuthConfigured()) {
+        if (!clientId || !isGoogleAuthConfigured()) {
           throw new Error('Google sign-in is not configured')
         }
 
@@ -138,22 +141,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (error) throw error
         completeOnboarding()
       },
-      sendEmailOtp: async (email: string) => {
-        if (!isSupabaseConfigured) return
-        const { error } = await supabase.auth.signInWithOtp({
-          email,
-          options: { shouldCreateUser: true }
-        })
-        if (error) throw error
+      sendEmailOtp: async (email: string, turnstileToken: string) => {
+        if (!isAuthConfigured()) {
+          throw new Error('Email sign-in is not configured')
+        }
+        await requestEmailOtp({ email, turnstileToken })
       },
       verifyEmailOtp: async (email: string, token: string) => {
-        if (!isSupabaseConfigured) return
-        const { error } = await supabase.auth.verifyOtp({
-          email,
-          token,
-          type: 'email'
-        })
-        if (error) throw error
+        if (!isAuthConfigured()) {
+          throw new Error('Email sign-in is not configured')
+        }
+        const next = await verifyEmailOtpApi({ email, code: token })
+        setSession(next)
         completeOnboarding()
       },
       signOut: async () => {

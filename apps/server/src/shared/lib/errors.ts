@@ -34,6 +34,12 @@ export class ForbiddenError extends AppError {
   }
 }
 
+export class TooManyRequestsError extends AppError {
+  constructor(message = 'Too many requests', code = 'RATE_LIMITED') {
+    super(429, message, code)
+  }
+}
+
 export class BadGatewayError extends AppError {
   constructor(message = 'Upstream service failed', code = 'BAD_GATEWAY') {
     super(502, message, code)

@@ -85,8 +85,8 @@ export default function AuthMethods() {
     setLastUsedAuthMethod('passkey')
   }
 
-  const handleSendOtp = async (email: string) => {
-    await sendEmailOtp(email)
+  const handleSendOtp = async (email: string, turnstileToken: string) => {
+    await sendEmailOtp(email, turnstileToken)
     setPendingEmail(email)
     setStep('otp')
     toast.success('Check your email for a code')
@@ -95,6 +95,11 @@ export default function AuthMethods() {
   const handleVerifyOtp = async (token: string) => {
     await verifyEmailOtp(pendingEmail, token)
     setStep('methods')
+  }
+
+  const handleResendOtp = async (turnstileToken: string) => {
+    await sendEmailOtp(pendingEmail, turnstileToken)
+    toast.success('Check your email for a code')
   }
 
   const methods: {
@@ -157,7 +162,7 @@ export default function AuthMethods() {
       <AuthOtpForm
         email={pendingEmail}
         onVerify={handleVerifyOtp}
-        onResend={() => sendEmailOtp(pendingEmail)}
+        onResend={handleResendOtp}
         onBack={() => setStep('email')}
       />
     )
