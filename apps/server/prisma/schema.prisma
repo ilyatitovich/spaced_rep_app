@@ -1,10 +1,7 @@
-// Prisma schema for the Express API.
-// Models mirror the client domain (topics/cards) and existing cloud-sync shape.
 generator client {
   provider            = "prisma-client"
   output              = "../src/generated/prisma"
   moduleFormat        = "esm"
-  // tsx resolves .ts imports; generated .js extensions break under watch mode
   importFileExtension = "ts"
 }
 
