@@ -6,7 +6,7 @@
     "node": "^24.18.0"
   },
   "scripts": {
-    "dev": "tsx watch src/index.ts"
+    "dev": "tsx watch src/server.ts"
   },
   "dependencies": {
     "compression": "^1.8.1",
@@ -17,5 +17,11 @@
     "pino": "^10.3.1",
     "pino-http": "^11.0.0",
     "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/compression": "^1.8.1",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "pino-pretty": "^13.1.3"
   }
 }
