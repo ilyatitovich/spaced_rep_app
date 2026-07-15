@@ -1,6 +1,7 @@
 import { createApp } from './app.js'
 import { env } from './shared/config/env.js'
 import { logger } from './shared/lib/logger.js'
+import { disconnectPrisma } from './shared/lib/prisma.js'
 
 const app = createApp()
 
@@ -11,8 +12,12 @@ const server = app.listen(env.PORT, () => {
 function shutdown(signal: string) {
   logger.info(`${signal} received, shutting down gracefully`)
   server.close(() => {
-    logger.info('Server closed')
-    process.exit(0)
+    void disconnectPrisma()
+      .catch(err => logger.error({ err }, 'Failed to disconnect Prisma'))
+      .finally(() => {
+        logger.info('Server closed')
+        process.exit(0)
+      })
   })
   setTimeout(() => process.exit(1), 10_000).unref()
 }

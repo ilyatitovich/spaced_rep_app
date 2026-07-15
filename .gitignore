@@ -33,3 +33,6 @@ coverage/
 *.txt
 
 .cursor/plans/*
+
+# Prisma generated client
+apps/server/src/generated/

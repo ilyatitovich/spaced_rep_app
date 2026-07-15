@@ -1,0 +1,72 @@
+// Prisma schema for the Express API.
+// Models mirror the client domain (topics/cards) and existing cloud-sync shape.
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  // tsx resolves .ts imports; generated .js extensions break under watch mode
+  importFileExtension = "ts"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id          String       @id @default(uuid()) @db.Uuid
+  email       String       @unique
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+  topics      Topic[]
+  cards       Card[]
+  syncDevices SyncDevice[]
+
+  @@map("users")
+}
+
+model Topic {
+  id             String    @id @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  title          String
+  pivot          BigInt
+  week           Json
+  nextUpdateDate BigInt    @map("next_update_date")
+  // Client-supplied LWW timestamp (do not use @updatedAt)
+  updatedAt      DateTime  @map("updated_at") @db.Timestamptz
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cards          Card[]
+
+  @@index([userId, updatedAt])
+  @@map("topics")
+}
+
+model Card {
+  id         String    @id @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  topicId    String    @map("topic_id") @db.Uuid
+  level      Int       @default(0)
+  data       Json
+  reviewDate BigInt?   @map("review_date")
+  // Client-supplied LWW timestamp (do not use @updatedAt)
+  updatedAt  DateTime  @map("updated_at") @db.Timestamptz
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamptz
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic      Topic     @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
+  @@index([topicId])
+  @@map("cards")
+}
+
+model SyncDevice {
+  id           String   @id @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  lastPulledAt DateTime @default(dbgenerated("'epoch'::timestamptz")) @map("last_pulled_at") @db.Timestamptz
+  lastSeenAt   DateTime @default(now()) @map("last_seen_at") @db.Timestamptz
+  userAgent    String?  @map("user_agent")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, lastSeenAt])
+  @@map("sync_devices")
+}

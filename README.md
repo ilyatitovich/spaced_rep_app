@@ -24,9 +24,15 @@ This project focuses on **fast UX**, **offline support via IndexedDB**, and a cl
 - **React Hot Toast** – notifications
 - **TailwindCSS** – styling
 
+**Backend**
+
+- **Express 5** – HTTP API (`apps/server`)
+- **Prisma 7** – PostgreSQL ORM
+- **PostgreSQL 17** + **Redis 7** via Docker Compose
+
 **Storage**
 
-- IndexedDB (custom wrapper + transactions)
+- IndexedDB (custom wrapper + transactions) on the client
 
 ## 💡 Inspiration
 
@@ -42,6 +48,50 @@ pnpm dev
 ```
 
 The app runs on `http://localhost:5173`.
+
+### Docker (Postgres + Redis + server)
+
+```bash
+cp .env.example .env
+cp apps/server/src/.env.example apps/server/src/.env
+pnpm docker:up
+```
+
+- Compose `DATABASE_URL` uses hostname `postgres` (Docker network).
+- Local Prisma CLI / host-side server use `localhost:5433` (see `apps/server/src/.env.example`).
+
+### Prisma
+
+Required env var: **`DATABASE_URL`** (see `.env.example` and `apps/server/src/.env.example`).
+
+```bash
+# Generate the Prisma Client (also runs on server package postinstall)
+pnpm prisma:generate
+
+# Create / apply migrations in development (interactive)
+pnpm prisma:migrate
+
+# Apply existing migrations (CI / production — does not auto-run on app start)
+pnpm prisma:migrate:deploy
+
+# Browse data
+pnpm prisma:studio
+```
+
+Or from `apps/server`:
+
+```bash
+pnpm prisma:generate
+pnpm prisma:migrate
+pnpm prisma:migrate:deploy
+pnpm prisma:studio
+```
+
+Import the shared client in server code:
+
+```ts
+import { prisma } from './shared/lib/prisma.js'
+```
 
 ## 📝 License
 
