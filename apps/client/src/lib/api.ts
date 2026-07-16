@@ -5,6 +5,12 @@ import {
   type AuthSession,
   type AuthUser
 } from './auth-storage'
+import type {
+  AuthenticationResponseJSON,
+  PublicKeyCredentialCreationOptionsJSON,
+  PublicKeyCredentialRequestOptionsJSON,
+  RegistrationResponseJSON
+} from '@simplewebauthn/browser'
 
 const apiUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, '') ?? ''
 
@@ -176,6 +182,73 @@ export async function verifyEmailOtp(input: {
   const session = sessionFromTokenResponse(data)
   setAuthSession(session)
   return session
+}
+
+export type PasskeySummary = {
+  id: string
+  name: string | null
+  deviceType: string | null
+  backedUp: boolean
+  createdAt: string
+  lastUsedAt: string | null
+}
+
+export async function passkeyRegisterOptions(
+  accessToken: string
+): Promise<PublicKeyCredentialCreationOptionsJSON> {
+  return postJson('/auth/passkeys/register/options', {}, { accessToken })
+}
+
+export async function passkeyRegisterVerify(input: {
+  accessToken: string
+  credential: RegistrationResponseJSON
+  name?: string
+}): Promise<PasskeySummary> {
+  return postJson(
+    '/auth/passkeys/register/verify',
+    { credential: input.credential, name: input.name },
+    { accessToken: input.accessToken }
+  )
+}
+
+export async function passkeyLoginOptions(input?: {
+  email?: string
+}): Promise<PublicKeyCredentialRequestOptionsJSON> {
+  return postJson('/auth/passkeys/login/options', input ?? {})
+}
+
+export async function passkeyLoginVerify(input: {
+  credential: AuthenticationResponseJSON
+}): Promise<AuthSession> {
+  const data = await postJson<AuthTokenResponse>(
+    '/auth/passkeys/login/verify',
+    input
+  )
+  const session = sessionFromTokenResponse(data)
+  setAuthSession(session)
+  return session
+}
+
+export async function listPasskeys(
+  accessToken: string
+): Promise<{ passkeys: PasskeySummary[] }> {
+  return getJson('/auth/passkeys', accessToken)
+}
+
+export async function deletePasskey(
+  accessToken: string,
+  passkeyId: string
+): Promise<{ ok: true }> {
+  if (!apiUrl) {
+    throw new ApiError(0, 'VITE_API_URL is not configured')
+  }
+
+  const response = await fetch(`${apiUrl}/auth/passkeys/${passkeyId}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${accessToken}` }
+  })
+  const json = await parseJson<{ data: { ok: true } }>(response)
+  return json.data
 }
 
 export function isAuthConfigured(): boolean {

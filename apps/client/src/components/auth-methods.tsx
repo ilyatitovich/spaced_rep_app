@@ -1,11 +1,13 @@
 import { KeyRound, Mail } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'react-hot-toast'
+import { browserSupportsWebAuthn } from '@simplewebauthn/browser'
 
 import AuthEmailForm from './auth-email-form'
 import AuthOtpForm from './auth-otp-form'
 import { GoogleIcon } from './ui/icons/google'
 import { useAuth } from '@/contexts'
+import { getAuthErrorMessage } from '@/lib/auth-errors'
 
 type AuthMethodId = 'google' | 'email' | 'passkey'
 
@@ -27,13 +29,17 @@ type AuthMethodButtonProps = {
   label: string
   onClick: () => void
   isLastUsed: boolean
+  disabled?: boolean
+  isLoading?: boolean
 }
 
 function AuthMethodButton({
   icon,
   label,
   onClick,
-  isLastUsed
+  isLastUsed,
+  disabled,
+  isLoading
 }: AuthMethodButtonProps) {
   return (
     <div className="relative">
@@ -43,15 +49,17 @@ function AuthMethodButton({
         </span>
       )}
       <button
+        type="button"
         onClick={onClick}
+        disabled={disabled || isLoading}
         className={
           isLastUsed
-            ? 'w-full bg-black active:bg-purple-700 font-medium py-4 rounded-xl flex items-center justify-center gap-3 transition-all text-base text-white'
-            : 'w-full border border-slate-300 active:bg-slate-100 font-medium py-4 rounded-xl flex items-center justify-center gap-3 transition-all text-base text-slate-700'
+            ? 'w-full bg-black active:bg-purple-700 font-medium py-4 rounded-xl flex items-center justify-center gap-3 transition-all text-base text-white disabled:opacity-50'
+            : 'w-full border border-slate-300 active:bg-slate-100 font-medium py-4 rounded-xl flex items-center justify-center gap-3 transition-all text-base text-slate-700 disabled:opacity-50'
         }
       >
         {icon}
-        {label}
+        {isLoading ? 'Waiting…' : label}
       </button>
     </div>
   )
@@ -65,7 +73,10 @@ export default function AuthMethods() {
   const [lastUsed] = useState<AuthMethodId | null>(getLastUsedAuthMethod)
   const [step, setStep] = useState<AuthStep>('methods')
   const [pendingEmail, setPendingEmail] = useState('')
-  const { signInWithGoogle, sendEmailOtp, verifyEmailOtp } = useAuth()
+  const [passkeyLoading, setPasskeyLoading] = useState(false)
+  const [passkeysSupported] = useState(() => browserSupportsWebAuthn())
+  const { signInWithGoogle, signInWithPasskey, sendEmailOtp, verifyEmailOtp } =
+    useAuth()
 
   const handleGoogle = () => {
     setLastUsedAuthMethod('google')
@@ -82,7 +93,20 @@ export default function AuthMethods() {
   }
 
   const handlePasskey = () => {
+    if (!passkeysSupported) {
+      toast.error('Passkeys aren’t supported in this browser')
+      return
+    }
+
     setLastUsedAuthMethod('passkey')
+    setPasskeyLoading(true)
+    void signInWithPasskey()
+      .catch(err => {
+        toast.error(getAuthErrorMessage(err))
+      })
+      .finally(() => {
+        setPasskeyLoading(false)
+      })
   }
 
   const handleSendOtp = async (email: string, turnstileToken: string) => {
@@ -136,6 +160,8 @@ export default function AuthMethods() {
           label="Sign in with Passkey"
           onClick={handlePasskey}
           isLastUsed={isLastUsed}
+          disabled={!passkeysSupported}
+          isLoading={passkeyLoading}
         />
       )
     }
@@ -183,6 +209,11 @@ export default function AuthMethods() {
         {orderedMethods.map(method => (
           <div key={method.id}>{method.render(method.id === lastUsed)}</div>
         ))}
+        {!passkeysSupported && (
+          <p className="text-xs text-center text-gray-500">
+            Passkeys aren’t supported in this browser
+          </p>
+        )}
       </div>
     </div>
   )

@@ -7,12 +7,18 @@ import {
   type ReactNode
 } from 'react'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
+import {
+  browserSupportsWebAuthn,
+  startAuthentication
+} from '@simplewebauthn/browser'
 
 import {
   ensureFreshSession,
   isAuthConfigured,
   isGoogleAuthConfigured,
   logoutAuthSession,
+  passkeyLoginOptions,
+  passkeyLoginVerify,
   requestEmailOtp,
   verifyEmailOtp as verifyEmailOtpApi
 } from '@/lib/api'
@@ -39,6 +45,7 @@ type AuthContextValue = {
   isConfigured: boolean
   signInWithGoogle: () => Promise<void>
   signInWithApple: () => Promise<void>
+  signInWithPasskey: () => Promise<void>
   sendEmailOtp: (email: string, turnstileToken: string) => Promise<void>
   verifyEmailOtp: (email: string, token: string) => Promise<void>
   signOut: () => Promise<void>
@@ -51,6 +58,13 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 function toAuthUser(user: SupabaseUser): AuthUser | null {
   if (!user.email) return null
   return { id: user.id, email: user.email }
+}
+
+function isWebAuthnAbort(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    (error.name === 'NotAllowedError' || error.name === 'AbortError')
+  )
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -139,6 +153,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           options: { redirectTo: window.location.origin }
         })
         if (error) throw error
+        completeOnboarding()
+      },
+      signInWithPasskey: async () => {
+        if (!isAuthConfigured()) {
+          throw new Error('Passkey sign-in is not configured')
+        }
+        if (!browserSupportsWebAuthn()) {
+          throw new Error('Passkeys aren’t supported in this browser')
+        }
+
+        const options = await passkeyLoginOptions()
+        let credential
+        try {
+          credential = await startAuthentication({ optionsJSON: options })
+        } catch (err) {
+          if (isWebAuthnAbort(err)) {
+            throw new Error('Passkey sign-in was cancelled')
+          }
+          throw err
+        }
+
+        const next = await passkeyLoginVerify({ credential })
+        setSession(next)
         completeOnboarding()
       },
       sendEmailOtp: async (email: string, turnstileToken: string) => {

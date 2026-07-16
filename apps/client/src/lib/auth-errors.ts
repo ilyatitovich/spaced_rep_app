@@ -27,6 +27,27 @@ export function getAuthErrorMessage(error: unknown): string {
     return 'Invalid or expired code. Request a new one.'
   }
 
+  if (code === 'CHALLENGE_INVALID') {
+    return 'Passkey challenge expired. Please try again.'
+  }
+
+  if (
+    code === 'PASSKEY_VERIFY_FAILED' ||
+    code === 'PASSKEY_NOT_FOUND' ||
+    code === 'PASSKEY_REVOKED' ||
+    code === 'PASSKEY_COUNTER_INVALID'
+  ) {
+    return 'Passkey sign-in failed. Try again or use another method.'
+  }
+
+  if (message.includes('cancelled')) {
+    return error.message
+  }
+
+  if (message.includes('aren’t supported') || message.includes("aren't supported")) {
+    return 'Passkeys aren’t supported in this browser.'
+  }
+
   if (message.includes('expired')) {
     return 'Code expired. Request a new one.'
   }

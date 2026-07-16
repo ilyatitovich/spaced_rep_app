@@ -9,6 +9,7 @@ import {
 import { AnimatePresence } from 'motion/react'
 import { useState } from 'react'
 
+import AccountSecuritySection from '../account-security'
 import {
   AuthMethods,
   BackButton,
@@ -90,6 +91,8 @@ export default function AccountScreen({ isOpen }: AccountScreenProps) {
                   Last synced: {formatSyncTime(lastSyncedAt)}
                 </span>
               </div>
+
+              <AccountSecuritySection />
 
               <button
                 onClick={signOut}

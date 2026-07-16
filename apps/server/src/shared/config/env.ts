@@ -49,7 +49,24 @@ const envSchema = z.object({
     .string()
     .min(1, 'TURNSTILE_SECRET_KEY is required'),
   RESEND_API_KEY: z.string().min(1, 'RESEND_API_KEY is required'),
-  EMAIL_FROM: z.string().min(1, 'EMAIL_FROM is required')
+  EMAIL_FROM: z.string().min(1, 'EMAIL_FROM is required'),
+  WEBAUTHN_RP_ID: z.string().min(1, 'WEBAUTHN_RP_ID is required'),
+  WEBAUTHN_RP_NAME: z.string().min(1, 'WEBAUTHN_RP_NAME is required'),
+  WEBAUTHN_ORIGIN: z
+    .string()
+    .min(1, 'WEBAUTHN_ORIGIN is required')
+    .transform(value =>
+      value
+        .split(',')
+        .map(origin => origin.trim())
+        .filter(Boolean)
+    )
+    .pipe(z.array(z.string().url()).min(1)),
+  WEBAUTHN_CHALLENGE_TTL_SECONDS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(60)
 })
 
 const parsed = envSchema.safeParse(process.env)
