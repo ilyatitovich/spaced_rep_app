@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "pnpm install --filter spaced_rep_pwa_client...",
+  "buildCommand": "pnpm --filter spaced_rep_pwa_client build",
+  "outputDirectory": "apps/client/dist",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
+  "ignoreCommand": "git diff HEAD^ HEAD --quiet -- apps/client"
+}
