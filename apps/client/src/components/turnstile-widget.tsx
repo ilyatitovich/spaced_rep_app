@@ -7,8 +7,9 @@ const SCRIPT_SRC =
 type TurnstileApi = {
   render: (
     el: HTMLElement,
-    options: {
+      options: {
       sitekey: string
+      size?: 'normal' | 'compact' | 'flexible' | 'invisible'
       callback: (token: string) => void
       'expired-callback'?: () => void
       'error-callback'?: () => void
@@ -66,6 +67,7 @@ export default function TurnstileWidget({ onToken }: TurnstileWidgetProps) {
         if (cancelled || !containerRef.current || !window.turnstile) return
         widgetIdRef.current = window.turnstile.render(containerRef.current, {
           sitekey: siteKey,
+          size: 'invisible',
           callback: token => onTokenRef.current(token),
           'expired-callback': () => onTokenRef.current(null),
           'error-callback': () => {
@@ -96,9 +98,9 @@ export default function TurnstileWidget({ onToken }: TurnstileWidgetProps) {
   }
 
   return (
-    <div className="flex flex-col items-center gap-2">
-      <div ref={containerRef} />
+    <>
+      <div ref={containerRef} className="hidden" aria-hidden="true" />
       {error && <p className="text-red-600 text-sm text-center">{error}</p>}
-    </div>
+    </>
   )
 }
