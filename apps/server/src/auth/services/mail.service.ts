@@ -1,4 +1,9 @@
 import { Resend } from 'resend'
+import {
+  brand,
+  renderOtpEmailHtml,
+  renderOtpEmailText
+} from '../../emails/index.js'
 import { env } from '../../shared/config/env.js'
 import { BadGatewayError } from '../../shared/lib/errors.js'
 import { getRedis } from '../../shared/lib/redis.js'
@@ -26,26 +31,19 @@ export async function sendOtpEmail(input: {
     return
   }
 
-  const minutes = Math.max(1, Math.round(input.expiresInSeconds / 60))
-  const text = [
-    `Your login code is ${input.code}.`,
-    `It expires in ${minutes} minute${minutes === 1 ? '' : 's'}.`,
-    '',
-    'If you did not request this code, you can ignore this email.'
-  ].join('\n')
-
-  const html = `
-    <p>Your login code is <strong style="font-size:1.25em;letter-spacing:0.1em">${input.code}</strong>.</p>
-    <p>It expires in ${minutes} minute${minutes === 1 ? '' : 's'}.</p>
-    <p>If you did not request this code, you can ignore this email.</p>
-  `.trim()
+  const expiresInMinutes = Math.max(1, Math.round(input.expiresInSeconds / 60))
+  const emailParams = {
+    code: input.code,
+    expiresInMinutes,
+    to: input.to
+  }
 
   const { error } = await resend.emails.send({
     from: env.EMAIL_FROM,
     to: [input.to],
-    subject: 'Your login code',
-    text,
-    html
+    subject: `Your ${brand.appName} login code`,
+    text: renderOtpEmailText(emailParams),
+    html: renderOtpEmailHtml(emailParams)
   })
 
   if (error) {
