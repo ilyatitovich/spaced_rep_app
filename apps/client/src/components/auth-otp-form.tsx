@@ -1,9 +1,9 @@
 import { ArrowLeft } from 'lucide-react'
-import type { ChangeEvent, FormEvent } from 'react'
 import { useEffect, useState } from 'react'
 
 import TurnstileWidget from './turnstile-widget'
 import { getAuthErrorMessage } from '@/lib'
+import { OTPInput, REGEXP_ONLY_DIGITS, type SlotProps } from 'input-otp'
 
 const OTP_LENGTH = 6
 const RESEND_COOLDOWN_SECONDS = 60
@@ -20,6 +20,21 @@ function maskEmail(email: string): string {
   if (!domain) return email
   const visible = local.slice(0, 1)
   return `${visible}${'*'.repeat(Math.max(local.length - 1, 1))}@${domain}`
+}
+
+function OtpSlot({ char, isActive, hasFakeCaret }: SlotProps) {
+  return (
+    <div
+      className={`relative w-11 h-14 flex items-center justify-center rounded-xl border text-2xl font-medium transition ${
+        isActive ? 'border-purple-600' : 'border-gray-300'
+      }`}
+    >
+      {char}
+      {hasFakeCaret && (
+        <div className="absolute w-px h-6 bg-purple-600 animate-pulse" />
+      )}
+    </div>
+  )
 }
 
 export default function AuthOtpForm({
@@ -44,26 +59,20 @@ export default function AuthOtpForm({
     return () => clearInterval(timer)
   }, [resendCooldown])
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const digits = e.target.value.replace(/\D/g, '').slice(0, OTP_LENGTH)
-    setCode(digits)
+  const handleChange = (value: string) => {
+    setCode(value)
     if (error) setError('')
   }
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
+  const handleComplete = async (value: string) => {
+    if (isLoading) return
     setError('')
-
-    if (!/^\d{6}$/.test(code)) {
-      setError('Please enter the 6-digit code')
-      return
-    }
-
     setIsLoading(true)
     try {
-      await onVerify(code)
+      await onVerify(value)
     } catch (err) {
       setError(getAuthErrorMessage(err))
+      setCode('')
     } finally {
       setIsLoading(false)
     }
@@ -82,6 +91,7 @@ export default function AuthOtpForm({
       setResendCooldown(RESEND_COOLDOWN_SECONDS)
       setTurnstileToken(null)
       setTurnstileKey(key => key + 1)
+      setCode('')
     } catch (err) {
       setError(getAuthErrorMessage(err))
       setTurnstileToken(null)
@@ -96,64 +106,65 @@ export default function AuthOtpForm({
       <div className="text-center mb-6 flex flex-col gap-2">
         <p className="text-2xl font-semibold text-slate-800">Enter your code</p>
         <p className="text-sm text-gray-600">
-          We sent a code to <span className="font-medium">{maskEmail(email)}</span>
+          We sent a code to{' '}
+          <span className="font-medium">{maskEmail(email)}</span>
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} noValidate className="space-y-4">
+      <div className="space-y-4">
         <div>
           <label htmlFor="auth-otp" className="sr-only">
             Verification code
           </label>
-          <input
+          <OTPInput
             id="auth-otp"
-            type="text"
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            pattern="[0-9]*"
             maxLength={OTP_LENGTH}
-            placeholder="123456"
             value={code}
             onChange={handleChange}
+            onComplete={handleComplete}
+            pattern={REGEXP_ONLY_DIGITS}
+            inputMode="numeric"
+            autoFocus
+            disabled={isLoading}
             aria-invalid={Boolean(error)}
             aria-describedby={error ? 'auth-otp-error' : undefined}
-            className="w-full p-4 rounded-xl border border-gray-300 focus:border-purple-600 focus:outline-none transition text-center text-2xl tracking-[0.5em] font-medium"
+            containerClassName="flex justify-center gap-2 has-[:disabled]:opacity-50"
+            render={({ slots }) => (
+              <>
+                {slots.map((slot, idx) => (
+                  <OtpSlot key={idx} {...slot} />
+                ))}
+              </>
+            )}
           />
-          {error && (
+          {isLoading && (
+            <p className="text-sm text-gray-500 mt-3 text-center flex items-center justify-center gap-2">
+              <span className="w-4 h-4 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
+              Verifying...
+            </p>
+          )}
+          {error && !isLoading && (
             <p
               id="auth-otp-error"
-              className="text-red-600 text-sm mt-2 text-center"
+              className="text-red-600 text-sm mt-3 text-center"
             >
               {error}
             </p>
           )}
         </div>
-
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="w-full bg-black active:bg-purple-700 font-medium py-4 rounded-xl flex items-center justify-center gap-3 transition-all text-base text-white disabled:opacity-50"
-        >
-          {isLoading ? (
-            <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-          ) : (
-            'Verify'
-          )}
-        </button>
-      </form>
+      </div>
 
       <div className="mt-4 flex flex-col items-center gap-3">
         {resendCooldown <= 0 && (
-          <TurnstileWidget
-            key={turnstileKey}
-            onToken={setTurnstileToken}
-          />
+          <TurnstileWidget key={turnstileKey} onToken={setTurnstileToken} />
         )}
         <button
           type="button"
           onClick={handleResend}
           disabled={
-            resendCooldown > 0 || isResending || (resendCooldown <= 0 && !turnstileToken)
+            resendCooldown > 0 ||
+            isResending ||
+            (resendCooldown <= 0 && !turnstileToken)
           }
           className="text-sm font-medium text-purple-600 active:text-purple-700 transition-colors disabled:text-slate-400"
         >

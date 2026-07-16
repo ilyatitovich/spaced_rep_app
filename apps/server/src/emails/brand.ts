@@ -1,4 +1,3 @@
-/** Mirrors apps/client/src/styles/index.css design tokens. */
 export const brand = {
   black: '#242424',
   gray: '#808080',
