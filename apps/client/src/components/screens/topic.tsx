@@ -17,7 +17,7 @@ import {
 } from '@/components'
 import { getToday, LEVELS } from '@/lib'
 import { Topic, Card } from '@/models'
-import { getTopicById } from '@/services'
+import { getTopicById, subscribeSyncData } from '@/services'
 
 type TopicPageProps = {
   isOpen: boolean
@@ -61,6 +61,13 @@ export default function TopicScreen({
 
     fetchTopic()
   }, [topicId, isTest, fetchTopic])
+
+  useEffect(() => {
+    if (!isOpen || !topicId) return
+    return subscribeSyncData(() => {
+      void fetchTopic()
+    })
+  }, [isOpen, topicId, fetchTopic])
 
   const handleOpenAddCard = (): void => {
     setSearchParams(prev => {

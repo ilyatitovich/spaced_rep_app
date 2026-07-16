@@ -4,6 +4,10 @@ import { env } from './shared/config/env.js'
 import { logger } from './shared/lib/logger.js'
 import { disconnectPrisma } from './shared/lib/prisma.js'
 import { connectRedis, getRedis } from './shared/lib/redis.js'
+import {
+  broadcastGracefulShutdown,
+  createSyncWss
+} from './sync/ws.handler.js'
 
 const app = createApp()
 let server: Server | null = null
@@ -15,6 +19,7 @@ async function main() {
       `Server is running on port ${env.PORT} in ${env.NODE_ENV} mode`
     )
   })
+  createSyncWss(server)
 }
 
 void main().catch(err => {
@@ -24,6 +29,8 @@ void main().catch(err => {
 
 function shutdown(signal: string) {
   logger.info(`${signal} received, shutting down gracefully`)
+  broadcastGracefulShutdown('server_restart')
+
   const closeHttp = server
     ? new Promise<void>((resolve, reject) => {
         server!.close(err => (err ? reject(err) : resolve()))

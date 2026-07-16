@@ -70,6 +70,7 @@ services:
       - ./apps/server/prisma.config.ts:/app/apps/server/prisma.config.ts
       - ./apps/server/package.json:/app/apps/server/package.json
       - ./apps/server/tsconfig.json:/app/apps/server/tsconfig.json
+      - ./packages/sync-protocol:/app/packages/sync-protocol
     depends_on:
       postgres:
         condition: service_healthy

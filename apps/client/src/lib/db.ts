@@ -1,5 +1,5 @@
 const DB_NAME = 'spacedRepApp'
-const DB_VERSION = 2
+const DB_VERSION = 3
 export const STORES = {
   TOPICS: 'topics',
   CARDS: 'cards',
@@ -13,6 +13,7 @@ function openDatabase(): Promise<IDBDatabase> {
 
     request.onupgradeneeded = event => {
       const db = (event.target as IDBOpenDBRequest).result
+      const tx = (event.target as IDBOpenDBRequest).transaction
 
       if (!db.objectStoreNames.contains(STORES.TOPICS)) {
         const topicStore = db.createObjectStore(STORES.TOPICS, {
@@ -33,6 +34,10 @@ function openDatabase(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(STORES.SYNC_META)) {
         db.createObjectStore(STORES.SYNC_META, { keyPath: 'key' })
       }
+
+      // v3: queue items may gain opId/attempts/nextRetryAt — no schema change needed
+      // (IndexedDB is schemaless for object properties). Bump version for migration hook.
+      void tx
     }
 
     request.onsuccess = () => resolve(request.result)

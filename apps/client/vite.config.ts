@@ -72,7 +72,14 @@ export default defineConfig({
   plugins: [react(), svgr(), tailwindcss(), VitePWA(pwaOptions)],
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src')
+      '@': resolve(__dirname, 'src'),
+      '@spaced-rep/sync-protocol': resolve(
+        __dirname,
+        '../../packages/sync-protocol/src/index.ts'
+      )
     }
+  },
+  optimizeDeps: {
+    include: ['protobufjs']
   }
 })

@@ -7,7 +7,7 @@ import {
   RefreshCw
 } from 'lucide-react'
 import { AnimatePresence } from 'motion/react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import AccountSecuritySection from '../account-security'
 import {
@@ -20,6 +20,7 @@ import {
   Spinner
 } from '@/components'
 import { useAuth, useSync } from '@/contexts'
+import { getSyncDiagnostics } from '@/services'
 
 type AccountScreenProps = {
   isOpen: boolean
@@ -36,9 +37,30 @@ function formatSyncTime(timestamp: number | null): string {
 
 export default function AccountScreen({ isOpen }: AccountScreenProps) {
   const { user, isLoading, isConfigured, signOut } = useAuth()
-  const { status, lastSyncedAt, isOnline, syncNow } = useSync()
+  const {
+    status,
+    lastSyncedAt,
+    isOnline,
+    syncNow,
+    connection,
+    queueDepth,
+    deviceId,
+    lastError,
+    failedOps
+  } = useSync()
   const [isExportModalOpen, setIsExportModalOpen] = useState(false)
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
+  const [diagnostics, setDiagnostics] = useState<{
+    lastPulledAt: string
+    wsState: string
+  } | null>(null)
+
+  useEffect(() => {
+    if (!isOpen || !user) return
+    void getSyncDiagnostics().then(d =>
+      setDiagnostics({ lastPulledAt: d.lastPulledAt, wsState: d.wsState })
+    )
+  }, [isOpen, user, status, lastSyncedAt])
 
   const statusLabel = !isOnline
     ? 'Offline'
@@ -90,6 +112,30 @@ export default function AccountScreen({ isOpen }: AccountScreenProps) {
                 <span className="text-sm text-gray-500">
                   Last synced: {formatSyncTime(lastSyncedAt)}
                 </span>
+                <div className="text-xs text-gray-400 flex flex-col gap-1">
+                  <span>
+                    Connection: {connection}
+                    {diagnostics ? ` · WS ${diagnostics.wsState}` : ''}
+                  </span>
+                  <span>Queue: {queueDepth} pending</span>
+                  {deviceId && (
+                    <span className="truncate">Device: {deviceId}</span>
+                  )}
+                  {diagnostics && (
+                    <span className="truncate">
+                      Watermark: {diagnostics.lastPulledAt}
+                    </span>
+                  )}
+                  {lastError && (
+                    <span className="text-red-400">Error: {lastError}</span>
+                  )}
+                  {failedOps.length > 0 && (
+                    <span className="text-amber-600">
+                      {failedOps.length} failed op
+                      {failedOps.length === 1 ? '' : 's'} (dead-letter)
+                    </span>
+                  )}
+                </div>
               </div>
 
               <AccountSecuritySection />

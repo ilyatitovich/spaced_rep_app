@@ -5,4 +5,5 @@ allowBuilds:
   '@prisma/engines': true
   esbuild: true
   prisma: true
+  protobufjs: true
   unrs-resolver: true

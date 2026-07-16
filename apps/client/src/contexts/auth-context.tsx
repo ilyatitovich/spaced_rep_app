@@ -36,7 +36,7 @@ import {
   googleRedirectUri
 } from '@/lib/pkce'
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
-import { setSyncUser } from '@/services'
+import { setSyncUser, initialSync } from '@/services'
 
 type AuthContextValue = {
   session: AuthSession | null
@@ -116,10 +116,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setSyncUser(userId)
-    // TODO: re-enable when server sync is ready
-    // if (userId) {
-    //   void initialSync(userId)
-    // }
+    if (userId) {
+      void initialSync(userId)
+    }
   }, [userId])
 
   const value = useMemo<AuthContextValue>(() => {

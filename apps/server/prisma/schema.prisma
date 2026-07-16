@@ -49,6 +49,7 @@ model User {
   topics           Topic[]
   cards            Card[]
   syncDevices      SyncDevice[]
+  syncOperations   SyncOperation[]
   sessions         Session[]
   passkeys         Passkey[]
   oauthIdentities  OAuthIdentity[]
@@ -104,6 +105,20 @@ model SyncDevice {
 
   @@index([userId, lastSeenAt])
   @@map("sync_devices")
+}
+
+model SyncOperation {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  opId      String   @map("op_id")
+  deviceId  String   @map("device_id") @db.Uuid
+  appliedAt DateTime @default(now()) @map("applied_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, opId])
+  @@index([userId, appliedAt])
+  @@map("sync_operations")
 }
 
 model Session {

@@ -1,0 +1,154 @@
+syntax = "proto3";
+
+package sync.v1;
+
+// Protocol version: bump SyncEnvelope.version on breaking changes.
+// Field numbers are additive-only.
+
+enum SyncTable {
+  SYNC_TABLE_UNSPECIFIED = 0;
+  SYNC_TABLE_TOPICS = 1;
+  SYNC_TABLE_CARDS = 2;
+}
+
+enum SyncOperation {
+  SYNC_OPERATION_UNSPECIFIED = 0;
+  SYNC_OPERATION_UPSERT = 1;
+  SYNC_OPERATION_DELETE = 2;
+}
+
+enum OpAckStatus {
+  OP_ACK_STATUS_UNSPECIFIED = 0;
+  OP_ACK_STATUS_ACCEPTED = 1;
+  OP_ACK_STATUS_REJECTED = 2;
+  OP_ACK_STATUS_CONFLICT_RESOLVED = 3;
+}
+
+message TopicRecord {
+  string id = 1;
+  string title = 2;
+  int64 pivot = 3;
+  // JSON-encoded week array (Day | null)[]
+  string week_json = 4;
+  int64 next_update_date = 5;
+  int64 updated_at = 6;
+  optional int64 deleted_at = 7;
+}
+
+message CardRecord {
+  string id = 1;
+  string topic_id = 2;
+  int32 level = 3;
+  // JSON-encoded CardData (images as base64)
+  string data_json = 4;
+  optional int64 review_date = 5;
+  int64 updated_at = 6;
+  optional int64 deleted_at = 7;
+}
+
+message Mutation {
+  string op_id = 1;
+  string device_id = 2;
+  SyncTable table = 3;
+  string record_id = 4;
+  SyncOperation operation = 5;
+  int64 updated_at = 6;
+  oneof payload {
+    TopicRecord topic = 7;
+    CardRecord card = 8;
+  }
+}
+
+message SyncRecord {
+  oneof record {
+    TopicRecord topic = 1;
+    CardRecord card = 2;
+  }
+}
+
+message Hello {
+  string last_pulled_at = 1;
+  uint32 pending_op_count = 2;
+  uint32 protocol_version = 3;
+}
+
+message HelloAck {
+  int64 server_time = 1;
+  string missed_since = 2;
+  string session_id = 3;
+}
+
+message PushBatch {
+  repeated Mutation mutations = 1;
+}
+
+message RejectedOp {
+  string op_id = 1;
+  string code = 2;
+  string message = 3;
+  bool retryable = 4;
+}
+
+message PushAck {
+  repeated string accepted_op_ids = 1;
+  repeated RejectedOp rejected = 2;
+  repeated TopicConflictResolved conflicts = 3;
+}
+
+message PullDelta {
+  repeated SyncRecord records = 1;
+  string watermark = 2;
+  bool more = 3;
+}
+
+message PullRequest {
+  string since = 1;
+}
+
+message TopicConflictResolved {
+  string topic_id = 1;
+  string old_title = 2;
+  string new_title = 3;
+  string reason = 4;
+  int64 updated_at = 5;
+}
+
+message Ping {
+  int64 timestamp = 1;
+}
+
+message Pong {
+  int64 timestamp = 1;
+}
+
+message Error {
+  string code = 1;
+  string message = 2;
+  bool retryable = 3;
+}
+
+message GracefulClose {
+  string reason = 1;
+}
+
+message SyncEnvelope {
+  uint32 version = 1;
+  string message_id = 2;
+  optional string correlation_id = 3;
+  string device_id = 4;
+  int64 sent_at = 5;
+  optional string trace_id = 6;
+  oneof payload {
+    Hello hello = 10;
+    HelloAck hello_ack = 11;
+    PushBatch push_batch = 12;
+    PushAck push_ack = 13;
+    PullDelta pull_delta = 14;
+    PullRequest pull_request = 15;
+    TopicConflictResolved topic_conflict_resolved = 16;
+    Ping ping = 17;
+    Pong pong = 18;
+    Error error = 19;
+    GracefulClose graceful_close = 20;
+  }
+}
