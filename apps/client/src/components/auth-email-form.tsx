@@ -52,7 +52,7 @@ export default function AuthEmailForm({
   }
 
   return (
-    <div>
+    <div className="w-full px-4">
       <div className="text-center mb-6 flex flex-col gap-2">
         <p className="text-2xl font-semibold text-slate-800">
           Sign in with Email
@@ -89,10 +89,7 @@ export default function AuthEmailForm({
           )}
         </div>
 
-        <TurnstileWidget
-          key={turnstileKey}
-          onToken={setTurnstileToken}
-        />
+        <TurnstileWidget key={turnstileKey} onToken={setTurnstileToken} />
 
         <button
           type="submit"

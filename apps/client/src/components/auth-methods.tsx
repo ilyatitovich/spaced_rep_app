@@ -81,9 +81,7 @@ export default function AuthMethods() {
   const handleGoogle = () => {
     setLastUsedAuthMethod('google')
     void signInWithGoogle().catch(err => {
-      toast.error(
-        err instanceof Error ? err.message : 'Google sign-in failed.'
-      )
+      toast.error(err instanceof Error ? err.message : 'Google sign-in failed.')
     })
   }
 
@@ -195,7 +193,7 @@ export default function AuthMethods() {
   }
 
   return (
-    <div>
+    <div className="w-full px-4">
       <div className="text-center mb-6 flex flex-col gap-2">
         <p className="text-2xl font-semibold text-slate-800">
           Login to SpacedRepApp

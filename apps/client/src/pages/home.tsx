@@ -20,6 +20,7 @@ import {
 import { useSync } from '@/contexts'
 import { Topic } from '@/models'
 import { useTopicsStore } from '@/store'
+import AuthScreen from '@/components/screens/auth'
 
 const listVariants = {
   hidden: { opacity: 0 },
@@ -49,6 +50,7 @@ export default function HomePage() {
   const isCreating = searchParams.get('create') === 'true'
   const currentTopic = searchParams.get('topicId')
   const isAccountOpen = searchParams.get('account') === 'true'
+  const isAuthScreenOpen = searchParams.get('auth') === 'true'
 
   useEffect(() => {
     if (!isCreating && !currentTopic) {
@@ -185,6 +187,8 @@ export default function HomePage() {
         topicId={currentTopic ?? ''}
         onClose={() => setSearchParams({})}
       />
+
+      <AuthScreen isOpen={isAuthScreenOpen} />
     </main>
   )
 }

@@ -139,14 +139,14 @@ export default function TopicSettings({
             className="border border-gray-300 p-4 rounded-xl flex gap-2 justify-center items-center"
             onClick={() => setIsImportModalOpen(true)}
           >
-            <Download />
+            <Download size={18} />
             <span>Import cards</span>
           </button>
           <button
             className="border border-gray-300 p-4 rounded-xl flex gap-2 justify-center items-center"
             onClick={() => setIsExportModalOpen(true)}
           >
-            <ArrowUpFromLine />
+            <ArrowUpFromLine size={18} />
             <span>Export topic</span>
           </button>
         </div>

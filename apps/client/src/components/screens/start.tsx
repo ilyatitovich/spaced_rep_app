@@ -14,7 +14,7 @@ export default function StartScreen({ onStart }: StartScreenProps) {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4">
       <div className="flex-1 flex flex-col pt-8 pb-12">
         <Logo />
 
@@ -34,6 +34,6 @@ export default function StartScreen({ onStart }: StartScreenProps) {
           Start Local App
         </button>
       </div>
-    </main>
+    </div>
   )
 }

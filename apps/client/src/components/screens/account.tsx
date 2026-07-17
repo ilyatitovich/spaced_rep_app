@@ -4,14 +4,15 @@ import {
   CloudOff,
   Download,
   LogOut,
-  RefreshCw
+  RefreshCw,
+  Lock,
+  TriangleAlert
 } from 'lucide-react'
 import { AnimatePresence } from 'motion/react'
 import { useEffect, useState } from 'react'
 
 import AccountSecuritySection from '../account-security'
 import {
-  AuthMethods,
   BackButton,
   ExportAppDataModal,
   Header,
@@ -21,6 +22,8 @@ import {
 } from '@/components'
 import { useAuth, useSync } from '@/contexts'
 import { getSyncDiagnostics } from '@/services'
+import { useSearchParams } from 'react-router'
+import toast from 'react-hot-toast'
 
 type AccountScreenProps = {
   isOpen: boolean
@@ -55,6 +58,8 @@ export default function AccountScreen({ isOpen }: AccountScreenProps) {
     wsState: string
   } | null>(null)
 
+  const [_, setSearchParams] = useSearchParams()
+
   useEffect(() => {
     if (!isOpen || !user) return
     void getSyncDiagnostics().then(d =>
@@ -69,6 +74,19 @@ export default function AccountScreen({ isOpen }: AccountScreenProps) {
       : status === 'error'
         ? 'Sync error'
         : 'Up to date'
+
+  const handleSignInOpen = () => {
+    if (!isOnline) {
+      toast('Server temporarily unavailable', {
+        icon: <TriangleAlert className="text-yellow-600" size={20} />
+      })
+      return
+    }
+    setSearchParams(prev => {
+      prev.set('auth', 'true')
+      return new URLSearchParams(prev)
+    })
+  }
 
   return (
     <Screen isOpen={isOpen}>
@@ -149,7 +167,13 @@ export default function AccountScreen({ isOpen }: AccountScreenProps) {
               </button>
             </>
           ) : (
-            <AuthMethods />
+            <button
+              className="border border-gray-300 p-4 rounded-xl flex gap-2 justify-center items-center"
+              onClick={handleSignInOpen}
+            >
+              <Lock size={18} />
+              Sign in
+            </button>
           )}
 
           <div className="flex flex-col gap-4">
@@ -158,14 +182,14 @@ export default function AccountScreen({ isOpen }: AccountScreenProps) {
               className="border border-gray-300 p-4 rounded-xl flex gap-2 justify-center items-center"
               onClick={() => setIsImportModalOpen(true)}
             >
-              <Download />
+              <Download size={18} />
               <span>Import all data</span>
             </button>
             <button
               className="border border-gray-300 p-4 rounded-xl flex gap-2 justify-center items-center"
               onClick={() => setIsExportModalOpen(true)}
             >
-              <ArrowUpFromLine />
+              <ArrowUpFromLine size={18} />
               <span>Export all data</span>
             </button>
           </div>
