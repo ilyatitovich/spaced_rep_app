@@ -1,4 +1,4 @@
-import { KeyRound, Mail } from 'lucide-react'
+import { KeyRound, Mail, TriangleAlert } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'react-hot-toast'
 import { browserSupportsWebAuthn } from '@simplewebauthn/browser'
@@ -8,6 +8,7 @@ import AuthOtpForm from './auth-otp-form'
 import { GoogleIcon } from './ui/icons/google'
 import { useAuth } from '@/contexts'
 import { getAuthErrorMessage } from '@/lib/auth-errors'
+import { AuthStep } from '@/types'
 
 type AuthMethodId = 'google' | 'email' | 'passkey'
 
@@ -65,13 +66,16 @@ function AuthMethodButton({
   )
 }
 
-type AuthStep = 'methods' | 'email' | 'otp'
+type AuthMethodsProps = {
+  step: AuthStep
+  onStepChange: (step: AuthStep) => void
+}
 
-export default function AuthMethods() {
+export default function AuthMethods({ step, onStepChange }: AuthMethodsProps) {
   // Lazy init: read synchronously on first render so the reorder happens
   // before paint, not after (avoids a visible button jump on mount).
   const [lastUsed] = useState<AuthMethodId | null>(getLastUsedAuthMethod)
-  const [step, setStep] = useState<AuthStep>('methods')
+
   const [pendingEmail, setPendingEmail] = useState('')
   const [passkeyLoading, setPasskeyLoading] = useState(false)
   const [passkeysSupported] = useState(() => browserSupportsWebAuthn())
@@ -87,12 +91,14 @@ export default function AuthMethods() {
 
   const handleEmail = () => {
     setLastUsedAuthMethod('email')
-    setStep('email')
+    onStepChange('email')
   }
 
   const handlePasskey = () => {
     if (!passkeysSupported) {
-      toast.error('Passkeys aren’t supported in this browser')
+      toast('Passkeys aren’t supported in this browser', {
+        icon: <TriangleAlert className="text-yellow-600" size={20} />
+      })
       return
     }
 
@@ -110,13 +116,13 @@ export default function AuthMethods() {
   const handleSendOtp = async (email: string, turnstileToken: string) => {
     await sendEmailOtp(email, turnstileToken)
     setPendingEmail(email)
-    setStep('otp')
+
     toast.success('Check your email for a code')
+    onStepChange('otp')
   }
 
   const handleVerifyOtp = async (token: string) => {
     await verifyEmailOtp(pendingEmail, token)
-    setStep('methods')
   }
 
   const handleResendOtp = async (turnstileToken: string) => {
@@ -176,7 +182,7 @@ export default function AuthMethods() {
     return (
       <AuthEmailForm
         onSubmit={handleSendOtp}
-        onBack={() => setStep('methods')}
+        onBack={() => onStepChange('methods')}
       />
     )
   }
@@ -187,7 +193,7 @@ export default function AuthMethods() {
         email={pendingEmail}
         onVerify={handleVerifyOtp}
         onResend={handleResendOtp}
-        onBack={() => setStep('email')}
+        onBack={() => onStepChange('email')}
       />
     )
   }
@@ -207,11 +213,6 @@ export default function AuthMethods() {
         {orderedMethods.map(method => (
           <div key={method.id}>{method.render(method.id === lastUsed)}</div>
         ))}
-        {!passkeysSupported && (
-          <p className="text-xs text-center text-gray-500">
-            Passkeys aren’t supported in this browser
-          </p>
-        )}
       </div>
     </div>
   )

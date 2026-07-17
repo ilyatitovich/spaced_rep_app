@@ -24,18 +24,10 @@ import { useAuth, useSync } from '@/contexts'
 import { getSyncDiagnostics } from '@/services'
 import { useSearchParams } from 'react-router'
 import toast from 'react-hot-toast'
+import { formatSyncTime } from '@/lib'
 
 type AccountScreenProps = {
   isOpen: boolean
-}
-
-function formatSyncTime(timestamp: number | null): string {
-  if (!timestamp) return 'Never'
-
-  return new Date(timestamp).toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit'
-  })
 }
 
 export default function AccountScreen({ isOpen }: AccountScreenProps) {
@@ -90,13 +82,13 @@ export default function AccountScreen({ isOpen }: AccountScreenProps) {
 
   return (
     <Screen isOpen={isOpen}>
-      <div className="h-full bg-background flex flex-col overflow-hidden">
+      <div className="h-full bg-background flex flex-col">
         <Header>
           <BackButton />
           <span className="font-bold">Account</span>
         </Header>
 
-        <div className="flex flex-col gap-8 px-4 mt-8">
+        <div className="flex flex-col gap-8 overflow-y-auto h-[92dvh] p-4 pb-30">
           {!isConfigured ? (
             <p className="text-center text-gray-500">
               Cloud sync is not configured for this build.
@@ -162,7 +154,7 @@ export default function AccountScreen({ isOpen }: AccountScreenProps) {
                 onClick={signOut}
                 className="border border-gray-300 p-4 rounded-xl flex gap-2 justify-center items-center text-red-500"
               >
-                <LogOut />
+                <LogOut size={18} />
                 <span>Sign out</span>
               </button>
             </>
