@@ -15,11 +15,11 @@ export default function LangSelect({
         value={lang}
         onChange={e => onChange(e.target.value as CodeLang)}
         className="
-          text-sm border border-gray-300 rounded-md
-          bg-white px-3 py-1 pr-8
+          text-sm border border-border rounded-md
+          bg-card px-3 py-1 pr-8
           outline-none
           appearance-none
-          focus:ring-1 focus:ring-purple-500
+          focus:ring-1 focus:ring-focus-ring
         "
       >
         <option value="ts">TypeScript</option>
@@ -33,7 +33,7 @@ export default function LangSelect({
         className="
           pointer-events-none
           absolute right-2 top-1/2 -translate-y-1/2
-          text-black
+          text-foreground
         "
       />
     </div>

@@ -50,7 +50,7 @@ export default function CodeEditor({
         </div>
       )}
       <CodeMirror
-        className="mt-4 border border-gray-200"
+        className="mt-4 border border-border"
         value={initialValue?.code ?? ''}
         height="auto"
         minHeight="50px"

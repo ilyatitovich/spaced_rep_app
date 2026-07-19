@@ -14,13 +14,13 @@ export default function TestButton({ todayLevels, onClick }: TestButtonProps) {
         w-2/3
         py-4
         text-center
-        text-white
+        text-primary-foreground
         font-semibold
         rounded-full
-        bg-gradient-to-br from-purple-600 to-purple-800
-        shadow-[0_8px_20px_rgba(168,85,247,0.4)]
+        bg-gradient-to-br from-primary to-primary-active
+        shadow-primary
         active:scale-95
-        active:shadow-[0_4px_12px_rgba(168,85,247,0.3)]
+        active:shadow-primary-active
         transition-all duration-300
         flex flex-col gap-2 items-center
       `}

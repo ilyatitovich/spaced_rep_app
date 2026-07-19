@@ -26,12 +26,12 @@ function OtpSlot({ char, isActive, hasFakeCaret }: SlotProps) {
   return (
     <div
       className={`relative w-11 h-14 flex items-center justify-center rounded-xl border text-2xl font-medium transition ${
-        isActive ? 'border-purple-600' : 'border-gray-300'
+        isActive ? 'border-primary' : 'border-border'
       }`}
     >
       {char}
       {hasFakeCaret && (
-        <div className="absolute w-px h-6 bg-purple-600 animate-pulse" />
+        <div className="absolute w-px h-6 bg-primary animate-pulse" />
       )}
     </div>
   )
@@ -104,8 +104,8 @@ export default function AuthOtpForm({
   return (
     <div>
       <div className="text-center mb-6 flex flex-col gap-2">
-        <p className="text-2xl font-semibold text-slate-800">Enter your code</p>
-        <p className="text-sm text-gray-600">
+        <p className="text-2xl font-semibold text-foreground">Enter your code</p>
+        <p className="text-sm text-foreground-muted">
           We sent a code to{' '}
           <span className="font-medium">{maskEmail(email)}</span>
         </p>
@@ -138,15 +138,15 @@ export default function AuthOtpForm({
             )}
           />
           {isLoading && (
-            <p className="text-sm text-gray-500 mt-3 text-center flex items-center justify-center gap-2">
-              <span className="w-4 h-4 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm text-foreground-muted mt-3 text-center flex items-center justify-center gap-2">
+              <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
               Verifying...
             </p>
           )}
           {error && !isLoading && (
             <p
               id="auth-otp-error"
-              className="text-red-600 text-sm mt-3 text-center"
+              className="text-danger text-sm mt-3 text-center"
             >
               {error}
             </p>
@@ -166,7 +166,7 @@ export default function AuthOtpForm({
             isResending ||
             (resendCooldown <= 0 && !turnstileToken)
           }
-          className="text-sm font-medium text-purple-600 active:text-purple-700 transition-colors disabled:text-slate-400"
+          className="text-sm font-medium text-primary active:text-primary-hover transition-colors disabled:text-foreground-subtle"
         >
           {resendCooldown > 0
             ? `Resend code in ${resendCooldown}s`
@@ -179,7 +179,7 @@ export default function AuthOtpForm({
       <button
         type="button"
         onClick={onBack}
-        className="w-full mt-4 py-2 flex items-center justify-center gap-2 text-sm font-medium text-slate-500 active:text-slate-700 transition-colors"
+        className="w-full mt-4 py-2 flex items-center justify-center gap-2 text-sm font-medium text-foreground-muted active:text-foreground transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
         Change email

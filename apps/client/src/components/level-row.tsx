@@ -14,9 +14,9 @@ export default function LevelRow({
   let leftContent = (
     <>
       <span className={`w-2 h-2 rounded-full bg-lvl-${levelId}`}></span>
-      <span className="flex flex-col text-black text-left">
+      <span className="flex flex-col text-foreground text-left">
         <span>{`Level ${levelId}`}</span>
-        <span className="text-gray-500 text-sm">
+        <span className="text-foreground-muted text-sm">
           {levelId === 1
             ? 'Everyday'
             : `Every ${Math.pow(2, levelId) / 2} days`}
@@ -40,13 +40,13 @@ export default function LevelRow({
   }
 
   return (
-    <li className="py-3.5 border-b border-gray-200 last:border-b-0">
+    <li className="py-3.5 border-b border-border last:border-b-0">
       <button
         onClick={onLevelOpen}
         className="w-full flex justify-between items-center"
       >
         <span className="flex items-center gap-3 text-lg">{leftContent}</span>
-        <span className="flex items-center gap-3 text-gray-500">
+        <span className="flex items-center gap-3 text-foreground-muted">
           <span className="text-lg">{`${cardsNumber} card${cardsNumber === 1 ? '' : 's'}`}</span>
           <ChevronRight className="text-sm" />
         </span>

@@ -45,7 +45,7 @@ function AuthMethodButton({
   return (
     <div className="relative">
       {isLastUsed && (
-        <span className="absolute -top-2 right-4 px-2 py-0.5 text-[10px] font-medium bg-purple-600 text-white rounded-full">
+        <span className="absolute -top-2 right-4 px-2 py-0.5 text-[10px] font-medium bg-primary text-primary-foreground rounded-full">
           Last Used
         </span>
       )}
@@ -55,8 +55,8 @@ function AuthMethodButton({
         disabled={disabled || isLoading}
         className={
           isLastUsed
-            ? 'w-full bg-black active:bg-purple-700 font-medium py-4 rounded-xl flex items-center justify-center gap-3 transition-all text-base text-white disabled:opacity-50'
-            : 'w-full border border-slate-300 active:bg-slate-100 font-medium py-4 rounded-xl flex items-center justify-center gap-3 transition-all text-base text-slate-700 disabled:opacity-50'
+            ? 'w-full bg-foreground active:bg-primary font-medium py-4 rounded-xl flex items-center justify-center gap-3 transition-all text-base text-background disabled:opacity-50'
+            : 'w-full border border-border active:bg-secondary font-medium py-4 rounded-xl flex items-center justify-center gap-3 transition-all text-base text-foreground disabled:opacity-50'
         }
       >
         {icon}
@@ -97,7 +97,7 @@ export default function AuthMethods({ step, onStepChange }: AuthMethodsProps) {
   const handlePasskey = () => {
     if (!passkeysSupported) {
       toast('Passkeys aren’t supported in this browser', {
-        icon: <TriangleAlert className="text-yellow-600" size={20} />
+        icon: <TriangleAlert className="text-warning" size={20} />
       })
       return
     }
@@ -201,10 +201,10 @@ export default function AuthMethods({ step, onStepChange }: AuthMethodsProps) {
   return (
     <div className="w-full px-4">
       <div className="text-center mb-6 flex flex-col gap-2">
-        <p className="text-2xl font-semibold text-slate-800">
+        <p className="text-2xl font-semibold text-foreground">
           Login to SpacedRepApp
         </p>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-foreground-muted">
           Sync your topics and flashcards across devices
         </p>
       </div>

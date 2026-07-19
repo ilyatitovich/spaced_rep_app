@@ -8,7 +8,7 @@ export default function QrCode({
   size?: number
 }) {
   return (
-    <div className="rounded-lg border border-slate-200 p-2">
+    <div className="rounded-lg border border-border p-2">
       <QRCodeSVG value={url} size={size} />
     </div>
   )

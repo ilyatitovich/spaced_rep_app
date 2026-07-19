@@ -10,7 +10,12 @@ export default function App() {
       <SyncProvider>
         <Toaster
           toastOptions={{
-            success: { iconTheme: { primary: '#00a63e', secondary: 'white' } }
+            success: {
+              iconTheme: {
+                primary: 'var(--color-success)',
+                secondary: 'var(--color-success-foreground)'
+              }
+            }
           }}
         />
         <RouterProvider router={router} />

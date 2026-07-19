@@ -13,14 +13,14 @@ export function SettingsGroup({
   return (
     <div className="flex flex-col gap-2">
       {label && (
-        <span className="px-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
+        <span className="px-1 text-xs font-semibold uppercase tracking-wide text-foreground-muted">
           {label}
         </span>
       )}
-      <div className="border border-gray-300 rounded-xl overflow-hidden divide-y divide-gray-300">
+      <div className="bg-card border border-border rounded-xl overflow-hidden divide-y divide-border">
         {children}
       </div>
-      {footer && <p className="px-1 text-xs text-gray-500">{footer}</p>}
+      {footer && <p className="px-1 text-xs text-foreground-muted">{footer}</p>}
     </div>
   )
 }
@@ -46,22 +46,22 @@ export function SettingsNavRow({
       onClick={onClick}
       disabled={disabled}
       className={`w-full flex items-center gap-3 px-4 py-3.5 text-left disabled:opacity-50 ${
-        destructive ? 'text-red-500' : ''
+        destructive ? 'text-danger' : ''
       }`}
     >
       {icon && (
-        <span className="shrink-0 text-gray-600 [&_svg]:w-[18px] [&_svg]:h-[18px]">
+        <span className="shrink-0 text-foreground-muted [&_svg]:w-[18px] [&_svg]:h-[18px]">
           {icon}
         </span>
       )}
       <span className="flex-1 min-w-0 font-medium">{label}</span>
       {value && (
-        <span className="shrink-0 text-sm text-gray-500 truncate max-w-[40%]">
+        <span className="shrink-0 text-sm text-foreground-muted truncate max-w-[40%]">
           {value}
         </span>
       )}
       {onClick && !disabled && (
-        <ChevronRight size={18} className="shrink-0 text-gray-400" />
+        <ChevronRight size={18} className="shrink-0 text-foreground-subtle" />
       )}
     </button>
   )
@@ -89,7 +89,7 @@ export function SettingsToggleRow({
       <div className="flex-1 min-w-0">
         <span className="font-medium block">{label}</span>
         {description && (
-          <span className="text-xs text-gray-500 block mt-0.5">
+          <span className="text-xs text-foreground-muted block mt-0.5">
             {description}
           </span>
         )}
@@ -130,7 +130,7 @@ export function SettingsSelectRow({
         value={value}
         disabled={disabled}
         onChange={e => onChange(e.target.value)}
-        className="text-sm text-gray-600 bg-transparent border-0 outline-none max-w-[55%] text-right appearance-none"
+        className="text-sm text-foreground-muted bg-transparent border-0 outline-none max-w-[55%] text-right appearance-none"
       >
         {options.map(opt => (
           <option key={opt.value} value={opt.value}>
@@ -156,7 +156,7 @@ export function SettingsSegmentedRow({
   return (
     <div className="flex flex-col gap-2.5 px-4 py-3.5">
       <span className="font-medium">{label}</span>
-      <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+      <div className="flex rounded-lg border border-border overflow-hidden">
         {options.map(opt => {
           const selected = opt.value === value
           return (
@@ -166,8 +166,8 @@ export function SettingsSegmentedRow({
               onClick={() => onChange(opt.value)}
               className={`flex-1 py-2 text-sm font-medium transition-colors ${
                 selected
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-transparent text-gray-600'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-transparent text-foreground-muted'
               }`}
             >
               {opt.label}
@@ -198,7 +198,7 @@ export function SettingsActionRow({
       onClick={onClick}
       disabled={disabled}
       className={`w-full flex items-center justify-center gap-2 px-4 py-3.5 font-medium disabled:opacity-50 ${
-        destructive ? 'text-red-500' : 'text-purple-600'
+        destructive ? 'text-danger' : 'text-primary'
       }`}
     >
       {icon}
@@ -216,7 +216,7 @@ export function SettingsInfoRow({
 }) {
   return (
     <div className="flex items-center gap-3 px-4 py-3.5">
-      <span className="flex-1 text-gray-600">{label}</span>
+      <span className="flex-1 text-foreground-muted">{label}</span>
       <span className="text-sm font-medium text-right max-w-[55%] truncate">
         {value}
       </span>

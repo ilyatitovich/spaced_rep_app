@@ -13,7 +13,7 @@ function ShareIcon() {
   return (
     <svg
       viewBox="0 0 24 24"
-      className="inline-block h-5 w-5 align-text-bottom text-purple-600"
+      className="inline-block h-5 w-5 align-text-bottom text-primary"
       fill="none"
       stroke="currentColor"
       strokeWidth={2}
@@ -38,19 +38,19 @@ export default function InstallAppSheet({
     return (
       <AnimatePresence>
         <motion.div
-          className="fixed bottom-4 left-4 right-4 z-50 flex items-center gap-3 rounded-2xl bg-white p-4 shadow-lg"
+          className="fixed bottom-4 left-4 right-4 z-50 flex items-center gap-3 rounded-2xl bg-card p-4 shadow-lg"
           initial={{ y: '110%' }}
           animate={{ y: 0 }}
           exit={{ y: '110%' }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         >
-          <p className="flex-1 text-sm text-gray-700">
+          <p className="flex-1 text-sm text-foreground">
             You might already have this installed — open it from your home
             screen for the best experience.
           </p>
           <button
             onClick={onDismissBanner}
-            className="shrink-0 rounded-xl bg-gray-200 px-4 py-2 text-sm active:scale-95"
+            className="shrink-0 rounded-xl bg-secondary text-foreground px-4 py-2 text-sm active:scale-95"
           >
             Got it
           </button>
@@ -69,7 +69,7 @@ export default function InstallAppSheet({
       {isOpen && (
         <>
           <motion.div
-            className="fixed inset-0 z-50 bg-black/40"
+            className="fixed inset-0 z-50 bg-background-overlay"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -77,7 +77,7 @@ export default function InstallAppSheet({
           />
 
           <motion.div
-            className="fixed bottom-4 left-4 right-4 z-50 rounded-3xl bg-white p-6"
+            className="fixed bottom-4 left-4 right-4 z-50 rounded-3xl bg-card p-6"
             initial={{ y: '110%' }}
             animate={{ y: 0 }}
             exit={{ y: '110%' }}
@@ -88,19 +88,19 @@ export default function InstallAppSheet({
                 <h2 className="mb-2 text-center text-xl font-semibold">
                   Install the app
                 </h2>
-                <p className="mb-6 text-center text-gray-600">
+                <p className="mb-6 text-center text-foreground-muted">
                   It&apos;s better to install for the best experience.
                 </p>
                 <div className="flex gap-3">
                   <button
                     onClick={onDismiss}
-                    className="flex-1 rounded-xl bg-gray-200 py-3 active:scale-95"
+                    className="flex-1 rounded-xl bg-secondary text-foreground py-3 active:scale-95"
                   >
                     Maybe later
                   </button>
                   <button
                     onClick={onInstall}
-                    className="flex-1 rounded-xl bg-purple-600 py-3 font-medium text-white active:scale-95"
+                    className="flex-1 rounded-xl bg-primary py-3 font-medium text-primary-foreground active:scale-95"
                   >
                     Install
                   </button>
@@ -113,10 +113,10 @@ export default function InstallAppSheet({
                 <h2 className="mb-2 text-center text-xl font-semibold">
                   Add to Home Screen
                 </h2>
-                <p className="mb-4 text-center text-gray-600">
+                <p className="mb-4 text-center text-foreground-muted">
                   Install this app for the best experience.
                 </p>
-                <ol className="mb-6 space-y-3 text-sm text-gray-700">
+                <ol className="mb-6 space-y-3 text-sm text-foreground">
                   <li>
                     1. Tap the Share icon <ShareIcon /> in the Safari toolbar.
                   </li>
@@ -130,7 +130,7 @@ export default function InstallAppSheet({
                 </ol>
                 <button
                   onClick={onDismiss}
-                  className="w-full rounded-xl bg-gray-200 py-3 active:scale-95"
+                  className="w-full rounded-xl bg-secondary text-foreground py-3 active:scale-95"
                 >
                   Got it
                 </button>
@@ -142,13 +142,13 @@ export default function InstallAppSheet({
                 <h2 className="mb-2 text-center text-xl font-semibold">
                   Open in Safari to install
                 </h2>
-                <p className="mb-6 text-center text-gray-600">
+                <p className="mb-6 text-center text-foreground-muted">
                   Installing to your home screen is only available in Safari on
                   iOS. Open this page in Safari to add the app.
                 </p>
                 <button
                   onClick={onDismiss}
-                  className="w-full rounded-xl bg-gray-200 py-3 active:scale-95"
+                  className="w-full rounded-xl bg-secondary text-foreground py-3 active:scale-95"
                 >
                   Maybe later
                 </button>

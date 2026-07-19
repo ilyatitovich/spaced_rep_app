@@ -31,7 +31,7 @@ export default function SelectionModeFooter({
         <button
           onClick={() => setIsConfirmDeleteModalOpen(true)}
           disabled={countItemsForDelete === 0}
-          className="flex flex-col justify-center items-center gap-2 disabled:text-gray-500"
+          className="flex flex-col justify-center items-center gap-2 disabled:text-foreground-subtle"
         >
           <span>
             <Trash />

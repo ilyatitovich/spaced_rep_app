@@ -16,7 +16,7 @@ export default function Button({
 }: ButtonProps) {
   const baseClasses = `
     inline-flex items-center justify-center
-    font-medium ${disabled ? 'text-gray-200 cursor-not-allowed' : 'text-purple-600'}
+    font-medium ${disabled ? 'text-foreground-subtle cursor-not-allowed' : 'text-primary'}
     bg-transparent
   `
 

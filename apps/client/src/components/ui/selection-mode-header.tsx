@@ -33,7 +33,7 @@ export default function SelectionModeHeader({
       </span>
       <button onClick={() => handleSelectAll(!isAllSelected)}>
         <ListCheck
-          className={`${isAllSelected ? 'text-purple-600' : 'text-black'}`}
+          className={`${isAllSelected ? 'text-primary' : 'text-foreground'}`}
         />
       </button>
     </motion.div>

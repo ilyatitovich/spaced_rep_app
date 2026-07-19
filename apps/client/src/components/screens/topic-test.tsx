@@ -164,14 +164,14 @@ export default function TestScreen({
       )}
 
       {!isDone && (
-        <div className="w-full mt-4 flex justify-evenly gap-1.5 text-white font-semibold">
+        <div className="w-full mt-4 flex justify-evenly gap-1.5 font-semibold">
           {isFlipped ? (
             <div className="flex gap-6">
               <AnswerButton isCorrect={false} onAnswer={handleAnswer} />
               <AnswerButton isCorrect={true} onAnswer={handleAnswer} />
             </div>
           ) : (
-            <span className="text-gray-400 text-sm">
+            <span className="text-foreground-subtle text-sm">
               tap on card to reweal answer
             </span>
           )}

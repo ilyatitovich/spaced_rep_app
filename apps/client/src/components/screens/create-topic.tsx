@@ -91,13 +91,13 @@ export default function CreateTopic({ isOpen, onCreate }: CreateTopicProps) {
               value={title}
               onChange={handleTitleChange}
               placeholder="e.g. Spanish Basics"
-              className="w-full p-4 rounded-xl border border-gray-300 focus:border-purple-600 focus:outline-none transition"
+              className="w-full p-4 rounded-xl border border-border focus:border-input-focus focus:outline-none transition"
             />
 
-            {error && <span className="text-red-600 text-sm">{error}</span>}
+            {error && <span className="text-danger text-sm">{error}</span>}
           </div>
 
-          <p className="text-gray-500 text-sm">
+          <p className="text-foreground-muted text-sm">
             Choose a short, clear name. This will be shown in your topics list.
           </p>
         </form>

@@ -118,7 +118,7 @@ export default function LevelScreen({
 
       <div className="flex flex-col overflow-y-auto h-[calc(100dvh-60px)]">
         <div className="w-full text-center p-4">
-          <p className="text-[16px] text-gray-900">
+          <p className="text-[16px] text-foreground">
             {`${levelCards.length} card${levelCards.length === 1 ? '' : 's'}${['0', '8'].includes(currentLevelId) ? '' : `, next review: ${getReviewMessage(startDate, Number(currentLevelId))}`}`}
           </p>
         </div>
@@ -159,7 +159,7 @@ export default function LevelScreen({
         )}
 
         <div className="w-full p-4">
-          <p className="text-[12px] text-gray-600 whitespace-pre-line">
+          <p className="text-[12px] text-foreground-muted whitespace-pre-line">
             {getLevelDescription(currentLevelId)}
           </p>
         </div>

@@ -91,7 +91,7 @@ export default function TurnstileWidget({ onToken }: TurnstileWidgetProps) {
 
   if (!siteKey) {
     return (
-      <p className="text-red-600 text-sm text-center">
+      <p className="text-danger text-sm text-center">
         Turnstile is not configured.
       </p>
     )
@@ -100,7 +100,7 @@ export default function TurnstileWidget({ onToken }: TurnstileWidgetProps) {
   return (
     <>
       <div ref={containerRef} className="hidden" aria-hidden="true" />
-      {error && <p className="text-red-600 text-sm text-center">{error}</p>}
+      {error && <p className="text-danger text-sm text-center">{error}</p>}
     </>
   )
 }

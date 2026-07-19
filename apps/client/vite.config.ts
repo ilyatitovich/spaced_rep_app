@@ -27,8 +27,8 @@ const pwaOptions: Partial<VitePWAOptions> = {
       'An app for memorizing information using spaced repetition techniques',
     start_url: '/?utm_source=pwa',
     scope: '/',
-    theme_color: '#ffffff',
-    background_color: '#ffffff',
+    theme_color: '#f5f5f5',
+    background_color: '#f5f5f5',
     display: 'standalone',
     related_applications: [
       {

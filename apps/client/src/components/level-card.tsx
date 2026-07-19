@@ -92,8 +92,8 @@ export default function LevelCard({
 
   return (
     <button
-      className="relative p-3 w-full h-30 text-xs border-2 border-black
-                 rounded-2xl text-black bg-white active:scale-95 transition-transform ease-in-out duration-150 select-none"
+      className="relative p-3 w-full h-30 text-xs border-2 border-foreground
+                 rounded-2xl text-foreground bg-card active:scale-95 transition-transform ease-in-out duration-150 select-none"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onClick={handleClick}
@@ -105,13 +105,13 @@ export default function LevelCard({
       <div
         className={`absolute bottom-1 right-1 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
           isSelectionMode
-            ? `${isSelected ? 'bg-purple-600 border-purple-600' : 'bg-gray-300 border-gray-300'}  scale-100 opacity-100`
-            : 'bg-gray-300 border-gray-300 scale-0 opacity-0'
+            ? `${isSelected ? 'bg-primary border-primary' : 'bg-secondary border-border'}  scale-100 opacity-100`
+            : 'bg-secondary border-border scale-0 opacity-0'
         }`}
       >
         {isSelected && (
           <Check
-            className="w-4 h-4 text-white transition-transform duration-200"
+            className="w-4 h-4 text-primary-foreground transition-transform duration-200"
             strokeWidth={3}
           />
         )}

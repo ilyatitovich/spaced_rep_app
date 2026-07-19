@@ -130,7 +130,7 @@ export default function HomePage() {
           <Spinner />
         ) : topics.length === 0 ? (
           <div className="h-full flex items-center justify-center">
-            <div className="text-center text-gray-500">
+            <div className="text-center text-foreground-muted">
               <p>No topics found.</p>
               <p>Click the + button to create one!</p>
             </div>

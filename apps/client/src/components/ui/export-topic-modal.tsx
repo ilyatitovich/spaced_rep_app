@@ -46,7 +46,7 @@ export default function ExportTopicModal({
     <>
       {/* Background overlay */}
       <motion.div
-        className="fixed inset-0 bg-black/40 z-50"
+        className="fixed inset-0 bg-background-overlay z-50"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -55,7 +55,7 @@ export default function ExportTopicModal({
 
       {/* Modal */}
       <motion.div
-        className="fixed top-1/2 left-4 -translate-y-1/2 right-4 z-50 bg-white rounded-3xl p-6 flex flex-col gap-4"
+        className="fixed top-1/2 left-4 -translate-y-1/2 right-4 z-50 bg-card rounded-3xl p-6 flex flex-col gap-4"
         initial={{ opacity: 0, y: '20%' }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: '20%' }}
@@ -67,20 +67,20 @@ export default function ExportTopicModal({
         {isLoading && <Spinner />}
 
         {!isLoading && error && (
-          <p className="text-red-500 text-center">{error}</p>
+          <p className="text-danger text-center">{error}</p>
         )}
 
         {!isLoading && downloadUrl && (
           <a
             href={downloadUrl}
             download={fileName}
-            className="bg-purple-600 text-white w-full inline-block text-center py-4 rounded-xl"
+            className="bg-primary text-primary-foreground w-full inline-block text-center py-4 rounded-xl"
           >
             Download JSON
           </a>
         )}
 
-        <button className="text-gray-600" onClick={onClose}>
+        <button className="text-foreground-muted" onClick={onClose}>
           Close
         </button>
       </motion.div>

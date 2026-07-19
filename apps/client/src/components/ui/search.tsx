@@ -27,7 +27,7 @@ export default function Search({
 
   return (
     <div className="relative w-full px-4">
-      <div className="absolute h-full flex items-center justify-center left-7 top-1/2 -translate-y-1/2 text-gray-500">
+      <div className="absolute h-full flex items-center justify-center left-7 top-1/2 -translate-y-1/2 text-foreground-muted">
         <SearchIcon size={18} />
       </div>
       <input
@@ -35,7 +35,7 @@ export default function Search({
         value={internalValue}
         onChange={handleChange}
         placeholder={placeholder}
-        className="w-full py-3 px-10 rounded-lg border border-gray-300 focus:border-purple-600 focus:outline-none transition [&::-webkit-search-cancel-button]:hidden text-base"
+        className="w-full py-3 px-10 rounded-lg border border-border focus:border-input-focus focus:outline-none transition [&::-webkit-search-cancel-button]:hidden text-base"
       />
 
       {internalValue.length > 0 && (
@@ -47,7 +47,7 @@ export default function Search({
               absolute right-7 top-1/2 -translate-y-1/2
             "
         >
-          <X size={18} className="text-gray-600" />
+          <X size={18} className="text-foreground-muted" />
         </button>
       )}
     </div>

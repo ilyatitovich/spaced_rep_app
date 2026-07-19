@@ -121,6 +121,14 @@ export function applyThemeToDocument(theme: ThemePreference): void {
   const resolved = resolveTheme(theme)
   document.documentElement.dataset.theme = resolved
   document.documentElement.classList.toggle('dark', resolved === 'dark')
+
+  const meta = document.querySelector('meta[name="theme-color"]')
+  if (meta) {
+    meta.setAttribute(
+      'content',
+      resolved === 'dark' ? '#0f0f0f' : '#f5f5f5'
+    )
+  }
 }
 
 export { SETTINGS_LOCAL_KEY }

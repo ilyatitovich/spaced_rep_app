@@ -74,7 +74,7 @@ export default function SettingsScreen({ isOpen }: SettingsScreenProps) {
   const handleSignInOpen = () => {
     if (!isOnline) {
       toast('Server temporarily unavailable', {
-        icon: <TriangleAlert className="text-yellow-600" size={20} />
+        icon: <TriangleAlert className="text-warning" size={20} />
       })
       return
     }
@@ -107,20 +107,20 @@ export default function SettingsScreen({ isOpen }: SettingsScreenProps) {
 
         <div className="flex flex-col gap-6 overflow-y-auto h-[92dvh] p-4 pb-30">
           {!isConfigured ? (
-            <p className="text-center text-gray-500">
+            <p className="text-center text-foreground-muted">
               Cloud sync is not configured for this build.
             </p>
           ) : isLoading ? (
             <Spinner />
           ) : (
             <>
-              <div className="border border-gray-300 rounded-xl p-4 flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold text-lg shrink-0">
+              <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg shrink-0">
                   {initial}
                 </div>
                 <div className="flex-1 flex flex-col gap-1 min-w-0">
                   <p className="font-bold truncate">{displayName}</p>
-                  <p className="text-sm text-gray-500">{planLabel} plan</p>
+                  <p className="text-sm text-foreground-muted">{planLabel} plan</p>
                 </div>
               </div>
 
@@ -167,7 +167,7 @@ export default function SettingsScreen({ isOpen }: SettingsScreenProps) {
                   <button
                     type="button"
                     onClick={() => void signOut()}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3.5 font-medium text-red-500"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3.5 font-medium text-danger"
                   >
                     <LogOut size={18} />
                     Sign out
@@ -176,7 +176,7 @@ export default function SettingsScreen({ isOpen }: SettingsScreenProps) {
                   <button
                     type="button"
                     onClick={handleSignInOpen}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3.5 font-medium text-purple-600"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3.5 font-medium text-primary"
                   >
                     <Lock size={18} />
                     Sign in

@@ -43,7 +43,7 @@ export default function ImportAppDataModal({
     <>
       {/* Overlay */}
       <motion.div
-        className="fixed inset-0 bg-black/40 z-50"
+        className="fixed inset-0 bg-background-overlay z-50"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -52,7 +52,7 @@ export default function ImportAppDataModal({
 
       {/* Modal */}
       <motion.div
-        className="fixed top-1/2 left-4 -translate-y-1/2 right-4 z-50 bg-white rounded-3xl p-6 flex flex-col gap-4"
+        className="fixed top-1/2 left-4 -translate-y-1/2 right-4 z-50 bg-card rounded-3xl p-6 flex flex-col gap-4"
         initial={{ opacity: 0, y: '20%' }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: '20%' }}
@@ -62,7 +62,7 @@ export default function ImportAppDataModal({
         <h2 className="text-xl font-bold text-center">Import All Data</h2>
 
         {!isLoading && !message && !error && (
-          <label className="bg-purple-600 text-white w-full text-center py-4 rounded-xl cursor-pointer">
+          <label className="bg-primary text-primary-foreground w-full text-center py-4 rounded-xl cursor-pointer">
             Choose JSON
             <input
               type="file"
@@ -76,14 +76,14 @@ export default function ImportAppDataModal({
         {isLoading && <Spinner />}
 
         {!isLoading && message && (
-          <p className="text-green-600 text-center">{message}</p>
+          <p className="text-success text-center">{message}</p>
         )}
 
         {!isLoading && error && (
-          <p className="text-red-600 text-center">{error}</p>
+          <p className="text-danger text-center">{error}</p>
         )}
 
-        <button className="text-gray-600 w-full" onClick={onClose}>
+        <button className="text-foreground-muted w-full" onClick={onClose}>
           Close
         </button>
       </motion.div>

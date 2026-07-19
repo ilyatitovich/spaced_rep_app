@@ -84,7 +84,7 @@ export default function OAuthGoogleCallbackPage() {
   return (
     <div className="min-h-dvh flex flex-col items-center justify-center gap-4 px-4">
       <Spinner />
-      <p className="text-sm text-gray-600">{message}</p>
+      <p className="text-sm text-foreground-muted">{message}</p>
     </div>
   )
 }

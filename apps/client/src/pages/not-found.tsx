@@ -7,7 +7,7 @@ export default function NotFoundPage() {
         <h1 className="font-bold text-2xl">404 - Page Not Found</h1>
         <div>
           Go back to{' '}
-          <Link className="text-purple-600" to="/">
+          <Link className="text-primary" to="/">
             Start screen
           </Link>
         </div>

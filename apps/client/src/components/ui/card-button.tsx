@@ -48,9 +48,9 @@ export default function CardButton({
       disabled={isDisabled}
     >
       <span className="w-8 h-8 flex justify-center items-center border-2 rounded-full">
-        <Icon className="w-4 h-4 text-black" strokeWidth={3} />
+        <Icon className="w-4 h-4 text-foreground" strokeWidth={3} />
       </span>
-      <span className="text-black text-sm font-semibold">{label}</span>
+      <span className="text-foreground text-sm font-semibold">{label}</span>
     </button>
   )
 }

@@ -54,10 +54,10 @@ export default function AuthEmailForm({
   return (
     <div className="w-full px-4">
       <div className="text-center mb-6 flex flex-col gap-2">
-        <p className="text-2xl font-semibold text-slate-800">
+        <p className="text-2xl font-semibold text-foreground">
           Sign in with Email
         </p>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-foreground-muted">
           Enter your email and we&apos;ll send you a login code
         </p>
       </div>
@@ -77,12 +77,12 @@ export default function AuthEmailForm({
             onChange={handleChange}
             aria-invalid={Boolean(error)}
             aria-describedby={error ? 'auth-email-error' : undefined}
-            className="w-full p-4 rounded-xl border border-gray-300 focus:border-purple-600 focus:outline-none transition"
+            className="w-full p-4 rounded-xl border border-border focus:border-input-focus focus:outline-none transition"
           />
           {error && (
             <p
               id="auth-email-error"
-              className="text-red-600 text-sm mt-2 text-center"
+              className="text-danger text-sm mt-2 text-center"
             >
               {error}
             </p>
@@ -94,10 +94,10 @@ export default function AuthEmailForm({
         <button
           type="submit"
           disabled={isLoading || !turnstileToken}
-          className="w-full bg-black active:bg-purple-700 font-medium py-4 rounded-xl flex items-center justify-center gap-3 transition-all text-base text-white disabled:opacity-50"
+          className="w-full bg-foreground active:bg-primary font-medium py-4 rounded-xl flex items-center justify-center gap-3 transition-all text-base text-background disabled:opacity-50"
         >
           {isLoading ? (
-            <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            <span className="w-5 h-5 border-2 border-background border-t-transparent rounded-full animate-spin" />
           ) : (
             'Send code'
           )}
@@ -107,7 +107,7 @@ export default function AuthEmailForm({
       <button
         type="button"
         onClick={onBack}
-        className="w-full mt-4 py-2 flex items-center justify-center gap-2 text-sm font-medium text-slate-500 active:text-slate-700 transition-colors"
+        className="w-full mt-4 py-2 flex items-center justify-center gap-2 text-sm font-medium text-foreground-muted active:text-foreground transition-colors"
       >
         Choose another method
       </button>

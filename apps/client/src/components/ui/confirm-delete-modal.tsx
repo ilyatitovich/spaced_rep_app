@@ -21,7 +21,7 @@ export default function ConfirmDeleteModal({
         <>
           {/* Background overlay */}
           <motion.div
-            className="fixed inset-0 bg-black/40 z-50"
+            className="fixed inset-0 bg-background-overlay z-50"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -30,7 +30,7 @@ export default function ConfirmDeleteModal({
 
           {/* Modal */}
           <motion.div
-            className="fixed bottom-4 left-4 right-4 z-50 bg-white rounded-3xl p-6"
+            className="fixed bottom-4 left-4 right-4 z-50 bg-card rounded-3xl p-6"
             initial={{ y: '110%' }}
             animate={{ y: 0 }}
             exit={{ y: '110%' }}
@@ -43,14 +43,14 @@ export default function ConfirmDeleteModal({
                 : itemName}
               ?
             </h2>
-            <p className="text-gray-600 text-center mb-6">
+            <p className="text-foreground-muted text-center mb-6">
               This action cannot be undone
             </p>
 
             <div className="flex gap-3">
               <button
                 onClick={onClose}
-                className="flex-1 py-3 rounded-xl bg-gray-200 active:scale-95"
+                className="flex-1 py-3 rounded-xl bg-secondary text-foreground active:scale-95"
               >
                 Cancel
               </button>
@@ -59,7 +59,7 @@ export default function ConfirmDeleteModal({
                   onConfirm()
                   onClose()
                 }}
-                className="flex-1 py-3 rounded-xl text-red-600 bg-gray-200 active:scale-95"
+                className="flex-1 py-3 rounded-xl text-danger bg-secondary active:scale-95"
               >
                 Delete
               </button>

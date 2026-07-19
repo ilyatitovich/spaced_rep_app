@@ -32,7 +32,7 @@ export default function CardsLeftBadge({
           r={radius}
           strokeWidth="3"
           fill="none"
-          className="stroke-gray-300"
+          className="stroke-border"
         />
 
         {/* animated progress */}
@@ -55,12 +55,12 @@ export default function CardsLeftBadge({
           }}
           transition={{ duration: 0.45, ease: 'easeInOut' }}
           style={{ willChange: 'stroke-dashoffset, opacity' }}
-          className="stroke-black"
+          className="stroke-foreground"
         />
       </svg>
 
       {/* inner number */}
-      <div className="absolute text-sm font-medium text-black">{current}</div>
+      <div className="absolute text-sm font-medium text-foreground">{current}</div>
     </div>
   )
 }

@@ -70,7 +70,7 @@ export default function ImageUploader({
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            className="mt-2.5 text-lg font-bold text-purple-600"
+            className="mt-2.5 text-lg font-bold text-primary"
           >
             Change
           </button>
@@ -79,7 +79,7 @@ export default function ImageUploader({
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="px-6 py-3 border border-purple-500 rounded-xl text-purple-600"
+          className="px-6 py-3 border border-primary rounded-xl text-primary"
         >
           Click to upload image
         </button>

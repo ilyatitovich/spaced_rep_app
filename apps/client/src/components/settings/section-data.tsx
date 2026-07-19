@@ -90,7 +90,7 @@ export default function SectionData({ isOpen }: SectionDataProps) {
         {user && (
           <SettingsGroup label="Sync">
             <div className="flex items-center justify-between px-4 py-3.5 gap-3">
-              <span className="flex items-center gap-2 text-gray-700">
+              <span className="flex items-center gap-2 text-foreground">
                 {isOnline ? <Cloud size={18} /> : <CloudOff size={18} />}
                 {statusLabel}
               </span>
@@ -98,7 +98,7 @@ export default function SectionData({ isOpen }: SectionDataProps) {
                 type="button"
                 onClick={syncNow}
                 disabled={!isOnline || status === 'syncing'}
-                className="flex items-center gap-1 text-purple-600 disabled:opacity-50"
+                className="flex items-center gap-1 text-primary disabled:opacity-50"
               >
                 <RefreshCw
                   size={16}
@@ -115,7 +115,7 @@ export default function SectionData({ isOpen }: SectionDataProps) {
             <button
               type="button"
               onClick={() => setAdvancedOpen(o => !o)}
-              className="w-full flex items-center justify-between px-4 py-3.5 text-sm text-gray-600"
+              className="w-full flex items-center justify-between px-4 py-3.5 text-sm text-foreground-muted"
             >
               <span>Advanced</span>
               <ChevronDown
@@ -125,7 +125,7 @@ export default function SectionData({ isOpen }: SectionDataProps) {
             </button>
 
             {advancedOpen && (
-              <div className="px-4 pb-3.5 text-xs text-gray-400 flex flex-col gap-1">
+              <div className="px-4 pb-3.5 text-xs text-foreground-subtle flex flex-col gap-1">
                 <span>
                   Connection: {connection}
                   {diagnostics ? ` · WS ${diagnostics.wsState}` : ''}
@@ -140,10 +140,10 @@ export default function SectionData({ isOpen }: SectionDataProps) {
                   </span>
                 )}
                 {lastError && (
-                  <span className="text-red-400">Error: {lastError}</span>
+                  <span className="text-danger">Error: {lastError}</span>
                 )}
                 {failedOps.length > 0 && (
-                  <span className="text-amber-600">
+                  <span className="text-warning">
                     {failedOps.length} failed op
                     {failedOps.length === 1 ? '' : 's'} (dead-letter)
                   </span>

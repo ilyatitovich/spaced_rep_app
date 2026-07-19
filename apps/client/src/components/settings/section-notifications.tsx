@@ -83,7 +83,7 @@ export default function SectionNotifications({
 
         <SettingsGroup label="Reminders">
           {reminders.length === 0 ? (
-            <p className="px-4 py-3.5 text-sm text-gray-500">
+            <p className="px-4 py-3.5 text-sm text-foreground-muted">
               No reminders yet.
             </p>
           ) : (
@@ -96,7 +96,7 @@ export default function SectionNotifications({
                   <span className="font-medium block">
                     {formatTime(reminder.timeLocal)}
                   </span>
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-foreground-muted">
                     Every day · Push
                   </span>
                 </div>
@@ -113,7 +113,7 @@ export default function SectionNotifications({
                 <button
                   type="button"
                   onClick={() => handleDelete(reminder.id)}
-                  className="text-red-500 p-1"
+                  className="text-danger p-1"
                   aria-label="Remove reminder"
                 >
                   <Trash2 size={18} />
@@ -127,12 +127,12 @@ export default function SectionNotifications({
               type="time"
               value={draftTime}
               onChange={e => setDraftTime(e.target.value)}
-              className="flex-1 text-sm bg-transparent border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-purple-500"
+              className="flex-1 text-sm bg-transparent border border-border rounded-lg px-3 py-2 outline-none focus:border-input-focus focus:ring-1 focus:ring-focus-ring"
             />
             <button
               type="button"
               onClick={handleAdd}
-              className="flex items-center gap-1 text-purple-600 font-medium shrink-0"
+              className="flex items-center gap-1 text-primary font-medium shrink-0"
             >
               <Plus size={16} />
               Add

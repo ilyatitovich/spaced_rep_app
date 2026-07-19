@@ -19,7 +19,7 @@ export default function SectionPrivacy({ isOpen }: SectionPrivacyProps) {
 
       <div className="flex flex-col gap-6 overflow-y-auto h-[92dvh] p-4 pb-30">
         <SettingsGroup label="How we use your data">
-          <p className="px-4 py-3.5 text-sm text-gray-600 leading-relaxed">
+          <p className="px-4 py-3.5 text-sm text-foreground-muted leading-relaxed">
             Study data (topics and cards) is stored on this device. When you
             sign in, it syncs to your account so you can study on other devices.
             Preferences and learning settings sync the same way. We don’t sell

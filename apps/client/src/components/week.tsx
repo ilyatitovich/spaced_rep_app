@@ -15,7 +15,7 @@ export default function Week({ week }: WeekProps) {
       {week.map((day, index) => (
         <span key={index} className="flex flex-col items-center">
           <small
-            className={`font-semibold ${index === getToday() ? 'text-purple-600' : `${day ? 'text-black' : 'text-gray-300'}`}`}
+            className={`font-semibold ${index === getToday() ? 'text-primary' : `${day ? 'text-foreground' : 'text-foreground-subtle'}`}`}
           >
             {letters[index]}
           </small>
@@ -50,12 +50,12 @@ function renderPast(day: Day) {
   return (
     <div
       className="
-        flex items-center justify-center h-7 w-7 my-2 border-2 rounded-full border-black"
+        flex items-center justify-center h-7 w-7 my-2 border-2 rounded-full border-foreground"
     >
       {day.isDone ? (
-        <Check className="w-4 h-4 text-green-600" strokeWidth={6} />
+        <Check className="w-4 h-4 text-success" strokeWidth={6} />
       ) : (
-        <X className="w-4 h-4 text-red-500" strokeWidth={6} />
+        <X className="w-4 h-4 text-danger" strokeWidth={6} />
       )}
     </div>
   )
@@ -65,24 +65,24 @@ function renderToday(day: Day) {
   // today & done
   if (day.isDone) {
     return (
-      <div className="flex items-center justify-center h-7 w-7 my-2 border-2 rounded-full border-black">
-        <Check className="w-4 h-4 text-green-600" strokeWidth={6} />
+      <div className="flex items-center justify-center h-7 w-7 my-2 border-2 rounded-full border-foreground">
+        <Check className="w-4 h-4 text-success" strokeWidth={6} />
       </div>
     )
   }
 
   // today & NOT done
   return (
-    <div className="flex items-center justify-center h-7 w-7 my-2 border-2 border-black rounded-full">
-      <div className="h-3.5 w-3.5 rounded-full bg-gradient-to-br from-purple-500 to-purple-800" />
+    <div className="flex items-center justify-center h-7 w-7 my-2 border-2 border-foreground rounded-full">
+      <div className="h-3.5 w-3.5 rounded-full bg-gradient-to-br from-primary to-primary-active" />
     </div>
   )
 }
 
 function renderFuture() {
-  return <div className="h-7 w-7 my-2 border-2 rounded-full border-black" />
+  return <div className="h-7 w-7 my-2 border-2 rounded-full border-foreground" />
 }
 
 function renderPastUnactiveDays() {
-  return <div className="h-7 w-7 my-2 border-2 rounded-full border-gray-300" />
+  return <div className="h-7 w-7 my-2 border-2 rounded-full border-border" />
 }

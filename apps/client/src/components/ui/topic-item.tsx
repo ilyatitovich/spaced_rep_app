@@ -52,8 +52,8 @@ export default function TopicItem({
 
   return (
     <button
-      className={`w-full flex justify-between items-center gap-2 p-4 my-4 mx-auto rounded-xl bg-white shadow-sm active:scale-95 transition-transform duration-150 select-none ${
-        isSelectionMode && isSelected ? 'ring-2 ring-purple-500' : ''
+      className={`w-full flex justify-between items-center gap-2 p-4 my-4 mx-auto rounded-xl bg-card shadow-sm active:scale-95 transition-transform duration-150 select-none ${
+        isSelectionMode && isSelected ? 'ring-2 ring-primary' : ''
       }`}
       aria-label={`Go to topic: ${topic.title}`}
       onTouchStart={handleTouchStart}
@@ -61,16 +61,16 @@ export default function TopicItem({
       onClick={handleClick}
     >
       <div className="flex flex-col gap-1.5 text-left w-3/4">
-        <span className="text-black font-semibold truncate">{topic.title}</span>
-        <span className="text-sm text-gray-700 flex items-center gap-1">
+        <span className="text-foreground font-semibold truncate">{topic.title}</span>
+        <span className="text-sm text-foreground flex items-center gap-1">
           Today's test
           {topic.week[getToday()]?.isDone ? (
-            <Check size={18} className="-mt-0.5 text-green-600" />
+            <Check size={18} className="-mt-0.5 text-success" />
           ) : (
             `: level${todayLevels.length > 1 ? 's' : ''} ${joinNumbers(todayLevels)}`
           )}
         </span>
-        <span className="text-xs text-gray-500">
+        <span className="text-xs text-foreground-muted">
           {`Started on ${formatTimestamp(topic.pivot)}`}
         </span>
       </div>
@@ -78,13 +78,13 @@ export default function TopicItem({
       <div
         className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
           isSelectionMode
-            ? `${isSelected ? 'bg-purple-600 border-purple-600' : 'bg-gray-300 border-gray-300'}  scale-100 opacity-100`
-            : 'bg-gray-300 border-gray-300 scale-0 opacity-0'
+            ? `${isSelected ? 'bg-primary border-primary' : 'bg-secondary border-border'}  scale-100 opacity-100`
+            : 'bg-secondary border-border scale-0 opacity-0'
         }`}
       >
         {isSelected && (
           <Check
-            className="w-4 h-4 text-white transition-transform duration-200"
+            className="w-4 h-4 text-primary-foreground transition-transform duration-200"
             strokeWidth={3}
           />
         )}

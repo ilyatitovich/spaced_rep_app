@@ -119,31 +119,31 @@ export default function TopicSettings({
                   value={title}
                   onChange={handleTitleChange}
                   placeholder="e.g. Spanish Basics"
-                  className="w-full p-4 rounded-xl border border-gray-300 focus:border-purple-600 focus:outline-none transition"
+                  className="w-full p-4 rounded-xl border border-border focus:border-input-focus focus:outline-none transition"
                 />
 
                 <button
                   type="submit"
                   disabled={isDisabled()}
-                  className="p-4 rounded-xl flex justify-center items-center bg-purple-600 disabled:opacity-50"
+                  className="p-4 rounded-xl flex justify-center items-center bg-primary disabled:opacity-50"
                 >
-                  <Pencil className="text-white" strokeWidth={3} />
+                  <Pencil className="text-primary-foreground" strokeWidth={3} />
                 </button>
               </div>
-              {error && <span className="text-red-600 text-sm">{error}</span>}
+              {error && <span className="text-danger text-sm">{error}</span>}
             </div>
           </form>
 
           {/* Export/import buttons */}
           <button
-            className="border border-gray-300 p-4 rounded-xl flex gap-2 justify-center items-center"
+            className="border border-border p-4 rounded-xl flex gap-2 justify-center items-center"
             onClick={() => setIsImportModalOpen(true)}
           >
             <Download size={18} />
             <span>Import cards</span>
           </button>
           <button
-            className="border border-gray-300 p-4 rounded-xl flex gap-2 justify-center items-center"
+            className="border border-border p-4 rounded-xl flex gap-2 justify-center items-center"
             onClick={() => setIsExportModalOpen(true)}
           >
             <ArrowUpFromLine size={18} />
@@ -154,7 +154,7 @@ export default function TopicSettings({
         <div className="absolute bottom-0 w-full p-4 flex justify-center items-center">
           <button
             onClick={() => setIsConfirmDeleteModalOpen(true)}
-            className="flex flex-col justify-center items-center gap-2 text-red-500"
+            className="flex flex-col justify-center items-center gap-2 text-danger"
           >
             <span>
               <Trash />

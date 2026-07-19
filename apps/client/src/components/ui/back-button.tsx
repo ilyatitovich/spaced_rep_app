@@ -20,8 +20,8 @@ export default function BackButton({ icon = 'chevron' }: BackButtonProps) {
       {icon === 'chevron' ? (
         <ChevronLeft size={28} />
       ) : (
-        <div className="w-8 h-8 flex items-center justify-center bg-black rounded-full">
-          <X className="w-4 h-4 text-white" strokeWidth={4} />
+        <div className="w-8 h-8 flex items-center justify-center bg-foreground rounded-full">
+          <X className="w-4 h-4 text-foreground-inverse" strokeWidth={4} />
         </div>
       )}
     </Button>
