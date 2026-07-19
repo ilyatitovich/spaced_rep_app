@@ -5,6 +5,7 @@ import {
   SettingsSegmentedRow,
   SettingsSelectRow
 } from './settings-ui'
+import { BackButton, Header, Screen } from '@/components'
 
 const THEME_OPTIONS = [
   { value: 'system', label: 'System' },
@@ -36,7 +37,13 @@ function getTimezoneOptions(): { value: string; label: string }[] {
 
 const TIMEZONE_OPTIONS = getTimezoneOptions()
 
-export default function SectionPreferences() {
+type SectionPreferencesProps = {
+  isOpen: boolean
+}
+
+export default function SectionPreferences({
+  isOpen
+}: SectionPreferencesProps) {
   const settings = useSettingsStore(s => s.settings)
   const setTheme = useSettingsStore(s => s.setTheme)
   const setTimezone = useSettingsStore(s => s.setTimezone)
@@ -44,33 +51,43 @@ export default function SectionPreferences() {
   const theme = settings?.preferences.theme ?? 'system'
   const timezone = settings?.preferences.timezone ?? 'UTC'
 
-  const timezoneOptions =
-    TIMEZONE_OPTIONS.some(o => o.value === timezone)
-      ? TIMEZONE_OPTIONS
-      : [{ value: timezone, label: timezone.replace(/_/g, ' ') }, ...TIMEZONE_OPTIONS]
+  const timezoneOptions = TIMEZONE_OPTIONS.some(o => o.value === timezone)
+    ? TIMEZONE_OPTIONS
+    : [
+        { value: timezone, label: timezone.replace(/_/g, ' ') },
+        ...TIMEZONE_OPTIONS
+      ]
 
   return (
-    <div className="flex flex-col gap-6">
-      <SettingsGroup label="Appearance">
-        <SettingsSegmentedRow
-          label="Theme"
-          value={theme}
-          options={THEME_OPTIONS}
-          onChange={v => void setTheme(v as ThemePreference)}
-        />
-      </SettingsGroup>
+    <Screen isOpen={isOpen}>
+      <Header>
+        <BackButton />
+        <span className="font-bold">Preferences</span>
+        <span className="w-7" aria-hidden />
+      </Header>
 
-      <SettingsGroup
-        label="Region"
-        footer="Used for reminders and local scheduling."
-      >
-        <SettingsSelectRow
-          label="Timezone"
-          value={timezone}
-          options={timezoneOptions}
-          onChange={v => void setTimezone(v)}
-        />
-      </SettingsGroup>
-    </div>
+      <div className="flex flex-col gap-6 overflow-y-auto h-[92dvh] p-4 pb-30">
+        <SettingsGroup label="Appearance">
+          <SettingsSegmentedRow
+            label="Theme"
+            value={theme}
+            options={THEME_OPTIONS}
+            onChange={v => void setTheme(v as ThemePreference)}
+          />
+        </SettingsGroup>
+
+        <SettingsGroup
+          label="Region"
+          footer="Used for reminders and local scheduling."
+        >
+          <SettingsSelectRow
+            label="Timezone"
+            value={timezone}
+            options={timezoneOptions}
+            onChange={v => void setTimezone(v)}
+          />
+        </SettingsGroup>
+      </div>
+    </Screen>
   )
 }

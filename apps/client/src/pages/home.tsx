@@ -5,7 +5,7 @@ import { useSearchParams } from 'react-router'
 import { useDebouncedCallback } from 'use-debounce'
 
 import {
-  AccountScreen,
+  SettingsScreen,
   Button,
   CreateTopicScreen,
   SelectionModeHeader,
@@ -49,7 +49,7 @@ export default function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const isCreating = searchParams.get('create') === 'true'
   const currentTopic = searchParams.get('topicId')
-  const isAccountOpen = searchParams.get('account') === 'true'
+  const isSettingsOpen = searchParams.get('settings') === 'true'
   const isAuthScreenOpen = searchParams.get('auth') === 'true'
 
   useEffect(() => {
@@ -117,7 +117,7 @@ export default function HomePage() {
         <span className="font-bold">Topics</span>
         <Button
           ariaLabel="Account"
-          onClick={() => setSearchParams({ account: 'true' })}
+          onClick={() => setSearchParams({ settings: 'true' })}
         >
           <CircleUserRound />
         </Button>
@@ -180,7 +180,7 @@ export default function HomePage() {
 
       <CreateTopicScreen isOpen={isCreating} onCreate={handleCreateTopic} />
 
-      <AccountScreen isOpen={isAccountOpen} />
+      <SettingsScreen isOpen={isSettingsOpen} />
 
       <TopicScreen
         isOpen={currentTopic !== null}

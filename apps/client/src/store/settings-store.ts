@@ -1,7 +1,4 @@
-import {
-  applyThemeToDocument,
-  isPlanEntitled
-} from '@/lib/settings'
+import { applyThemeToDocument, isPlanEntitled } from '@/lib/settings'
 import {
   bootstrapLocalSettings,
   getSettingsMemory,
@@ -10,14 +7,10 @@ import {
   setSettingsUser,
   subscribeSettings,
   triggerSettingsFlush,
-  updateLearning,
   updateNotifications,
   updatePreferences
 } from '@/services/settings.service'
-import type {
-  PlanTier,
-  UserSettingsDocument
-} from '@/types/settings.types'
+import type { PlanTier, UserSettingsDocument } from '@/types/settings.types'
 import { create } from 'zustand'
 
 type SettingsStore = {
@@ -26,17 +19,11 @@ type SettingsStore = {
   loadLocal: () => Promise<void>
   setUser: (userId: string | null) => void
   pullRemote: (userId: string) => Promise<void>
-  setTheme: (theme: UserSettingsDocument['preferences']['theme']) => Promise<void>
+  setTheme: (
+    theme: UserSettingsDocument['preferences']['theme']
+  ) => Promise<void>
   setLanguage: (language: string) => Promise<void>
   setTimezone: (timezone: string) => Promise<void>
-  setLearning: (
-    patch: Partial<
-      Pick<
-        UserSettingsDocument['learning'],
-        'weekStartsOn' | 'dailyNewCardLimit'
-      >
-    >
-  ) => Promise<void>
   setNotifications: (
     patch: Partial<
       Pick<
@@ -83,10 +70,6 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
   },
   setTimezone: async timezone => {
     const settings = await updatePreferences({ timezone })
-    set({ settings })
-  },
-  setLearning: async patch => {
-    const settings = await updateLearning(patch)
     set({ settings })
   },
   setNotifications: async patch => {

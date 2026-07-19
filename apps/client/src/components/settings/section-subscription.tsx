@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 
+import { BackButton, Header, Screen } from '@/components'
 import { useAuth } from '@/contexts'
 import { useSettingsStore } from '@/store'
 import type { PlanTier, SubscriptionStatus } from '@/types/settings.types'
@@ -33,61 +34,75 @@ function formatDate(ts: number | null): string {
   })
 }
 
-export default function SectionSubscription() {
+type SectionSubscriptionProps = {
+  isOpen: boolean
+}
+
+export default function SectionSubscription({
+  isOpen
+}: SectionSubscriptionProps) {
   const { user } = useAuth()
   const settings = useSettingsStore(s => s.settings)
   const refreshSubscription = useSettingsStore(s => s.refreshSubscription)
 
   useEffect(() => {
-    if (user) void refreshSubscription()
-  }, [user, refreshSubscription])
+    if (isOpen && user) void refreshSubscription()
+  }, [isOpen, user, refreshSubscription])
 
   const sub = settings?.subscription
 
-  if (!user) {
-    return (
-      <SettingsGroup footer="Sign in to view and manage your plan.">
-        <SettingsInfoRow label="Plan" value="Free" />
-      </SettingsGroup>
-    )
-  }
-
   return (
-    <div className="flex flex-col gap-6">
-      <SettingsGroup label="Current plan">
-        <SettingsInfoRow
-          label="Plan"
-          value={sub ? PLAN_LABELS[sub.plan] : 'Free'}
-        />
-        <SettingsInfoRow
-          label="Status"
-          value={sub ? STATUS_LABELS[sub.status] : 'Active'}
-        />
-        {sub?.trialEndsAt != null && (
-          <SettingsInfoRow
-            label="Trial ends"
-            value={formatDate(sub.trialEndsAt)}
-          />
-        )}
-        {sub?.currentPeriodEnd != null && (
-          <SettingsInfoRow
-            label="Renews"
-            value={formatDate(sub.currentPeriodEnd)}
-          />
-        )}
-        {sub?.cancelAtPeriodEnd && (
-          <SettingsInfoRow label="Cancels" value="At period end" />
-        )}
-      </SettingsGroup>
+    <Screen isOpen={isOpen}>
+      <Header>
+        <BackButton />
+        <span className="font-bold">Subscription</span>
+        <span className="w-7" aria-hidden />
+      </Header>
 
-      <SettingsGroup footer="Billing management is coming soon.">
-        <SettingsActionRow label="Upgrade" onClick={() => {}} disabled />
-        <SettingsActionRow
-          label="Manage billing"
-          onClick={() => {}}
-          disabled
-        />
-      </SettingsGroup>
-    </div>
+      <div className="flex flex-col gap-6 overflow-y-auto h-[92dvh] p-4 pb-30">
+        {!user ? (
+          <SettingsGroup footer="Sign in to view and manage your plan.">
+            <SettingsInfoRow label="Plan" value="Free" />
+          </SettingsGroup>
+        ) : (
+          <>
+            <SettingsGroup label="Current plan">
+              <SettingsInfoRow
+                label="Plan"
+                value={sub ? PLAN_LABELS[sub.plan] : 'Free'}
+              />
+              <SettingsInfoRow
+                label="Status"
+                value={sub ? STATUS_LABELS[sub.status] : 'Active'}
+              />
+              {sub?.trialEndsAt != null && (
+                <SettingsInfoRow
+                  label="Trial ends"
+                  value={formatDate(sub.trialEndsAt)}
+                />
+              )}
+              {sub?.currentPeriodEnd != null && (
+                <SettingsInfoRow
+                  label="Renews"
+                  value={formatDate(sub.currentPeriodEnd)}
+                />
+              )}
+              {sub?.cancelAtPeriodEnd && (
+                <SettingsInfoRow label="Cancels" value="At period end" />
+              )}
+            </SettingsGroup>
+
+            <SettingsGroup footer="Billing management is coming soon.">
+              <SettingsActionRow label="Upgrade" onClick={() => {}} disabled />
+              <SettingsActionRow
+                label="Manage billing"
+                onClick={() => {}}
+                disabled
+              />
+            </SettingsGroup>
+          </>
+        )}
+      </div>
+    </Screen>
   )
 }
