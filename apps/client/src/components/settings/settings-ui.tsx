@@ -153,10 +153,19 @@ export function SettingsSegmentedRow({
   options: { value: string; label: string }[]
   onChange: (value: string) => void
 }) {
+  const selectedIndex = options.findIndex(opt => opt.value === value)
+
   return (
     <div className="flex flex-col gap-2.5 px-4 py-3.5">
       <span className="font-medium">{label}</span>
-      <div className="flex rounded-lg border border-border overflow-hidden">
+      <div className="relative flex rounded-lg border border-border overflow-hidden">
+        <div
+          className="absolute top-0 bottom-0 left-0 bg-primary rounded-md transition-transform duration-300 ease-out"
+          style={{
+            width: `${100 / options.length}%`,
+            transform: `translateX(${selectedIndex * 100}%)`
+          }}
+        />
         {options.map(opt => {
           const selected = opt.value === value
           return (
@@ -164,10 +173,8 @@ export function SettingsSegmentedRow({
               key={opt.value}
               type="button"
               onClick={() => onChange(opt.value)}
-              className={`flex-1 py-2 text-sm font-medium transition-colors ${
-                selected
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-transparent text-foreground-muted'
+              className={`relative z-10 flex-1 py-2 text-sm font-medium transition-colors duration-300 ${
+                selected ? 'text-primary-foreground' : 'text-foreground-muted'
               }`}
             >
               {opt.label}
