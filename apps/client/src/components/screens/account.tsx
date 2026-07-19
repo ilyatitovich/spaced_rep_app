@@ -1,30 +1,65 @@
 import {
-  ArrowUpFromLine,
+  Bell,
+  BookOpen,
+  ChevronLeft,
   Cloud,
-  CloudOff,
-  Download,
-  LogOut,
-  RefreshCw,
+  CreditCard,
   Lock,
-  TriangleAlert
+  LogOut,
+  Settings2,
+  Shield,
+  TriangleAlert,
+  UserRound
 } from 'lucide-react'
-import { AnimatePresence } from 'motion/react'
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router'
+import toast from 'react-hot-toast'
 
-import AccountSecuritySection from '../account-security'
 import {
   BackButton,
-  ExportAppDataModal,
+  Button,
   Header,
-  ImportAppDataModal,
   Screen,
   Spinner
 } from '@/components'
 import { useAuth, useSync } from '@/contexts'
-import { getSyncDiagnostics } from '@/services'
-import { useSearchParams } from 'react-router'
-import toast from 'react-hot-toast'
-import { formatSyncTime } from '@/lib'
+import { useSettingsStore } from '@/store'
+import type { PlanTier } from '@/types/settings.types'
+import { SettingsGroup, SettingsNavRow } from '../settings/settings-ui'
+import SectionAccount from '../settings/section-account'
+import SectionPreferences from '../settings/section-preferences'
+import SectionLearning from '../settings/section-learning'
+import SectionNotifications from '../settings/section-notifications'
+import SectionSubscription from '../settings/section-subscription'
+import SectionPrivacy from '../settings/section-privacy'
+import SectionData from '../settings/section-data'
+
+type SettingsView =
+  | 'hub'
+  | 'account'
+  | 'preferences'
+  | 'learning'
+  | 'notifications'
+  | 'subscription'
+  | 'privacy'
+  | 'data'
+
+const VIEW_TITLES: Record<SettingsView, string> = {
+  hub: 'Settings',
+  account: 'Account',
+  preferences: 'Preferences',
+  learning: 'Learning',
+  notifications: 'Notifications',
+  subscription: 'Subscription',
+  privacy: 'Privacy',
+  data: 'Data & Sync'
+}
+
+const PLAN_LABELS: Record<PlanTier, string> = {
+  free: 'Free',
+  pro: 'Pro',
+  pro_plus: 'Pro+'
+}
 
 type AccountScreenProps = {
   isOpen: boolean
@@ -32,40 +67,14 @@ type AccountScreenProps = {
 
 export default function AccountScreen({ isOpen }: AccountScreenProps) {
   const { user, isLoading, isConfigured, signOut } = useAuth()
-  const {
-    status,
-    lastSyncedAt,
-    isOnline,
-    syncNow,
-    connection,
-    queueDepth,
-    deviceId,
-    lastError,
-    failedOps
-  } = useSync()
-  const [isExportModalOpen, setIsExportModalOpen] = useState(false)
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false)
-  const [diagnostics, setDiagnostics] = useState<{
-    lastPulledAt: string
-    wsState: string
-  } | null>(null)
-
-  const [_, setSearchParams] = useSearchParams()
+  const { isOnline } = useSync()
+  const settings = useSettingsStore(s => s.settings)
+  const [, setSearchParams] = useSearchParams()
+  const [view, setView] = useState<SettingsView>('hub')
 
   useEffect(() => {
-    if (!isOpen || !user) return
-    void getSyncDiagnostics().then(d =>
-      setDiagnostics({ lastPulledAt: d.lastPulledAt, wsState: d.wsState })
-    )
-  }, [isOpen, user, status, lastSyncedAt])
-
-  const statusLabel = !isOnline
-    ? 'Offline'
-    : status === 'syncing'
-      ? 'Syncing…'
-      : status === 'error'
-        ? 'Sync error'
-        : 'Up to date'
+    if (!isOpen) setView('hub')
+  }, [isOpen])
 
   const handleSignInOpen = () => {
     if (!isOnline) {
@@ -80,124 +89,154 @@ export default function AccountScreen({ isOpen }: AccountScreenProps) {
     })
   }
 
-  return (
-    <Screen isOpen={isOpen}>
-      <div className="h-full bg-background flex flex-col">
-        <Header>
-          <BackButton />
-          <span className="font-bold">Account</span>
-        </Header>
+  const plan = settings?.subscription.plan ?? 'free'
+  const planLabel = PLAN_LABELS[plan]
+  const displayName = user?.email ?? 'Guest'
+  const initial = (user?.email?.[0] ?? 'G').toUpperCase()
 
-        <div className="flex flex-col gap-8 overflow-y-auto h-[92dvh] p-4 pb-30">
-          {!isConfigured ? (
-            <p className="text-center text-gray-500">
-              Cloud sync is not configured for this build.
-            </p>
-          ) : isLoading ? (
-            <Spinner />
-          ) : user ? (
-            <>
-              <div className="flex flex-col items-center gap-2">
-                <span className="font-bold">{user.email}</span>
-              </div>
+  const renderHub = () => {
+    if (!isConfigured) {
+      return (
+        <p className="text-center text-gray-500">
+          Cloud sync is not configured for this build.
+        </p>
+      )
+    }
 
-              <div className="border border-gray-300 rounded-xl p-4 flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-2 text-gray-700">
-                    {isOnline ? <Cloud size={18} /> : <CloudOff size={18} />}
-                    {statusLabel}
-                  </span>
-                  <button
-                    onClick={syncNow}
-                    disabled={!isOnline || status === 'syncing'}
-                    className="flex items-center gap-1 text-purple-600 disabled:opacity-50"
-                  >
-                    <RefreshCw
-                      size={16}
-                      className={status === 'syncing' ? 'animate-spin' : ''}
-                    />
-                    Sync now
-                  </button>
-                </div>
-                <span className="text-sm text-gray-500">
-                  Last synced: {formatSyncTime(lastSyncedAt)}
-                </span>
-                <div className="text-xs text-gray-400 flex flex-col gap-1">
-                  <span>
-                    Connection: {connection}
-                    {diagnostics ? ` · WS ${diagnostics.wsState}` : ''}
-                  </span>
-                  <span>Queue: {queueDepth} pending</span>
-                  {deviceId && (
-                    <span className="truncate">Device: {deviceId}</span>
-                  )}
-                  {diagnostics && (
-                    <span className="truncate">
-                      Watermark: {diagnostics.lastPulledAt}
-                    </span>
-                  )}
-                  {lastError && (
-                    <span className="text-red-400">Error: {lastError}</span>
-                  )}
-                  {failedOps.length > 0 && (
-                    <span className="text-amber-600">
-                      {failedOps.length} failed op
-                      {failedOps.length === 1 ? '' : 's'} (dead-letter)
-                    </span>
-                  )}
-                </div>
-              </div>
+    if (isLoading) {
+      return <Spinner />
+    }
 
-              <AccountSecuritySection />
+    return (
+      <div className="flex flex-col gap-6">
+        <button
+          type="button"
+          onClick={() => setView('account')}
+          className="border border-gray-300 rounded-xl p-4 flex items-center gap-3 text-left"
+        >
+          <div className="w-12 h-12 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold text-lg shrink-0">
+            {initial}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-bold truncate">{displayName}</p>
+            <p className="text-sm text-gray-500">{planLabel} plan</p>
+          </div>
+        </button>
 
-              <button
-                onClick={signOut}
-                className="border border-gray-300 p-4 rounded-xl flex gap-2 justify-center items-center text-red-500"
-              >
-                <LogOut size={18} />
-                <span>Sign out</span>
-              </button>
-            </>
+        <SettingsGroup label="General">
+          <SettingsNavRow
+            icon={<UserRound />}
+            label="Account"
+            onClick={() => setView('account')}
+          />
+          <SettingsNavRow
+            icon={<Settings2 />}
+            label="Preferences"
+            value={
+              settings?.preferences.theme === 'system'
+                ? 'System'
+                : settings?.preferences.theme === 'dark'
+                  ? 'Dark'
+                  : 'Light'
+            }
+            onClick={() => setView('preferences')}
+          />
+          <SettingsNavRow
+            icon={<BookOpen />}
+            label="Learning"
+            onClick={() => setView('learning')}
+          />
+          <SettingsNavRow
+            icon={<Bell />}
+            label="Notifications"
+            onClick={() => setView('notifications')}
+          />
+        </SettingsGroup>
+
+        <SettingsGroup label="Plan & privacy">
+          <SettingsNavRow
+            icon={<CreditCard />}
+            label="Subscription"
+            value={planLabel}
+            onClick={() => setView('subscription')}
+          />
+          <SettingsNavRow
+            icon={<Shield />}
+            label="Privacy"
+            onClick={() => setView('privacy')}
+          />
+          <SettingsNavRow
+            icon={<Cloud />}
+            label="Data & Sync"
+            onClick={() => setView('data')}
+          />
+        </SettingsGroup>
+
+        <SettingsGroup>
+          {user ? (
+            <button
+              type="button"
+              onClick={() => void signOut()}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3.5 font-medium text-red-500"
+            >
+              <LogOut size={18} />
+              Sign out
+            </button>
           ) : (
             <button
-              className="border border-gray-300 p-4 rounded-xl flex gap-2 justify-center items-center"
+              type="button"
               onClick={handleSignInOpen}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3.5 font-medium text-purple-600"
             >
               <Lock size={18} />
               Sign in
             </button>
           )}
+        </SettingsGroup>
+      </div>
+    )
+  }
 
-          <div className="flex flex-col gap-4">
-            <span className="font-bold">Data</span>
-            <button
-              className="border border-gray-300 p-4 rounded-xl flex gap-2 justify-center items-center"
-              onClick={() => setIsImportModalOpen(true)}
-            >
-              <Download size={18} />
-              <span>Import all data</span>
-            </button>
-            <button
-              className="border border-gray-300 p-4 rounded-xl flex gap-2 justify-center items-center"
-              onClick={() => setIsExportModalOpen(true)}
-            >
-              <ArrowUpFromLine size={18} />
-              <span>Export all data</span>
-            </button>
-          </div>
+  const renderSection = () => {
+    switch (view) {
+      case 'account':
+        return <SectionAccount />
+      case 'preferences':
+        return <SectionPreferences />
+      case 'learning':
+        return <SectionLearning />
+      case 'notifications':
+        return <SectionNotifications />
+      case 'subscription':
+        return <SectionSubscription />
+      case 'privacy':
+        return <SectionPrivacy />
+      case 'data':
+        return <SectionData />
+      default:
+        return null
+    }
+  }
+
+  return (
+    <Screen isOpen={isOpen}>
+      <div className="h-full bg-background flex flex-col">
+        <Header>
+          {view === 'hub' ? (
+            <BackButton />
+          ) : (
+            <Button onClick={() => setView('hub')} ariaLabel="Back to Settings">
+              <ChevronLeft size={28} />
+            </Button>
+          )}
+          <span className="font-bold">{VIEW_TITLES[view]}</span>
+          <span className="w-7" aria-hidden />
+        </Header>
+
+        <div className="flex flex-col gap-6 overflow-y-auto h-[92dvh] p-4 pb-30">
+          {view === 'hub' ? renderHub() : renderSection()}
         </div>
       </div>
-
-      <AnimatePresence>
-        {isImportModalOpen && (
-          <ImportAppDataModal onClose={() => setIsImportModalOpen(false)} />
-        )}
-      </AnimatePresence>
-      <AnimatePresence>
-        {isExportModalOpen && (
-          <ExportAppDataModal onClose={() => setIsExportModalOpen(false)} />
-        )}
-      </AnimatePresence>
     </Screen>
   )
 }

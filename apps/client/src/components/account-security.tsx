@@ -18,6 +18,7 @@ import {
 } from '@/lib/api'
 import { getAuthErrorMessage } from '@/lib/auth-errors'
 import { getAuthSession } from '@/lib/auth-storage'
+import { SettingsGroup, SettingsNavRow } from './settings/settings-ui'
 
 type SecurityStep = 'menu' | 'passkeys'
 
@@ -141,7 +142,7 @@ export default function AccountSecuritySection() {
           Security
         </button>
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between px-1">
           <span className="font-bold">Passkeys</span>
           <button
             type="button"
@@ -167,11 +168,11 @@ export default function AccountSecuritySection() {
             No passkeys yet. Add one to sign in faster on this device.
           </p>
         ) : (
-          <ul className="flex flex-col gap-3">
+          <SettingsGroup>
             {passkeys.map(passkey => (
-              <li
+              <div
                 key={passkey.id}
-                className="border border-gray-300 rounded-xl p-4 flex items-center justify-between gap-3"
+                className="flex items-center justify-between gap-3 px-4 py-3.5"
               >
                 <div className="flex items-start gap-3 min-w-0">
                   <KeyRound className="w-5 h-5 mt-0.5 shrink-0 text-gray-600" />
@@ -197,25 +198,21 @@ export default function AccountSecuritySection() {
                 >
                   <Trash2 size={18} />
                 </button>
-              </li>
+              </div>
             ))}
-          </ul>
+          </SettingsGroup>
         )}
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <span className="font-bold">Security</span>
-      <button
-        type="button"
+    <SettingsGroup label="Security">
+      <SettingsNavRow
+        icon={<KeyRound />}
+        label="Passkeys"
         onClick={() => setStep('passkeys')}
-        className="border border-gray-300 p-4 rounded-xl flex gap-2 items-center"
-      >
-        <KeyRound size={18} />
-        <span>Passkeys</span>
-      </button>
-    </div>
+      />
+    </SettingsGroup>
   )
 }

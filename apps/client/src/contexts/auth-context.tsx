@@ -37,6 +37,7 @@ import {
 } from '@/lib/pkce'
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
 import { setSyncUser, initialSync } from '@/services'
+import { useSettingsStore } from '@/store/settings-store'
 
 type AuthContextValue = {
   session: AuthSession | null
@@ -115,9 +116,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const userId = user?.id ?? null
 
   useEffect(() => {
+    void useSettingsStore.getState().loadLocal()
+  }, [])
+
+  useEffect(() => {
     setSyncUser(userId)
+    useSettingsStore.getState().setUser(userId)
     if (userId) {
       void initialSync(userId)
+      void useSettingsStore.getState().pullRemote(userId)
+    } else {
+      void useSettingsStore.getState().loadLocal()
     }
   }, [userId])
 

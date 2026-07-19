@@ -38,6 +38,37 @@ enum SecurityEventType {
   USER_DISABLED
 }
 
+enum ThemePreference {
+  LIGHT
+  DARK
+  SYSTEM
+}
+
+enum PlanTier {
+  FREE
+  PRO
+  PRO_PLUS
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIALING
+  PAST_DUE
+  CANCELED
+  EXPIRED
+  INCOMPLETE
+}
+
+enum BillingProvider {
+  NONE
+  STRIPE
+}
+
+enum NotificationChannel {
+  PUSH
+  EMAIL
+}
+
 model User {
   id              String    @id @default(uuid()) @db.Uuid
   email           String    @unique // always store lowercased
@@ -46,16 +77,21 @@ model User {
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
-  topics           Topic[]
-  cards            Card[]
-  syncDevices      SyncDevice[]
-  syncOperations   SyncOperation[]
-  sessions         Session[]
-  passkeys         Passkey[]
-  oauthIdentities  OAuthIdentity[]
-  otpCodes         OtpCode[]
-  authChallenges   AuthChallenge[]
-  securityEvents   SecurityEvent[]
+  topics                Topic[]
+  cards                 Card[]
+  syncDevices           SyncDevice[]
+  syncOperations        SyncOperation[]
+  sessions              Session[]
+  passkeys              Passkey[]
+  oauthIdentities       OAuthIdentity[]
+  otpCodes              OtpCode[]
+  authChallenges        AuthChallenge[]
+  securityEvents        SecurityEvent[]
+  preference            UserPreference?
+  learningSettings      UserLearningSettings?
+  notificationSettings  UserNotificationSettings?
+  notificationReminders NotificationReminder[]
+  subscription          Subscription?
 
   @@map("users")
 }
@@ -250,4 +286,84 @@ model SecurityEvent {
   @@index([userId, createdAt])
   @@index([type, createdAt])
   @@map("security_events")
+}
+
+model UserPreference {
+  userId            String          @id @map("user_id") @db.Uuid
+  theme             ThemePreference @default(SYSTEM)
+  language          String          @default("en") @db.VarChar(35)
+  timezone          String          @default("UTC") @db.VarChar(64)
+  // Client-supplied LWW timestamp (do not use @updatedAt)
+  updatedAt         DateTime        @map("updated_at") @db.Timestamptz
+  updatedByDeviceId String?         @map("updated_by_device_id") @db.Uuid
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_preferences")
+}
+
+model UserLearningSettings {
+  userId            String   @id @map("user_id") @db.Uuid
+  weekStartsOn      Int      @default(0) @map("week_starts_on")
+  dailyNewCardLimit Int?     @map("daily_new_card_limit")
+  // Client-supplied LWW timestamp (do not use @updatedAt)
+  updatedAt         DateTime @map("updated_at") @db.Timestamptz
+  updatedByDeviceId String?  @map("updated_by_device_id") @db.Uuid
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_learning_settings")
+}
+
+model UserNotificationSettings {
+  userId            String   @id @map("user_id") @db.Uuid
+  enabled           Boolean  @default(false)
+  timezone          String   @default("UTC") @db.VarChar(64)
+  // Client-supplied LWW timestamp (do not use @updatedAt)
+  updatedAt         DateTime @map("updated_at") @db.Timestamptz
+  updatedByDeviceId String?  @map("updated_by_device_id") @db.Uuid
+
+  reminders NotificationReminder[]
+  user      User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_notification_settings")
+}
+
+model NotificationReminder {
+  id         String              @id @default(uuid()) @db.Uuid
+  userId     String              @map("user_id") @db.Uuid
+  timeLocal  DateTime            @map("time_local") @db.Time(0)
+  daysOfWeek Int                 @default(127) @map("days_of_week") @db.SmallInt
+  channel    NotificationChannel @default(PUSH)
+  enabled    Boolean             @default(true)
+  sortOrder  Int                 @default(0) @map("sort_order")
+  // Client-supplied LWW timestamp (do not use @updatedAt)
+  updatedAt  DateTime            @map("updated_at") @db.Timestamptz
+
+  settings UserNotificationSettings @relation(fields: [userId], references: [userId], onDelete: Cascade, map: "notification_reminders_settings_fkey")
+  user     User                     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "notification_reminders_user_fkey")
+
+  @@index([userId, sortOrder])
+  @@index([enabled, timeLocal])
+  @@map("notification_reminders")
+}
+
+model Subscription {
+  userId                 String             @id @map("user_id") @db.Uuid
+  plan                   PlanTier           @default(FREE)
+  status                 SubscriptionStatus @default(ACTIVE)
+  provider               BillingProvider    @default(NONE)
+  providerCustomerId     String?            @map("provider_customer_id")
+  providerSubscriptionId String?            @map("provider_subscription_id")
+  currentPeriodStart     DateTime?          @map("current_period_start") @db.Timestamptz
+  currentPeriodEnd       DateTime?          @map("current_period_end") @db.Timestamptz
+  trialEndsAt            DateTime?          @map("trial_ends_at") @db.Timestamptz
+  cancelAtPeriodEnd      Boolean            @default(false) @map("cancel_at_period_end")
+  canceledAt             DateTime?          @map("canceled_at") @db.Timestamptz
+  serverUpdatedAt        DateTime           @updatedAt @map("server_updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, currentPeriodEnd])
+  @@map("subscriptions")
 }

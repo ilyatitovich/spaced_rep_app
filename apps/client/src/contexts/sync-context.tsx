@@ -7,8 +7,10 @@ import {
   getSyncState,
   subscribeSync,
   syncNow,
-  type SyncState
+  type SyncState,
+  triggerSettingsFlush
 } from '@/services'
+import { useSettingsStore } from '@/store/settings-store'
 
 type SyncContextValue = SyncState & {
   isOnline: boolean
@@ -27,12 +29,15 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user || !isOnline) return
     syncNow()
+    triggerSettingsFlush()
   }, [user, isOnline])
 
   useEffect(() => {
     function onVisibility(): void {
       if (document.visibilityState === 'visible' && user && isOnline) {
         syncNow()
+        triggerSettingsFlush()
+        void useSettingsStore.getState().pullRemote(user.id)
       }
     }
     document.addEventListener('visibilitychange', onVisibility)

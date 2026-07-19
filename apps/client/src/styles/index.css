@@ -24,6 +24,17 @@
   --font-card: 'StampatelloFaceto', sans-serif;
 }
 
+html[data-theme='dark'] {
+  --color-black: #f0f0f0;
+  --color-gray: #a0a0a0;
+  --color-background: #1a1a1a;
+  color-scheme: dark;
+}
+
+html[data-theme='light'] {
+  color-scheme: light;
+}
+
 @layer utilities {
   .transform-style-preserve-3d {
     transform-style: preserve-3d;
@@ -71,6 +82,48 @@
   .scrollbar-hidden {
     scrollbar-width: none;
   }
+}
+
+/* Settings toggle — native checkbox styled as a switch */
+.settings-switch {
+  appearance: none;
+  width: 2.75rem;
+  height: 1.625rem;
+  border-radius: 9999px;
+  background: #d1d5db;
+  position: relative;
+  transition: background 0.15s ease;
+  flex-shrink: 0;
+}
+
+.settings-switch::after {
+  content: '';
+  position: absolute;
+  top: 0.125rem;
+  left: 0.125rem;
+  width: 1.375rem;
+  height: 1.375rem;
+  border-radius: 9999px;
+  background: white;
+  transition: transform 0.15s ease;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.15);
+}
+
+.settings-switch:checked {
+  background: var(--color-purple);
+}
+
+.settings-switch:checked::after {
+  transform: translateX(1.125rem);
+}
+
+.settings-switch:disabled {
+  opacity: 0.5;
+}
+
+.settings-switch:focus-visible {
+  outline: 2px solid var(--color-purple);
+  outline-offset: 2px;
 }
 
 body {

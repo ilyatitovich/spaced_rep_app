@@ -193,6 +193,8 @@ async function getDeviceId(): Promise<string> {
   return id
 }
 
+export { getDeviceId }
+
 async function loadFailedOps(): Promise<FailedOp[]> {
   const raw = await getMeta(FAILED_OPS_KEY)
   if (!raw) return []

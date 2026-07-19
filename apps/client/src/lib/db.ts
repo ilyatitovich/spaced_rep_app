@@ -1,10 +1,16 @@
 const DB_NAME = 'spacedRepApp'
-const DB_VERSION = 3
+const DB_VERSION = 4
 export const STORES = {
   TOPICS: 'topics',
   CARDS: 'cards',
   SYNC_QUEUE: 'sync_queue',
-  SYNC_META: 'sync_meta'
+  SYNC_META: 'sync_meta',
+  USER_PREFERENCES: 'user_preferences',
+  USER_LEARNING_SETTINGS: 'user_learning_settings',
+  USER_NOTIFICATION_SETTINGS: 'user_notification_settings',
+  NOTIFICATION_REMINDERS: 'notification_reminders',
+  SUBSCRIPTION_CACHE: 'subscription_cache',
+  SETTINGS_OUTBOX: 'settings_outbox'
 }
 
 function openDatabase(): Promise<IDBDatabase> {
@@ -35,8 +41,32 @@ function openDatabase(): Promise<IDBDatabase> {
         db.createObjectStore(STORES.SYNC_META, { keyPath: 'key' })
       }
 
+      if (!db.objectStoreNames.contains(STORES.USER_PREFERENCES)) {
+        db.createObjectStore(STORES.USER_PREFERENCES, { keyPath: 'id' })
+      }
+      if (!db.objectStoreNames.contains(STORES.USER_LEARNING_SETTINGS)) {
+        db.createObjectStore(STORES.USER_LEARNING_SETTINGS, { keyPath: 'id' })
+      }
+      if (!db.objectStoreNames.contains(STORES.USER_NOTIFICATION_SETTINGS)) {
+        db.createObjectStore(STORES.USER_NOTIFICATION_SETTINGS, {
+          keyPath: 'id'
+        })
+      }
+      if (!db.objectStoreNames.contains(STORES.NOTIFICATION_REMINDERS)) {
+        const rem = db.createObjectStore(STORES.NOTIFICATION_REMINDERS, {
+          keyPath: 'id'
+        })
+        rem.createIndex('ownerKey', 'ownerKey', { unique: false })
+      }
+      if (!db.objectStoreNames.contains(STORES.SUBSCRIPTION_CACHE)) {
+        db.createObjectStore(STORES.SUBSCRIPTION_CACHE, { keyPath: 'id' })
+      }
+      if (!db.objectStoreNames.contains(STORES.SETTINGS_OUTBOX)) {
+        db.createObjectStore(STORES.SETTINGS_OUTBOX, { keyPath: 'id' })
+      }
+
       // v3: queue items may gain opId/attempts/nextRetryAt — no schema change needed
-      // (IndexedDB is schemaless for object properties). Bump version for migration hook.
+      // v4: user settings stores
       void tx
     }
 

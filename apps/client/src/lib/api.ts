@@ -11,6 +11,13 @@ import type {
   PublicKeyCredentialRequestOptionsJSON,
   RegistrationResponseJSON
 } from '@simplewebauthn/browser'
+import type {
+  SubscriptionSnapshot,
+  UserLearningSettings,
+  UserNotificationSettings,
+  UserPreferences,
+  UserSettingsDocument
+} from '@/types/settings.types'
 
 const apiUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, '') ?? ''
 
@@ -249,6 +256,98 @@ export async function deletePasskey(
   })
   const json = await parseJson<{ data: { ok: true } }>(response)
   return json.data
+}
+
+async function patchJson<T>(
+  path: string,
+  body: unknown,
+  accessToken: string
+): Promise<T> {
+  if (!apiUrl) {
+    throw new ApiError(0, 'VITE_API_URL is not configured')
+  }
+
+  const response = await fetch(`${apiUrl}${path}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`
+    },
+    body: JSON.stringify(body)
+  })
+  const json = await parseJson<{ data: T }>(response)
+  return json.data
+}
+
+async function putJson<T>(
+  path: string,
+  body: unknown,
+  accessToken: string
+): Promise<T> {
+  if (!apiUrl) {
+    throw new ApiError(0, 'VITE_API_URL is not configured')
+  }
+
+  const response = await fetch(`${apiUrl}${path}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`
+    },
+    body: JSON.stringify(body)
+  })
+  const json = await parseJson<{ data: T }>(response)
+  return json.data
+}
+
+export async function fetchSettings(
+  accessToken: string
+): Promise<UserSettingsDocument> {
+  return getJson('/settings', accessToken)
+}
+
+export async function patchSettingsPreferences(
+  accessToken: string,
+  body: Partial<UserPreferences> & { updatedAt: number; deviceId: string }
+): Promise<UserPreferences & { applied?: boolean }> {
+  return patchJson('/settings/preferences', body, accessToken)
+}
+
+export async function patchSettingsLearning(
+  accessToken: string,
+  body: Partial<UserLearningSettings> & {
+    updatedAt: number
+    deviceId: string
+  }
+): Promise<UserLearningSettings & { applied?: boolean }> {
+  return patchJson('/settings/learning', body, accessToken)
+}
+
+export async function patchSettingsNotifications(
+  accessToken: string,
+  body: Partial<UserNotificationSettings> & {
+    updatedAt: number
+    deviceId: string
+  }
+): Promise<UserNotificationSettings & { applied?: boolean }> {
+  return patchJson('/settings/notifications', body, accessToken)
+}
+
+export async function putSettingsReminders(
+  accessToken: string,
+  body: {
+    reminders: UserNotificationSettings['reminders']
+    updatedAt: number
+    deviceId: string
+  }
+): Promise<UserNotificationSettings & { applied?: boolean }> {
+  return putJson('/settings/notifications/reminders', body, accessToken)
+}
+
+export async function fetchSubscription(
+  accessToken: string
+): Promise<SubscriptionSnapshot> {
+  return getJson('/settings/subscription', accessToken)
 }
 
 export function isAuthConfigured(): boolean {
