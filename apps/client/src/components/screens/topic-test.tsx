@@ -1,0 +1,173 @@
+import { useState, useEffect, useRef, useCallback } from 'react'
+
+import {
+  Card,
+  CardsLeftBadge,
+  CardContainer,
+  TestDoneMessage,
+  AnswerButton,
+  Screen,
+  BackButton,
+  Header
+} from '@/components'
+import { getToday, isAnotherDay } from '@/lib'
+import { Card as CardModel, Topic } from '@/models'
+import { updateCard, updateTopic } from '@/services'
+
+type TestScreenProps = {
+  isOpen: boolean
+  topic: Topic
+  topicCards: Record<number, CardModel[]>
+}
+
+export default function TestScreen({
+  isOpen,
+  topic,
+  topicCards
+}: TestScreenProps) {
+  const [isFlipped, setIsFlipped] = useState(false)
+  const [cards, setCards] = useState<CardModel[] | null>(null)
+  const [isFirstCardActive, setIsFirstCardActive] = useState(true)
+  const [isInitialRender, setIsInitialRender] = useState(true)
+  const [isCorrect, setIsCorrect] = useState(false)
+  const [prevCard, setPrevCard] = useState<CardModel | null>(null)
+
+  const totalCardsRef = useRef(0)
+
+  const isDone = cards && cards.length === 0
+
+  useEffect(() => {
+    async function setTopic(): Promise<void> {
+      try {
+        topic.week[getToday()]!.isDone = true
+        await updateTopic(topic)
+      } catch (error) {
+        console.error(error)
+      }
+    }
+
+    if (isDone) {
+      setTopic()
+    }
+  }, [isDone, topic])
+
+  async function handleAnswer(isCorrect: boolean): Promise<void> {
+    try {
+      if (!cards) return
+      const currentCard = cards.shift()
+      if (!currentCard) return
+
+      if (isCorrect) {
+        currentCard.level += 1
+      } else {
+        currentCard.level = 1
+      }
+
+      currentCard.reviewDate = Date.now()
+
+      await updateCard(currentCard)
+
+      setIsCorrect(isCorrect)
+      setCards(cards)
+      setIsFlipped(false)
+      setIsInitialRender(false)
+      setPrevCard(currentCard)
+      setIsFirstCardActive(prev => !prev)
+    } catch (error) {
+      console.error('Error updating card:', error)
+    }
+  }
+
+  const handleOpen = useCallback(() => {
+    const testCards = topic.week[getToday()]!.todayLevels.flatMap(
+      levelId => topicCards[levelId]
+    ).filter(
+      card =>
+        card !== undefined &&
+        (!card.reviewDate || isAnotherDay(card.reviewDate))
+    )
+    setCards(testCards)
+    totalCardsRef.current = testCards.length
+  }, [topic.week, topicCards])
+
+  const handleClose = useCallback(() => {
+    setIsFlipped(false)
+    setIsFirstCardActive(true)
+    setIsInitialRender(true)
+    setPrevCard(null)
+    setIsCorrect(false)
+    setCards(null)
+    totalCardsRef.current = 0
+  }, [])
+
+  return (
+    <Screen
+      isOpen={isOpen}
+      onClose={handleClose}
+      onOpen={handleOpen}
+      isVertical
+    >
+      <Header>
+        <BackButton icon="x" />
+        <span className={isDone ? 'invisible' : undefined}>
+          {isFlipped ? 'Back' : 'Front'}
+        </span>
+        {cards && (
+          <CardsLeftBadge
+            current={cards.length}
+            total={totalCardsRef.current}
+          />
+        )}
+      </Header>
+
+      {cards && (
+        <CardContainer>
+          {cards.length === 0 && isFirstCardActive ? (
+            <div className="absolute w-[80vw] max-w-[350px] h-[60dvh] max-h-[500px] scale-up">
+              <TestDoneMessage />
+            </div>
+          ) : (
+            (isFirstCardActive ? cards[0] : prevCard) && (
+              <Card
+                className={`${isFirstCardActive ? 'scale-up' : isCorrect ? 'move-right' : 'move-left'}`.trim()}
+                data={(isFirstCardActive ? cards[0]! : prevCard!).data}
+                isFlipped={isFirstCardActive ? isFlipped : false}
+                handleClick={() => setIsFlipped(prev => !prev)}
+              />
+            )
+          )}
+
+          {cards.length === 0 && !isFirstCardActive ? (
+            <div className="absolute w-[80vw] max-w-[350px] h-[60dvh] max-h-[500px] scale-up">
+              <TestDoneMessage />
+            </div>
+          ) : (
+            (isFirstCardActive ? prevCard : cards[0]) && (
+              <Card
+                className={`${isInitialRender ? 'hidden' : ''} ${isFirstCardActive ? (isCorrect ? 'move-right' : 'move-left') : 'scale-up'}`.trim()}
+                data={(isFirstCardActive ? prevCard! : cards[0]!).data}
+                isFlipped={isFirstCardActive ? false : isFlipped}
+                handleClick={() => setIsFlipped(prev => !prev)}
+              />
+            )
+          )}
+        </CardContainer>
+      )}
+
+      {!isDone && (
+        <div className="w-full mt-4 flex justify-evenly gap-1.5 font-semibold">
+          {isFlipped ? (
+            <div className="flex gap-6">
+              <AnswerButton isCorrect={false} onAnswer={handleAnswer} />
+              <AnswerButton isCorrect={true} onAnswer={handleAnswer} />
+            </div>
+          ) : (
+            <span className="text-foreground-subtle text-sm">
+              tap on card to reweal answer
+            </span>
+          )}
+        </div>
+      )}
+    </Screen>
+  )
+}

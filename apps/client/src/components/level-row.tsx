@@ -1,0 +1,56 @@
+import { ChevronRight } from 'lucide-react'
+
+type LevelRowProps = {
+  levelId: number
+  cardsNumber: number
+  onLevelOpen: () => void
+}
+
+export default function LevelRow({
+  levelId,
+  cardsNumber,
+  onLevelOpen
+}: LevelRowProps) {
+  let leftContent = (
+    <>
+      <span className={`w-2 h-2 rounded-full bg-lvl-${levelId}`}></span>
+      <span className="flex flex-col text-foreground text-left">
+        <span>{`Level ${levelId}`}</span>
+        <span className="text-foreground-muted text-sm">
+          {levelId === 1
+            ? 'Everyday'
+            : `Every ${Math.pow(2, levelId) / 2} days`}
+        </span>
+      </span>
+    </>
+  )
+
+  if (levelId === 0) {
+    leftContent = <span className="flex flex-col">Draft</span>
+  }
+
+  if (levelId === 8) {
+    leftContent = leftContent = (
+      <span className="flex flex-col">Finished cards</span>
+    )
+  }
+
+  if (levelId === 0 && cardsNumber === 0) {
+    return null
+  }
+
+  return (
+    <li className="py-3.5 border-b border-border last:border-b-0">
+      <button
+        onClick={onLevelOpen}
+        className="w-full flex justify-between items-center"
+      >
+        <span className="flex items-center gap-3 text-lg">{leftContent}</span>
+        <span className="flex items-center gap-3 text-foreground-muted">
+          <span className="text-lg">{`${cardsNumber} card${cardsNumber === 1 ? '' : 's'}`}</span>
+          <ChevronRight className="text-sm" />
+        </span>
+      </button>
+    </li>
+  )
+}

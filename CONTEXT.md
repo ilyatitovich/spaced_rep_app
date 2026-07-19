@@ -1,8 +1,14 @@
 # Project Overview
 
-**Spaced Repetition** is a mobile-first, offline-capable Progressive Web App (PWA) for memorizing information via spaced repetition. Users create **topics**, add flashcards (**cards**) with text / image / code content, and review them on a weekly, level-based schedule. The app is **local-first**: IndexedDB is the runtime source of truth, and an optional Supabase backend mirrors data per authenticated user for cross-device cloud sync. When Supabase is not configured (no env vars), the app runs fully local.
+**Spaced Repetition** is a mobile-first, offline-capable Progressive Web App (PWA) for memorizing information via spaced repetition. Users create **topics**, add flashcards (**cards**) with text / image / code content, and review them on a weekly, level-based schedule. The app is **local-first**: IndexedDB is the runtime source of truth; an optional cloud backend syncs data for authenticated users.
 
-The project is published as a portfolio app (`package.json` name `spaced_rep_pwa`, author "Ilya Titov", MIT licensed).
+Cloud backends are selected at build/init with `VITE_BACKEND_PROVIDER`:
+
+- `custom` — Express + Prisma + protobuf sync (`VITE_API_URL`)
+- `supabase` — Supabase Auth (Google) + PostgREST HTTP sync
+- unset — infers from env (`VITE_API_URL` → custom, Supabase vars → supabase), else fully local
+
+Ports live under `apps/client/src/providers` (`auth` / `sync` / `settings`). See [`apps/client/BACKEND_PROVIDERS.md`](apps/client/BACKEND_PROVIDERS.md).
 
 _Confidence: High_
 
@@ -14,8 +20,8 @@ Layered, local-first client architecture with a clear one-directional dependency
 models / types      (domain entities + content shapes)
       ↓
 lib/db.ts           (IndexedDB access: STORES, withTransaction)
-lib/sync-serialize  (model ↔ Supabase row mapping, LWW comparator)
-lib/supabase        (network client)
+lib/sync-serialize  (model ↔ row mapping, LWW comparator)
+providers/          (AuthPort / SyncPort / SettingsPort — custom | supabase)
       ↓
 services/           (CRUD + sync engine; the only writers of persistence)
       ↓
@@ -28,11 +34,14 @@ pages / components  (UI; reads from store, contexts, or services)
 Major building blocks:
 
 - **Domain layer** (`src/models`, `src/types`) — entities and scheduling logic; no I/O.
-- **Persistence layer** (`src/lib/db.ts`) — a single IndexedDB database `spacedRepApp` (v2) with four object stores.
-- **Services layer** (`src/services`) — all CRUD, plus a sync engine (offline queue, debounced push/pull, observer emitters).
-- **State layer** (`src/store`) — a single Zustand store for the topics list, bridged to sync via an observer.
-- **Context layer** (`src/contexts`) — `AuthProvider` (Supabase session) and `SyncProvider` (sync status + connectivity).
-- **UI layer** (`src/pages`, `src/components`) — a single React Router v7 route where navigation is driven by URL search params.
+- **Persistence layer** (`src/lib/db.ts`) — IndexedDB database `spacedRepApp`.
+- **Provider layer** (`src/providers`) — backend abstraction; UI/services never branch on provider name.
+- **Services layer** (`src/services`) — CRUD + sync orchestration (queue, LWW apply).
+- **State layer** (`src/store`) — Zustand topics list.
+- **Context layer** (`src/contexts`) — `AuthProvider`, `SyncProvider`.
+- **UI layer** — React Router; AuthMethods gated by `auth.capabilities`.
+
+Server (`apps/server`) is the **custom** provider implementation (Express, Prisma, Redis). Shared app DDL must match Supabase migrations under `apps/client/supabase/migrations`.
 
 _Confidence: High_
 

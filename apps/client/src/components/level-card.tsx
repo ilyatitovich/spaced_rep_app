@@ -1,0 +1,121 @@
+import { Check } from 'lucide-react'
+import { useRef, useEffect, useState, ReactNode } from 'react'
+
+import { isCodeBlock, isRecord, recordToBlob } from '@/lib'
+import { Card } from '@/models'
+
+type LevelCardProps = {
+  card: Card
+  isSelected: boolean
+  isSelectionMode: boolean
+  onPress: (isPressed: boolean) => void
+  onSelect: (cardId: string, add?: boolean) => void
+  onOpen: () => void
+}
+
+export default function LevelCard({
+  card,
+  isSelected,
+  isSelectionMode,
+  onOpen,
+  onPress,
+  onSelect
+}: LevelCardProps) {
+  const [previewUrl, setPreviewUrl] = useState('')
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const { content: frontContent } = card.data.front
+
+  let preview: ReactNode | null = null
+
+  useEffect(() => {
+    if (isRecord(frontContent)) {
+      const blob = recordToBlob(frontContent)
+      const url = URL.createObjectURL(blob)
+      setPreviewUrl(url)
+
+      return () => {
+        URL.revokeObjectURL(url)
+      }
+    }
+  }, [frontContent])
+
+  if (typeof frontContent === 'string') {
+    preview = (
+      <p>
+        {frontContent.length > 50
+          ? frontContent.slice(0, 50) + '...'
+          : frontContent}
+      </p>
+    )
+  }
+
+  if (isCodeBlock(frontContent)) {
+    preview = (
+      <p className="font-mono text-[10px]">
+        {frontContent.code.length > 50
+          ? frontContent.code.slice(0, 50) + '...'
+          : frontContent.code}
+      </p>
+    )
+  }
+
+  if (previewUrl) {
+    preview = <img src={previewUrl} alt="front pic" />
+  }
+
+  const handleTouchStart = () => {
+    timerRef.current = setTimeout(() => {
+      onPress(true)
+
+      if (!isSelected) {
+        onSelect(card.id)
+      }
+    }, 700) // long press threshold
+  }
+
+  const handleTouchEnd = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current)
+      timerRef.current = null
+    }
+  }
+
+  const handleClick = () => {
+    if (isSelectionMode) {
+      onSelect(card.id, !isSelected)
+      return
+    }
+
+    onOpen()
+  }
+
+  return (
+    <button
+      className="relative p-3 w-full h-30 text-xs border-2 border-foreground
+                 rounded-2xl text-foreground bg-card active:scale-95 transition-transform ease-in-out duration-150 select-none"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onClick={handleClick}
+    >
+      <span className="font-bold font-card break-all w-full h-full flex justify-center items-center overflow-hidden">
+        {preview}
+      </span>
+
+      <div
+        className={`absolute bottom-1 right-1 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
+          isSelectionMode
+            ? `${isSelected ? 'bg-primary border-primary' : 'bg-secondary border-border'}  scale-100 opacity-100`
+            : 'bg-secondary border-border scale-0 opacity-0'
+        }`}
+      >
+        {isSelected && (
+          <Check
+            className="w-4 h-4 text-primary-foreground transition-transform duration-200"
+            strokeWidth={3}
+          />
+        )}
+      </div>
+    </button>
+  )
+}

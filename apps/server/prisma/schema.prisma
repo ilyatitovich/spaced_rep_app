@@ -1,0 +1,376 @@
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "ts"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum AuthMethod {
+  EMAIL_OTP
+  PASSKEY
+  OAUTH
+}
+
+enum OtpPurpose {
+  LOGIN
+}
+
+enum AuthChallengeType {
+  WEBAUTHN_REGISTER
+  WEBAUTHN_ASSERT
+}
+
+enum SecurityEventType {
+  OTP_REQUESTED
+  OTP_FAILED
+  OTP_SUCCEEDED
+  PASSKEY_REGISTERED
+  PASSKEY_ASSERT_FAILED
+  PASSKEY_ASSERTED
+  SESSION_CREATED
+  SESSION_REVOKED
+  REFRESH_SUCCEEDED
+  REFRESH_REUSE_DETECTED
+  USER_DISABLED
+}
+
+enum ThemePreference {
+  LIGHT
+  DARK
+  SYSTEM
+}
+
+enum PlanTier {
+  FREE
+  PRO
+  PRO_PLUS
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIALING
+  PAST_DUE
+  CANCELED
+  EXPIRED
+  INCOMPLETE
+}
+
+enum BillingProvider {
+  NONE
+  STRIPE
+}
+
+enum NotificationChannel {
+  PUSH
+  EMAIL
+}
+
+model User {
+  id              String    @id @default(uuid()) @db.Uuid
+  email           String    @unique // always store lowercased
+  emailVerifiedAt DateTime? @map("email_verified_at") @db.Timestamptz
+  disabledAt      DateTime? @map("disabled_at") @db.Timestamptz
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  topics                Topic[]
+  cards                 Card[]
+  syncDevices           SyncDevice[]
+  syncOperations        SyncOperation[]
+  sessions              Session[]
+  passkeys              Passkey[]
+  oauthIdentities       OAuthIdentity[]
+  otpCodes              OtpCode[]
+  authChallenges        AuthChallenge[]
+  securityEvents        SecurityEvent[]
+  preference            UserPreference?
+  learningSettings      UserLearningSettings?
+  notificationSettings  UserNotificationSettings?
+  notificationReminders NotificationReminder[]
+  subscription          Subscription?
+
+  @@map("users")
+}
+
+model Topic {
+  id             String    @id @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  title          String
+  pivot          BigInt
+  week           Json
+  nextUpdateDate BigInt    @map("next_update_date")
+  // Client-supplied LWW timestamp (do not use @updatedAt)
+  updatedAt      DateTime  @map("updated_at") @db.Timestamptz
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cards          Card[]
+
+  @@index([userId, updatedAt])
+  // Partial unique topics_user_title_unique (user_id, title) WHERE deleted_at IS NULL
+  // is enforced in SQL migrations (Prisma cannot express partial uniques).
+  @@map("topics")
+}
+
+model Card {
+  id         String    @id @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  topicId    String    @map("topic_id") @db.Uuid
+  level      Int       @default(0)
+  data       Json
+  reviewDate BigInt?   @map("review_date")
+  // Client-supplied LWW timestamp (do not use @updatedAt)
+  updatedAt  DateTime  @map("updated_at") @db.Timestamptz
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamptz
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic      Topic     @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
+  @@index([topicId])
+  @@map("cards")
+}
+
+model SyncDevice {
+  id           String   @id @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  lastPulledAt DateTime @default(dbgenerated("'epoch'::timestamptz")) @map("last_pulled_at") @db.Timestamptz
+  lastSeenAt   DateTime @default(now()) @map("last_seen_at") @db.Timestamptz
+  userAgent    String?  @map("user_agent")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, lastSeenAt])
+  @@map("sync_devices")
+}
+
+model SyncOperation {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  opId      String   @map("op_id")
+  deviceId  String   @map("device_id") @db.Uuid
+  appliedAt DateTime @default(now()) @map("applied_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, opId])
+  @@index([userId, appliedAt])
+  @@map("sync_operations")
+}
+
+model Session {
+  id           String     @id @default(uuid()) @db.Uuid
+  userId       String     @map("user_id") @db.Uuid
+  authMethod   AuthMethod @map("auth_method")
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  lastActiveAt DateTime   @default(now()) @map("last_active_at") @db.Timestamptz
+  expiresAt    DateTime   @map("expires_at") @db.Timestamptz
+  revokedAt    DateTime?  @map("revoked_at") @db.Timestamptz
+  ipAddress    String?    @map("ip_address") @db.Inet
+  userAgent    String?    @map("user_agent")
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokens  RefreshToken[]
+  securityEvents SecurityEvent[]
+
+  @@index([userId, revokedAt])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model RefreshToken {
+  id                String    @id @default(uuid()) @db.Uuid
+  sessionId         String    @map("session_id") @db.Uuid
+  tokenHash         String    @unique @map("token_hash")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  expiresAt         DateTime  @map("expires_at") @db.Timestamptz
+  revokedAt         DateTime? @map("revoked_at") @db.Timestamptz
+  replacedByTokenId String?   @unique @map("replaced_by_token_id") @db.Uuid
+
+  session    Session       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  replacedBy RefreshToken? @relation("TokenRotation", fields: [replacedByTokenId], references: [id])
+  replaces   RefreshToken? @relation("TokenRotation")
+
+  @@index([sessionId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+model OtpCode {
+  id          String     @id @default(uuid()) @db.Uuid
+  email       String
+  userId      String?    @map("user_id") @db.Uuid
+  purpose     OtpPurpose
+  codeHash    String     @map("code_hash")
+  expiresAt   DateTime   @map("expires_at") @db.Timestamptz
+  consumedAt  DateTime?  @map("consumed_at") @db.Timestamptz
+  attempts    Int        @default(0)
+  maxAttempts Int        @default(5) @map("max_attempts")
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  requestIp   String?    @map("request_ip") @db.Inet
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([email, purpose, createdAt])
+  @@index([email, purpose, consumedAt, expiresAt])
+  @@index([expiresAt])
+  @@map("otp_codes")
+}
+
+model Passkey {
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  credentialId String    @unique @map("credential_id")
+  publicKey    Bytes     @map("public_key")
+  counter      BigInt    @default(0)
+  transports   String[]  @default([])
+  deviceType   String?   @map("device_type")
+  backedUp     Boolean   @default(false) @map("backed_up")
+  aaguid       String?
+  name         String?
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  lastUsedAt   DateTime? @map("last_used_at") @db.Timestamptz
+  revokedAt    DateTime? @map("revoked_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  // Partial index (user_id) WHERE revoked_at IS NULL is enforced in SQL migrations.
+  @@map("passkeys")
+}
+
+model AuthChallenge {
+  id         String            @id @default(uuid()) @db.Uuid
+  userId     String?           @map("user_id") @db.Uuid
+  type       AuthChallengeType
+  challenge  String            @unique
+  expiresAt  DateTime          @map("expires_at") @db.Timestamptz
+  consumedAt DateTime?         @map("consumed_at") @db.Timestamptz
+  createdAt  DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  metadata   Json?
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type, createdAt])
+  @@index([expiresAt])
+  @@map("auth_challenges")
+}
+
+model OAuthIdentity {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  provider       String
+  providerUserId String   @map("provider_user_id")
+  email          String?
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerUserId])
+  @@index([userId])
+  @@map("oauth_identities")
+}
+
+model SecurityEvent {
+  id        String            @id @default(uuid()) @db.Uuid
+  userId    String?           @map("user_id") @db.Uuid
+  sessionId String?           @map("session_id") @db.Uuid
+  type      SecurityEventType
+  ipAddress String?           @map("ip_address") @db.Inet
+  userAgent String?           @map("user_agent")
+  metadata  Json?
+  createdAt DateTime          @default(now()) @map("created_at") @db.Timestamptz
+
+  user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  session Session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([type, createdAt])
+  @@map("security_events")
+}
+
+model UserPreference {
+  userId            String          @id @map("user_id") @db.Uuid
+  theme             ThemePreference @default(SYSTEM)
+  language          String          @default("en") @db.VarChar(35)
+  timezone          String          @default("UTC") @db.VarChar(64)
+  // Client-supplied LWW timestamp (do not use @updatedAt)
+  updatedAt         DateTime        @map("updated_at") @db.Timestamptz
+  updatedByDeviceId String?         @map("updated_by_device_id") @db.Uuid
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_preferences")
+}
+
+model UserLearningSettings {
+  userId            String   @id @map("user_id") @db.Uuid
+  // CHECK week_starts_on BETWEEN 0 AND 6 (SQL migration)
+  weekStartsOn      Int      @default(0) @map("week_starts_on")
+  dailyNewCardLimit Int?     @map("daily_new_card_limit")
+  // Client-supplied LWW timestamp (do not use @updatedAt)
+  updatedAt         DateTime @map("updated_at") @db.Timestamptz
+  updatedByDeviceId String?  @map("updated_by_device_id") @db.Uuid
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_learning_settings")
+}
+
+model UserNotificationSettings {
+  userId            String   @id @map("user_id") @db.Uuid
+  enabled           Boolean  @default(false)
+  timezone          String   @default("UTC") @db.VarChar(64)
+  // Client-supplied LWW timestamp (do not use @updatedAt)
+  updatedAt         DateTime @map("updated_at") @db.Timestamptz
+  updatedByDeviceId String?  @map("updated_by_device_id") @db.Uuid
+
+  reminders NotificationReminder[]
+  user      User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_notification_settings")
+}
+
+model NotificationReminder {
+  id         String              @id @default(uuid()) @db.Uuid
+  userId     String              @map("user_id") @db.Uuid
+  timeLocal  DateTime            @map("time_local") @db.Time(0)
+  // CHECK days_of_week BETWEEN 0 AND 127 (SQL migration)
+  daysOfWeek Int                 @default(127) @map("days_of_week") @db.SmallInt
+  channel    NotificationChannel @default(PUSH)
+  enabled    Boolean             @default(true)
+  sortOrder  Int                 @default(0) @map("sort_order")
+  // Client-supplied LWW timestamp (do not use @updatedAt)
+  updatedAt  DateTime            @map("updated_at") @db.Timestamptz
+
+  settings UserNotificationSettings @relation(fields: [userId], references: [userId], onDelete: Cascade, map: "notification_reminders_settings_fkey")
+  user     User                     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "notification_reminders_user_fkey")
+
+  @@index([userId, sortOrder])
+  @@index([enabled, timeLocal])
+  @@map("notification_reminders")
+}
+
+model Subscription {
+  userId                 String             @id @map("user_id") @db.Uuid
+  plan                   PlanTier           @default(FREE)
+  status                 SubscriptionStatus @default(ACTIVE)
+  provider               BillingProvider    @default(NONE)
+  providerCustomerId     String?            @map("provider_customer_id")
+  providerSubscriptionId String?            @map("provider_subscription_id")
+  currentPeriodStart     DateTime?          @map("current_period_start") @db.Timestamptz
+  currentPeriodEnd       DateTime?          @map("current_period_end") @db.Timestamptz
+  trialEndsAt            DateTime?          @map("trial_ends_at") @db.Timestamptz
+  cancelAtPeriodEnd      Boolean            @default(false) @map("cancel_at_period_end")
+  canceledAt             DateTime?          @map("canceled_at") @db.Timestamptz
+  serverUpdatedAt        DateTime           @updatedAt @map("server_updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, currentPeriodEnd])
+  // Partial unique (provider, provider_subscription_id) WHERE provider_subscription_id IS NOT NULL
+  // is enforced in SQL migrations.
+  @@map("subscriptions")
+}
