@@ -5,8 +5,8 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey)
 
-// Fall back to harmless placeholders so createClient never throws when the app
-// runs unconfigured (local-only mode). Real calls are gated by isSupabaseConfigured.
+// Placeholders so createClient never throws when unused (provider=custom / local-only).
+// Real calls go through the supabase AuthPort / SyncPort when VITE_BACKEND_PROVIDER=supabase.
 export const supabase = createClient(
   supabaseUrl || 'http://localhost:54321',
   supabaseAnonKey || 'placeholder-anon-key',

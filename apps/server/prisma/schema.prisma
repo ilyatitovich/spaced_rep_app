@@ -110,6 +110,8 @@ model Topic {
   cards          Card[]
 
   @@index([userId, updatedAt])
+  // Partial unique topics_user_title_unique (user_id, title) WHERE deleted_at IS NULL
+  // is enforced in SQL migrations (Prisma cannot express partial uniques).
   @@map("topics")
 }
 
@@ -234,6 +236,7 @@ model Passkey {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  // Partial index (user_id) WHERE revoked_at IS NULL is enforced in SQL migrations.
   @@map("passkeys")
 }
 
@@ -304,6 +307,7 @@ model UserPreference {
 
 model UserLearningSettings {
   userId            String   @id @map("user_id") @db.Uuid
+  // CHECK week_starts_on BETWEEN 0 AND 6 (SQL migration)
   weekStartsOn      Int      @default(0) @map("week_starts_on")
   dailyNewCardLimit Int?     @map("daily_new_card_limit")
   // Client-supplied LWW timestamp (do not use @updatedAt)
@@ -333,6 +337,7 @@ model NotificationReminder {
   id         String              @id @default(uuid()) @db.Uuid
   userId     String              @map("user_id") @db.Uuid
   timeLocal  DateTime            @map("time_local") @db.Time(0)
+  // CHECK days_of_week BETWEEN 0 AND 127 (SQL migration)
   daysOfWeek Int                 @default(127) @map("days_of_week") @db.SmallInt
   channel    NotificationChannel @default(PUSH)
   enabled    Boolean             @default(true)
@@ -365,5 +370,7 @@ model Subscription {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([status, currentPeriodEnd])
+  // Partial unique (provider, provider_subscription_id) WHERE provider_subscription_id IS NOT NULL
+  // is enforced in SQL migrations.
   @@map("subscriptions")
 }

@@ -6,36 +6,16 @@ import {
   useState,
   type ReactNode
 } from 'react'
-import type { User as SupabaseUser } from '@supabase/supabase-js'
-import {
-  browserSupportsWebAuthn,
-  startAuthentication
-} from '@simplewebauthn/browser'
 
-import {
-  ensureFreshSession,
-  isAuthConfigured,
-  isGoogleAuthConfigured,
-  logoutAuthSession,
-  passkeyLoginOptions,
-  passkeyLoginVerify,
-  requestEmailOtp,
-  verifyEmailOtp as verifyEmailOtpApi
-} from '@/lib/api'
 import {
   clearAuthSession,
   getAuthSession,
-  setPkcePending,
   type AuthSession,
   type AuthUser
 } from '@/lib/auth-storage'
 import { completeOnboarding } from '@/lib/onboarding'
-import {
-  buildGoogleAuthorizeUrl,
-  createPkcePair,
-  googleRedirectUri
-} from '@/lib/pkce'
-import { isSupabaseConfigured, supabase } from '@/lib/supabase'
+import { auth, isBackendConfigured } from '@/providers'
+import type { AuthCapabilities } from '@/providers'
 import { setSyncUser, initialSync } from '@/services'
 import { useSettingsStore } from '@/store/settings-store'
 
@@ -44,75 +24,60 @@ type AuthContextValue = {
   user: AuthUser | null
   isLoading: boolean
   isConfigured: boolean
+  capabilities: AuthCapabilities
   signInWithGoogle: () => Promise<void>
-  signInWithApple: () => Promise<void>
   signInWithPasskey: () => Promise<void>
   sendEmailOtp: (email: string, turnstileToken: string) => Promise<void>
   verifyEmailOtp: (email: string, token: string) => Promise<void>
   signOut: () => Promise<void>
-  /** Used by OAuth callback route after exchanging the code. */
+  /** Used by OAuth callback route after exchanging the code (custom provider). */
   completeGoogleLogin: (session: AuthSession) => void
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
-function toAuthUser(user: SupabaseUser): AuthUser | null {
-  if (!user.email) return null
-  return { id: user.id, email: user.email }
-}
-
-function isWebAuthnAbort(error: unknown): boolean {
-  return (
-    error instanceof Error &&
-    (error.name === 'NotAllowedError' || error.name === 'AbortError')
-  )
+const emptyCapabilities: AuthCapabilities = {
+  google: false,
+  passkey: false,
+  emailOtp: false
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<AuthSession | null>(() =>
     getAuthSession()
   )
-  const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null)
-  const [isLoading, setIsLoading] = useState(
-    () => isAuthConfigured() || isSupabaseConfigured
-  )
+  const [isLoading, setIsLoading] = useState(() => isBackendConfigured())
 
   useEffect(() => {
+    if (!auth) {
+      setIsLoading(false)
+      return
+    }
+
     let cancelled = false
 
     async function bootstrap() {
-      if (isAuthConfigured()) {
-        const fresh = await ensureFreshSession()
-        if (!cancelled) setSession(fresh)
+      const fresh = await auth!.refreshSession()
+      if (!cancelled) {
+        setSession(fresh)
+        setIsLoading(false)
       }
-
-      if (isSupabaseConfigured) {
-        const { data } = await supabase.auth.getSession()
-        if (!cancelled) setSupabaseUser(data.session?.user ?? null)
-      }
-
-      if (!cancelled) setIsLoading(false)
     }
 
     void bootstrap()
 
-    if (!isSupabaseConfigured) {
-      return () => {
-        cancelled = true
-      }
-    }
-
-    const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSupabaseUser(nextSession?.user ?? null)
+    const unsubscribe = auth.onAuthStateChange(next => {
+      setSession(next)
+      if (next) completeOnboarding()
     })
 
     return () => {
       cancelled = true
-      data.subscription.unsubscribe()
+      unsubscribe()
     }
   }, [])
 
-  const user = session?.user ?? (supabaseUser ? toAuthUser(supabaseUser) : null)
+  const user = session?.user ?? null
   const userId = user?.id ?? null
 
   useEffect(() => {
@@ -135,82 +100,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session,
       user,
       isLoading,
-      isConfigured: isAuthConfigured() || isSupabaseConfigured,
+      isConfigured: isBackendConfigured(),
+      capabilities: auth?.capabilities ?? emptyCapabilities,
       signInWithGoogle: async () => {
-        const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
-        if (!clientId || !isGoogleAuthConfigured()) {
+        if (!auth?.capabilities.google) {
           throw new Error('Google sign-in is not configured')
         }
-
-        const { codeVerifier, codeChallenge, state } = await createPkcePair()
-        const redirectUri = googleRedirectUri()
-        setPkcePending({ codeVerifier, state })
-        window.location.assign(
-          buildGoogleAuthorizeUrl({
-            clientId,
-            redirectUri,
-            codeChallenge,
-            state
-          })
-        )
-      },
-      signInWithApple: async () => {
-        if (!isSupabaseConfigured) return
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: 'apple',
-          options: { redirectTo: window.location.origin }
-        })
-        if (error) throw error
-        completeOnboarding()
+        await auth.loginWithGoogle()
       },
       signInWithPasskey: async () => {
-        if (!isAuthConfigured()) {
+        if (!auth?.capabilities.passkey) {
           throw new Error('Passkey sign-in is not configured')
         }
-        if (!browserSupportsWebAuthn()) {
-          throw new Error('Passkeys aren’t supported in this browser')
+        await auth.loginWithPasskey()
+        const next = await auth.getSession()
+        if (next) {
+          setSession(next)
+          completeOnboarding()
         }
-
-        const options = await passkeyLoginOptions()
-        let credential
-        try {
-          credential = await startAuthentication({ optionsJSON: options })
-        } catch (err) {
-          if (isWebAuthnAbort(err)) {
-            throw new Error('Passkey sign-in was cancelled')
-          }
-          throw err
-        }
-
-        const next = await passkeyLoginVerify({ credential })
-        setSession(next)
-        completeOnboarding()
       },
       sendEmailOtp: async (email: string, turnstileToken: string) => {
-        if (!isAuthConfigured()) {
+        if (!auth?.capabilities.emailOtp) {
           throw new Error('Email sign-in is not configured')
         }
-        await requestEmailOtp({ email, turnstileToken })
+        await auth.requestEmailOtp(email, turnstileToken)
       },
       verifyEmailOtp: async (email: string, token: string) => {
-        if (!isAuthConfigured()) {
+        if (!auth?.capabilities.emailOtp) {
           throw new Error('Email sign-in is not configured')
         }
-        const next = await verifyEmailOtpApi({ email, code: token })
+        const next = await auth.verifyEmailOtp(email, token)
         setSession(next)
         completeOnboarding()
       },
       signOut: async () => {
-        const accessToken = getAuthSession()?.accessToken
-        if (accessToken) {
-          await logoutAuthSession(accessToken)
+        if (auth) {
+          await auth.logout()
         } else {
           clearAuthSession()
         }
         setSession(null)
-        if (isSupabaseConfigured) {
-          await supabase.auth.signOut()
-        }
       },
       completeGoogleLogin: (next: AuthSession) => {
         setSession(next)

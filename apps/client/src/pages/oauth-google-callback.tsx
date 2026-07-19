@@ -11,6 +11,7 @@ import {
   type AuthSession
 } from '@/lib/auth-storage'
 import { googleRedirectUri } from '@/lib/pkce'
+import { getBackendProvider } from '@/providers'
 
 let loginOnce: Promise<AuthSession> | null = null
 
@@ -23,6 +24,11 @@ export default function OAuthGoogleCallbackPage() {
     let cancelled = false
 
     async function run() {
+      if (getBackendProvider() !== 'custom') {
+        navigate('/', { replace: true })
+        return
+      }
+
       const params = new URLSearchParams(window.location.search)
       const error = params.get('error')
       const errorDescription = params.get('error_description')

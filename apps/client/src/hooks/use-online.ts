@@ -63,7 +63,12 @@ export function useOnlineVerified({
       const timer = setTimeout(() => controller.abort(), timeout)
 
       try {
-        await fetch(`${import.meta.env.VITE_API_URL}${pingUrl}`, {
+        const apiUrl = import.meta.env.VITE_API_URL
+        if (!apiUrl) {
+          if (!cancelled) setVerifiedOnline(browserOnline)
+          return
+        }
+        await fetch(`${apiUrl}${pingUrl}`, {
           method: 'HEAD',
           cache: 'no-store',
           signal: controller.signal

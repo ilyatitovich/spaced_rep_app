@@ -14,13 +14,9 @@ import {
   shouldApplyRemote
 } from '@/lib/sync-serialize'
 import { Card, Topic } from '@/models'
-import {
-  httpBootstrap,
-  httpPull,
-  httpPushBatch,
-  isServerSyncConfigured
-} from './sync-http.client'
-import { syncWsManager, type WsConnectionState } from './sync-ws.manager'
+import { isBackendConfigured, sync as syncBackend } from '@/providers'
+import type { SyncRealtimeHandle } from '@/providers/types'
+import type { WsConnectionState } from './sync-ws.manager'
 
 type SyncTable = typeof STORES.TOPICS | typeof STORES.CARDS
 type SyncOperation = 'upsert' | 'delete'
@@ -80,6 +76,7 @@ let state: SyncState = {
 }
 let triggerTimer: ReturnType<typeof setTimeout> | null = null
 let syncInFlight = false
+let realtime: SyncRealtimeHandle | null = null
 
 const listeners = new Set<(state: SyncState) => void>()
 const dataListeners = new Set<() => void>()
@@ -219,7 +216,7 @@ export async function enqueueSync(
   recordId: string,
   operation: SyncOperation
 ): Promise<void> {
-  if (!isServerSyncConfigured()) return
+  if (!isBackendConfigured()) return
 
   const queueId = `${table}:${recordId}`
   const existing = await withTransaction(
@@ -511,6 +508,7 @@ async function applyPullDelta(delta: PullDelta): Promise<void> {
 }
 
 async function pushChanges(deviceId: string): Promise<void> {
+  if (!syncBackend) return
   const queue = await getQueue()
   if (queue.length === 0) return
 
@@ -518,17 +516,16 @@ async function pushChanges(deviceId: string): Promise<void> {
   if (mutations.length === 0) return
 
   let ack: PushAck
-  const wsActive = syncWsManager.isActive()
-  if (wsActive) {
+  if (realtime?.isActive() && realtime.pushBatch) {
     try {
-      ack = await syncWsManager.pushBatch(mutations)
+      ack = await realtime.pushBatch(mutations)
       setState({ connection: 'ws' })
     } catch {
-      ack = await httpPushBatch({ deviceId, mutations })
+      ack = await syncBackend.push({ deviceId, mutations })
       setState({ connection: 'http' })
     }
   } else {
-    ack = await httpPushBatch({ deviceId, mutations })
+    ack = await syncBackend.push({ deviceId, mutations })
     setState({ connection: 'http' })
   }
 
@@ -540,16 +537,16 @@ async function pushChanges(deviceId: string): Promise<void> {
 }
 
 async function pullChanges(deviceId: string): Promise<void> {
+  if (!syncBackend) return
   const lastPulledAt = (await getMeta('lastPulledAt')) ?? EPOCH_ISO
-  const delta = await httpPull({ deviceId, since: lastPulledAt })
+  const delta = await syncBackend.pull({ deviceId, since: lastPulledAt })
   await applyPullDelta(delta)
 }
 
 async function reconcile(): Promise<void> {
-  // After long absence, bootstrap from epoch and drop local orphans via pull tombstones.
-  // Full ID reconcile requires live id list — use bootstrap pull as approximation.
+  if (!syncBackend) return
   const deviceId = await getDeviceId()
-  const delta = await httpBootstrap({
+  const delta = await syncBackend.bootstrap({
     deviceId,
     lastPulledAt: EPOCH_ISO,
     pendingOpCount: (await getQueue()).length
@@ -557,8 +554,10 @@ async function reconcile(): Promise<void> {
   await applyPullDelta(delta)
 }
 
-function wireWsListeners(): void {
-  syncWsManager.setListeners({
+function wireRealtimeListeners(): void {
+  if (!syncBackend?.connectRealtime) return
+
+  realtime = syncBackend.connectRealtime({
     onDelta: delta => {
       void applyPullDelta(delta).catch(err =>
         console.error('WS delta apply failed:', err)
@@ -569,7 +568,7 @@ function wireWsListeners(): void {
         console.error('WS conflict apply failed:', err)
       )
     },
-    onStateChange: (wsState: WsConnectionState) => {
+    onStateChange: wsState => {
       if (wsState === 'active') {
         setState({ connection: 'ws' })
         void flushAfterConnect()
@@ -578,17 +577,17 @@ function wireWsListeners(): void {
       }
     },
     onTokenExpired: () => {
-      void ensureWsReconnectWithFreshToken()
+      void ensureRealtimeReconnectWithFreshToken()
     }
   })
 }
 
-async function ensureWsReconnectWithFreshToken(): Promise<void> {
-  syncWsManager.disconnect()
-  if (!currentUserId) return
+async function ensureRealtimeReconnectWithFreshToken(): Promise<void> {
+  realtime?.disconnect()
+  if (!currentUserId || !realtime) return
   const deviceId = await getDeviceId()
   const lastPulledAt = (await getMeta('lastPulledAt')) ?? EPOCH_ISO
-  await syncWsManager.connect({
+  await realtime.connect({
     deviceId,
     lastPulledAt,
     pendingOpCount: (await getQueue()).length
@@ -605,11 +604,12 @@ async function flushAfterConnect(): Promise<void> {
   }
 }
 
-async function connectWs(): Promise<void> {
+async function connectRealtime(): Promise<void> {
+  if (!realtime) return
   const deviceId = await getDeviceId()
   const lastPulledAt = (await getMeta('lastPulledAt')) ?? EPOCH_ISO
-  syncWsManager.updateResume(lastPulledAt, (await getQueue()).length)
-  await syncWsManager.connect({
+  realtime.updateResume?.(lastPulledAt, (await getQueue()).length)
+  await realtime.connect({
     deviceId,
     lastPulledAt,
     pendingOpCount: (await getQueue()).length
@@ -617,7 +617,7 @@ async function connectWs(): Promise<void> {
 }
 
 export async function syncAll(_userId: string): Promise<void> {
-  if (!isServerSyncConfigured()) return
+  if (!isBackendConfigured() || !syncBackend) return
   if (syncInFlight) return
 
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
@@ -650,8 +650,8 @@ export async function syncAll(_userId: string): Promise<void> {
       queueDepth: (await getQueue()).length
     })
 
-    if (!syncWsManager.isActive()) {
-      await connectWs()
+    if (realtime && !realtime.isActive()) {
+      await connectRealtime()
     }
   } catch (error) {
     console.error('Sync failed:', error)
@@ -681,7 +681,7 @@ async function migrateLocalToCloud(): Promise<void> {
 export function setSyncUser(userId: string | null): void {
   currentUserId = userId
   if (!userId) {
-    syncWsManager.disconnect()
+    realtime?.disconnect()
     setState({
       status: 'idle',
       connection: 'idle',
@@ -697,9 +697,9 @@ export function setSyncUser(userId: string | null): void {
 }
 
 export async function initialSync(userId: string): Promise<void> {
-  if (!isServerSyncConfigured()) return
+  if (!isBackendConfigured() || !syncBackend) return
 
-  wireWsListeners()
+  wireRealtimeListeners()
 
   const migratedUserId = await getMeta('migratedUserId')
   if (migratedUserId !== userId) {
@@ -713,7 +713,7 @@ export async function initialSync(userId: string): Promise<void> {
   try {
     setState({ status: 'syncing' })
     const lastPulledAt = (await getMeta('lastPulledAt')) ?? EPOCH_ISO
-    const delta = await httpBootstrap({
+    const delta = await syncBackend.bootstrap({
       deviceId,
       lastPulledAt,
       pendingOpCount: (await getQueue()).length
@@ -734,7 +734,7 @@ export async function initialSync(userId: string): Promise<void> {
     })
   }
 
-  await connectWs()
+  await connectRealtime()
 }
 
 export function syncNow(): void {
@@ -743,7 +743,7 @@ export function syncNow(): void {
 }
 
 export function triggerSync(): void {
-  if (!currentUserId || !isServerSyncConfigured()) return
+  if (!currentUserId || !isBackendConfigured()) return
   if (typeof navigator !== 'undefined' && !navigator.onLine) return
 
   if (triggerTimer) clearTimeout(triggerTimer)
@@ -761,11 +761,14 @@ export async function getSyncDiagnostics(): Promise<{
   failedOps: FailedOp[]
 }> {
   const deviceId = await getDeviceId()
+  const wsState: WsConnectionState = realtime?.isActive()
+    ? 'active'
+    : 'disconnected'
   return {
     deviceId,
     lastPulledAt: (await getMeta('lastPulledAt')) ?? EPOCH_ISO,
     queueDepth: (await getQueue()).length,
-    wsState: syncWsManager.getState(),
+    wsState,
     failedOps: await loadFailedOps()
   }
 }

@@ -1,11 +1,7 @@
 import {
-  fetchSettings,
-  fetchSubscription,
-  isAuthConfigured,
-  patchSettingsLearning,
-  patchSettingsNotifications,
-  patchSettingsPreferences
-} from '@/lib/api'
+  isBackendConfigured,
+  settings as settingsBackend
+} from '@/providers'
 import { getAuthSession } from '@/lib/auth-storage'
 import { STORES, withTransaction } from '@/lib/db'
 import {
@@ -255,7 +251,7 @@ async function enqueueOutbox(
 export function triggerSettingsFlush(): void {
   if (currentOwnerKey === SETTINGS_LOCAL_KEY) return
   if (typeof navigator !== 'undefined' && !navigator.onLine) return
-  if (!isAuthConfigured()) return
+  if (!isBackendConfigured()) return
 
   if (flushTimer) clearTimeout(flushTimer)
   flushTimer = setTimeout(() => {
@@ -290,6 +286,7 @@ async function bumpOutbox(item: SettingsOutboxItem): Promise<void> {
 
 export async function flushSettingsOutbox(): Promise<void> {
   if (flushInFlight || currentOwnerKey === SETTINGS_LOCAL_KEY) return
+  if (!settingsBackend) return
   const session = getAuthSession()
   if (!session) return
 
@@ -303,21 +300,22 @@ export async function flushSettingsOutbox(): Promise<void> {
     for (const item of items) {
       try {
         if (item.section === 'preferences') {
-          const canonical = await patchSettingsPreferences(
-            session.accessToken,
-            item.payload as Parameters<typeof patchSettingsPreferences>[1]
+          const canonical = await settingsBackend.patchPreferences(
+            item.payload as Parameters<
+              typeof settingsBackend.patchPreferences
+            >[0]
           )
           await writePreferences(currentOwnerKey, canonical)
         } else if (item.section === 'learning') {
-          const canonical = await patchSettingsLearning(
-            session.accessToken,
-            item.payload as Parameters<typeof patchSettingsLearning>[1]
+          const canonical = await settingsBackend.patchLearning(
+            item.payload as Parameters<typeof settingsBackend.patchLearning>[0]
           )
           await writeLearning(currentOwnerKey, canonical)
         } else if (item.section === 'notifications') {
-          const canonical = await patchSettingsNotifications(
-            session.accessToken,
-            item.payload as Parameters<typeof patchSettingsNotifications>[1]
+          const canonical = await settingsBackend.patchNotifications(
+            item.payload as Parameters<
+              typeof settingsBackend.patchNotifications
+            >[0]
           )
           await writeNotifications(currentOwnerKey, canonical)
         }
@@ -435,10 +433,10 @@ function mergeNotifications(
 /** Pull server settings and LWW-merge into IDB for the signed-in user. */
 export async function pullAndMergeSettings(userId: string): Promise<void> {
   const session = getAuthSession()
-  if (!session || !isAuthConfigured()) return
+  if (!session || !settingsBackend) return
 
   const deviceId = await getDeviceId()
-  const remote = await fetchSettings(session.accessToken)
+  const remote = await settingsBackend.fetchSettings()
 
   // Migrate 'local' → userId on first login if needed
   const localDoc = await readDoc(SETTINGS_LOCAL_KEY)
@@ -496,9 +494,10 @@ export async function pullAndMergeSettings(userId: string): Promise<void> {
 }
 
 export async function refreshSubscriptionCache(): Promise<SubscriptionSnapshot | null> {
+  if (!settingsBackend || currentOwnerKey === SETTINGS_LOCAL_KEY) return null
   const session = getAuthSession()
-  if (!session || currentOwnerKey === SETTINGS_LOCAL_KEY) return null
-  const sub = await fetchSubscription(session.accessToken)
+  if (!session) return null
+  const sub = await settingsBackend.fetchSubscription()
   await writeSubscription(currentOwnerKey, sub)
   const doc = await readDoc(currentOwnerKey)
   emit(doc)

@@ -72,15 +72,18 @@ type AuthMethodsProps = {
 }
 
 export default function AuthMethods({ step, onStepChange }: AuthMethodsProps) {
-  // Lazy init: read synchronously on first render so the reorder happens
-  // before paint, not after (avoids a visible button jump on mount).
   const [lastUsed] = useState<AuthMethodId | null>(getLastUsedAuthMethod)
 
   const [pendingEmail, setPendingEmail] = useState('')
   const [passkeyLoading, setPasskeyLoading] = useState(false)
   const [passkeysSupported] = useState(() => browserSupportsWebAuthn())
-  const { signInWithGoogle, signInWithPasskey, sendEmailOtp, verifyEmailOtp } =
-    useAuth()
+  const {
+    signInWithGoogle,
+    signInWithPasskey,
+    sendEmailOtp,
+    verifyEmailOtp,
+    capabilities
+  } = useAuth()
 
   const handleGoogle = () => {
     setLastUsedAuthMethod('google')
@@ -130,13 +133,15 @@ export default function AuthMethods({ step, onStepChange }: AuthMethodsProps) {
     toast.success('Check your email for a code')
   }
 
-  const methods: {
+  const allMethods: {
     id: AuthMethodId
+    enabled: boolean
     render: (isLastUsed: boolean) => React.ReactNode
   }[] = [
     {
       id: 'google',
-      render: isLastUsed => (
+      enabled: capabilities.google,
+      render: (isLastUsed: boolean) => (
         <AuthMethodButton
           icon={<GoogleIcon />}
           label="Continue with Google"
@@ -147,7 +152,8 @@ export default function AuthMethods({ step, onStepChange }: AuthMethodsProps) {
     },
     {
       id: 'email',
-      render: isLastUsed => (
+      enabled: capabilities.emailOtp,
+      render: (isLastUsed: boolean) => (
         <AuthMethodButton
           icon={<Mail className="w-4 h-4" />}
           label="Continue with Email"
@@ -158,7 +164,8 @@ export default function AuthMethods({ step, onStepChange }: AuthMethodsProps) {
     },
     {
       id: 'passkey',
-      render: isLastUsed => (
+      enabled: capabilities.passkey,
+      render: (isLastUsed: boolean) => (
         <AuthMethodButton
           icon={<KeyRound className="w-4 h-4" />}
           label="Sign in with Passkey"
@@ -171,9 +178,11 @@ export default function AuthMethods({ step, onStepChange }: AuthMethodsProps) {
     }
   ]
 
+  const methods = allMethods.filter(m => m.enabled)
+
   const orderedMethods = lastUsed
     ? [
-        methods.find(m => m.id === lastUsed)!,
+        ...methods.filter(m => m.id === lastUsed),
         ...methods.filter(m => m.id !== lastUsed)
       ]
     : methods
