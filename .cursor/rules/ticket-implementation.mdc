@@ -1,0 +1,65 @@
+---
+description: Workflow for implementing a Linear ticket end-to-end - creating a branch, following acceptance criteria, verifying the work, and producing a summary for review. Apply whenever the user asks to implement, take, or work on a Linear ticket (e.g. "implement SR-142", "take this ticket", "work on ticket X", or pastes a ticket with an ID pattern like SR-XXX).
+alwaysApply: false
+---
+
+# Linear Ticket Implementation Workflow
+
+You are implementing a Linear ticket. Follow this workflow exactly.
+
+## 1. Branch
+
+Create and checkout a new git branch from the current base branch.
+Naming convention: `<type>/<ticket-id>-<short-kebab-description>`
+Example: `fix/sr-142-blur-save-button-unchanged`
+
+Infer `<type>` from the ticket (fix / feature / chore) and the ticket ID from
+the user's message or the ticket content itself.
+
+## 2. Ticket
+
+If Linear MCP is connected, fetch the ticket by ID to get the full title,
+description, and acceptance criteria. If not connected, use whatever ticket
+content (title/description/AC) the user pasted directly in the chat.
+
+## 3. Implementation rules
+
+- Follow the Acceptance Criteria exactly. Do not skip any checkbox.
+- Do not touch anything listed under "Out of Scope."
+- Stay within the relevant modules/files — don't refactor unrelated code
+  unless it's required to complete the ticket.
+- Match existing code style and patterns in the surrounding files
+  (don't introduce new libraries/patterns without flagging it first).
+- If Technical Notes mention a specific approach, use it as the default
+  unless you find a clear reason not to — in that case, flag it in the
+  summary instead of silently deciding differently.
+
+## 4. Verification
+
+Before finishing:
+
+- Run typecheck
+- Run linter
+- Run relevant tests if they exist for the touched area
+- Fix any errors introduced by your changes
+
+## 5. Do NOT commit or push
+
+Stop after implementation. Do not commit, do not push, do not open a PR.
+The user reviews the diff manually first.
+
+## 6. Summary
+
+When done, output a summary with:
+
+- **Branch name** created
+- **Files changed** (list, with 1-line reason per file)
+- **Acceptance criteria** — checklist showing which ones are satisfied and how
+- **Deviations** — anything done differently from the ticket or Technical
+  Notes, and why
+- **Open questions / risks** — anything unsure about or that needs input
+- **Not done** — any AC item that couldn't be completed, and why
+
+Wait for review before proceeding further. If Linear MCP is connected, set
+the ticket status to "In Progress" at the start and leave it there — do not
+mark it "Done" or "In Review" yourself.
