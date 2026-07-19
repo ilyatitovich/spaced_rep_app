@@ -74,13 +74,15 @@ function renderToday(day: Day) {
   // today & NOT done
   return (
     <div className="flex items-center justify-center h-7 w-7 my-2 border-2 border-foreground rounded-full">
-      <div className="h-3.5 w-3.5 rounded-full bg-gradient-to-br from-primary to-primary-active" />
+      <div className="h-3.5 w-3.5 rounded-full bg-linear-to-br from-primary to-primary-active" />
     </div>
   )
 }
 
 function renderFuture() {
-  return <div className="h-7 w-7 my-2 border-2 rounded-full border-foreground" />
+  return (
+    <div className="h-7 w-7 my-2 border-2 rounded-full border-foreground" />
+  )
 }
 
 function renderPastUnactiveDays() {

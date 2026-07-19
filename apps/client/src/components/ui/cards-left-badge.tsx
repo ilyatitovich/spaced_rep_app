@@ -20,11 +20,7 @@ export default function CardsLeftBadge({
 
   return (
     <div className="relative w-8 h-8 flex items-center justify-center">
-      <svg
-        width="32"
-        height="32"
-        className="absolute top-0 left-0 rotate-[-90deg]"
-      >
+      <svg width="32" height="32" className="absolute top-0 left-0 -rotate-90">
         {/* background circle */}
         <circle
           cx="16"
@@ -60,7 +56,9 @@ export default function CardsLeftBadge({
       </svg>
 
       {/* inner number */}
-      <div className="absolute text-sm font-medium text-foreground">{current}</div>
+      <div className="absolute text-sm font-medium text-foreground">
+        {current}
+      </div>
     </div>
   )
 }
