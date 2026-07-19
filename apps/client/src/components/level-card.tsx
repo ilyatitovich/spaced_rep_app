@@ -38,6 +38,8 @@ export default function LevelCard({
         URL.revokeObjectURL(url)
       }
     }
+
+    setPreviewUrl('')
   }, [frontContent])
 
   if (typeof frontContent === 'string') {
@@ -60,7 +62,7 @@ export default function LevelCard({
     )
   }
 
-  if (previewUrl) {
+  if (previewUrl && isRecord(frontContent)) {
     preview = <img src={previewUrl} alt="front pic" />
   }
 

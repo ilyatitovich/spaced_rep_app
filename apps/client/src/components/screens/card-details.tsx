@@ -11,7 +11,7 @@ import {
   BackButton,
   Header
 } from '@/components'
-import { isContentEmpty } from '@/lib'
+import { isCardDataEqual, isContentEmpty } from '@/lib'
 import { Card as CardModel } from '@/models'
 import { updateCard } from '@/services'
 import type {
@@ -52,6 +52,23 @@ const getSidesContentType = (card: CardModel | null | undefined) => ({
   back: card?.data.back.type ?? 'text'
 })
 
+const mergeTextFromEditor = (
+  base: CardData,
+  editor: CardData,
+  types: { front: SideContentType; back: SideContentType }
+): CardData => ({
+  front: {
+    ...base.front,
+    type: types.front,
+    content: types.front === 'text' ? editor.front.content : base.front.content
+  },
+  back: {
+    ...base.back,
+    type: types.back,
+    content: types.back === 'text' ? editor.back.content : base.back.content
+  }
+})
+
 export default function CardDetailsScreen({
   isOpen,
   cards,
@@ -67,6 +84,7 @@ export default function CardDetailsScreen({
   const [isFlipped, setIsFlipped] = useState(false)
   const [cardData, setCardData] = useState<CardData>(() => getCardData(card))
   const [isEdited, setIsEdited] = useState(false)
+  const [isDirty, setIsDirty] = useState(false)
   const [sidesContentType, setSidesContentType] = useState(() =>
     getSidesContentType(card)
   )
@@ -74,6 +92,12 @@ export default function CardDetailsScreen({
   const cardRef = useRef<CardHandle>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
+  const cardDataRef = useRef(cardData)
+  const savedCardDataRef = useRef(getCardData(card))
+  const sidesContentTypeRef = useRef(sidesContentType)
+
+  cardDataRef.current = cardData
+  sidesContentTypeRef.current = sidesContentType
 
   const isDragging = useRef(false)
   const isAnimating = useRef(false)
@@ -86,20 +110,33 @@ export default function CardDetailsScreen({
   const prevCard = cards?.[prevIndex]
   const nextCard = cards?.[nextIndex]
 
+  const setDirtyFrom = useCallback((data: CardData) => {
+    setIsDirty(!isCardDataEqual(data, savedCardDataRef.current))
+  }, [])
+
   const loadCardAtIndex = useCallback(
     (index: number) => {
       const c = cards?.[index]
-      setCardData(getCardData(c))
-      setSidesContentType(getSidesContentType(c))
+      const data = getCardData(c)
+      const types = getSidesContentType(c)
+      setCardData(data)
+      cardDataRef.current = data
+      savedCardDataRef.current = data
+      setSidesContentType(types)
+      sidesContentTypeRef.current = types
       setIsFlipped(false)
       setIsEdited(false)
+      setIsDirty(false)
     },
     [cards]
   )
 
   const saveCard = useCallback(
-    async (cardToSave: CardModel | undefined, dataToSave: CardData) => {
-      if (!cardToSave) return
+    async (
+      cardToSave: CardModel | undefined,
+      dataToSave: CardData
+    ): Promise<boolean> => {
+      if (!cardToSave) return false
 
       try {
         cardToSave.data = dataToSave
@@ -118,16 +155,34 @@ export default function CardDetailsScreen({
         if (cardToSave.level > 0) {
           toast.success('Card updated!')
         }
+        return true
       } catch (error) {
         console.error('Failed to save card:', error)
+        return false
       }
     },
     [onUpdate]
   )
 
+  const readLatestCardData = useCallback((): CardData => {
+    const editor = cardRef.current?.getContent()
+    if (!editor) return cardDataRef.current
+    return mergeTextFromEditor(
+      cardDataRef.current,
+      editor,
+      sidesContentTypeRef.current
+    )
+  }, [])
+
   const handleSaveCard = async (): Promise<void> => {
-    const latest = cardRef.current?.getContent() ?? cardData
-    await saveCard(card, latest)
+    const latest = readLatestCardData()
+    const saved = await saveCard(card, latest)
+    if (!saved) return
+
+    setCardData(latest)
+    cardDataRef.current = latest
+    savedCardDataRef.current = latest
+    setIsDirty(false)
     setIsEdited(false)
   }
 
@@ -157,22 +212,28 @@ export default function CardDetailsScreen({
   }, [cardIndex, loadCardAtIndex])
 
   const handleBlur = (): void => {
-    if (cardRef.current) {
-      const data = cardRef.current.getContent()
-      setCardData(prev => ({
-        ...prev,
-        [side]: { ...prev[side], content: data[side].content }
-      }))
-    }
+    const latest = readLatestCardData()
+    setCardData(latest)
+    cardDataRef.current = latest
+    setDirtyFrom(latest)
     setIsEdited(false)
   }
 
   const handleChangeSideContentType = (type: SideContentType = 'text') => {
-    setSidesContentType(prev => ({ ...prev, [side]: type }))
-    setCardData(prev => ({
-      ...prev,
-      [side]: { ...prev[side], type, content: '' }
-    }))
+    setSidesContentType(prev => {
+      const nextTypes = { ...prev, [side]: type }
+      sidesContentTypeRef.current = nextTypes
+      return nextTypes
+    })
+    setCardData(prev => {
+      const next = {
+        ...prev,
+        [side]: { ...prev[side], type, content: '' }
+      }
+      cardDataRef.current = next
+      setDirtyFrom(next)
+      return next
+    })
 
     if (type === 'text') {
       requestAnimationFrame(() => {
@@ -181,11 +242,27 @@ export default function CardDetailsScreen({
     }
   }
 
-  const handleChangeSideContent = (value: SideContent, side: SideName) => {
-    setCardData(prev => ({
-      ...prev,
-      [side]: { ...prev[side], content: value }
-    }))
+  const handleChangeSideContent = (value: SideContent, sideName: SideName) => {
+    // Text: update dirty only — writing back into `cardData` would remount
+    // contentEditable children and reset the caret.
+    if (typeof value === 'string') {
+      const draft: CardData = {
+        ...cardDataRef.current,
+        [sideName]: { ...cardDataRef.current[sideName], content: value }
+      }
+      setDirtyFrom(draft)
+      return
+    }
+
+    setCardData(prev => {
+      const next = {
+        ...prev,
+        [sideName]: { ...prev[sideName], content: value }
+      }
+      cardDataRef.current = next
+      setDirtyFrom(next)
+      return next
+    })
   }
 
   const finishSwipe = useCallback(
@@ -193,7 +270,7 @@ export default function CardDetailsScreen({
       if (total < 2) return
 
       if (isEdited) {
-        const latest = cardRef.current?.getContent() ?? cardData
+        const latest = readLatestCardData()
         void saveCard(card, latest)
       }
 
@@ -201,7 +278,15 @@ export default function CardDetailsScreen({
       setCurrentIndex(newIndex)
       loadCardAtIndex(newIndex)
     },
-    [total, isEdited, card, cardData, saveCard, currentIndex, loadCardAtIndex]
+    [
+      total,
+      isEdited,
+      card,
+      saveCard,
+      currentIndex,
+      loadCardAtIndex,
+      readLatestCardData
+    ]
   )
 
   const animateTrackTo = useCallback(
@@ -284,15 +369,13 @@ export default function CardDetailsScreen({
       <Header>
         <BackButton />
         <span>{isFlipped ? 'Back' : 'Front'}</span>
-        {isEdited ? (
-          <Button key="done" onClick={() => setIsEdited(false)}>
-            Done
-          </Button>
-        ) : (
-          <Button key="save" onClick={() => handleSaveCard()}>
-            Save
-          </Button>
-        )}
+        <Button
+          key="save"
+          disabled={!isDirty}
+          onClick={() => handleSaveCard()}
+        >
+          Save
+        </Button>
       </Header>
 
       <div
