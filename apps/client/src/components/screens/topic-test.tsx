@@ -72,12 +72,7 @@ export default function TestScreen({
       setIsFlipped(false)
       setIsInitialRender(false)
       setPrevCard(currentCard)
-
-      if (cards.length === 0) {
-        setIsFirstCardActive(false)
-      } else {
-        setIsFirstCardActive(prev => !prev)
-      }
+      setIsFirstCardActive(prev => !prev)
     } catch (error) {
       console.error('Error updating card:', error)
     }
@@ -114,7 +109,9 @@ export default function TestScreen({
     >
       <Header>
         <BackButton icon="x" />
-        {!isDone && <span>{isFlipped ? 'Back' : 'Front'}</span>}
+        <span className={isDone ? 'invisible' : undefined}>
+          {isFlipped ? 'Back' : 'Front'}
+        </span>
         {cards && (
           <CardsLeftBadge
             current={cards.length}
@@ -125,40 +122,34 @@ export default function TestScreen({
 
       {cards && (
         <CardContainer>
-          {cards.length === 0 ? (
-            <TestDoneMessage />
+          {cards.length === 0 && isFirstCardActive ? (
+            <div className="absolute w-[80vw] max-w-[350px] h-[60dvh] max-h-[500px] scale-up">
+              <TestDoneMessage />
+            </div>
           ) : (
-            <>
+            (isFirstCardActive ? cards[0] : prevCard) && (
               <Card
                 className={`${isFirstCardActive ? 'scale-up' : isCorrect ? 'move-right' : 'move-left'}`.trim()}
-                data={
-                  prevCard
-                    ? isFirstCardActive
-                      ? cards[0].data
-                      : prevCard.data
-                    : cards[0].data
-                }
+                data={(isFirstCardActive ? cards[0]! : prevCard!).data}
                 isFlipped={isFirstCardActive ? isFlipped : false}
                 handleClick={() => setIsFlipped(prev => !prev)}
               />
+            )
+          )}
 
-              {cards.length > 0 ? (
-                <Card
-                  className={`${isInitialRender ? 'hidden' : ''} ${isFirstCardActive ? (isCorrect ? 'move-right' : 'move-left') : 'scale-up'}`.trim()}
-                  data={
-                    prevCard
-                      ? isFirstCardActive
-                        ? prevCard.data
-                        : cards[0].data
-                      : cards[0].data
-                  }
-                  isFlipped={isFirstCardActive ? false : isFlipped}
-                  handleClick={() => setIsFlipped(prev => !prev)}
-                />
-              ) : (
-                <TestDoneMessage />
-              )}
-            </>
+          {cards.length === 0 && !isFirstCardActive ? (
+            <div className="absolute w-[80vw] max-w-[350px] h-[60dvh] max-h-[500px] scale-up">
+              <TestDoneMessage />
+            </div>
+          ) : (
+            (isFirstCardActive ? prevCard : cards[0]) && (
+              <Card
+                className={`${isInitialRender ? 'hidden' : ''} ${isFirstCardActive ? (isCorrect ? 'move-right' : 'move-left') : 'scale-up'}`.trim()}
+                data={(isFirstCardActive ? prevCard! : cards[0]!).data}
+                isFlipped={isFirstCardActive ? false : isFlipped}
+                handleClick={() => setIsFlipped(prev => !prev)}
+              />
+            )
           )}
         </CardContainer>
       )}

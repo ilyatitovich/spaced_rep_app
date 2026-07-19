@@ -158,9 +158,7 @@ export default function TopicScreen({
             onAdd={handleAddCard}
           />
           <TestScreen
-            isOpen={
-              topic?.week[getToday()]!.isDone ? false : !isAddingCard && isTest
-            }
+            isOpen={!isAddingCard && isTest}
             topicCards={cards}
             topic={topic}
           />
