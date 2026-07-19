@@ -12,8 +12,9 @@ import type {
   UserPreferences,
   UserSettingsDocument
 } from '@/types/settings.types'
+import type { BackendProvider } from './resolve-provider'
 
-export type BackendProvider = 'custom' | 'supabase'
+export type { BackendProvider }
 
 export type AuthCapabilities = {
   google: boolean

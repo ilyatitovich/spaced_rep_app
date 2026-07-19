@@ -18,7 +18,7 @@ export function useOnline(): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// useOnlineVerified — useOnline, plus periodic real-reachability checks.
+// useOnline — useOnline, plus periodic real-reachability checks.
 //
 // When the browser reports "online", periodically pings a lightweight
 // same-origin URL (HEAD request, no-store) to confirm actual connectivity.
@@ -38,7 +38,7 @@ export type UseOnlineVerifiedOptions = {
   timeout?: number
 }
 
-export function useOnlineVerified({
+export function useVerifiedOnline({
   pingUrl = '/health',
   interval = 30_000,
   timeout = 5_000

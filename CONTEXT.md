@@ -47,21 +47,21 @@ _Confidence: High_
 
 # Directory Structure
 
-| Path | Purpose |
-|------|---------|
-| `src/models/` | Domain entities: `topic.model.ts`, `card.model.ts` (`Card` class), `day.model.ts` (`Day` class + review-level scheduling). |
-| `src/types/` | Content/shape types (`card.types.ts`): `CardData`, `SideContent`, `CodeBlock`, image records, editor handles. |
-| `src/lib/` | Framework-agnostic utilities: `db.ts` (IndexedDB), `supabase.ts`, `sync-serialize.ts`, plus many small helpers (formatting, onboarding, search, image, auth-errors, etc.). All re-exported from `src/lib/index.ts`. |
-| `src/services/` | `topic.services.ts`, `card.services.ts`, `sync.service.ts`. Persistence + cloud sync. |
-| `src/store/` | Zustand store (`topics-store.ts`). |
-| `src/contexts/` | `auth-context.tsx`, `sync-context.tsx`. |
-| `src/hooks/` | Custom hooks: `use-online`, `use-is-mobile`, `use-font-size`, `use-tap`. |
-| `src/pages/` | Route components: `root.tsx` (mobile gate), `home.tsx`, `not-found.tsx`. |
-| `src/components/` | UI, split into `ui/` (primitives), `screens/` (full-screen overlays), `wrappers/` (layout shells), and top-level domain components. |
-| `src/styles/` | `index.css` — Tailwind v4 import + `@theme` design tokens. |
-| `src/__tests__/` | Jest tests, mirroring source paths (e.g. `__tests__/lib/...`). |
-| `supabase/migrations/` | SQL schema for the cloud mirror (`001_cloud_sync.sql`). |
-| `src/router.tsx`, `src/app.tsx`, `src/main.tsx` | Router definition, provider composition, and bootstrap. |
+| Path                                            | Purpose                                                                                                                                                                                                             |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/models/`                                   | Domain entities: `topic.model.ts`, `card.model.ts` (`Card` class), `day.model.ts` (`Day` class + review-level scheduling).                                                                                          |
+| `src/types/`                                    | Content/shape types (`card.types.ts`): `CardData`, `SideContent`, `CodeBlock`, image records, editor handles.                                                                                                       |
+| `src/lib/`                                      | Framework-agnostic utilities: `db.ts` (IndexedDB), `supabase.ts`, `sync-serialize.ts`, plus many small helpers (formatting, onboarding, search, image, auth-errors, etc.). All re-exported from `src/lib/index.ts`. |
+| `src/services/`                                 | `topic.services.ts`, `card.services.ts`, `sync.service.ts`. Persistence + cloud sync.                                                                                                                               |
+| `src/store/`                                    | Zustand store (`topics-store.ts`).                                                                                                                                                                                  |
+| `src/contexts/`                                 | `auth-context.tsx`, `sync-context.tsx`.                                                                                                                                                                             |
+| `src/hooks/`                                    | Custom hooks: `use-online`, `use-is-mobile`, `use-font-size`, `use-tap`.                                                                                                                                            |
+| `src/pages/`                                    | Route components: `root.tsx` (mobile gate), `home.tsx`, `not-found.tsx`.                                                                                                                                            |
+| `src/components/`                               | UI, split into `ui/` (primitives), `screens/` (full-screen overlays), `wrappers/` (layout shells), and top-level domain components.                                                                                 |
+| `src/styles/`                                   | `index.css` — Tailwind v4 import + `@theme` design tokens.                                                                                                                                                          |
+| `src/__tests__/`                                | Jest tests, mirroring source paths (e.g. `__tests__/lib/...`).                                                                                                                                                      |
+| `supabase/migrations/`                          | SQL schema for the cloud mirror (`001_cloud_sync.sql`).                                                                                                                                                             |
+| `src/router.tsx`, `src/app.tsx`, `src/main.tsx` | Router definition, provider composition, and bootstrap.                                                                                                                                                             |
 
 _Confidence: High_
 
@@ -126,7 +126,7 @@ _Confidence: High_
 
 - **Supabase** is the only external service. The client is created once in `src/lib/supabase.ts` using `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`. If either is missing, `isSupabaseConfigured` is `false` and the client falls back to harmless placeholder credentials so construction never throws; all real network calls are gated on `isSupabaseConfigured` (and a current user).
 - All Supabase reads/writes are confined to `sync.service.ts` (data) and `auth-context.tsx` (auth: OAuth, email OTP, session). No other module talks to the network directly.
-- **Connectivity detection**: `useOnline` (via `useSyncExternalStore` on browser online/offline events) and `useOnlineVerified` (adds a periodic HEAD ping to `/favicon.ico`). `SyncProvider` uses `useOnlineVerified`.
+- **Connectivity detection**: `useOnline` (via `useSyncExternalStore` on browser online/offline events) and `useOnline` (adds a periodic HEAD ping to `/favicon.ico`). `SyncProvider` uses `useOnline`.
 
 _Confidence: High_
 
@@ -268,5 +268,5 @@ _Confidence: High_
 - **`sonarjs` and `react-refresh`** are installed but effectively inactive (rules commented / not wired). Intent unknown. _(Medium)_
 - **Card-level reactivity:** topic/card detail screens do not subscribe to `subscribeSyncData`, so remote changes to an open card/level view won't auto-refresh. Unclear whether this is a deliberate scope limit. _(Medium)_
 - **`STAGING` CI env var** is set in the workflow but not referenced in source. Purpose unknown. _(Low)_
-- **Passkey / additional auth methods** and "poor connection" ping handling are mentioned in `notes.txt` as intentions but only partially implemented (OAuth + email OTP exist; connectivity ping exists via `useOnlineVerified`). Roadmap vs. shipped state is ambiguous. _(Low)_
+- **Passkey / additional auth methods** and "poor connection" ping handling are mentioned in `notes.txt` as intentions but only partially implemented (OAuth + email OTP exist; connectivity ping exists via `useOnline`). Roadmap vs. shipped state is ambiguous. _(Low)_
 - **PWA service-worker registration** is delegated entirely to `vite-plugin-pwa` (`registerType: 'autoUpdate'`); there is no explicit `registerSW` in source, so update UX relies on plugin defaults. _(Medium)_

@@ -3,29 +3,11 @@ import {
   createCustomSettingsAdapter,
   createCustomSyncAdapter
 } from './custom'
+import { resolveBackendProvider } from './resolve-provider'
 import { createSupabaseAuthAdapter } from './supabase/auth'
 import { createSupabaseSettingsAdapter } from './supabase'
 import { createSupabaseSyncAdapter } from './supabase/sync'
 import type { BackendPorts, BackendProvider } from './types'
-
-function readProvider(): BackendProvider | null {
-  const raw = (import.meta.env.VITE_BACKEND_PROVIDER ?? '').trim().toLowerCase()
-  if (raw === 'custom' || raw === 'supabase') return raw
-  if (raw) {
-    throw new Error(
-      `Invalid VITE_BACKEND_PROVIDER="${raw}". Expected "custom" or "supabase".`
-    )
-  }
-  // Backward-compatible inference when the flag is unset
-  if (import.meta.env.VITE_API_URL?.trim()) return 'custom'
-  if (
-    import.meta.env.VITE_SUPABASE_URL?.trim() &&
-    import.meta.env.VITE_SUPABASE_ANON_KEY?.trim()
-  ) {
-    return 'supabase'
-  }
-  return null
-}
 
 function assertCustomEnv(): void {
   if (!import.meta.env.VITE_API_URL?.trim()) {
@@ -67,7 +49,7 @@ function createPorts(provider: BackendProvider): BackendPorts {
   }
 }
 
-const resolvedProvider = readProvider()
+const resolvedProvider = resolveBackendProvider()
 
 /** Active backend ports, or null when running local-only (no provider configured). */
 export const backend: BackendPorts | null = resolvedProvider
@@ -75,7 +57,7 @@ export const backend: BackendPorts | null = resolvedProvider
   : null
 
 export function getBackendProvider(): BackendProvider | null {
-  return backend?.provider ?? null
+  return resolvedProvider
 }
 
 export function isBackendConfigured(): boolean {

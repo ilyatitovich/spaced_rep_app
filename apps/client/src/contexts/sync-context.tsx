@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 
 import { useAuth } from './auth-context'
-import { useOnlineVerified } from '@/hooks'
+import { useOnline } from '@/hooks'
 import {
   getSyncState,
   subscribeSync,
@@ -20,7 +20,7 @@ type SyncContextValue = SyncState & {
 const SyncContext = createContext<SyncContextValue | undefined>(undefined)
 
 export function SyncProvider({ children }: { children: ReactNode }) {
-  const isOnline = useOnlineVerified()
+  const isOnline = useOnline()
   const { user } = useAuth()
   const [syncState, setSyncState] = useState<SyncState>(getSyncState())
 

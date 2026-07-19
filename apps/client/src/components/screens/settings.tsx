@@ -12,7 +12,7 @@ import {
 import { useSearchParams } from 'react-router'
 import toast from 'react-hot-toast'
 
-import { BackButton, Header, Screen, Spinner } from '@/components'
+import { Avatar, BackButton, Header, Screen, Spinner } from '@/components'
 import { useAuth, useSync } from '@/contexts'
 import { useSettingsStore } from '@/store'
 import type { PlanTier } from '@/types/settings.types'
@@ -87,6 +87,7 @@ export default function SettingsScreen({ isOpen }: SettingsScreenProps) {
   const plan = settings?.subscription.plan ?? 'free'
   const planLabel = PLAN_LABELS[plan]
   const displayName = user?.email ?? 'Guest'
+  const avatarUrl = user?.user_metadata?.avatar_url
   const initial = (user?.email?.[0] ?? 'G').toUpperCase()
 
   const themeValue =
@@ -115,12 +116,12 @@ export default function SettingsScreen({ isOpen }: SettingsScreenProps) {
           ) : (
             <>
               <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg shrink-0">
-                  {initial}
-                </div>
+                <Avatar url={avatarUrl} initial={initial} />
                 <div className="flex-1 flex flex-col gap-1 min-w-0">
                   <p className="font-bold truncate">{displayName}</p>
-                  <p className="text-sm text-foreground-muted">{planLabel} plan</p>
+                  <p className="text-sm text-foreground-muted">
+                    {planLabel} plan
+                  </p>
                 </div>
               </div>
 
