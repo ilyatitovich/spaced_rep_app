@@ -5,7 +5,6 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey)
 
-/** Matches supabase-js default: `sb-{project-ref}-auth-token`. */
 export function getSupabaseAuthStorageKey(
   url = supabaseUrl || 'http://localhost:54321'
 ): string {

@@ -1,5 +1,6 @@
 import { getSupabaseAuthStorageKey } from '@/lib/supabase'
 import { resolveBackendProvider } from '@/providers/resolve-provider'
+import type { Session as SupabaseSession } from '@supabase/supabase-js'
 
 const AUTH_SESSION_KEY = 'auth.session'
 const PKCE_KEY = 'auth.pkce'
@@ -22,15 +23,8 @@ export type PkcePending = {
   state: string
 }
 
-type SupabaseStoredSession = {
-  access_token?: string
-  refresh_token?: string
-  expires_at?: number
-  user?: AuthUser
-}
-
 export function mapSupabaseSession(
-  session: SupabaseStoredSession
+  session: SupabaseSession
 ): AuthSession | null {
   const email = session.user?.email
   if (
@@ -77,7 +71,7 @@ function readSupabaseSession(): AuthSession | null {
   const raw = localStorage.getItem(getSupabaseAuthStorageKey())
   if (!raw) return null
   try {
-    return mapSupabaseSession(JSON.parse(raw) as SupabaseStoredSession)
+    return mapSupabaseSession(JSON.parse(raw) as SupabaseSession)
   } catch {
     return null
   }
