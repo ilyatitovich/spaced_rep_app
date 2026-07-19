@@ -8,8 +8,6 @@ type AvatarProps = {
 export default function Avatar({ url, initial = '?' }: AvatarProps) {
   const [failed, setFailed] = useState(false)
 
-  console.log(url)
-
   useEffect(() => {
     setFailed(false)
   }, [url])
