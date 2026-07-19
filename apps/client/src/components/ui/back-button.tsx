@@ -2,7 +2,7 @@ import { ChevronLeft, X } from 'lucide-react'
 import { useSearchParams } from 'react-router'
 
 import Button from './button'
-import { removeLastSearchParam } from '@/lib'
+import { removeLastSearchParam, resetViewportScroll } from '@/lib'
 
 type BackButtonProps = {
   icon?: 'chevron' | 'x'
@@ -14,6 +14,8 @@ export default function BackButton({ icon = 'chevron' }: BackButtonProps) {
   return (
     <Button
       onClick={() => {
+        // Blur before params change so the iOS keyboard starts collapsing immediately
+        resetViewportScroll()
         setSearchParams(prev => removeLastSearchParam(prev))
       }}
     >

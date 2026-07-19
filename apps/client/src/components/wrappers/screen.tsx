@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+
+import { resetViewportScroll } from '@/lib'
 
 type ScreenProps = {
   isOpen: boolean
@@ -17,6 +19,14 @@ export default function Screen({
   children
 }: ScreenProps) {
   const [isInitialRender, setIsInitialRender] = useState(true)
+  const wasOpenRef = useRef(false)
+
+  useEffect(() => {
+    if (wasOpenRef.current && !isOpen) {
+      resetViewportScroll()
+    }
+    wasOpenRef.current = isOpen
+  }, [isOpen])
 
   useEffect(() => {
     if (!isOpen) return
