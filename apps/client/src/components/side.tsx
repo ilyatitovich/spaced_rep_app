@@ -47,9 +47,16 @@ export default function Side({
     }
   }, [data.content, data.type])
 
-  const handleInput = useCallback((e: FormEvent<HTMLDivElement>) => {
-    setIsLongText(e.currentTarget.innerText.length > LONGTEXT_THRESHOLD)
-  }, [])
+  const handleInput = useCallback(
+    (e: FormEvent<HTMLDivElement>) => {
+      const text = e.currentTarget.innerText
+      setIsLongText(text.length > LONGTEXT_THRESHOLD)
+      // Keep React `data.content` unchanged while typing (avoids cursor reset);
+      // parent uses this only to derive dirty state. Trim to match getContent().
+      onChange?.(text.trim(), data.side)
+    },
+    [data.side, onChange]
+  )
 
   const handleChangeImage = useCallback(
     (file: ImageDBRecord) => {

@@ -47,7 +47,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     getAuthSession()
   )
 
-  console.log(session)
   const [isLoading, setIsLoading] = useState(() => isBackendConfigured())
 
   useEffect(() => {
