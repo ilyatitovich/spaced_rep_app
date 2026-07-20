@@ -166,6 +166,10 @@ export default function TopicScreen({
           <LevelScreen
             isOpen={levelId !== ''}
             levelId={levelId}
+            isDone={
+              topic.week[getToday()]!.isDone &&
+              topic.week[getToday()]!.todayLevels.includes(Number(levelId))
+            }
             cards={levelId ? (cards[Number(levelId)] ?? []) : []}
             startDate={topic.pivot}
             onDeleteCards={(cards: Card[]) => {

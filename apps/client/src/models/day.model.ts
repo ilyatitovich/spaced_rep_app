@@ -1,18 +1,4 @@
-/*
-
-Card's levels:
-
-0 - draft
-1 - everyday
-2 - every 2 days
-3 - every 4 days
-4 - every 8 days
-5 - every 16 days
-6 - every 32 days
-7 - every 64 days
-8 - finished
-
-*/
+import { LEITNER_64_DAY_SCHEDULE } from '@/lib'
 
 export class Day {
   date: number
@@ -26,21 +12,7 @@ export class Day {
   }
 
   public setLevelList(pivot: number): void {
-    const numOfDays = Math.floor((this.date - pivot) / 86400000 + 1)
-
-    const levelConditions = [
-      { divisor: 2, level: 2 },
-      { divisor: 5, level: 3 },
-      { divisor: 9, level: 4 },
-      { divisor: 17, level: 5 },
-      { divisor: 33, level: 6 },
-      { divisor: 65, level: 7 }
-    ]
-
-    levelConditions.forEach(condition => {
-      if (numOfDays % condition.divisor === 0) {
-        this.todayLevels.push(condition.level)
-      }
-    })
+    const day = Math.floor((this.date - pivot) / 86400000)
+    this.todayLevels = LEITNER_64_DAY_SCHEDULE[day % 64]
   }
 }

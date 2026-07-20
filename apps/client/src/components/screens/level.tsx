@@ -17,6 +17,7 @@ import { deleteCardsBulk } from '@/services'
 type LevelScreenProps = {
   isOpen: boolean
   levelId: string
+  isDone: boolean
   cards: Card[]
   startDate: number
   onDeleteCards: (cards: Card[]) => void
@@ -36,6 +37,7 @@ const itemVariants = {
 export default function LevelScreen({
   isOpen,
   levelId,
+  isDone,
   cards,
   startDate,
   onDeleteCards
@@ -119,7 +121,7 @@ export default function LevelScreen({
       <div className="flex flex-col overflow-y-auto h-[calc(100dvh-60px)]">
         <div className="w-full text-center p-4">
           <p className="text-[16px] text-foreground">
-            {`${levelCards.length} card${levelCards.length === 1 ? '' : 's'}${['0', '8'].includes(currentLevelId) ? '' : `, next review: ${getReviewMessage(startDate, Number(currentLevelId))}`}`}
+            {`${levelCards.length} card${levelCards.length === 1 ? '' : 's'}${['0', '8'].includes(currentLevelId) ? '' : `, next review: ${getReviewMessage(startDate, Number(currentLevelId), isDone)}`}`}
           </p>
         </div>
 

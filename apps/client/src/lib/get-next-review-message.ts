@@ -1,63 +1,62 @@
-const MS_PER_DAY = 24 * 60 * 60 * 1000
+import { LEITNER_64_DAY_SCHEDULE } from './leitner-schedule'
 
-const LEVEL_INTERVAL: Record<number, number> = {
-  2: 1,
-  3: 4,
-  4: 8,
-  5: 16,
-  6: 32,
-  7: 64
-}
+const DAY_MS = 86_400_000
+const CYCLE_LENGTH = LEITNER_64_DAY_SCHEDULE.length
 
 function startOfDay(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate())
 }
 
-function getNextReviewDate(startDateTs: number, level: number): Date {
-  const days = LEVEL_INTERVAL[level] ?? 1
-  if (days <= 0) return startOfDay(new Date(startDateTs))
+export function getNextReviewDate(
+  fromTs: number,
+  level: number,
+  pivot: number
+): number {
+  const currentDay = Math.floor((fromTs - pivot) / DAY_MS)
+  const cycleDay = ((currentDay % CYCLE_LENGTH) + CYCLE_LENGTH) % CYCLE_LENGTH
 
-  // initial next date = startDate + days
-  const initialNext = new Date(startDateTs)
-  initialNext.setDate(initialNext.getDate() + days)
+  for (let offset = 1; offset <= CYCLE_LENGTH; offset++) {
+    const index = (cycleDay + offset) % CYCLE_LENGTH
 
-  const today = startOfDay(new Date())
-
-  // if initialNext already >= today — return start-of-day of that date
-  const nextDayStart = startOfDay(initialNext)
-  if (nextDayStart.getTime() >= today.getTime()) {
-    return nextDayStart
+    if (LEITNER_64_DAY_SCHEDULE[index].includes(level)) {
+      return fromTs + offset * DAY_MS
+    }
   }
 
-  // compute how many intervals we need to add
-  const diffMs = today.getTime() - nextDayStart.getTime()
-  // how many full intervals have passed since nextDayStart
-  const intervalsPassed = Math.ceil(diffMs / (days * MS_PER_DAY))
-  const advanced = new Date(nextDayStart)
-  advanced.setDate(advanced.getDate() + intervalsPassed * days)
-
-  // ensure we return start-of-day of advanced date
-  return startOfDay(advanced)
+  throw new Error(`Level ${level} not found in schedule`)
 }
 
-function formatReviewDate(date: Date): string {
+function formatReviewDate(date: number): string {
+  const next = startOfDay(new Date(date))
+
   const today = startOfDay(new Date())
-  const next = startOfDay(date)
+  if (next.getTime() === today.getTime()) return 'today'
 
-  const diffDays = Math.round((next.getTime() - today.getTime()) / MS_PER_DAY)
+  const tomorrow = new Date()
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  const tomorrowStart = startOfDay(tomorrow)
+  if (next.getTime() === tomorrowStart.getTime()) return 'tomorrow'
 
-  if (diffDays === 0) return 'today'
-  if (diffDays === 1) return 'tomorrow'
-
-  // dd.mm.yyyy
+  // dd.mm.yy
   const dd = String(next.getDate()).padStart(2, '0')
   const mm = String(next.getMonth() + 1).padStart(2, '0')
-  const yyyy = next.getFullYear()
-  return `${dd}.${mm}.${yyyy}`
+  const yy = next.getFullYear().toString().slice(-2)
+  return `${dd}.${mm}.${yy}`
 }
 
-export function getReviewMessage(startDateTs: number, level: number): string {
+export function getReviewMessage(
+  startDateTs: number,
+  level: number,
+  isDone: boolean
+): string {
+  if (level === 0) return ''
+  if (isDone) {
+    if (level === 1) return 'tomorrow'
+
+    return formatReviewDate(getNextReviewDate(Date.now(), level, startDateTs))
+  }
+
   if (level === 1) return 'today'
-  const next = getNextReviewDate(startDateTs, level)
-  return formatReviewDate(next)
+
+  return formatReviewDate(getNextReviewDate(startDateTs, level, startDateTs))
 }
