@@ -1,4 +1,4 @@
-import { isPlanEntitled } from './plan.service.js'
+import { isPlanEntitled } from './plan-entitlement.js'
 
 describe('isPlanEntitled', () => {
   it('allows free for free minimum', () => {
