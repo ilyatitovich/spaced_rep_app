@@ -12,7 +12,9 @@
   },
   "include": [
     "**/*.ts",
-    "../apps/server/src/shared/types/express.d.ts"
+    "../apps/server/src/shared/types/express.d.ts",
+    "../e2e/**/*.ts",
+    "../playwright.config.ts"
   ],
   "exclude": ["node_modules"]
 }

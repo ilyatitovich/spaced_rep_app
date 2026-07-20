@@ -27,6 +27,36 @@ export {
   resetTestApp
 } from './helpers/http/supertest-app.js'
 export {
+  loginViaEmailOtp,
+  readOtpFromRedis,
+  requestEmailOtp,
+  verifyEmailOtp
+} from './helpers/auth/email-otp.js'
+export {
+  createAuthenticatedAgent,
+  createSessionForUser,
+  findUserByEmail,
+  refreshTokens,
+  revokeSession,
+  type AuthTokens
+} from './helpers/auth/session.js'
+export { createOAuthSession } from './helpers/auth/oauth.js'
+export {
+  authenticatedContext,
+  createStorageState,
+  writeStorageStateFile
+} from './helpers/auth/storage-state.js'
+export {
+  installVirtualAuthenticator,
+  seedPasskey,
+  WebAuthnHelper,
+  type VirtualPasskey
+} from './helpers/webauthn/virtual-authenticator.js'
+export {
+  loadPasskey,
+  savePasskey
+} from './helpers/webauthn/passkey-storage.js'
+export {
   cardFactory,
   topicFactory,
   userFactory,

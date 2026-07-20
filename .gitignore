@@ -31,6 +31,9 @@ vite.svg
 
 coverage/
 testing/.auth/
+playwright-report/
+test-results/
+blob-report/
 .pnpm-store
 *.txt
 
