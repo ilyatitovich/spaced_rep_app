@@ -20,7 +20,7 @@ export default function AuthScreen({ isOpen }: AuthScreenProps) {
           <BackButton />
           <span className="font-bold">Sign in</span>
         </Header>
-        <div className="flex flex-col items-center justify-center h-full w-full">
+        <div className="pt-4">
           <AuthMethods step={step} onStepChange={setStep} />
         </div>
       </div>
