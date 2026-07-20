@@ -72,7 +72,10 @@ export default function LevelScreen({
   }, [cancelSelectionMode])
 
   const handleSelectAll = (isSelectAll: boolean): void => {
-    selectAll(levelCards.map(card => card.id), isSelectAll)
+    selectAll(
+      levelCards.map(card => card.id),
+      isSelectAll
+    )
   }
 
   const handleDeleteSelectedItems = (): Promise<void> =>

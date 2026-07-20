@@ -71,7 +71,10 @@ export default function HomePage() {
   }
 
   const handleSelectAll = (isSelectAll: boolean): void => {
-    selectAll(topics.map(topic => topic.id), isSelectAll)
+    selectAll(
+      topics.map(topic => topic.id),
+      isSelectAll
+    )
   }
 
   const handleDeleteSelectedItems = (): Promise<void> =>
