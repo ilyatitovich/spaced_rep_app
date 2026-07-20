@@ -1,4 +1,4 @@
-import { CircleUserRound } from 'lucide-react'
+import { CircleUserRound, List } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router'
@@ -62,10 +62,6 @@ export default function HomePage() {
     addTopic(topic)
   }
 
-  const handlePress = (isPressed: boolean): void => {
-    setIsSelectionMode(isPressed)
-  }
-
   const handleSelectItem = (topicId: string, add: boolean = true): void => {
     setSelectedItems(prev =>
       add ? [...prev, topicId] : prev.filter(tId => tId !== topicId)
@@ -113,13 +109,15 @@ export default function HomePage() {
       </AnimatePresence>
 
       <Header>
-        <span className="w-6" />
+        <Button onClick={() => setIsSelectionMode(true)}>
+          <List />
+        </Button>
         <span className="font-bold">Topics</span>
         <Button
           ariaLabel="Account"
           onClick={() => setSearchParams({ settings: 'true' })}
         >
-          <CircleUserRound />
+          <CircleUserRound size={24} />
         </Button>
       </Header>
       <Search onSearch={handleSearch} placeholder="Search topics" />
@@ -154,7 +152,7 @@ export default function HomePage() {
                     topic={topic}
                     isSelectionMode={isSelectionMode}
                     isSelected={selectedItems.includes(topic.id)}
-                    onPress={handlePress}
+                    // onPress={handlePress}
                     onSelect={handleSelectItem}
                     onOpen={() => setSearchParams({ topicId: topic.id })}
                   />

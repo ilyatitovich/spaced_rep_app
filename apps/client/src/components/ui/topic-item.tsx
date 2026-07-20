@@ -1,5 +1,4 @@
 import { Check } from 'lucide-react'
-import { useRef } from 'react'
 
 import { formatTimestamp, getToday, joinNumbers } from '@/lib'
 import { Topic, Day } from '@/models'
@@ -8,7 +7,6 @@ type TopicItemProps = {
   topic: Topic
   isSelectionMode?: boolean
   isSelected: boolean
-  onPress: (isPressed: boolean) => void
   onSelect: (topicId: string, add?: boolean) => void
   onOpen: () => void
 }
@@ -17,29 +15,10 @@ export default function TopicItem({
   topic,
   isSelectionMode = false,
   isSelected = false,
-  onPress,
   onSelect,
   onOpen
 }: TopicItemProps) {
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { todayLevels } = topic.week[getToday()] as Day
-
-  const handleTouchStart = () => {
-    timerRef.current = setTimeout(() => {
-      onPress(true)
-
-      if (!isSelected) {
-        onSelect(topic.id)
-      }
-    }, 700) // long press threshold
-  }
-
-  const handleTouchEnd = () => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current)
-      timerRef.current = null
-    }
-  }
 
   const handleClick = () => {
     if (isSelectionMode) {
@@ -56,8 +35,6 @@ export default function TopicItem({
         isSelectionMode && isSelected ? 'ring-2 ring-primary' : ''
       }`}
       aria-label={`Go to topic: ${topic.title}`}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
       onClick={handleClick}
     >
       <div className="flex flex-col gap-1.5 text-left w-3/4">
