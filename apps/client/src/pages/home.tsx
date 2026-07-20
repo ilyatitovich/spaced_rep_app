@@ -1,6 +1,6 @@
 import { CircleUserRound, List } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useSearchParams } from 'react-router'
 import { useDebouncedCallback } from 'use-debounce'
 
@@ -18,6 +18,7 @@ import {
   Search
 } from '@/components'
 import { useSync } from '@/contexts'
+import { useSelectionMode } from '@/hooks'
 import { Topic } from '@/models'
 import { useTopicsStore } from '@/store'
 import AuthScreen from '@/components/screens/auth'
@@ -43,8 +44,15 @@ export default function HomePage() {
 
   const { status } = useSync()
 
-  const [isSelectionMode, setIsSelectionMode] = useState(false)
-  const [selectedItems, setSelectedItems] = useState<string[]>([])
+  const {
+    isSelectionMode,
+    selectedItems,
+    setIsSelectionMode,
+    selectItem,
+    selectAll,
+    cancelSelectionMode,
+    deleteSelected
+  } = useSelectionMode()
 
   const [searchParams, setSearchParams] = useSearchParams()
   const isCreating = searchParams.get('create') === 'true'
@@ -62,34 +70,15 @@ export default function HomePage() {
     addTopic(topic)
   }
 
-  const handleSelectItem = (topicId: string, add: boolean = true): void => {
-    setSelectedItems(prev =>
-      add ? [...prev, topicId] : prev.filter(tId => tId !== topicId)
-    )
-  }
-
-  const handleCancelSelectedMode = (): void => {
-    setIsSelectionMode(false)
-    setSelectedItems([])
-  }
-
   const handleSelectAll = (isSelectAll: boolean): void => {
-    setSelectedItems(isSelectAll ? topics.map(topic => topic.id) : [])
+    selectAll(topics.map(topic => topic.id), isSelectAll)
   }
 
-  const handleDeleteSelectedItems = async (): Promise<void> => {
-    try {
-      await deleteTopics(selectedItems)
-
-      if (useTopicsStore.getState().topics.length === 0) {
-        setIsSelectionMode(false)
-      }
-
-      setSelectedItems([])
-    } catch (error) {
-      console.error('Failed to delete some topics:', error)
-    }
-  }
+  const handleDeleteSelectedItems = (): Promise<void> =>
+    deleteSelected(async ids => {
+      await deleteTopics(ids)
+      return useTopicsStore.getState().topics.length === 0
+    })
 
   const handleSearch = useDebouncedCallback((value: string) => {
     searchTopics(value)
@@ -100,7 +89,7 @@ export default function HomePage() {
       <AnimatePresence>
         {isSelectionMode && (
           <SelectionModeHeader
-            handleCancel={handleCancelSelectedMode}
+            handleCancel={cancelSelectionMode}
             selectedItemsCount={selectedItems.length}
             isAllSelected={selectedItems.length === topics.length}
             handleSelectAll={handleSelectAll}
@@ -152,8 +141,7 @@ export default function HomePage() {
                     topic={topic}
                     isSelectionMode={isSelectionMode}
                     isSelected={selectedItems.includes(topic.id)}
-                    // onPress={handlePress}
-                    onSelect={handleSelectItem}
+                    onSelect={selectItem}
                     onOpen={() => setSearchParams({ topicId: topic.id })}
                   />
                 </motion.li>

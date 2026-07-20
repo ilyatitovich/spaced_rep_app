@@ -8,11 +8,14 @@ import {
   Screen,
   SelectionModeHeader,
   SelectionModeFooter,
-  Header
+  Header,
+  Button
 } from '@/components'
+import { useSelectionMode } from '@/hooks'
 import { getReviewMessage, getLevelDescription } from '@/lib'
 import { Card } from '@/models'
 import { deleteCardsBulk } from '@/services'
+import { List } from 'lucide-react'
 
 type LevelScreenProps = {
   isOpen: boolean
@@ -42,10 +45,18 @@ export default function LevelScreen({
   startDate,
   onDeleteCards
 }: LevelScreenProps) {
-  const [isSelectionMode, setIsSelectionMode] = useState(false)
-  const [selectedItems, setSelectedItems] = useState<string[]>([])
   const [levelCards, setLevelCards] = useState<Card[]>([])
   const [currentLevelId, setCurrentLevelId] = useState('')
+
+  const {
+    isSelectionMode,
+    selectedItems,
+    setIsSelectionMode,
+    selectItem,
+    selectAll,
+    cancelSelectionMode,
+    deleteSelected
+  } = useSelectionMode()
 
   const [_, setSearchParams] = useSearchParams()
 
@@ -55,55 +66,29 @@ export default function LevelScreen({
   }, [cards, levelId])
 
   const onClose = useCallback(() => {
-    setIsSelectionMode(false)
-    setSelectedItems([])
+    cancelSelectionMode()
     setLevelCards([])
     setCurrentLevelId('')
-  }, [])
-
-  const handlePress = (isPressed: boolean): void => {
-    setIsSelectionMode(isPressed)
-  }
-
-  const handleSelectItem = (cardId: string, add: boolean = true): void => {
-    setSelectedItems(prev =>
-      add ? [...prev, cardId] : prev.filter(cId => cId !== cardId)
-    )
-  }
-
-  const handleCancelSelectedMode = (): void => {
-    setIsSelectionMode(false)
-    setSelectedItems([])
-  }
+  }, [cancelSelectionMode])
 
   const handleSelectAll = (isSelectAll: boolean): void => {
-    setSelectedItems(isSelectAll ? levelCards.map(c => c.id) : [])
+    selectAll(levelCards.map(card => card.id), isSelectAll)
   }
 
-  const handleDeleteSelectedItems = async (): Promise<void> => {
-    try {
-      await deleteCardsBulk(selectedItems)
-      const restCards = levelCards.filter(
-        card => !selectedItems.includes(card.id)
-      )
+  const handleDeleteSelectedItems = (): Promise<void> =>
+    deleteSelected(async ids => {
+      await deleteCardsBulk(ids)
+      const restCards = levelCards.filter(card => !ids.includes(card.id))
       onDeleteCards(restCards)
-
-      if (restCards.length === 0) {
-        setIsSelectionMode(false)
-      }
-
-      setSelectedItems([])
-    } catch (error) {
-      console.error('Failed to delete some topics:', error)
-    }
-  }
+      return restCards.length === 0
+    })
 
   return (
     <Screen isOpen={isOpen} onClose={onClose} onOpen={onOpen}>
       <AnimatePresence>
         {isSelectionMode && (
           <SelectionModeHeader
-            handleCancel={handleCancelSelectedMode}
+            handleCancel={cancelSelectionMode}
             selectedItemsCount={selectedItems.length}
             isAllSelected={selectedItems.length === levelCards.length}
             handleSelectAll={handleSelectAll}
@@ -116,6 +101,9 @@ export default function LevelScreen({
         <span className="font-semibold">
           {currentLevelId === '0' ? 'Draft' : `Level ${currentLevelId}`}
         </span>
+        <Button onClick={() => setIsSelectionMode(true)}>
+          <List size={24} />
+        </Button>
       </Header>
 
       <div className="flex flex-col overflow-y-auto h-[calc(100dvh-60px)]">
@@ -144,8 +132,8 @@ export default function LevelScreen({
                     card={card}
                     isSelected={selectedItems.includes(card.id)}
                     isSelectionMode={isSelectionMode}
-                    onPress={handlePress}
-                    onSelect={handleSelectItem}
+                    onPress={setIsSelectionMode}
+                    onSelect={selectItem}
                     onOpen={() => {
                       setSearchParams(prev => {
                         const params = new URLSearchParams(prev)
