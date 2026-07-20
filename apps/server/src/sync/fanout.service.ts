@@ -50,7 +50,11 @@ export async function publishFanout(input: {
 let subscriberStarted = false
 
 export async function startFanoutSubscriber(
-  onRemote: (userId: string, frame: Uint8Array, excludeDeviceId?: string) => void
+  onRemote: (
+    userId: string,
+    frame: Uint8Array,
+    excludeDeviceId?: string
+  ) => void
 ): Promise<void> {
   if (subscriberStarted) return
   subscriberStarted = true

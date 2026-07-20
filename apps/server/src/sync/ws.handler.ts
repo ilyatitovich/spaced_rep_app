@@ -10,15 +10,8 @@ import {
 import { verifyAccessToken } from '../auth/services/index.js'
 import { prisma } from '../shared/lib/prisma.js'
 import { logger } from '../shared/lib/logger.js'
-import {
-  applyPushBatch,
-  pullChanges,
-  reportDevice
-} from './sync.service.js'
-import {
-  startFanoutSubscriber,
-  subscribeFanout
-} from './fanout.service.js'
+import { applyPushBatch, pullChanges, reportDevice } from './sync.service.js'
+import { startFanoutSubscriber, subscribeFanout } from './fanout.service.js'
 
 type Conn = {
   ws: WebSocket
@@ -307,7 +300,10 @@ export function createSyncWss(server: HttpServer): WebSocketServer {
         if (conn.deviceId) {
           connections.delete(connKey(conn.userId, conn.deviceId))
         }
-        logger.info({ userId: conn.userId, deviceId: conn.deviceId }, 'ws.disconnect')
+        logger.info(
+          { userId: conn.userId, deviceId: conn.deviceId },
+          'ws.disconnect'
+        )
       })
 
       ws.on('error', err => {

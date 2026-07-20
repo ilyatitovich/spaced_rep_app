@@ -60,7 +60,10 @@ async function applyTopicUpsert(input: {
 }): Promise<{ conflict: TopicConflictResolved | null }> {
   const topic = input.mutation.topic
   if (!topic) {
-    throw new BadRequestError('Topic upsert missing payload', 'VALIDATION_ERROR')
+    throw new BadRequestError(
+      'Topic upsert missing payload',
+      'VALIDATION_ERROR'
+    )
   }
 
   const existing = await prisma.topic.findUnique({ where: { id: topic.id } })
@@ -201,7 +204,9 @@ async function applyDelete(input: {
       throw new BadRequestError('Record not owned by user', 'FORBIDDEN')
     }
     if (input.hardDelete) {
-      await prisma.topic.delete({ where: { id: recordId } }).catch(() => undefined)
+      await prisma.topic
+        .delete({ where: { id: recordId } })
+        .catch(() => undefined)
     } else {
       await prisma.topic.update({
         where: { id: recordId },

@@ -16,9 +16,9 @@ export async function sendOtpEmail(input: {
   code: string
   expiresInSeconds: number
 }): Promise<void> {
-  // Local placeholder key: skip Resend and stash code in Redis for manual testing.
+  // Local/test placeholder key: skip Resend and stash code in Redis for manual and automated testing.
   if (
-    env.NODE_ENV === 'development' &&
+    (env.NODE_ENV === 'development' || env.NODE_ENV === 'test') &&
     env.RESEND_API_KEY === 're_placeholder'
   ) {
     const redis = getRedis()

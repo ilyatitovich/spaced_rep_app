@@ -6,4 +6,8 @@ export {
   finishSyncCycle,
   reportDevice
 } from './sync.service.js'
-export { subscribeFanout, publishFanout, startFanoutSubscriber } from './fanout.service.js'
+export {
+  subscribeFanout,
+  publishFanout,
+  startFanoutSubscriber
+} from './fanout.service.js'

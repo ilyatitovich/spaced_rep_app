@@ -93,6 +93,23 @@ Import the shared client in server code:
 import { prisma } from './shared/lib/prisma.js'
 ```
 
+## 🧪 Testing
+
+Vitest (unit + integration) and Playwright (e2e). See **[testing/README.md](testing/README.md)** for setup, commands, and conventions.
+
+```bash
+pnpm test:unit
+pnpm test:integration   # needs Docker + spaced_rep_test DB
+pnpm test:e2e
+```
+
+Linting uses **oxlint** (see [docs/oxlint-migration.md](docs/oxlint-migration.md)). Pre-commit hooks run via Husky.
+
+```bash
+pnpm lint
+pnpm format:check
+```
+
 ## 📝 License
 
 MIT — feel free to use and modify.

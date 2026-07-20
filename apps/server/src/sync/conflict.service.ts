@@ -96,9 +96,7 @@ export async function purgeSyncedTombstones(userId: string): Promise<void> {
 
   const minPulled =
     activeDevices.length > 0
-      ? new Date(
-          Math.min(...activeDevices.map(d => d.lastPulledAt.getTime()))
-        )
+      ? new Date(Math.min(...activeDevices.map(d => d.lastPulledAt.getTime())))
       : ttlCutoff
 
   await prisma.syncDevice.deleteMany({

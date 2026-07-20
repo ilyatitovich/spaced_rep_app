@@ -484,9 +484,7 @@ function fromWire(raw: Record<string, unknown>): SyncEnvelope {
   const meta = {
     version: Number(raw.version ?? 1),
     messageId: String(raw.messageId ?? ''),
-    correlationId: raw.correlationId
-      ? String(raw.correlationId)
-      : undefined,
+    correlationId: raw.correlationId ? String(raw.correlationId) : undefined,
     deviceId: String(raw.deviceId ?? ''),
     sentAt: longToNumber(raw.sentAt),
     traceId: raw.traceId ? String(raw.traceId) : undefined
@@ -516,7 +514,8 @@ function fromWire(raw: Record<string, unknown>): SyncEnvelope {
     }
   } else if (raw.pushBatch) {
     const p = raw.pushBatch as Record<string, unknown>
-    const mutations = (p.mutations as Record<string, unknown>[] | undefined) ?? []
+    const mutations =
+      (p.mutations as Record<string, unknown>[] | undefined) ?? []
     payload = {
       kind: 'pushBatch',
       pushBatch: { mutations: mutations.map(decodeMutation) }

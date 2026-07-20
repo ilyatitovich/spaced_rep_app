@@ -13,10 +13,7 @@ import { ensureFreshSession } from '@/lib/api'
 import { getWsUrl } from './sync-http.client'
 
 export type WsConnectionState =
-  | 'disconnected'
-  | 'connecting'
-  | 'authenticating'
-  | 'active'
+  'disconnected' | 'connecting' | 'authenticating' | 'active'
 
 type WsListeners = {
   onDelta?: (delta: PullDelta) => void
@@ -286,7 +283,8 @@ export class SyncWsManager {
 
   private scheduleReconnect(): void {
     if (this.reconnectTimer) return
-    const delay = Math.min(30_000, 1000 * 2 ** this.attempt) + Math.random() * 1000
+    const delay =
+      Math.min(30_000, 1000 * 2 ** this.attempt) + Math.random() * 1000
     this.attempt += 1
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null

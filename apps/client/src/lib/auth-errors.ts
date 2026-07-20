@@ -44,7 +44,10 @@ export function getAuthErrorMessage(error: unknown): string {
     return error.message
   }
 
-  if (message.includes('aren’t supported') || message.includes("aren't supported")) {
+  if (
+    message.includes('aren’t supported') ||
+    message.includes("aren't supported")
+  ) {
     return 'Passkeys aren’t supported in this browser.'
   }
 

@@ -1,9 +1,6 @@
 import type { Request, Response, NextFunction } from 'express'
 import { parseBody, sendData } from '../../shared/lib/http.js'
-import {
-  emailRequestSchema,
-  emailVerifySchema
-} from '../schemas/index.js'
+import { emailRequestSchema, emailVerifySchema } from '../schemas/index.js'
 import {
   requestEmailOtp,
   verifyEmailOtp,

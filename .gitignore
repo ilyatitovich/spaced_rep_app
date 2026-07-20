@@ -15,6 +15,7 @@ dev-dist/
 .env
 .env.*
 !.env.example
+!.env.test.example
 
 # Editor directories and files
 .vscode/*
@@ -29,6 +30,10 @@ dev-dist/
 vite.svg
 
 coverage/
+testing/.auth/
+playwright-report/
+test-results/
+blob-report/
 .pnpm-store
 *.txt
 

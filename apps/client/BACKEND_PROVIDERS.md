@@ -2,11 +2,11 @@
 
 The client selects a backend **once at init** via `VITE_BACKEND_PROVIDER`:
 
-| Value | Auth | Sync | Settings |
-|-------|------|------|----------|
-| `custom` | Express JWT (`VITE_API_URL`) | Protobuf HTTP + optional WebSocket | Express `/settings` |
-| `supabase` | Supabase Auth (Google only) | PostgREST HTTP LWW | PostgREST on shared tables |
-| _(unset)_ | Local-only — no cloud | — | — |
+| Value      | Auth                         | Sync                               | Settings                   |
+| ---------- | ---------------------------- | ---------------------------------- | -------------------------- |
+| `custom`   | Express JWT (`VITE_API_URL`) | Protobuf HTTP + optional WebSocket | Express `/settings`        |
+| `supabase` | Supabase Auth (Google only)  | PostgREST HTTP LWW                 | PostgREST on shared tables |
+| _(unset)_  | Local-only — no cloud        | —                                  | —                          |
 
 Application code talks only to ports in [`src/providers`](../src/providers): `auth`, `sync`, `settings`. UI uses `auth.capabilities` (not the provider name) to show login methods.
 

@@ -63,41 +63,42 @@ export function createSupabaseSettingsAdapter(auth: AuthPort): SettingsPort {
     async fetchSettings(): Promise<UserSettingsDocument> {
       const userId = await requireUserId(auth)
 
-      const [
+      const [prefsRes, learningRes, notifRes, remindersRes, subRes] =
+        await Promise.all([
+          supabase
+            .from('user_preferences')
+            .select('*')
+            .eq('user_id', userId)
+            .maybeSingle(),
+          supabase
+            .from('user_learning_settings')
+            .select('*')
+            .eq('user_id', userId)
+            .maybeSingle(),
+          supabase
+            .from('user_notification_settings')
+            .select('*')
+            .eq('user_id', userId)
+            .maybeSingle(),
+          supabase
+            .from('notification_reminders')
+            .select('*')
+            .eq('user_id', userId)
+            .order('sort_order'),
+          supabase
+            .from('subscriptions')
+            .select('*')
+            .eq('user_id', userId)
+            .maybeSingle()
+        ])
+
+      for (const res of [
         prefsRes,
         learningRes,
         notifRes,
         remindersRes,
         subRes
-      ] = await Promise.all([
-        supabase
-          .from('user_preferences')
-          .select('*')
-          .eq('user_id', userId)
-          .maybeSingle(),
-        supabase
-          .from('user_learning_settings')
-          .select('*')
-          .eq('user_id', userId)
-          .maybeSingle(),
-        supabase
-          .from('user_notification_settings')
-          .select('*')
-          .eq('user_id', userId)
-          .maybeSingle(),
-        supabase
-          .from('notification_reminders')
-          .select('*')
-          .eq('user_id', userId)
-          .order('sort_order'),
-        supabase
-          .from('subscriptions')
-          .select('*')
-          .eq('user_id', userId)
-          .maybeSingle()
-      ])
-
-      for (const res of [prefsRes, learningRes, notifRes, remindersRes, subRes]) {
+      ]) {
         if (res.error) throw new ApiError(500, res.error.message)
       }
 
@@ -122,7 +123,8 @@ export function createSupabaseSettingsAdapter(auth: AuthPort): SettingsPort {
             language: prefs.language as string,
             timezone: prefs.timezone as string,
             updatedAt: ms(prefs.updated_at as string),
-            updatedByDeviceId: (prefs.updated_by_device_id as string) ?? undefined
+            updatedByDeviceId:
+              (prefs.updated_by_device_id as string) ?? undefined
           }
         : {
             theme: 'system',
@@ -134,7 +136,8 @@ export function createSupabaseSettingsAdapter(auth: AuthPort): SettingsPort {
       const learningSettings: UserLearningSettings = learning
         ? {
             weekStartsOn: learning.week_starts_on as number,
-            dailyNewCardLimit: (learning.daily_new_card_limit as number) ?? null,
+            dailyNewCardLimit:
+              (learning.daily_new_card_limit as number) ?? null,
             updatedAt: ms(learning.updated_at as string),
             updatedByDeviceId:
               (learning.updated_by_device_id as string) ?? undefined
@@ -150,17 +153,15 @@ export function createSupabaseSettingsAdapter(auth: AuthPort): SettingsPort {
         timezone: (notif?.timezone as string) ?? 'UTC',
         updatedAt: notif ? ms(notif.updated_at as string) : now,
         updatedByDeviceId: (notif?.updated_by_device_id as string) ?? undefined,
-        reminders: reminders.map(
-          (r): NotificationReminder => ({
-            id: r.id,
-            timeLocal: String(r.time_local).slice(0, 8),
-            daysOfWeek: r.days_of_week,
-            channel: channelFromDb(r.channel),
-            enabled: r.enabled,
-            sortOrder: r.sort_order,
-            updatedAt: ms(r.updated_at)
-          })
-        )
+        reminders: reminders.map((r): NotificationReminder => ({
+          id: r.id,
+          timeLocal: String(r.time_local).slice(0, 8),
+          daysOfWeek: r.days_of_week,
+          channel: channelFromDb(r.channel),
+          enabled: r.enabled,
+          sortOrder: r.sort_order,
+          updatedAt: ms(r.updated_at)
+        }))
       }
 
       const subscription: SubscriptionSnapshot = sub
@@ -200,10 +201,7 @@ export function createSupabaseSettingsAdapter(auth: AuthPort): SettingsPort {
         .eq('user_id', userId)
         .maybeSingle()
 
-      if (
-        existing &&
-        ms(existing.updated_at as string) > body.updatedAt
-      ) {
+      if (existing && ms(existing.updated_at as string) > body.updatedAt) {
         const doc = await this.fetchSettings()
         return { ...doc.preferences, applied: false }
       }

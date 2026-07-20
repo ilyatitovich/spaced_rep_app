@@ -1,8 +1,7 @@
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 type ValidateEmailResult =
-  | { ok: true; email: string }
-  | { ok: false; message: string }
+  { ok: true; email: string } | { ok: false; message: string }
 
 export function validateEmail(value: string): ValidateEmailResult {
   const email = value.trim()

@@ -1,25 +1,23 @@
-import assert from 'node:assert/strict'
-import { describe, it } from 'node:test'
 import { isPlanEntitled } from './plan.service.js'
 
 describe('isPlanEntitled', () => {
   it('allows free for free minimum', () => {
-    assert.equal(isPlanEntitled('FREE', 'ACTIVE', 'FREE'), true)
+    expect(isPlanEntitled('FREE', 'ACTIVE', 'FREE')).toBe(true)
   })
 
   it('blocks free from pro', () => {
-    assert.equal(isPlanEntitled('FREE', 'ACTIVE', 'PRO'), false)
+    expect(isPlanEntitled('FREE', 'ACTIVE', 'PRO')).toBe(false)
   })
 
   it('allows pro_plus for pro', () => {
-    assert.equal(isPlanEntitled('PRO_PLUS', 'ACTIVE', 'PRO'), true)
+    expect(isPlanEntitled('PRO_PLUS', 'ACTIVE', 'PRO')).toBe(true)
   })
 
   it('rejects past_due even on pro', () => {
-    assert.equal(isPlanEntitled('PRO', 'PAST_DUE', 'PRO'), false)
+    expect(isPlanEntitled('PRO', 'PAST_DUE', 'PRO')).toBe(false)
   })
 
   it('allows trialing', () => {
-    assert.equal(isPlanEntitled('PRO', 'TRIALING', 'PRO'), true)
+    expect(isPlanEntitled('PRO', 'TRIALING', 'PRO')).toBe(true)
   })
 })

@@ -1,10 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import {
-  CardData,
-  CodeBlock,
-  ImageDBRecord,
-  SideContent
-} from '@/types'
+import { CardData, CodeBlock, ImageDBRecord, SideContent } from '@/types'
 
 export function isContentEmpty(
   content: null | undefined | SideContent

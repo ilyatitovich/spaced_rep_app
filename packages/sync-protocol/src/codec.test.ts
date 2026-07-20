@@ -1,6 +1,3 @@
-import { describe, it } from 'node:test'
-import assert from 'node:assert/strict'
-
 import {
   PROTOCOL_VERSION,
   createEnvelopeId,
@@ -29,10 +26,10 @@ describe('sync-protocol codec', () => {
     const bytes = encodeEnvelope(envelope)
     const decoded = decodeEnvelope(bytes)
 
-    assert.equal(decoded.kind, 'hello')
+    expect(decoded.kind).toBe('hello')
     if (decoded.kind === 'hello') {
-      assert.equal(decoded.hello.pendingOpCount, 3)
-      assert.equal(decoded.hello.protocolVersion, PROTOCOL_VERSION)
+      expect(decoded.hello.pendingOpCount).toBe(3)
+      expect(decoded.hello.protocolVersion).toBe(PROTOCOL_VERSION)
     }
   })
 
@@ -67,12 +64,12 @@ describe('sync-protocol codec', () => {
     }
 
     const decoded = decodeEnvelope(encodeEnvelope(envelope))
-    assert.equal(decoded.kind, 'pushBatch')
+    expect(decoded.kind).toBe('pushBatch')
     if (decoded.kind === 'pushBatch') {
-      assert.equal(decoded.pushBatch.mutations.length, 1)
-      assert.equal(decoded.pushBatch.mutations[0]?.topic?.title, 'English')
-      assert.equal(decoded.pushBatch.mutations[0]?.table, 'topics')
-      assert.equal(decoded.pushBatch.mutations[0]?.operation, 'upsert')
+      expect(decoded.pushBatch.mutations).toHaveLength(1)
+      expect(decoded.pushBatch.mutations[0]?.topic?.title).toBe('English')
+      expect(decoded.pushBatch.mutations[0]?.table).toBe('topics')
+      expect(decoded.pushBatch.mutations[0]?.operation).toBe('upsert')
     }
   })
 
@@ -86,9 +83,9 @@ describe('sync-protocol codec', () => {
       ping: { timestamp: 42 }
     }
     const frame = encodeFrame(envelope)
-    assert.equal(frame[0], 0x53)
+    expect(frame[0]).toBe(0x53)
     const decoded = decodeFrame(frame)
-    assert.equal(decoded.kind, 'ping')
+    expect(decoded.kind).toBe('ping')
   })
 
   it('round-trips pull delta with card', () => {
@@ -117,9 +114,9 @@ describe('sync-protocol codec', () => {
       }
     }
     const decoded = decodeEnvelope(encodeEnvelope(envelope))
-    assert.equal(decoded.kind, 'pullDelta')
+    expect(decoded.kind).toBe('pullDelta')
     if (decoded.kind === 'pullDelta') {
-      assert.equal(decoded.pullDelta.records[0]?.card?.level, 2)
+      expect(decoded.pullDelta.records[0]?.card?.level).toBe(2)
     }
   })
 })

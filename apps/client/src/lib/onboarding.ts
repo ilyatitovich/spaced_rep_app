@@ -1,14 +1,14 @@
 export function isOnboardingComplete() {
   try {
-    return localStorage.getItem('onboardingComplete') === 'true';
+    return localStorage.getItem('onboardingComplete') === 'true'
   } catch {
-    return false;
+    return false
   }
 }
 
 export function completeOnboarding() {
   try {
-    localStorage.setItem('onboardingComplete', 'true');
+    localStorage.setItem('onboardingComplete', 'true')
   } catch {
     // ignore
   }

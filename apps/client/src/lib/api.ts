@@ -90,10 +90,7 @@ async function postJson<T>(
   return json.data
 }
 
-async function getJson<T>(
-  path: string,
-  accessToken: string
-): Promise<T> {
+async function getJson<T>(path: string, accessToken: string): Promise<T> {
   if (!apiUrl) {
     throw new ApiError(0, 'VITE_API_URL is not configured')
   }
@@ -271,7 +268,7 @@ async function patchJson<T>(
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${accessToken}`
+      'Authorization': `Bearer ${accessToken}`
     },
     body: JSON.stringify(body)
   })
@@ -292,7 +289,7 @@ async function putJson<T>(
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${accessToken}`
+      'Authorization': `Bearer ${accessToken}`
     },
     body: JSON.stringify(body)
   })

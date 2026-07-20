@@ -73,7 +73,7 @@ export async function hasRelatedAppInstalled(): Promise<boolean> {
     }
     if (!nav.getInstalledRelatedApps) return false
     const apps = await nav.getInstalledRelatedApps()
-    return apps.some((app) => app.platform === 'webapp')
+    return apps.some(app => app.platform === 'webapp')
   } catch {
     return false
   }

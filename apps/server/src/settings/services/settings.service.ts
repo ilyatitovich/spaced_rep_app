@@ -151,9 +151,7 @@ export async function patchNotifications(
         where: { userId },
         data: {
           ...(input.enabled !== undefined ? { enabled: input.enabled } : {}),
-          ...(input.timezone !== undefined
-            ? { timezone: input.timezone }
-            : {}),
+          ...(input.timezone !== undefined ? { timezone: input.timezone } : {}),
           updatedAt: new Date(input.updatedAt),
           updatedByDeviceId: input.deviceId
         }
