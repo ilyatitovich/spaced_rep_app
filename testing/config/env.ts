@@ -53,14 +53,11 @@ export function getTestEnv(): TestEnv {
     redisUrl,
     corsOrigin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
     jwtSecret:
-      process.env.JWT_SECRET ??
-      'test-jwt-secret-at-least-32-characters-long',
+      process.env.JWT_SECRET ?? 'test-jwt-secret-at-least-32-characters-long',
     otpPepper:
-      process.env.OTP_PEPPER ??
-      'test-otp-pepper-at-least-32-chars-long',
+      process.env.OTP_PEPPER ?? 'test-otp-pepper-at-least-32-chars-long',
     webauthnRpId: process.env.WEBAUTHN_RP_ID ?? 'localhost',
-    webauthnOrigin:
-      process.env.WEBAUTHN_ORIGIN ?? 'http://localhost:5173',
+    webauthnOrigin: process.env.WEBAUTHN_ORIGIN ?? 'http://localhost:5173',
     playwrightBaseUrl:
       process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:5173'
   }

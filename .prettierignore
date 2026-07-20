@@ -1,3 +1,9 @@
 coverage/
 dist/
 dev-dist/
+playwright-report/
+test-results/
+blob-report/
+pnpm-lock.yaml
+apps/server/src/generated/
+.cursor/

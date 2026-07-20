@@ -38,7 +38,7 @@ async function postProtobuf(
   const response = await fetch(`${apiUrl}${path}`, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${accessToken}`,
+      'Authorization': `Bearer ${accessToken}`,
       'Content-Type': 'application/x-protobuf'
     },
     body: new Blob([Uint8Array.from(encodeEnvelope(envelope))], {

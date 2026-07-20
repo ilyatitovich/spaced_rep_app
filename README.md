@@ -103,6 +103,13 @@ pnpm test:integration   # needs Docker + spaced_rep_test DB
 pnpm test:e2e
 ```
 
+Linting uses **oxlint** (see [docs/oxlint-migration.md](docs/oxlint-migration.md)). Pre-commit hooks run via Husky.
+
+```bash
+pnpm lint
+pnpm format:check
+```
+
 ## 📝 License
 
 MIT — feel free to use and modify.

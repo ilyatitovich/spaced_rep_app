@@ -60,7 +60,10 @@ export async function pushHandler(
     const bytes = await readBinaryBody(req)
     const envelope = decodeEnvelope(bytes)
     if (envelope.kind !== 'pushBatch') {
-      throw new BadRequestError('Expected PushBatch envelope', 'VALIDATION_ERROR')
+      throw new BadRequestError(
+        'Expected PushBatch envelope',
+        'VALIDATION_ERROR'
+      )
     }
 
     const ack = await applyPushBatch({

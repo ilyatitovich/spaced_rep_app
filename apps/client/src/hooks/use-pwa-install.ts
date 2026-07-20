@@ -29,8 +29,9 @@ export function usePwaInstall() {
   const [installed, setInstalled] = useState(false)
   const [dismissed, setDismissed] = useState(isInstallPromptDismissed)
   const [relatedInstalled, setRelatedInstalled] = useState(false)
-  const [softBannerDismissed, setSoftBannerDismissed] =
-    useState(isSoftBannerDismissed)
+  const [softBannerDismissed, setSoftBannerDismissed] = useState(
+    isSoftBannerDismissed
+  )
 
   useEffect(() => {
     function onBeforeInstallPrompt(e: Event) {

@@ -1,10 +1,5 @@
 type DevicePlatform =
-  | 'iOS'
-  | 'Android'
-  | 'Windows'
-  | 'macOS'
-  | 'Linux'
-  | 'Other'
+  'iOS' | 'Android' | 'Windows' | 'macOS' | 'Linux' | 'Other'
 
 export function getDevicePlatform(): DevicePlatform {
   if (typeof navigator === 'undefined') return 'Other'

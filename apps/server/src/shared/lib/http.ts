@@ -10,7 +10,10 @@ export function parseBody<T>(schema: ZodType<T>, body: unknown): T {
   const result = schema.safeParse(body)
   if (!result.success) {
     const message = result.error.issues.map(i => i.message).join('; ')
-    throw new BadRequestError(message || 'Invalid request body', 'VALIDATION_ERROR')
+    throw new BadRequestError(
+      message || 'Invalid request body',
+      'VALIDATION_ERROR'
+    )
   }
   return result.data
 }

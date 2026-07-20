@@ -104,7 +104,9 @@ export default function AuthOtpForm({
   return (
     <div>
       <div className="text-center mb-6 flex flex-col gap-2">
-        <p className="text-2xl font-semibold text-foreground">Enter your code</p>
+        <p className="text-2xl font-semibold text-foreground">
+          Enter your code
+        </p>
         <p className="text-sm text-foreground-muted">
           We sent a code to{' '}
           <span className="font-medium">{maskEmail(email)}</span>

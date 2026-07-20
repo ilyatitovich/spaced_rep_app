@@ -79,7 +79,8 @@ export default defineConfig({
       }
     },
     {
-      command: 'pnpm --filter spaced_rep_pwa_client exec vite --host 127.0.0.1 --port 5173',
+      command:
+        'pnpm --filter spaced_rep_pwa_client exec vite --host 127.0.0.1 --port 5173',
       cwd: path.join(process.cwd(), 'apps/client'),
       url: clientUrl,
       reuseExistingServer: !process.env.CI,

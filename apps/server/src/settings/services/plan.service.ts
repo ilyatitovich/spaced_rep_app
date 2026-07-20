@@ -1,4 +1,7 @@
-import type { PlanTier, SubscriptionStatus } from '../../generated/prisma/client.js'
+import type {
+  PlanTier,
+  SubscriptionStatus
+} from '../../generated/prisma/client.js'
 import { ForbiddenError } from '../../shared/lib/errors.js'
 import { prisma } from '../../shared/lib/prisma.js'
 import { ensureUserSettings } from './ensure.service.js'

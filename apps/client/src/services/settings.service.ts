@@ -1,7 +1,4 @@
-import {
-  isBackendConfigured,
-  settings as settingsBackend
-} from '@/providers'
+import { isBackendConfigured, settings as settingsBackend } from '@/providers'
 import { getAuthSession } from '@/lib/auth-storage'
 import { STORES, withTransaction } from '@/lib/db'
 import {
@@ -119,15 +116,25 @@ async function readDoc(ownerKey: string): Promise<UserSettingsDocument> {
         updatedAt: notif.updatedAt,
         updatedByDeviceId: notif.updatedByDeviceId,
         reminders: reminders
-          .map(({ id, timeLocal, daysOfWeek, channel, enabled, sortOrder, updatedAt }) => ({
-            id,
-            timeLocal,
-            daysOfWeek,
-            channel,
-            enabled,
-            sortOrder,
-            updatedAt
-          }))
+          .map(
+            ({
+              id,
+              timeLocal,
+              daysOfWeek,
+              channel,
+              enabled,
+              sortOrder,
+              updatedAt
+            }) => ({
+              id,
+              timeLocal,
+              daysOfWeek,
+              channel,
+              enabled,
+              sortOrder,
+              updatedAt
+            })
+          )
           .sort((a, b) => a.sortOrder - b.sortOrder || a.id.localeCompare(b.id))
       }
     : defaultNotifications()
@@ -144,7 +151,12 @@ async function readDoc(ownerKey: string): Promise<UserSettingsDocument> {
       }
     : defaultSubscription()
 
-  return { preferences, learning: learningSettings, notifications, subscription }
+  return {
+    preferences,
+    learning: learningSettings,
+    notifications,
+    subscription
+  }
 }
 
 async function writePreferences(
@@ -178,10 +190,7 @@ async function writeNotifications(
   notifications: UserNotificationSettings
 ): Promise<void> {
   await withTransaction(
-    [
-      STORES.USER_NOTIFICATION_SETTINGS,
-      STORES.NOTIFICATION_REMINDERS
-    ],
+    [STORES.USER_NOTIFICATION_SETTINGS, STORES.NOTIFICATION_REMINDERS],
     'readwrite',
     async stores => {
       const { reminders, ...master } = notifications
@@ -216,15 +225,19 @@ async function writeSubscription(
   ownerKey: string,
   subscription: SubscriptionSnapshot
 ): Promise<void> {
-  await withTransaction(STORES.SUBSCRIPTION_CACHE, 'readwrite', async stores => {
-    await promisify(
-      stores[STORES.SUBSCRIPTION_CACHE].put({
-        id: ownerKey,
-        ...subscription,
-        fetchedAt: Date.now()
-      })
-    )
-  })
+  await withTransaction(
+    STORES.SUBSCRIPTION_CACHE,
+    'readwrite',
+    async stores => {
+      await promisify(
+        stores[STORES.SUBSCRIPTION_CACHE].put({
+          id: ownerKey,
+          ...subscription,
+          fetchedAt: Date.now()
+        })
+      )
+    }
+  )
 }
 
 async function enqueueOutbox(
@@ -509,9 +522,7 @@ export function setSettingsUser(userId: string | null): void {
 }
 
 export async function updatePreferences(
-  patch: Partial<
-    Pick<UserPreferences, 'theme' | 'language' | 'timezone'>
-  >
+  patch: Partial<Pick<UserPreferences, 'theme' | 'language' | 'timezone'>>
 ): Promise<UserSettingsDocument> {
   const deviceId = await getDeviceId()
   const doc = await readDoc(currentOwnerKey)

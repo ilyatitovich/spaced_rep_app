@@ -1,11 +1,6 @@
 import { createBrowserRouter } from 'react-router'
 
-import {
-  NotFoundPage,
-  HomePage,
-  Root,
-  OAuthGoogleCallbackPage
-} from '@/pages'
+import { NotFoundPage, HomePage, Root, OAuthGoogleCallbackPage } from '@/pages'
 import { StartScreen } from './components'
 import { isOnboardingComplete } from './lib'
 import { useState } from 'react'

@@ -4,10 +4,7 @@ import { env } from './shared/config/env.js'
 import { logger } from './shared/lib/logger.js'
 import { disconnectPrisma } from './shared/lib/prisma.js'
 import { connectRedis, getRedis } from './shared/lib/redis.js'
-import {
-  broadcastGracefulShutdown,
-  createSyncWss
-} from './sync/ws.handler.js'
+import { broadcastGracefulShutdown, createSyncWss } from './sync/ws.handler.js'
 
 const app = createApp()
 let server: Server | null = null
@@ -15,9 +12,7 @@ let server: Server | null = null
 async function main() {
   await connectRedis()
   server = app.listen(env.PORT, () => {
-    logger.info(
-      `Server is running on port ${env.PORT} in ${env.NODE_ENV} mode`
-    )
+    logger.info(`Server is running on port ${env.PORT} in ${env.NODE_ENV} mode`)
   })
   createSyncWss(server)
 }

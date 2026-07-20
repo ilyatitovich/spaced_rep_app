@@ -369,11 +369,7 @@ export default function CardDetailsScreen({
       <Header>
         <BackButton />
         <span>{isFlipped ? 'Back' : 'Front'}</span>
-        <Button
-          key="save"
-          disabled={!isDirty}
-          onClick={() => handleSaveCard()}
-        >
+        <Button key="save" disabled={!isDirty} onClick={() => handleSaveCard()}>
           Save
         </Button>
       </Header>

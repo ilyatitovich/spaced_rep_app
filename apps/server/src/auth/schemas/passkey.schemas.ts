@@ -14,7 +14,10 @@ const registrationResponseSchema = z.object({
   id: z.string().min(1),
   rawId: z.string().min(1),
   type: z.literal('public-key'),
-  clientExtensionResults: z.record(z.string(), z.unknown()).optional().default({}),
+  clientExtensionResults: z
+    .record(z.string(), z.unknown())
+    .optional()
+    .default({}),
   authenticatorAttachment: z.enum(['platform', 'cross-platform']).optional(),
   response: z.object({
     clientDataJSON: z.string().min(1),
@@ -30,7 +33,10 @@ const authenticationResponseSchema = z.object({
   id: z.string().min(1),
   rawId: z.string().min(1),
   type: z.literal('public-key'),
-  clientExtensionResults: z.record(z.string(), z.unknown()).optional().default({}),
+  clientExtensionResults: z
+    .record(z.string(), z.unknown())
+    .optional()
+    .default({}),
   authenticatorAttachment: z.enum(['platform', 'cross-platform']).optional(),
   response: z.object({
     clientDataJSON: z.string().min(1),

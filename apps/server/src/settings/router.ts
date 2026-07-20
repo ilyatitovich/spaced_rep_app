@@ -16,11 +16,7 @@ settingsRouter.get('/', requireAuth, getSettingsHandler)
 settingsRouter.patch('/preferences', requireAuth, patchPreferencesHandler)
 settingsRouter.patch('/learning', requireAuth, patchLearningHandler)
 settingsRouter.patch('/notifications', requireAuth, patchNotificationsHandler)
-settingsRouter.put(
-  '/notifications/reminders',
-  requireAuth,
-  putRemindersHandler
-)
+settingsRouter.put('/notifications/reminders', requireAuth, putRemindersHandler)
 settingsRouter.get('/subscription', requireAuth, getSubscriptionHandler)
 
 // Billing webhooks (no user JWT; provider signature verification TBD)

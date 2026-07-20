@@ -61,7 +61,9 @@ export default function TopicItem({
       onClick={handleClick}
     >
       <div className="flex flex-col gap-1.5 text-left w-3/4">
-        <span className="text-foreground font-semibold truncate">{topic.title}</span>
+        <span className="text-foreground font-semibold truncate">
+          {topic.title}
+        </span>
         <span className="text-sm text-foreground flex items-center gap-1">
           Today's test
           {topic.week[getToday()]?.isDone ? (

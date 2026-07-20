@@ -25,7 +25,9 @@ export default function StartScreen({ onStart }: StartScreenProps) {
 
         <div className="flex items-center my-8">
           <div className="flex-1 h-px bg-border" />
-          <span className="px-4 text-foreground-subtle text-sm font-medium">OR</span>
+          <span className="px-4 text-foreground-subtle text-sm font-medium">
+            OR
+          </span>
           <div className="flex-1 h-px bg-border" />
         </div>
 

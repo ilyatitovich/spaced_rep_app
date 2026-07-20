@@ -7,10 +7,10 @@ const SCRIPT_SRC =
 type TurnstileApi = {
   render: (
     el: HTMLElement,
-      options: {
-      sitekey: string
-      size?: 'normal' | 'compact' | 'flexible' | 'invisible'
-      callback: (token: string) => void
+    options: {
+      'sitekey': string
+      'size'?: 'normal' | 'compact' | 'flexible' | 'invisible'
+      'callback': (token: string) => void
       'expired-callback'?: () => void
       'error-callback'?: () => void
     }
@@ -66,9 +66,9 @@ export default function TurnstileWidget({ onToken }: TurnstileWidgetProps) {
       .then(() => {
         if (cancelled || !containerRef.current || !window.turnstile) return
         widgetIdRef.current = window.turnstile.render(containerRef.current, {
-          sitekey: siteKey,
-          size: 'invisible',
-          callback: token => onTokenRef.current(token),
+          'sitekey': siteKey,
+          'size': 'invisible',
+          'callback': token => onTokenRef.current(token),
           'expired-callback': () => onTokenRef.current(null),
           'error-callback': () => {
             onTokenRef.current(null)

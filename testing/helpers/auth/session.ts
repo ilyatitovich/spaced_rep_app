@@ -23,9 +23,8 @@ export async function createSessionForUser(input?: {
     emailVerifiedAt: new Date()
   })
 
-  const { createSessionWithTokens } = await import(
-    '../../../apps/server/src/auth/services/session.service.js'
-  )
+  const { createSessionWithTokens } =
+    await import('../../../apps/server/src/auth/services/session.service.js')
 
   return createSessionWithTokens({
     userId: user.id,
@@ -33,13 +32,9 @@ export async function createSessionForUser(input?: {
   })
 }
 
-export async function refreshTokens(
-  refreshToken: string
-): Promise<AuthTokens> {
+export async function refreshTokens(refreshToken: string): Promise<AuthTokens> {
   const agent = await createTestAgent()
-  const res = await agent
-    .post('/auth/token/refresh')
-    .send({ refreshToken })
+  const res = await agent.post('/auth/token/refresh').send({ refreshToken })
 
   if (res.status >= 400) {
     throw new Error(

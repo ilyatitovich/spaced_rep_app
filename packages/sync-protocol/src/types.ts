@@ -109,7 +109,10 @@ export type SyncEnvelopePayload =
   | { kind: 'pushAck'; pushAck: PushAck }
   | { kind: 'pullDelta'; pullDelta: PullDelta }
   | { kind: 'pullRequest'; pullRequest: PullRequest }
-  | { kind: 'topicConflictResolved'; topicConflictResolved: TopicConflictResolved }
+  | {
+      kind: 'topicConflictResolved'
+      topicConflictResolved: TopicConflictResolved
+    }
   | { kind: 'ping'; ping: Ping }
   | { kind: 'pong'; pong: Pong }
   | { kind: 'error'; error: SyncError }

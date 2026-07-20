@@ -32,9 +32,8 @@ export async function createOAuthSession(input?: {
     }
   })
 
-  const { createSessionWithTokens } = await import(
-    '../../../apps/server/src/auth/services/session.service.js'
-  )
+  const { createSessionWithTokens } =
+    await import('../../../apps/server/src/auth/services/session.service.js')
 
   return createSessionWithTokens({
     userId: user.id,

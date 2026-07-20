@@ -8,9 +8,7 @@ let app: TestApp | null = null
 async function getTestApp(): Promise<TestApp> {
   if (!app) {
     loadTestEnv()
-    const { createApp } = await import(
-      '../../../apps/server/src/app.js'
-    )
+    const { createApp } = await import('../../../apps/server/src/app.js')
     app = createApp()
   }
   return app

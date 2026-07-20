@@ -57,8 +57,7 @@ function topicRecordToRow(record: TopicRecord, userId: string): TopicRow {
     week: JSON.parse(record.weekJson),
     next_update_date: record.nextUpdateDate,
     updated_at: msToIso(record.updatedAt),
-    deleted_at:
-      record.deletedAt != null ? msToIso(record.deletedAt) : null
+    deleted_at: record.deletedAt != null ? msToIso(record.deletedAt) : null
   }
 }
 
@@ -71,8 +70,7 @@ function cardRecordToRow(record: CardRecord, userId: string): CardRow {
     data: JSON.parse(record.dataJson),
     review_date: record.reviewDate ?? null,
     updated_at: msToIso(record.updatedAt),
-    deleted_at:
-      record.deletedAt != null ? msToIso(record.deletedAt) : null
+    deleted_at: record.deletedAt != null ? msToIso(record.deletedAt) : null
   }
 }
 
@@ -100,7 +98,10 @@ function rowToCardRecord(row: CardRow): CardRecord {
   }
 }
 
-function isUniqueViolation(error: { code?: string; message?: string }): boolean {
+function isUniqueViolation(error: {
+  code?: string
+  message?: string
+}): boolean {
   return (
     error.code === '23505' ||
     (error.message?.includes('topics_user_title_unique') ?? false)
@@ -146,10 +147,7 @@ async function applyTopicUpsert(
     .eq('id', mutation.recordId)
     .maybeSingle()
 
-  if (
-    existing &&
-    isoToMs(existing.updated_at as string) > mutation.updatedAt
-  ) {
+  if (existing && isoToMs(existing.updated_at as string) > mutation.updatedAt) {
     return {}
   }
 
@@ -176,7 +174,10 @@ async function applyTopicUpsert(
   return {}
 }
 
-async function applyCardUpsert(userId: string, mutation: Mutation): Promise<void> {
+async function applyCardUpsert(
+  userId: string,
+  mutation: Mutation
+): Promise<void> {
   if (!mutation.card) {
     throw new ApiError(400, 'Missing card payload')
   }
@@ -187,10 +188,7 @@ async function applyCardUpsert(userId: string, mutation: Mutation): Promise<void
     .eq('id', mutation.recordId)
     .maybeSingle()
 
-  if (
-    existing &&
-    isoToMs(existing.updated_at as string) > mutation.updatedAt
-  ) {
+  if (existing && isoToMs(existing.updated_at as string) > mutation.updatedAt) {
     return
   }
 
@@ -226,8 +224,7 @@ async function touchDevice(
     id: deviceId,
     user_id: userId,
     last_seen_at: new Date().toISOString(),
-    user_agent:
-      typeof navigator !== 'undefined' ? navigator.userAgent : null
+    user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null
   }
   if (lastPulledAt) payload.last_pulled_at = lastPulledAt
 
@@ -236,21 +233,23 @@ async function touchDevice(
 }
 
 async function pullSince(userId: string, since: string): Promise<PullDelta> {
-  const [{ data: topics, error: topicsError }, { data: cards, error: cardsError }] =
-    await Promise.all([
-      supabase
-        .from('topics')
-        .select('*')
-        .eq('user_id', userId)
-        .gt('updated_at', since)
-        .order('updated_at', { ascending: true }),
-      supabase
-        .from('cards')
-        .select('*')
-        .eq('user_id', userId)
-        .gt('updated_at', since)
-        .order('updated_at', { ascending: true })
-    ])
+  const [
+    { data: topics, error: topicsError },
+    { data: cards, error: cardsError }
+  ] = await Promise.all([
+    supabase
+      .from('topics')
+      .select('*')
+      .eq('user_id', userId)
+      .gt('updated_at', since)
+      .order('updated_at', { ascending: true }),
+    supabase
+      .from('cards')
+      .select('*')
+      .eq('user_id', userId)
+      .gt('updated_at', since)
+      .order('updated_at', { ascending: true })
+  ])
 
   if (topicsError) throw new ApiError(500, topicsError.message)
   if (cardsError) throw new ApiError(500, cardsError.message)

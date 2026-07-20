@@ -3,7 +3,10 @@ import { fileURLToPath } from 'node:url'
 import dotenv from 'dotenv'
 import { z } from 'zod'
 
-const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
+const rootDir = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '../..'
+)
 dotenv.config({ path: path.join(rootDir, '.env') })
 
 const envSchema = z.object({
@@ -45,9 +48,7 @@ const envSchema = z.object({
   OTP_TTL_SECONDS: z.coerce.number().int().positive().default(600),
   OTP_RESEND_COOLDOWN_SECONDS: z.coerce.number().int().positive().default(60),
   OTP_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
-  TURNSTILE_SECRET_KEY: z
-    .string()
-    .min(1, 'TURNSTILE_SECRET_KEY is required'),
+  TURNSTILE_SECRET_KEY: z.string().min(1, 'TURNSTILE_SECRET_KEY is required'),
   RESEND_API_KEY: z.string().min(1, 'RESEND_API_KEY is required'),
   EMAIL_FROM: z.string().min(1, 'EMAIL_FROM is required'),
   WEBAUTHN_RP_ID: z.string().min(1, 'WEBAUTHN_RP_ID is required'),
@@ -62,11 +63,7 @@ const envSchema = z.object({
         .filter(Boolean)
     )
     .pipe(z.array(z.string().url()).min(1)),
-  WEBAUTHN_CHALLENGE_TTL_SECONDS: z.coerce
-    .number()
-    .int()
-    .positive()
-    .default(60)
+  WEBAUTHN_CHALLENGE_TTL_SECONDS: z.coerce.number().int().positive().default(60)
 })
 
 const parsed = envSchema.safeParse(process.env)

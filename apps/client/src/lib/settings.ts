@@ -51,9 +51,7 @@ export function defaultNotifications(
   }
 }
 
-export function defaultSubscription(
-  now = Date.now()
-): SubscriptionSnapshot {
+export function defaultSubscription(now = Date.now()): SubscriptionSnapshot {
   return {
     plan: 'free',
     status: 'active',
@@ -106,9 +104,7 @@ export function isPlanEntitled(
   )
 }
 
-export function resolveTheme(
-  theme: ThemePreference
-): 'light' | 'dark' {
+export function resolveTheme(theme: ThemePreference): 'light' | 'dark' {
   if (theme === 'system') {
     return window.matchMedia('(prefers-color-scheme: dark)').matches
       ? 'dark'
@@ -124,10 +120,7 @@ export function applyThemeToDocument(theme: ThemePreference): void {
 
   const meta = document.querySelector('meta[name="theme-color"]')
   if (meta) {
-    meta.setAttribute(
-      'content',
-      resolved === 'dark' ? '#0f0f0f' : '#f5f5f5'
-    )
+    meta.setAttribute('content', resolved === 'dark' ? '#0f0f0f' : '#f5f5f5')
   }
 }
 

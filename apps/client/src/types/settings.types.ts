@@ -1,12 +1,7 @@
 export type ThemePreference = 'light' | 'dark' | 'system'
 export type PlanTier = 'free' | 'pro' | 'pro_plus'
 export type SubscriptionStatus =
-  | 'active'
-  | 'trialing'
-  | 'past_due'
-  | 'canceled'
-  | 'expired'
-  | 'incomplete'
+  'active' | 'trialing' | 'past_due' | 'canceled' | 'expired' | 'incomplete'
 export type NotificationChannel = 'push' | 'email'
 export type BillingProvider = 'none' | 'stripe'
 
@@ -60,10 +55,7 @@ export type UserSettingsDocument = {
   subscription: SubscriptionSnapshot
 }
 
-export type SettingsSection =
-  | 'preferences'
-  | 'learning'
-  | 'notifications'
+export type SettingsSection = 'preferences' | 'learning' | 'notifications'
 
 export type SettingsOutboxItem = {
   id: string

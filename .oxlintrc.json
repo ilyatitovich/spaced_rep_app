@@ -1,0 +1,51 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  // Migrated from eslint.config.js (ESLint 9 flat config).
+  //
+  // Unsupported / not migrated (no native oxlint equivalent used here):
+  // - perfectionist/sort-imports (eslint-plugin-perfectionist)
+  // - eslint-plugin-sonarjs (was already commented out in ESLint config)
+  // - eslint-plugin-react-refresh (listed as a dep but never wired into ESLint)
+  //
+  // Disabled on migration to avoid app-code edits (existing patterns):
+  // - eslint/no-empty-pattern (Playwright fixtures / empty props destructure)
+  // - typescript/no-useless-empty-export (ambient .d.ts `export {}`)
+  // - several jsx-a11y correctness rules that flag current UI markup
+  //
+  // Preserved where possible:
+  // - TypeScript unused-vars with ^_ ignore patterns
+  // - React (JSX runtime: react-in-jsx-scope off)
+  // - react-hooks (via react plugin correctness rules)
+  // - remaining jsx-a11y correctness checks
+  "plugins": ["typescript", "react", "jsx-a11y"],
+  "categories": {
+    "correctness": "error"
+  },
+  "ignorePatterns": [
+    "**/dist/**",
+    "**/dev-dist/**",
+    "**/coverage/**",
+    "**/node_modules/**",
+    "**/playwright-report/**",
+    "**/test-results/**",
+    "**/blob-report/**",
+    "apps/server/src/generated/**"
+  ],
+  "rules": {
+    "typescript/no-unused-vars": [
+      "error",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
+      }
+    ],
+    "react/react-in-jsx-scope": "off",
+    "eslint/no-empty-pattern": "off",
+    "typescript/no-useless-empty-export": "off",
+    "jsx-a11y/prefer-tag-over-role": "off",
+    "jsx-a11y/no-autofocus": "off",
+    "jsx-a11y/role-has-required-aria-props": "off",
+    "jsx-a11y/control-has-associated-label": "off"
+  }
+}

@@ -222,7 +222,8 @@ export async function enqueueSync(
   const existing = await withTransaction(
     STORES.SYNC_QUEUE,
     'readonly',
-    stores => promisify<QueueItem | undefined>(stores[STORES.SYNC_QUEUE].get(queueId))
+    stores =>
+      promisify<QueueItem | undefined>(stores[STORES.SYNC_QUEUE].get(queueId))
   )
 
   let opId: string = crypto.randomUUID()
@@ -311,9 +312,7 @@ function recordToTopic(record: TopicRecord): Topic {
     next_update_date: record.nextUpdateDate,
     updated_at: new Date(record.updatedAt).toISOString(),
     deleted_at:
-      record.deletedAt != null
-        ? new Date(record.deletedAt).toISOString()
-        : null
+      record.deletedAt != null ? new Date(record.deletedAt).toISOString() : null
   })
 }
 
@@ -327,9 +326,7 @@ function recordToCard(record: CardRecord): Card {
     review_date: record.reviewDate ?? null,
     updated_at: new Date(record.updatedAt).toISOString(),
     deleted_at:
-      record.deletedAt != null
-        ? new Date(record.deletedAt).toISOString()
-        : null
+      record.deletedAt != null ? new Date(record.deletedAt).toISOString() : null
   })
 }
 
@@ -390,10 +387,7 @@ async function buildMutations(items: QueueItem[]): Promise<{
   return { mutations, items: included }
 }
 
-async function applyPushAck(
-  ack: PushAck,
-  items: QueueItem[]
-): Promise<void> {
+async function applyPushAck(ack: PushAck, items: QueueItem[]): Promise<void> {
   const byOpId = new Map(items.map(i => [i.opId, i]))
 
   for (const opId of ack.acceptedOpIds) {
@@ -403,9 +397,7 @@ async function applyPushAck(
 
   for (const conflict of ack.conflicts) {
     await applyTopicConflict(conflict)
-    const item = [...byOpId.values()].find(
-      i => i.recordId === conflict.topicId
-    )
+    const item = [...byOpId.values()].find(i => i.recordId === conflict.topicId)
     if (item) await removeQueueItem(item.id)
   }
 
@@ -442,7 +434,10 @@ async function applyTopicConflict(
   await putLocal(STORES.TOPICS, local)
   emitSyncData()
 
-  if (typeof localStorage !== 'undefined' && localStorage.getItem('SYNC_DEBUG')) {
+  if (
+    typeof localStorage !== 'undefined' &&
+    localStorage.getItem('SYNC_DEBUG')
+  ) {
     console.info('Topic renamed to avoid duplicate:', conflict)
   }
 }

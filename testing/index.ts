@@ -22,10 +22,7 @@ export { migrateTestDatabase } from './db/migrate.js'
 export { resetTestDatabase } from './db/reset.js'
 export { prepareTestRun, seedFaker } from './db/seed.js'
 export { flushTestRedis } from './redis/flush.js'
-export {
-  createTestAgent,
-  resetTestApp
-} from './helpers/http/supertest-app.js'
+export { createTestAgent, resetTestApp } from './helpers/http/supertest-app.js'
 export {
   loginViaEmailOtp,
   readOtpFromRedis,
@@ -52,10 +49,7 @@ export {
   WebAuthnHelper,
   type VirtualPasskey
 } from './helpers/webauthn/virtual-authenticator.js'
-export {
-  loadPasskey,
-  savePasskey
-} from './helpers/webauthn/passkey-storage.js'
+export { loadPasskey, savePasskey } from './helpers/webauthn/passkey-storage.js'
 export {
   cardFactory,
   topicFactory,
