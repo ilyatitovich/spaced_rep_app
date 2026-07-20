@@ -19,6 +19,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:unit": "vitest run --project client --project server --project sync-protocol --project testing",
+    "test:integration": "vitest run --project server-integration",
     "test:db:prepare": "tsx testing/scripts/prepare-db.ts",
     "test:testing:typecheck": "tsc -p testing/tsconfig.json --noEmit"
   },
@@ -27,10 +28,12 @@
     "@faker-js/faker": "^9.9.0",
     "@prisma/adapter-pg": "^7.8.0",
     "@types/node": "^25.9.5",
+    "@types/supertest": "^6.0.3",
     "@vitest/coverage-v8": "^3.2.4",
     "dotenv": "^17.4.2",
     "pg": "^8.22.0",
     "redis": "^6.1.0",
+    "supertest": "^7.1.4",
     "tsx": "^4.23.1",
     "typescript": "7.0.2",
     "vitest": "^3.2.4"

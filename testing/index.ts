@@ -23,6 +23,10 @@ export { resetTestDatabase } from './db/reset.js'
 export { prepareTestRun, seedFaker } from './db/seed.js'
 export { flushTestRedis } from './redis/flush.js'
 export {
+  createTestAgent,
+  resetTestApp
+} from './helpers/http/supertest-app.js'
+export {
   cardFactory,
   topicFactory,
   userFactory,

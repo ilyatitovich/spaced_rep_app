@@ -18,6 +18,7 @@ export default defineConfig({
     projects: [
       'apps/client/vitest.config.ts',
       'apps/server/vitest.config.ts',
+      'apps/server/vitest.integration.config.ts',
       'packages/sync-protocol/vitest.config.ts',
       'testing/vitest.config.ts'
     ]
