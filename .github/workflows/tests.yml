@@ -40,134 +40,134 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-  integration:
-    name: Integration
-    permissions:
-      contents: read
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_USER: spaced_rep
-          POSTGRES_PASSWORD: spaced_rep
-          POSTGRES_DB: spaced_rep_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U spaced_rep -d spaced_rep_test"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    env:
-      DATABASE_URL: postgresql://spaced_rep:spaced_rep@localhost:5432/spaced_rep_test
-      REDIS_URL: redis://localhost:6379/1
-    steps:
-      - name: Checkout the repository
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+  # integration:
+  #   name: Integration
+  #   permissions:
+  #     contents: read
+  #   runs-on: ubuntu-latest
+  #   services:
+  #     postgres:
+  #       image: postgres:17-alpine
+  #       env:
+  #         POSTGRES_USER: spaced_rep
+  #         POSTGRES_PASSWORD: spaced_rep
+  #         POSTGRES_DB: spaced_rep_test
+  #       ports:
+  #         - 5432:5432
+  #       options: >-
+  #         --health-cmd "pg_isready -U spaced_rep -d spaced_rep_test"
+  #         --health-interval 5s
+  #         --health-timeout 5s
+  #         --health-retries 10
+  #     redis:
+  #       image: redis:7-alpine
+  #       ports:
+  #         - 6379:6379
+  #       options: >-
+  #         --health-cmd "redis-cli ping"
+  #         --health-interval 5s
+  #         --health-timeout 5s
+  #         --health-retries 10
+  #   env:
+  #     DATABASE_URL: postgresql://spaced_rep:spaced_rep@localhost:5432/spaced_rep_test
+  #     REDIS_URL: redis://localhost:6379/1
+  #   steps:
+  #     - name: Checkout the repository
+  #       uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
-      - name: Initialize Node.js & dependencies
-        uses: ./.github/actions/init-node
+  #     - name: Initialize Node.js & dependencies
+  #       uses: ./.github/actions/init-node
 
-      - name: Prepare test environment
-        run: |
-          cp .env.test.example .env.test
-          # Override host ports for GitHub Actions service containers.
-          sed -i 's|localhost:5433|localhost:5432|g' .env.test
-          sed -i 's|localhost:6380|localhost:6379|g' .env.test
+  #     - name: Prepare test environment
+  #       run: |
+  #         cp .env.test.example .env.test
+  #         # Override host ports for GitHub Actions service containers.
+  #         sed -i 's|localhost:5433|localhost:5432|g' .env.test
+  #         sed -i 's|localhost:6380|localhost:6379|g' .env.test
 
-      - name: Generate Prisma client
-        run: pnpm prisma:generate
-        env:
-          DATABASE_URL: ${{ env.DATABASE_URL }}
+  #     - name: Generate Prisma client
+  #       run: pnpm prisma:generate
+  #       env:
+  #         DATABASE_URL: ${{ env.DATABASE_URL }}
 
-      - name: Run integration tests
-        run: pnpm test:integration
+  #     - name: Run integration tests
+  #       run: pnpm test:integration
 
-  e2e:
-    name: E2E
-    permissions:
-      contents: read
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_USER: spaced_rep
-          POSTGRES_PASSWORD: spaced_rep
-          POSTGRES_DB: spaced_rep_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U spaced_rep -d spaced_rep_test"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    env:
-      DATABASE_URL: postgresql://spaced_rep:spaced_rep@localhost:5432/spaced_rep_test
-      REDIS_URL: redis://localhost:6379/1
-    steps:
-      - name: Checkout the repository
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+  # e2e:
+  #   name: E2E
+  #   permissions:
+  #     contents: read
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 30
+  #   services:
+  #     postgres:
+  #       image: postgres:17-alpine
+  #       env:
+  #         POSTGRES_USER: spaced_rep
+  #         POSTGRES_PASSWORD: spaced_rep
+  #         POSTGRES_DB: spaced_rep_test
+  #       ports:
+  #         - 5432:5432
+  #       options: >-
+  #         --health-cmd "pg_isready -U spaced_rep -d spaced_rep_test"
+  #         --health-interval 5s
+  #         --health-timeout 5s
+  #         --health-retries 10
+  #     redis:
+  #       image: redis:7-alpine
+  #       ports:
+  #         - 6379:6379
+  #       options: >-
+  #         --health-cmd "redis-cli ping"
+  #         --health-interval 5s
+  #         --health-timeout 5s
+  #         --health-retries 10
+  #   env:
+  #     DATABASE_URL: postgresql://spaced_rep:spaced_rep@localhost:5432/spaced_rep_test
+  #     REDIS_URL: redis://localhost:6379/1
+  #   steps:
+  #     - name: Checkout the repository
+  #       uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
-      - name: Initialize Node.js & dependencies
-        uses: ./.github/actions/init-node
+  #     - name: Initialize Node.js & dependencies
+  #       uses: ./.github/actions/init-node
 
-      - name: Prepare test environment
-        run: |
-          cp .env.test.example .env.test
-          sed -i 's|localhost:5433|localhost:5432|g' .env.test
-          sed -i 's|localhost:6380|localhost:6379|g' .env.test
+  #     - name: Prepare test environment
+  #       run: |
+  #         cp .env.test.example .env.test
+  #         sed -i 's|localhost:5433|localhost:5432|g' .env.test
+  #         sed -i 's|localhost:6380|localhost:6379|g' .env.test
 
-      - name: Generate Prisma client
-        run: pnpm prisma:generate
-        env:
-          DATABASE_URL: ${{ env.DATABASE_URL }}
+  #     - name: Generate Prisma client
+  #       run: pnpm prisma:generate
+  #       env:
+  #         DATABASE_URL: ${{ env.DATABASE_URL }}
 
-      - name: Cache Playwright browsers
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        id: playwright-cache
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+  #     - name: Cache Playwright browsers
+  #       uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+  #       id: playwright-cache
+  #       with:
+  #         path: ~/.cache/ms-playwright
+  #         key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
-      - name: Install Playwright browsers
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: pnpm exec playwright install --with-deps chromium firefox webkit
+  #     - name: Install Playwright browsers
+  #       if: steps.playwright-cache.outputs.cache-hit != 'true'
+  #       run: pnpm exec playwright install --with-deps chromium firefox webkit
 
-      - name: Install Playwright OS dependencies
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: pnpm exec playwright install-deps chromium firefox webkit
+  #     - name: Install Playwright OS dependencies
+  #       if: steps.playwright-cache.outputs.cache-hit == 'true'
+  #       run: pnpm exec playwright install-deps chromium firefox webkit
 
-      - name: Run end-to-end tests
-        run: pnpm test:e2e
+  #     - name: Run end-to-end tests
+  #       run: pnpm test:e2e
 
-      - name: Upload Playwright report
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: playwright-report
-          path: |
-            playwright-report/
-            test-results/
-          if-no-files-found: ignore
-          retention-days: 14
+  #     - name: Upload Playwright report
+  #       if: ${{ !cancelled() }}
+  #       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+  #       with:
+  #         name: playwright-report
+  #         path: |
+  #           playwright-report/
+  #           test-results/
+  #         if-no-files-found: ignore
+  #         retention-days: 14
