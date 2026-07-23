@@ -102,7 +102,7 @@ export default function SettingsScreen({ isOpen }: SettingsScreenProps) {
       <div className="h-full bg-background flex flex-col">
         <Header>
           <BackButton />
-          <span className="font-bold">Settings</span>
+          <span className="font-bold">Account</span>
           <span className="w-7" aria-hidden />
         </Header>
 
