@@ -7,19 +7,32 @@ function startOfDay(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate())
 }
 
+function resetToStartOfDay(ts: number): number {
+  const date = new Date(ts)
+  date.setHours(0, 0, 0, 0)
+  return date.getTime()
+}
+
 export function getNextReviewDate(
   fromTs: number,
   level: number,
   pivot: number
 ): number {
-  const currentDay = Math.floor((fromTs - pivot) / DAY_MS)
+  const currentDay = Math.floor(
+    (resetToStartOfDay(fromTs) - resetToStartOfDay(pivot)) / DAY_MS
+  )
   const cycleDay = ((currentDay % CYCLE_LENGTH) + CYCLE_LENGTH) % CYCLE_LENGTH
 
   for (let offset = 1; offset <= CYCLE_LENGTH; offset++) {
     const index = (cycleDay + offset) % CYCLE_LENGTH
 
     if (LEITNER_64_DAY_SCHEDULE[index].includes(level)) {
-      return fromTs + offset * DAY_MS
+      const nextReviewDate = fromTs + offset * DAY_MS
+      if (nextReviewDate < resetToStartOfDay(Date.now())) {
+        continue
+      }
+
+      return nextReviewDate
     }
   }
 
