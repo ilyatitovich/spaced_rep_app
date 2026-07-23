@@ -2,6 +2,7 @@ import {
   Bell,
   Cloud,
   CreditCard,
+  Info,
   KeyRound,
   Lock,
   LogOut,
@@ -24,7 +25,8 @@ import {
   SectionSubscription,
   SectionPrivacy,
   SectionData,
-  SectionPasskeys
+  SectionPasskeys,
+  SectionAbout
 } from '@/components/settings'
 
 const PLAN_LABELS: Record<PlanTier, string> = {
@@ -39,7 +41,8 @@ const SECTION_PARAMS = [
   'passkeys',
   'subscription',
   'privacy',
-  'data'
+  'data',
+  'about'
 ] as const
 
 type SectionParam = (typeof SECTION_PARAMS)[number]
@@ -70,6 +73,7 @@ export default function SettingsScreen({ isOpen }: SettingsScreenProps) {
   const isSubscriptionOpen = searchParams.get('subscription') === 'true'
   const isPrivacyOpen = searchParams.get('privacy') === 'true'
   const isDataOpen = searchParams.get('data') === 'true'
+  const isAboutOpen = searchParams.get('about') === 'true'
 
   const handleSignInOpen = () => {
     if (!isOnline) {
@@ -126,6 +130,11 @@ export default function SettingsScreen({ isOpen }: SettingsScreenProps) {
               </div>
 
               <SettingsGroup label="General">
+                <SettingsNavRow
+                  icon={<Info />}
+                  label="About"
+                  onClick={() => openSection(setSearchParams, 'about')}
+                />
                 <SettingsNavRow
                   icon={<Settings2 />}
                   label="Preferences"
@@ -195,6 +204,7 @@ export default function SettingsScreen({ isOpen }: SettingsScreenProps) {
       <SectionSubscription isOpen={isSubscriptionOpen} />
       <SectionPrivacy isOpen={isPrivacyOpen} />
       <SectionData isOpen={isDataOpen} />
+      <SectionAbout isOpen={isAboutOpen} />
     </Screen>
   )
 }
