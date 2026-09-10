@@ -43,7 +43,7 @@ type FailedOp = {
 
 export type SyncStatus = 'idle' | 'syncing' | 'error' | 'offline'
 
-export type SyncConnection = 'ws' | 'http' | 'offline' | 'idle'
+export type SyncConnection = 'idle' | 'ws' | 'http' | 'offline'
 
 export type SyncState = {
   status: SyncStatus
@@ -233,7 +233,6 @@ export async function enqueueSync(
       opId = existing.opId
       createdAt = existing.createdAt
     }
-    // operation flip → new opId
   }
 
   const item: QueueItem = {
