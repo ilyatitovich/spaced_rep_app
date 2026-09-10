@@ -1,5 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { CardData, CodeBlock, ImageDBRecord, SideContent } from '@/types'
+import {
+  CodeBlock,
+  ImageDBRecord,
+  LegacyCardData,
+  SideContent
+} from '@/types'
 
 export function isContentEmpty(
   content: null | undefined | SideContent
@@ -73,7 +78,7 @@ function isSideContentEqual(a: SideContent, b: SideContent): boolean {
   return false
 }
 
-export function isCardDataEqual(a: CardData, b: CardData): boolean {
+export function isCardDataEqual(a: LegacyCardData, b: LegacyCardData): boolean {
   return (
     a.front.type === b.front.type &&
     a.back.type === b.back.type &&

@@ -1,14 +1,14 @@
-import type { CardData } from '@/types'
+import type { LegacyCardData } from '@/types'
 
 export class Card {
   id: string
   topicId: string
   level: number
-  data: CardData
+  data: LegacyCardData
   reviewDate?: number
   updatedAt: number
 
-  constructor(data: CardData, topicId: string, level: number = 0) {
+  constructor(data: LegacyCardData, topicId: string, level: number = 0) {
     this.id = crypto.randomUUID()
     this.topicId = topicId
     this.level = level

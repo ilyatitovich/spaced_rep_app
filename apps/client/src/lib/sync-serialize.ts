@@ -7,9 +7,9 @@ import {
 import { Card, Topic } from '@/models'
 import type { Day } from '@/models'
 import type {
-  CardData,
-  CardSideData,
   ImageBase64Record,
+  LegacyCardData,
+  LegacyCardSideData,
   SideContent
 } from '@/types'
 
@@ -29,13 +29,13 @@ export type CardRow = {
   user_id: string
   topic_id: string
   level: number
-  data: CardData
+  data: LegacyCardData
   review_date: number | null
   updated_at: string
   deleted_at: string | null
 }
 
-function encodeSide(side: CardSideData): CardSideData {
+function encodeSide(side: LegacyCardSideData): LegacyCardSideData {
   if (isRecord(side.content)) {
     const encoded = arrayBufferToBase64(side.content) as unknown as SideContent
     return { ...side, content: encoded }
@@ -43,7 +43,7 @@ function encodeSide(side: CardSideData): CardSideData {
   return side
 }
 
-function decodeSide(side: CardSideData): CardSideData {
+function decodeSide(side: LegacyCardSideData): LegacyCardSideData {
   if (isBase64Image(side.content)) {
     const record = side.content as unknown as ImageBase64Record
     return { ...side, content: base64ToArrayBuffer(record) }
@@ -93,7 +93,7 @@ export function cardToRow(card: Card, userId: string): CardRow {
 }
 
 export function rowToCard(row: CardRow): Card {
-  const data: CardData = {
+  const data: LegacyCardData = {
     front: decodeSide(row.data.front),
     back: decodeSide(row.data.back)
   }

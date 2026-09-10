@@ -4,15 +4,15 @@ import { forwardRef, useRef, useImperativeHandle } from 'react'
 import Side from './side'
 import { useTap } from '@/hooks'
 import type {
-  CardData,
   CardHandle,
+  LegacyCardData,
   SideContent,
   SideContentType,
   SideName
 } from '@/types'
 
 type CardProps = {
-  data: CardData
+  data: LegacyCardData
   sidesContentType?: {
     front: SideContentType
     back: SideContentType

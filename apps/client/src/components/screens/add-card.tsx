@@ -14,7 +14,7 @@ import { Card as CardModel } from '@/models'
 import { createCard } from '@/services'
 import type {
   CardHandle,
-  CardData,
+  LegacyCardData,
   SideContentType,
   SideName,
   SideContent
@@ -26,7 +26,7 @@ type NewCardPageProps = {
   onAdd: (payload: { level: number; card: CardModel }) => void
 }
 
-const initialCardData: CardData = {
+const initialCardData: LegacyCardData = {
   front: { side: 'front', type: 'text', content: '' },
   back: { side: 'back', type: 'text', content: '' }
 }

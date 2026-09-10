@@ -8,7 +8,7 @@ import {
   isBase64Image
 } from '@/lib'
 import { Card, Topic } from '@/models'
-import type { CardSideData, ImageBase64Record } from '@/types'
+import type { ImageBase64Record, LegacyCardSideData } from '@/types'
 
 const BACKUP_VERSION = 1
 const UUID_RE =
@@ -18,13 +18,13 @@ function ensureUuid(id: string): string {
   return UUID_RE.test(id) ? id : crypto.randomUUID()
 }
 
-function encodeSide(side: CardSideData): CardSideData {
+function encodeSide(side: LegacyCardSideData): LegacyCardSideData {
   return isRecord(side.content)
     ? { ...side, content: arrayBufferToBase64(side.content) as never }
     : side
 }
 
-function decodeSide(side: CardSideData): CardSideData {
+function decodeSide(side: LegacyCardSideData): LegacyCardSideData {
   return isBase64Image(side.content)
     ? {
         ...side,

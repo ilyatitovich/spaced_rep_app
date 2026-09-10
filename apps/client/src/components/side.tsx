@@ -10,9 +10,9 @@ import {
   recordToBlob
 } from '@/lib'
 import type {
-  CardSideData,
   CodeBlock,
   ImageDBRecord,
+  LegacyCardSideData,
   SideContent,
   SideContentType,
   SideName
@@ -21,7 +21,7 @@ import type {
 const CodeEditor = lazy(() => import('./code-editor'))
 
 type SideProps = {
-  data: CardSideData
+  data: LegacyCardSideData
   contentType?: SideContentType
   isEditable?: boolean
   handleFocus?: FocusEventHandler<HTMLDivElement>

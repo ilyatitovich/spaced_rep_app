@@ -15,8 +15,8 @@ import { isCardDataEqual, isContentEmpty } from '@/lib'
 import { Card as CardModel } from '@/models'
 import { updateCard } from '@/services'
 import type {
-  CardData,
   CardHandle,
+  LegacyCardData,
   SideContent,
   SideContentType,
   SideName
@@ -34,7 +34,7 @@ const ANIMATION_MS = 250
 
 const mod = (n: number, m: number) => ((n % m) + m) % m
 
-const getCardData = (card: CardModel | null | undefined): CardData => ({
+const getCardData = (card: CardModel | null | undefined): LegacyCardData => ({
   front: {
     side: 'front',
     content: card?.data.front.content ?? '',
@@ -53,10 +53,10 @@ const getSidesContentType = (card: CardModel | null | undefined) => ({
 })
 
 const mergeTextFromEditor = (
-  base: CardData,
-  editor: CardData,
+  base: LegacyCardData,
+  editor: LegacyCardData,
   types: { front: SideContentType; back: SideContentType }
-): CardData => ({
+): LegacyCardData => ({
   front: {
     ...base.front,
     type: types.front,
@@ -82,7 +82,7 @@ export default function CardDetailsScreen({
   const card = cards?.[currentIndex]
 
   const [isFlipped, setIsFlipped] = useState(false)
-  const [cardData, setCardData] = useState<CardData>(() => getCardData(card))
+  const [cardData, setCardData] = useState<LegacyCardData>(() => getCardData(card))
   const [isEdited, setIsEdited] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
   const [sidesContentType, setSidesContentType] = useState(() =>
@@ -110,7 +110,7 @@ export default function CardDetailsScreen({
   const prevCard = cards?.[prevIndex]
   const nextCard = cards?.[nextIndex]
 
-  const setDirtyFrom = useCallback((data: CardData) => {
+  const setDirtyFrom = useCallback((data: LegacyCardData) => {
     setIsDirty(!isCardDataEqual(data, savedCardDataRef.current))
   }, [])
 
@@ -134,7 +134,7 @@ export default function CardDetailsScreen({
   const saveCard = useCallback(
     async (
       cardToSave: CardModel | undefined,
-      dataToSave: CardData
+      dataToSave: LegacyCardData
     ): Promise<boolean> => {
       if (!cardToSave) return false
 
@@ -164,7 +164,7 @@ export default function CardDetailsScreen({
     [onUpdate]
   )
 
-  const readLatestCardData = useCallback((): CardData => {
+  const readLatestCardData = useCallback((): LegacyCardData => {
     const editor = cardRef.current?.getContent()
     if (!editor) return cardDataRef.current
     return mergeTextFromEditor(
@@ -246,7 +246,7 @@ export default function CardDetailsScreen({
     // Text: update dirty only — writing back into `cardData` would remount
     // contentEditable children and reset the caret.
     if (typeof value === 'string') {
-      const draft: CardData = {
+      const draft: LegacyCardData = {
         ...cardDataRef.current,
         [sideName]: { ...cardDataRef.current[sideName], content: value }
       }
