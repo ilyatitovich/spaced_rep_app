@@ -1,8 +1,7 @@
 import { enqueueSync, triggerSync } from './sync.service'
-import { base64ToArrayBuffer, isBase64Image } from '@/lib'
 import { withTransaction, STORES } from '@/lib/db'
+import { decodeCardData } from '@/lib/sync-serialize'
 import { Card } from '@/models'
-import { ImageBase64Record } from '@/types'
 
 export async function createCard(card: Card): Promise<void> {
   try {
@@ -147,24 +146,7 @@ export async function importCards(
     ...card,
     topicId,
     updatedAt: Date.now(),
-    data: {
-      front: {
-        ...card.data.front,
-        content: isBase64Image(card.data.front.content)
-          ? base64ToArrayBuffer(
-              card.data.front.content as unknown as ImageBase64Record
-            )
-          : card.data.front.content
-      },
-      back: {
-        ...card.data.back,
-        content: isBase64Image(card.data.back.content)
-          ? base64ToArrayBuffer(
-              card.data.back.content as unknown as ImageBase64Record
-            )
-          : card.data.back.content
-      }
-    }
+    data: decodeCardData(card.data) as Card['data']
   }))
 
   let successCount = 0

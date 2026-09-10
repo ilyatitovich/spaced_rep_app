@@ -1,14 +1,7 @@
 import { enqueueSync, triggerSync } from './sync.service'
-import {
-  withTransaction,
-  STORES,
-  arrayBufferToBase64,
-  base64ToArrayBuffer,
-  isRecord,
-  isBase64Image
-} from '@/lib'
+import { withTransaction, STORES } from '@/lib'
+import { decodeCardData, encodeCardData } from '@/lib/sync-serialize'
 import { Card, Topic } from '@/models'
-import type { ImageBase64Record, LegacyCardSideData } from '@/types'
 
 const BACKUP_VERSION = 1
 const UUID_RE =
@@ -16,23 +9,6 @@ const UUID_RE =
 
 function ensureUuid(id: string): string {
   return UUID_RE.test(id) ? id : crypto.randomUUID()
-}
-
-function encodeSide(side: LegacyCardSideData): LegacyCardSideData {
-  return isRecord(side.content)
-    ? { ...side, content: arrayBufferToBase64(side.content) as never }
-    : side
-}
-
-function decodeSide(side: LegacyCardSideData): LegacyCardSideData {
-  return isBase64Image(side.content)
-    ? {
-        ...side,
-        content: base64ToArrayBuffer(
-          side.content as unknown as ImageBase64Record
-        )
-      }
-    : side
 }
 
 export async function exportAppData(): Promise<Record<string, string>> {
@@ -56,10 +32,7 @@ export async function exportAppData(): Promise<Record<string, string>> {
 
       const processedCards = cards.map(card => ({
         ...card,
-        data: {
-          front: encodeSide(card.data.front),
-          back: encodeSide(card.data.back)
-        }
+        data: encodeCardData(card.data)
       }))
 
       const exportedAt = new Date().toISOString()
@@ -110,10 +83,7 @@ export async function importAppData(
     ...card,
     id: ensureUuid(card.id),
     topicId: topicIdMap.get(card.topicId) ?? card.topicId,
-    data: {
-      front: decodeSide(card.data.front),
-      back: decodeSide(card.data.back)
-    }
+    data: decodeCardData(card.data)
   }))
 
   const importedTopicIds: string[] = []

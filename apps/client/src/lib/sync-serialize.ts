@@ -7,9 +7,13 @@ import {
 import { Card, Topic } from '@/models'
 import type { Day } from '@/models'
 import type {
+  CardData,
+  CardSideData,
   ImageBase64Record,
+  ImageDBRecord,
   LegacyCardData,
   LegacyCardSideData,
+  SideBlock,
   SideContent
 } from '@/types'
 
@@ -29,26 +33,80 @@ export type CardRow = {
   user_id: string
   topic_id: string
   level: number
-  data: LegacyCardData
+  data: LegacyCardData | CardData
   review_date: number | null
   updated_at: string
   deleted_at: string | null
 }
 
-function encodeSide(side: LegacyCardSideData): LegacyCardSideData {
+type AnyCardSide = LegacyCardSideData | CardSideData
+type AnyCardData = LegacyCardData | CardData
+
+function isBlocksSide(side: AnyCardSide): side is CardSideData {
+  return Array.isArray((side as CardSideData).blocks)
+}
+
+function encodeBlock(block: SideBlock): SideBlock {
+  if (block.type === 'text') return block
+  return {
+    ...block,
+    content: arrayBufferToBase64(block.content) as unknown as ImageDBRecord
+  }
+}
+
+function decodeBlock(block: SideBlock): SideBlock {
+  if (block.type === 'text') return block
+  if (isBase64Image(block.content)) {
+    return {
+      ...block,
+      content: base64ToArrayBuffer(
+        block.content as unknown as ImageBase64Record
+      )
+    }
+  }
+  return block
+}
+
+export function encodeSide(side: AnyCardSide): AnyCardSide {
+  if (isBlocksSide(side)) {
+    return { side: side.side, blocks: side.blocks.map(encodeBlock) }
+  }
   if (isRecord(side.content)) {
-    const encoded = arrayBufferToBase64(side.content) as unknown as SideContent
-    return { ...side, content: encoded }
+    return {
+      ...side,
+      content: arrayBufferToBase64(side.content) as unknown as SideContent
+    }
   }
   return side
 }
 
-function decodeSide(side: LegacyCardSideData): LegacyCardSideData {
+export function decodeSide(side: AnyCardSide): AnyCardSide {
+  if (isBlocksSide(side)) {
+    return { side: side.side, blocks: side.blocks.map(decodeBlock) }
+  }
   if (isBase64Image(side.content)) {
-    const record = side.content as unknown as ImageBase64Record
-    return { ...side, content: base64ToArrayBuffer(record) }
+    return {
+      ...side,
+      content: base64ToArrayBuffer(
+        side.content as unknown as ImageBase64Record
+      )
+    }
   }
   return side
+}
+
+export function encodeCardData(data: AnyCardData): AnyCardData {
+  return {
+    front: encodeSide(data.front),
+    back: encodeSide(data.back)
+  } as AnyCardData
+}
+
+export function decodeCardData(data: AnyCardData): AnyCardData {
+  return {
+    front: decodeSide(data.front),
+    back: decodeSide(data.back)
+  } as AnyCardData
 }
 
 export function topicToRow(topic: Topic, userId: string): TopicRow {
@@ -82,10 +140,7 @@ export function cardToRow(card: Card, userId: string): CardRow {
     user_id: userId,
     topic_id: card.topicId,
     level: card.level,
-    data: {
-      front: encodeSide(card.data.front),
-      back: encodeSide(card.data.back)
-    },
+    data: encodeCardData(card.data),
     review_date: card.reviewDate ?? null,
     updated_at: new Date(card.updatedAt ?? Date.now()).toISOString(),
     deleted_at: null
@@ -93,10 +148,7 @@ export function cardToRow(card: Card, userId: string): CardRow {
 }
 
 export function rowToCard(row: CardRow): Card {
-  const data: LegacyCardData = {
-    front: decodeSide(row.data.front),
-    back: decodeSide(row.data.back)
-  }
+  const data = decodeCardData(row.data) as LegacyCardData
   const card = new Card(data, row.topic_id, row.level)
   card.id = row.id
   card.reviewDate = row.review_date ?? undefined

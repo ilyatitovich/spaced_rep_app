@@ -1,5 +1,6 @@
 import { enqueueSync, triggerSync } from './sync.service'
-import { withTransaction, STORES, arrayBufferToBase64, isRecord } from '@/lib'
+import { withTransaction, STORES } from '@/lib'
+import { encodeCardData } from '@/lib/sync-serialize'
 import { Topic, Card, updateWeek } from '@/models'
 
 export async function createTopic(topic: Topic): Promise<void> {
@@ -230,20 +231,7 @@ export async function exportTopic(
 
       const processedCards = cards.map((card: Card) => ({
         ...card,
-        data: {
-          front: {
-            ...card.data.front,
-            content: isRecord(card.data.front.content)
-              ? arrayBufferToBase64(card.data.front.content)
-              : card.data.front.content
-          },
-          back: {
-            ...card.data.back,
-            content: isRecord(card.data.back.content)
-              ? arrayBufferToBase64(card.data.back.content)
-              : card.data.back.content
-          }
-        }
+        data: encodeCardData(card.data)
       }))
 
       const payload = {
