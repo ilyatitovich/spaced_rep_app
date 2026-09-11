@@ -1,19 +1,69 @@
 import type { ImageBase64Record, MediaDBRecord } from '@/types'
 
-export async function processImage(file: File): Promise<Blob> {
-  const maxWidth = 800,
-    maxHeight = 800
+export type CropArea = {
+  x: number
+  y: number
+  width: number
+  height: number
+}
 
-  const img = await createImageBitmap(file)
+const MAX_WIDTH = 800
+const MAX_HEIGHT = 800
+const WEBP_QUALITY = 0.85
 
-  let width = img.width
-  let height = img.height
+function canvasToWebp(canvas: HTMLCanvasElement): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      blob => {
+        if (!blob) return reject(new Error('Failed to convert to Webp'))
+        resolve(blob)
+      },
+      'image/webp',
+      WEBP_QUALITY
+    )
+  })
+}
 
-  if (width > maxWidth || height > maxHeight) {
-    const ratio = Math.min(maxWidth / width, maxHeight / height)
-    width = Math.round(width * ratio)
-    height = Math.round(height * ratio)
+function scaleToMax(width: number, height: number) {
+  if (width <= MAX_WIDTH && height <= MAX_HEIGHT) {
+    return { width, height }
   }
+  const ratio = Math.min(MAX_WIDTH / width, MAX_HEIGHT / height)
+  return {
+    width: Math.round(width * ratio),
+    height: Math.round(height * ratio)
+  }
+}
+
+function getRadianAngle(degree: number) {
+  return (degree * Math.PI) / 180
+}
+
+export function rotateSize(width: number, height: number, rotation: number) {
+  const rotRad = getRadianAngle(rotation)
+  return {
+    width:
+      Math.abs(Math.cos(rotRad) * width) + Math.abs(Math.sin(rotRad) * height),
+    height:
+      Math.abs(Math.sin(rotRad) * width) + Math.abs(Math.cos(rotRad) * height)
+  }
+}
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image()
+    image.addEventListener('load', () => resolve(image))
+    image.addEventListener('error', error => reject(error))
+    image.src = src
+  })
+}
+
+export async function processImage(file: Blob): Promise<Blob> {
+  const img = await createImageBitmap(file, {
+    imageOrientation: 'from-image'
+  })
+
+  const { width, height } = scaleToMax(img.width, img.height)
 
   const canvas = document.createElement('canvas')
   canvas.width = width
@@ -24,16 +74,63 @@ export async function processImage(file: File): Promise<Blob> {
   ctx!.fillRect(0, 0, width, height)
   ctx?.drawImage(img, 0, 0, width, height)
 
-  return await new Promise((resolve, reject) => {
-    canvas.toBlob(
+  return canvasToWebp(canvas)
+}
+
+/** Crop + rotate, then run through the same WebP/800 pipeline as uploads. */
+export async function getCroppedImage(
+  imageSrc: string,
+  pixelCrop: CropArea,
+  rotation = 0
+): Promise<Blob> {
+  const image = await loadImage(imageSrc)
+  const rotRad = getRadianAngle(rotation)
+  const { width: bBoxWidth, height: bBoxHeight } = rotateSize(
+    image.width,
+    image.height,
+    rotation
+  )
+
+  const canvas = document.createElement('canvas')
+  canvas.width = bBoxWidth
+  canvas.height = bBoxHeight
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('Canvas context unavailable')
+
+  ctx.translate(bBoxWidth / 2, bBoxHeight / 2)
+  ctx.rotate(rotRad)
+  ctx.translate(-image.width / 2, -image.height / 2)
+  ctx.drawImage(image, 0, 0)
+
+  const cropped = document.createElement('canvas')
+  cropped.width = pixelCrop.width
+  cropped.height = pixelCrop.height
+  const croppedCtx = cropped.getContext('2d')
+  if (!croppedCtx) throw new Error('Canvas context unavailable')
+
+  croppedCtx.drawImage(
+    canvas,
+    pixelCrop.x,
+    pixelCrop.y,
+    pixelCrop.width,
+    pixelCrop.height,
+    0,
+    0,
+    pixelCrop.width,
+    pixelCrop.height
+  )
+
+  const croppedBlob = await new Promise<Blob>((resolve, reject) => {
+    cropped.toBlob(
       blob => {
-        if (!blob) return reject('Failed to convert to Webp')
+        if (!blob) return reject(new Error('Failed to crop image'))
         resolve(blob)
       },
-      'image/webp',
-      0.85
+      'image/png'
     )
   })
+
+  return processImage(croppedBlob)
 }
 
 export async function blobToRecord(blob: Blob): Promise<MediaDBRecord> {

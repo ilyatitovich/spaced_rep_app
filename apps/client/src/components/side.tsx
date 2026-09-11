@@ -14,8 +14,7 @@ import {
 } from 'react'
 
 import AudioBlock from './audio-block'
-import ImageUploader from './image-uploader'
-import ObjectUrl from './object-url'
+import ImageBlock from './image-block'
 import TextBlockEditor, {
   type TextBlockEditorHandle
 } from './text-block-editor'
@@ -343,45 +342,20 @@ export default forwardRef(function Side(
 
               if (block.type === 'image') {
                 return (
-                  // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
-                  <div
+                  <ImageBlock
                     key={`image-${index}`}
-                    className="relative w-full"
-                    onClick={e => {
-                      e.stopPropagation()
-                      if (!isEditable) return
+                    content={block.content}
+                    isEditable={isEditable}
+                    alt={`${data.side} side`}
+                    onChange={content =>
+                      updateBlock(index, { type: 'image', content })
+                    }
+                    onRemove={() => removeBlock(index)}
+                    onFocus={() => {
                       setIsTextFocused(false)
                       handleFocus?.({} as FocusEvent<HTMLElement>)
                     }}
-                  >
-                    {isEditable ? (
-                      <ObjectUrl record={block.content}>
-                        {url => (
-                          <ImageUploader
-                            onChange={file =>
-                              updateBlock(index, {
-                                type: 'image',
-                                content: file
-                              })
-                            }
-                            onRemove={() => removeBlock(index)}
-                            initialPreview={url}
-                          />
-                        )}
-                      </ObjectUrl>
-                    ) : (
-                      <ObjectUrl record={block.content}>
-                        {url => (
-                          <img
-                            src={url}
-                            alt={`${data.side} side`}
-                            draggable={false}
-                            className="max-w-full max-h-[40dvh] mx-auto object-contain backface-hidden"
-                          />
-                        )}
-                      </ObjectUrl>
-                    )}
-                  </div>
+                  />
                 )
               }
 
