@@ -203,11 +203,11 @@ export function noteToCard(
   return new Card(
     noteFieldsToCardData(note.fields, mediaByName, note.fieldNames),
     topicId,
-    1
+    0
   )
 }
 
-/** Parse result → Card instances at Leitner level 1 with fresh UUIDs. */
+/** Parse result → Card instances at Draft (level 0) with fresh UUIDs. */
 export function apkgToCards(parsed: ParsedApkg, topicId: string): Card[] {
   return parsed.notes
     .map(note => noteToCard(note, topicId, parsed.mediaByName))

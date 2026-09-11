@@ -130,7 +130,7 @@ describe('pickFrontBackHtml', () => {
 })
 
 describe('parseApkg + apkgToCards', () => {
-  it('maps Basic + image + sound notes to level-1 cards', async () => {
+  it('maps Basic + image + sound notes to Draft (level 0) cards', async () => {
     const pngBytes = new Uint8Array([137, 80, 78, 71])
     const mp3Bytes = new Uint8Array([1, 2, 3, 4])
 
@@ -156,7 +156,7 @@ describe('parseApkg + apkgToCards', () => {
     const cards = apkgToCards(parsed, 'topic-1')
     expect(cards).toHaveLength(1)
     expect(cards[0].topicId).toBe('topic-1')
-    expect(cards[0].level).toBe(1)
+    expect(cards[0].level).toBe(0)
     expect(cards[0].id).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
     )

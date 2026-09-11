@@ -33,11 +33,16 @@ export default function ImportCardsModal({
     setMessage(null)
 
     try {
-      const count = isAnkiApkg(file)
+      const anki = isAnkiApkg(file)
+      const count = anki
         ? await importAnkiApkg(file, topicId)
         : await importCards(file, topicId)
       await onCardsImport()
-      setMessage(`${count} cards imported successfully`)
+      setMessage(
+        anki
+          ? `${count} cards imported to Draft`
+          : `${count} cards imported successfully`
+      )
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message ?? 'Import failed')

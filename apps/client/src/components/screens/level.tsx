@@ -14,7 +14,7 @@ import {
 import { useSelectionMode } from '@/hooks'
 import { getReviewMessage, getLevelDescription } from '@/lib'
 import { Card } from '@/models'
-import { deleteCardsBulk } from '@/services'
+import { deleteCardsBulk, updateCardsLevelBulk } from '@/services'
 import { List } from 'lucide-react'
 
 type LevelScreenProps = {
@@ -24,6 +24,11 @@ type LevelScreenProps = {
   cards: Card[]
   startDate: number
   onDeleteCards: (cards: Card[]) => void
+  onMoveCards: (
+    remaining: Card[],
+    moved: Card[],
+    toLevel: number
+  ) => void
 }
 
 const listVariants = {
@@ -43,7 +48,8 @@ export default function LevelScreen({
   isDone,
   cards,
   startDate,
-  onDeleteCards
+  onDeleteCards,
+  onMoveCards
 }: LevelScreenProps) {
   const [levelCards, setLevelCards] = useState<Card[]>([])
   const [currentLevelId, setCurrentLevelId] = useState('')
@@ -85,6 +91,20 @@ export default function LevelScreen({
       onDeleteCards(restCards)
       return restCards.length === 0
     })
+
+  const handleMoveSelectedItems = async (toLevel: number): Promise<void> => {
+    const selectedIds = new Set(selectedItems)
+    const moved = levelCards.filter(card => selectedIds.has(card.id))
+    try {
+      await updateCardsLevelBulk(moved, toLevel)
+      const remaining = levelCards.filter(card => !selectedIds.has(card.id))
+      setLevelCards(remaining)
+      onMoveCards(remaining, moved, toLevel)
+      cancelSelectionMode()
+    } catch (error) {
+      console.error('Failed to move selected cards:', error)
+    }
+  }
 
   return (
     <Screen isOpen={isOpen} onClose={onClose} onOpen={onOpen}>
@@ -163,6 +183,8 @@ export default function LevelScreen({
           <SelectionModeFooter
             countItemsForDelete={selectedItems.length}
             handleDelete={handleDeleteSelectedItems}
+            handleMove={handleMoveSelectedItems}
+            currentLevel={Number(currentLevelId)}
             nameItemsForDelete="card"
           />
         )}

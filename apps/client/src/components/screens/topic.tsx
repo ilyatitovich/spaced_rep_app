@@ -178,6 +178,13 @@ export default function TopicScreen({
                 [Number(levelId)]: cards
               }))
             }}
+            onMoveCards={(remaining, moved, toLevel) => {
+              setCards(prev => ({
+                ...prev,
+                [Number(levelId)]: remaining,
+                [toLevel]: [...(prev[toLevel] ?? []), ...moved]
+              }))
+            }}
           />
           <CardDetailsScreen
             isOpen={!!cardId}

@@ -79,6 +79,43 @@ export async function deleteCardsBulk(cardIds: string[]): Promise<void> {
   triggerSync()
 }
 
+export async function updateCardsLevelBulk(
+  cards: Card[],
+  level: number
+): Promise<void> {
+  if (cards.length === 0) return
+
+  const now = Date.now()
+  for (const card of cards) {
+    card.level = level
+    card.updatedAt = now
+  }
+
+  await withTransaction([STORES.CARDS], 'readwrite', async stores => {
+    return new Promise<void>((resolve, reject) => {
+      let remaining = cards.length
+
+      for (const card of cards) {
+        const req = stores[STORES.CARDS].put(card)
+
+        req.onerror = () => {
+          reject(req.error ?? new Error(`Failed to update card ${card.id}`))
+        }
+
+        req.onsuccess = () => {
+          remaining -= 1
+          if (remaining === 0) resolve()
+        }
+      }
+    })
+  })
+
+  for (const card of cards) {
+    await enqueueSync(STORES.CARDS, card.id, 'upsert')
+  }
+  triggerSync()
+}
+
 export async function migrateCardsToNewSchema(): Promise<void> {
   return withTransaction([STORES.CARDS], 'readwrite', async stores => {
     return new Promise<void>((resolve, reject) => {
