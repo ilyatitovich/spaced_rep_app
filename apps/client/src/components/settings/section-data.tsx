@@ -58,6 +58,13 @@ function formatCachedImages(stats: StorageUsage | null): string {
   return `${formatBytes(stats.cacheBytes)} · ${images}`
 }
 
+function formatCardMedia(stats: StorageUsage | null): string {
+  if (!stats) return '…'
+  const images = `${stats.cardImageCount.toLocaleString()} image${stats.cardImageCount === 1 ? '' : 's'}`
+  const audio = `${stats.cardAudioCount.toLocaleString()} audio`
+  return `${formatBytes(stats.cardMediaBytes)} · ${images} · ${audio}`
+}
+
 export default function SectionData({ isOpen }: SectionDataProps) {
   const { user } = useAuth()
   const {
@@ -131,12 +138,16 @@ export default function SectionData({ isOpen }: SectionDataProps) {
       <div className="flex flex-col gap-6 overflow-y-auto h-[92dvh] p-4 pb-30">
         <SettingsGroup
           label="Storage"
-          footer="Approximate. Includes cards, images, and app cache. Cached images download again when you review online."
+          footer="Approximate. Card media is images and audio stored on cards. Cached images download again when you review online."
         >
           <SettingsInfoRow label="Used" value={formatUsedValue(storage)} />
           <SettingsInfoRow
             label="Topics & cards"
             value={formatTopicsCards(storage)}
+          />
+          <SettingsInfoRow
+            label="Card media"
+            value={formatCardMedia(storage)}
           />
           <SettingsInfoRow
             label="Cached images"
