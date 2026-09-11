@@ -24,6 +24,8 @@ export default function ImageEditorScreen({
   onSave
 }: ImageEditorScreenProps) {
   const [hasOpened, setHasOpened] = useState(false)
+  // Mount closed first so Screen can transition in; isOpen alone would paint already open.
+  const [isVisible, setIsVisible] = useState(false)
   const [crop, setCrop] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
   const [rotation, setRotation] = useState(0)
@@ -33,7 +35,19 @@ export default function ImageEditorScreen({
   const [naturalAspect, setNaturalAspect] = useState(4 / 3)
 
   useEffect(() => {
-    if (isOpen) setHasOpened(true)
+    if (isOpen) {
+      setHasOpened(true)
+      // Paint closed (translate-y-100vh) first, then open — otherwise first paint skips the enter transition.
+      let inner = 0
+      const outer = requestAnimationFrame(() => {
+        inner = requestAnimationFrame(() => setIsVisible(true))
+      })
+      return () => {
+        cancelAnimationFrame(outer)
+        cancelAnimationFrame(inner)
+      }
+    }
+    setIsVisible(false)
   }, [isOpen])
 
   const handleCropComplete = useCallback((_: Area, pixels: Area) => {
@@ -78,7 +92,7 @@ export default function ImageEditorScreen({
   if (!hasOpened) return null
 
   return createPortal(
-    <Screen isOpen={isOpen} isVertical onClose={handleClose} className="z-60">
+    <Screen isOpen={isVisible} isVertical onClose={handleClose} className="z-60">
       <div className="h-full bg-background flex flex-col overflow-hidden">
         <Header>
           <Button ariaLabel="Cancel" onClick={onClose}>
@@ -95,7 +109,7 @@ export default function ImageEditorScreen({
 
         <div className="relative flex-1 bg-black">
           <Suspense fallback={<Spinner />}>
-            {isOpen && (
+            {isVisible && (
               <Cropper
                 image={imageUrl}
                 crop={crop}
@@ -112,25 +126,6 @@ export default function ImageEditorScreen({
         </div>
 
         <div className="flex flex-col gap-4 p-4 pb-8">
-          <div className="flex items-center gap-3">
-            <label
-              htmlFor="image-zoom"
-              className="text-sm text-foreground-muted w-12"
-            >
-              Zoom
-            </label>
-            <input
-              id="image-zoom"
-              type="range"
-              min={1}
-              max={3}
-              step={0.05}
-              value={zoom}
-              onChange={e => setZoom(Number(e.target.value))}
-              className="flex-1"
-            />
-          </div>
-
           <div className="flex items-center justify-between gap-2">
             <div className="flex gap-2">
               <button
