@@ -1,7 +1,13 @@
-import { Check, Volume2 } from 'lucide-react'
-import { useRef, useLayoutEffect, useState, type ReactNode } from 'react'
+import { Check, CloudOff, Volume2 } from 'lucide-react'
+import { useRef, useLayoutEffect, useEffect, useState, type ReactNode } from 'react'
 
-import { isTextHtmlEmpty, normalizeCardData } from '@/lib'
+import { useOnline } from '@/hooks'
+import {
+  cacheRemoteImage,
+  isTextHtmlEmpty,
+  normalizeCardData,
+  toHttpsImageUrl
+} from '@/lib'
 import { Card } from '@/models'
 import type { SideBlock } from '@/types'
 
@@ -38,7 +44,9 @@ export default function LevelCard({
   onPress,
   onSelect
 }: LevelCardProps) {
+  const isOnline = useOnline()
   const [previewUrl, setPreviewUrl] = useState('')
+  const [cachedRemoteUrl, setCachedRemoteUrl] = useState('')
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const front = normalizeCardData(card.data).front
@@ -50,6 +58,10 @@ export default function LevelCard({
   const imageType =
     block?.type === 'image' && 'buffer' in block.content
       ? block.content.type
+      : undefined
+  const remoteSrc =
+    block?.type === 'image' && 'src' in block.content
+      ? toHttpsImageUrl(block.content.src)
       : undefined
 
   useLayoutEffect(() => {
@@ -64,6 +76,30 @@ export default function LevelCard({
     return () => URL.revokeObjectURL(url)
   }, [imageBuffer, imageType])
 
+  // Offline only: read mediaCache (isOnline: false skips fetch — no scroll caching).
+  useEffect(() => {
+    if (!remoteSrc || isOnline) {
+      setCachedRemoteUrl('')
+      return
+    }
+
+    let cancelled = false
+    let objectUrl: string | undefined
+
+    void cacheRemoteImage(remoteSrc, { isOnline: () => false }).then(record => {
+      if (cancelled || !record) return
+      objectUrl = URL.createObjectURL(
+        new Blob([record.buffer], { type: record.type })
+      )
+      setCachedRemoteUrl(objectUrl)
+    })
+
+    return () => {
+      cancelled = true
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
+  }, [remoteSrc, isOnline])
+
   let preview: ReactNode | null = null
 
   if (block?.type === 'image' && previewUrl) {
@@ -72,6 +108,30 @@ export default function LevelCard({
         src={previewUrl}
         alt="front pic"
         className="max-h-full max-w-full object-contain"
+      />
+    )
+  } else if (block?.type === 'image' && remoteSrc && isOnline) {
+    preview = (
+      <img
+        src={remoteSrc}
+        alt="front pic"
+        className="max-h-full max-w-full object-contain"
+      />
+    )
+  } else if (block?.type === 'image' && remoteSrc && cachedRemoteUrl) {
+    preview = (
+      <img
+        src={cachedRemoteUrl}
+        alt="front pic"
+        className="max-h-full max-w-full object-contain"
+      />
+    )
+  } else if (block?.type === 'image' && remoteSrc && !isOnline) {
+    preview = (
+      <CloudOff
+        className="w-8 h-8 text-foreground-muted"
+        strokeWidth={2}
+        aria-label="You’re offline. This image is on an external host."
       />
     )
   } else if (block?.type === 'audio') {
