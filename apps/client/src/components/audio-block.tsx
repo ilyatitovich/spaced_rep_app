@@ -57,7 +57,11 @@ export default function AudioBlock({
       <ObjectUrl record={content}>
         {url => (
           // eslint-disable-next-line jsx-a11y/media-has-caption
-          <audio controls src={url} className="w-full max-w-full" />
+          <audio
+            controls
+            src={url}
+            className="w-full max-w-full backface-hidden"
+          />
         )}
       </ObjectUrl>
     </div>

@@ -25,6 +25,9 @@ import { didAppendSideBlock, LONGTEXT_THRESHOLD, sanitizeCardHtml } from '@/lib'
 
 const CodeBlockEditor = lazy(() => import('./code-block-editor'))
 
+// Match `duration-600` on the card rotator in card.tsx.
+const FLIP_MS = 600
+
 function bindOverflowScroll(el: HTMLElement) {
   const onWheel = (e: WheelEvent) => {
     if (el.scrollHeight <= el.clientHeight) return
@@ -90,7 +93,17 @@ export default forwardRef(function Side(
   const scrollRef = useRef<HTMLDivElement>(null)
   const prevBlocksRef = useRef<SideBlock[] | null>(null)
   const stopRevealRef = useRef<(() => void) | null>(null)
+  const [isPainted, setIsPainted] = useState(true)
   focusedTextIndexRef.current = focusedTextIndex
+
+  useEffect(() => {
+    if (isVisible) {
+      setIsPainted(true)
+      return
+    }
+    const id = window.setTimeout(() => setIsPainted(false), FLIP_MS)
+    return () => window.clearTimeout(id)
+  }, [isVisible])
 
   const readBlocks = useCallback((): SideBlock[] => {
     return data.blocks.map((block, index) => {
@@ -220,9 +233,11 @@ export default forwardRef(function Side(
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
     <div
-      className={`overflow-hidden absolute w-full h-full backface-hidden border-foreground border-6 rounded-4xl bg-card ${
+      className={`absolute w-full h-full backface-hidden ${
         isVisible ? '' : 'pointer-events-none'
-      } ${data.side === 'back' ? 'rotate-y-180' : ''}`.trim()}
+      } ${isPainted ? '' : 'invisible'} ${
+        data.side === 'back' ? 'rotate-y-180' : ''
+      }`.trim()}
       onClick={focusEmptySide}
     >
       <TextFormatToolbar
@@ -234,157 +249,159 @@ export default forwardRef(function Side(
         onBulletList={() => activeEditor()?.chain().toggleBulletList().run()}
         onNumberedList={() => activeEditor()?.chain().toggleOrderedList().run()}
       />
-      <div
-        ref={scrollRef}
-        className="h-full w-full overflow-y-auto overscroll-y-contain scrollbar-hidden"
-      >
-        <div className="flex min-h-full w-full flex-col justify-center gap-4 px-4 py-4">
-          {data.blocks.map((block, index) => {
-            if (block.type === 'text') {
-              if (!isEditable) {
-                const plainLen = block.html.replace(/<[^>]*>/g, '').length
+      <div className="h-full w-full overflow-hidden border-foreground border-6 rounded-4xl bg-card">
+        <div
+          ref={scrollRef}
+          className="h-full w-full overflow-y-auto overscroll-y-contain scrollbar-hidden"
+        >
+          <div className="flex min-h-full w-full flex-col justify-center gap-4 px-4 py-4">
+            {data.blocks.map((block, index) => {
+              if (block.type === 'text') {
+                if (!isEditable) {
+                  const plainLen = block.html.replace(/<[^>]*>/g, '').length
+                  return (
+                    <div
+                      key={`text-${index}`}
+                      className={`w-full card-rich-text wrap-break-word ${
+                        plainLen > LONGTEXT_THRESHOLD
+                          ? 'is-long text-left text-lg'
+                          : 'text-center text-3xl font-card leading-10'
+                      }`}
+                      dangerouslySetInnerHTML={{
+                        __html: sanitizeCardHtml(block.html)
+                      }}
+                    />
+                  )
+                }
+
                 return (
+                  // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
                   <div
                     key={`text-${index}`}
-                    className={`w-full card-rich-text wrap-break-word ${
-                      plainLen > LONGTEXT_THRESHOLD
-                        ? 'is-long text-left text-lg'
-                        : 'text-center text-3xl font-card leading-10'
-                    }`}
-                    dangerouslySetInnerHTML={{
-                      __html: sanitizeCardHtml(block.html)
+                    className="w-full"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <TextBlockEditor
+                      ref={handle => {
+                        if (handle) textEditors.current.set(index, handle)
+                        else textEditors.current.delete(index)
+                      }}
+                      html={block.html}
+                      isEditable={isEditable}
+                      onBackspaceEmpty={() => removeEmptyTextBlock(index)}
+                      onFocus={e => {
+                        setFocusedTextIndex(index)
+                        setIsTextFocused(true)
+                        handleFocus?.(e)
+                      }}
+                      onBlur={e => {
+                        if (skipBlurRef.current) {
+                          skipBlurRef.current = false
+                          return
+                        }
+                        if (isToolbarTarget(e.relatedTarget)) return
+                        setFocusedTextIndex(null)
+                        setIsTextFocused(false)
+                        const html =
+                          textEditors.current.get(index)?.getHtml() ??
+                          sanitizeCardHtml(block.html)
+                        updateBlock(index, { type: 'text', html })
+                        handleBlur?.(e)
+                      }}
+                    />
+                  </div>
+                )
+              }
+
+              if (block.type === 'code') {
+                return (
+                  // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+                  <div
+                    key={`code-${index}`}
+                    className="w-full"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <Suspense fallback={<Spinner />}>
+                      <CodeBlockEditor
+                        value={{ lang: block.lang, code: block.code }}
+                        isEditable={isEditable}
+                        onFocus={() => {
+                          setIsTextFocused(false)
+                          handleFocus?.({} as FocusEvent<HTMLElement>)
+                        }}
+                        onChange={value =>
+                          updateBlock(index, { type: 'code', ...value })
+                        }
+                        onRemove={
+                          isEditable ? () => removeBlock(index) : undefined
+                        }
+                      />
+                    </Suspense>
+                  </div>
+                )
+              }
+
+              if (block.type === 'image') {
+                return (
+                  // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+                  <div
+                    key={`image-${index}`}
+                    className="relative w-full"
+                    onClick={e => {
+                      e.stopPropagation()
+                      if (!isEditable) return
+                      setIsTextFocused(false)
+                      handleFocus?.({} as FocusEvent<HTMLElement>)
                     }}
-                  />
+                  >
+                    {isEditable ? (
+                      <ObjectUrl record={block.content}>
+                        {url => (
+                          <ImageUploader
+                            onChange={file =>
+                              updateBlock(index, {
+                                type: 'image',
+                                content: file
+                              })
+                            }
+                            onRemove={() => removeBlock(index)}
+                            initialPreview={url}
+                          />
+                        )}
+                      </ObjectUrl>
+                    ) : (
+                      <ObjectUrl record={block.content}>
+                        {url => (
+                          <img
+                            src={url}
+                            alt={`${data.side} side`}
+                            draggable={false}
+                            className="max-w-full max-h-[40dvh] mx-auto object-contain backface-hidden"
+                          />
+                        )}
+                      </ObjectUrl>
+                    )}
+                  </div>
                 )
               }
 
               return (
-                // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
-                <div
-                  key={`text-${index}`}
-                  className="w-full"
-                  onClick={e => e.stopPropagation()}
-                >
-                  <TextBlockEditor
-                    ref={handle => {
-                      if (handle) textEditors.current.set(index, handle)
-                      else textEditors.current.delete(index)
-                    }}
-                    html={block.html}
-                    isEditable={isEditable}
-                    onBackspaceEmpty={() => removeEmptyTextBlock(index)}
-                    onFocus={e => {
-                      setFocusedTextIndex(index)
-                      setIsTextFocused(true)
-                      handleFocus?.(e)
-                    }}
-                    onBlur={e => {
-                      if (skipBlurRef.current) {
-                        skipBlurRef.current = false
-                        return
-                      }
-                      if (isToolbarTarget(e.relatedTarget)) return
-                      setFocusedTextIndex(null)
-                      setIsTextFocused(false)
-                      const html =
-                        textEditors.current.get(index)?.getHtml() ??
-                        sanitizeCardHtml(block.html)
-                      updateBlock(index, { type: 'text', html })
-                      handleBlur?.(e)
-                    }}
-                  />
-                </div>
-              )
-            }
-
-            if (block.type === 'code') {
-              return (
-                // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
-                <div
-                  key={`code-${index}`}
-                  className="w-full"
-                  onClick={e => e.stopPropagation()}
-                >
-                  <Suspense fallback={<Spinner />}>
-                    <CodeBlockEditor
-                      value={{ lang: block.lang, code: block.code }}
-                      isEditable={isEditable}
-                      onFocus={() => {
-                        setIsTextFocused(false)
-                        handleFocus?.({} as FocusEvent<HTMLElement>)
-                      }}
-                      onChange={value =>
-                        updateBlock(index, { type: 'code', ...value })
-                      }
-                      onRemove={
-                        isEditable ? () => removeBlock(index) : undefined
-                      }
-                    />
-                  </Suspense>
-                </div>
-              )
-            }
-
-            if (block.type === 'image') {
-              return (
-                // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
-                <div
-                  key={`image-${index}`}
-                  className="relative w-full"
-                  onClick={e => {
-                    e.stopPropagation()
-                    if (!isEditable) return
+                <AudioBlock
+                  key={`audio-${index}`}
+                  content={block.content}
+                  isEditable={isEditable}
+                  onChange={content =>
+                    updateBlock(index, { type: 'audio', content })
+                  }
+                  onRemove={() => removeBlock(index)}
+                  onFocus={() => {
                     setIsTextFocused(false)
                     handleFocus?.({} as FocusEvent<HTMLElement>)
                   }}
-                >
-                  {isEditable ? (
-                    <ObjectUrl record={block.content}>
-                      {url => (
-                        <ImageUploader
-                          onChange={file =>
-                            updateBlock(index, {
-                              type: 'image',
-                              content: file
-                            })
-                          }
-                          onRemove={() => removeBlock(index)}
-                          initialPreview={url}
-                        />
-                      )}
-                    </ObjectUrl>
-                  ) : (
-                    <ObjectUrl record={block.content}>
-                      {url => (
-                        <img
-                          src={url}
-                          alt={`${data.side} side`}
-                          draggable={false}
-                          className="max-w-full max-h-[40dvh] mx-auto object-contain"
-                        />
-                      )}
-                    </ObjectUrl>
-                  )}
-                </div>
+                />
               )
-            }
-
-            return (
-              <AudioBlock
-                key={`audio-${index}`}
-                content={block.content}
-                isEditable={isEditable}
-                onChange={content =>
-                  updateBlock(index, { type: 'audio', content })
-                }
-                onRemove={() => removeBlock(index)}
-                onFocus={() => {
-                  setIsTextFocused(false)
-                  handleFocus?.({} as FocusEvent<HTMLElement>)
-                }}
-              />
-            )
-          })}
+            })}
+          </div>
         </div>
       </div>
     </div>

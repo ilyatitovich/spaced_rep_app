@@ -74,7 +74,7 @@ export default function ImageUploader({
             src={preview}
             alt="preview"
             draggable={false}
-            className="w-60 max-h-[48dvh] rounded-xl object-contain"
+            className="w-60 max-h-[48dvh] rounded-xl object-contain backface-hidden"
           />
         </div>
       ) : (
