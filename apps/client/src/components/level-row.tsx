@@ -1,5 +1,7 @@
 import { ChevronRight } from 'lucide-react'
 
+import { levelLabel } from '@/lib'
+
 type LevelRowProps = {
   levelId: number
   cardsNumber: number
@@ -15,7 +17,7 @@ export default function LevelRow({
     <>
       <span className={`w-2 h-2 rounded-full bg-lvl-${levelId}`}></span>
       <span className="flex flex-col text-foreground text-left">
-        <span>{`Level ${levelId}`}</span>
+        <span>{levelLabel(levelId)}</span>
         <span className="text-foreground-muted text-sm">
           {levelId === 1
             ? 'Everyday'
@@ -25,14 +27,8 @@ export default function LevelRow({
     </>
   )
 
-  if (levelId === 0) {
-    leftContent = <span className="flex flex-col">Draft</span>
-  }
-
-  if (levelId === 8) {
-    leftContent = leftContent = (
-      <span className="flex flex-col">Finished cards</span>
-    )
+  if (levelId === 0 || levelId === 8) {
+    leftContent = <span className="flex flex-col">{levelLabel(levelId)}</span>
   }
 
   if (levelId === 0 && cardsNumber === 0) {

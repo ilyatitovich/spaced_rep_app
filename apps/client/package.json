@@ -21,6 +21,7 @@
     "@simplewebauthn/browser": "^13.3.0",
     "@spaced-rep/sync-protocol": "workspace:*",
     "@supabase/supabase-js": "^2.110.1",
+    "@tanstack/react-virtual": "^3.14.11",
     "@tiptap/pm": "^3.31.3",
     "@tiptap/react": "^3.31.3",
     "@tiptap/starter-kit": "^3.31.3",

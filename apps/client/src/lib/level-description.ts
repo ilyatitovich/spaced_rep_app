@@ -1,3 +1,9 @@
+export function levelLabel(level: number): string {
+  if (level === 0) return 'Draft'
+  if (level === 8) return 'Finished'
+  return `Level ${level}`
+}
+
 const levelDescription: Record<string, string> = {
   0: 'Cards with only one side are served as drafts. You can also move cards to drafts if you are not ready to review them.',
   1: 'New cards are added to level 1. When you review a card, and get it right, it moves up one level. When you review a card, and get it wrong, it moved back to level 1.',

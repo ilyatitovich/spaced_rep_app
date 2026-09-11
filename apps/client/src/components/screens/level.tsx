@@ -1,5 +1,6 @@
+import { useVirtualizer } from '@tanstack/react-virtual'
 import { AnimatePresence, motion } from 'motion/react'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useSearchParams } from 'react-router'
 
 import {
@@ -12,7 +13,7 @@ import {
   Button
 } from '@/components'
 import { useSelectionMode } from '@/hooks'
-import { getReviewMessage, getLevelDescription } from '@/lib'
+import { getReviewMessage, getLevelDescription, levelLabel } from '@/lib'
 import { Card } from '@/models'
 import { deleteCardsBulk, updateCardsLevelBulk } from '@/services'
 import { List } from 'lucide-react'
@@ -31,16 +32,10 @@ type LevelScreenProps = {
   ) => void
 }
 
-const listVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.05 } }
-}
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -20, transition: { duration: 0.25 } }
-}
+const COLS = 3
+/** h-30 (120px) + gap-4 (16px) */
+const ROW_SIZE = 136
+const MOTION_LIMIT = 40
 
 export default function LevelScreen({
   isOpen,
@@ -53,6 +48,7 @@ export default function LevelScreen({
 }: LevelScreenProps) {
   const [levelCards, setLevelCards] = useState<Card[]>([])
   const [currentLevelId, setCurrentLevelId] = useState('')
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   const {
     isSelectionMode,
@@ -106,6 +102,16 @@ export default function LevelScreen({
     }
   }
 
+  const rowCount = Math.ceil(levelCards.length / COLS)
+  const useMotion = levelCards.length > 0 && levelCards.length <= MOTION_LIMIT
+
+  const rowVirtualizer = useVirtualizer({
+    count: rowCount,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => ROW_SIZE,
+    overscan: 2
+  })
+
   return (
     <Screen isOpen={isOpen} onClose={onClose} onOpen={onOpen}>
       <AnimatePresence>
@@ -122,59 +128,83 @@ export default function LevelScreen({
       <Header>
         <BackButton />
         <span className="font-semibold">
-          {currentLevelId === '0' ? 'Draft' : `Level ${currentLevelId}`}
+          {levelLabel(Number(currentLevelId))}
         </span>
         <Button onClick={() => setIsSelectionMode(true)}>
           <List size={24} />
         </Button>
       </Header>
 
-      <div className="flex flex-col overflow-y-auto h-[calc(100dvh-60px)]">
-        <div className="w-full text-center p-4">
+      <div className="flex flex-col h-[calc(100dvh-60px)]">
+        <div className="w-full text-center p-4 shrink-0">
           <p className="text-[16px] text-foreground">
             {`${levelCards.length} card${levelCards.length === 1 ? '' : 's'}${['0', '8'].includes(currentLevelId) ? '' : `, next review: ${getReviewMessage(startDate, Number(currentLevelId), isDone)}`}`}
           </p>
         </div>
 
-        {levelCards.length > 0 && (
-          <motion.div
-            className="grid grid-cols-3 gap-4 content-start p-4"
-            variants={listVariants}
-            initial="hidden"
-            animate="visible"
-          >
-            <AnimatePresence>
-              {levelCards.map(card => (
-                <motion.div
-                  key={card.id}
-                  variants={itemVariants}
-                  layout
-                  exit="exit"
-                >
-                  <LevelCard
-                    card={card}
-                    isSelected={selectedItems.includes(card.id)}
-                    isSelectionMode={isSelectionMode}
-                    onPress={setIsSelectionMode}
-                    onSelect={selectItem}
-                    onOpen={() => {
-                      setSearchParams(prev => {
-                        const params = new URLSearchParams(prev)
-                        params.set('cardId', card.id)
-                        return params
-                      })
-                    }}
-                  />
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </motion.div>
-        )}
+        <div ref={scrollRef} className="flex-1 overflow-y-auto">
+          {levelCards.length > 0 && (
+            <div
+              className="relative w-full"
+              style={{ height: rowVirtualizer.getTotalSize() }}
+            >
+              {rowVirtualizer.getVirtualItems().map(virtualRow => {
+                const start = virtualRow.index * COLS
+                const rowCards = levelCards.slice(start, start + COLS)
 
-        <div className="w-full p-4">
-          <p className="text-[12px] text-foreground-muted whitespace-pre-line">
-            {getLevelDescription(currentLevelId)}
-          </p>
+                return (
+                  <div
+                    key={virtualRow.key}
+                    className="absolute top-0 left-0 w-full grid grid-cols-3 gap-4 px-4"
+                    style={{
+                      height: virtualRow.size,
+                      transform: `translateY(${virtualRow.start}px)`
+                    }}
+                  >
+                    {rowCards.map((card, col) => {
+                      const cell = (
+                        <LevelCard
+                          card={card}
+                          isSelected={selectedItems.includes(card.id)}
+                          isSelectionMode={isSelectionMode}
+                          onPress={setIsSelectionMode}
+                          onSelect={selectItem}
+                          onOpen={() => {
+                            setSearchParams(prev => {
+                              const params = new URLSearchParams(prev)
+                              params.set('cardId', card.id)
+                              return params
+                            })
+                          }}
+                        />
+                      )
+
+                      if (!useMotion) {
+                        return <div key={card.id}>{cell}</div>
+                      }
+
+                      return (
+                        <motion.div
+                          key={card.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: (start + col) * 0.05 }}
+                        >
+                          {cell}
+                        </motion.div>
+                      )
+                    })}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          <div className="w-full p-4">
+            <p className="text-[12px] text-foreground-muted whitespace-pre-line">
+              {getLevelDescription(currentLevelId)}
+            </p>
+          </div>
         </div>
       </div>
 

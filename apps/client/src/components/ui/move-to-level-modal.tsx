@@ -1,18 +1,12 @@
 import { motion, AnimatePresence } from 'motion/react'
 
-import { LEVELS } from '@/lib'
+import { LEVELS, levelLabel } from '@/lib'
 
 type MoveToLevelModalProps = {
   isOpen: boolean
   onClose: () => void
   onSelect: (level: number) => void
   currentLevel: number
-}
-
-function levelLabel(level: number): string {
-  if (level === 0) return 'Draft'
-  if (level === 8) return 'Finished'
-  return `Level ${level}`
 }
 
 export default function MoveToLevelModal({
