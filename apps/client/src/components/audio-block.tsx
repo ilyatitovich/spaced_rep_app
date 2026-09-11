@@ -2,6 +2,7 @@ import type { ChangeEvent } from 'react'
 import type { MediaDBRecord } from '@/types'
 import MediaToolbar from './media-toolbar'
 import ObjectUrl from './object-url'
+import { AUDIO_FILE_ACCEPT } from '@/lib'
 
 type AudioBlockProps = {
   content: MediaDBRecord
@@ -10,9 +11,6 @@ type AudioBlockProps = {
   onRemove?: () => void
   onFocus?: () => void
 }
-
-// iOS treats `audio/*` as camera/photos; extensions open the Files picker
-export const AUDIO_FILE_ACCEPT = '.mp3,.m4a,.wav,.aac,.ogg,.flac,.opus,.caf'
 
 export default function AudioBlock({
   content,
