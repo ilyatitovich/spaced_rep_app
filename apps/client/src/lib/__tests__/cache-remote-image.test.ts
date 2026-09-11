@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
   cacheRemoteImage,
+  clearMediaCache,
+  getMediaCacheStats,
   toHttpsImageUrl,
   type MediaCacheRecord
 } from '@/lib/cache-remote-image'
@@ -16,6 +18,10 @@ function memoryStore() {
     getCached: async (url: string) => map.get(url),
     putCached: async (record: MediaCacheRecord) => {
       map.set(record.url, record)
+    },
+    getAll: async () => [...map.values()],
+    clear: async () => {
+      map.clear()
     },
     map
   }
@@ -126,5 +132,46 @@ describe('cacheRemoteImage', () => {
     expect(ra?.buffer.byteLength).toBe(4)
     expect(rb?.buffer.byteLength).toBe(4)
     expect(store.map.size).toBe(1)
+  })
+})
+
+describe('getMediaCacheStats / clearMediaCache', () => {
+  it('sums buffer bytes and counts entries', async () => {
+    const store = memoryStore()
+    await store.putCached({
+      url: 'https://a.example/1.png',
+      buffer: new ArrayBuffer(100),
+      type: 'image/png'
+    })
+    await store.putCached({
+      url: 'https://a.example/2.png',
+      buffer: new ArrayBuffer(50),
+      type: 'image/png'
+    })
+
+    await expect(getMediaCacheStats(store.getAll)).resolves.toEqual({
+      bytes: 150,
+      count: 2
+    })
+  })
+
+  it('returns zeros for empty cache and clears all entries', async () => {
+    const store = memoryStore()
+    await expect(getMediaCacheStats(store.getAll)).resolves.toEqual({
+      bytes: 0,
+      count: 0
+    })
+
+    await store.putCached({
+      url: 'https://a.example/1.png',
+      buffer: new ArrayBuffer(10),
+      type: 'image/png'
+    })
+    await clearMediaCache(store.clear)
+    expect(store.map.size).toBe(0)
+    await expect(getMediaCacheStats(store.getAll)).resolves.toEqual({
+      bytes: 0,
+      count: 0
+    })
   })
 })

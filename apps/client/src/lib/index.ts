@@ -1,4 +1,6 @@
 export * from './format-timestamp'
+export * from './format-bytes'
+export * from './storage-usage'
 export * from './join-numbers'
 export * from './get-today'
 export * from './get-next-review-message'

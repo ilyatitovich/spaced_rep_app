@@ -46,6 +46,41 @@ async function putCachedDefault(record: MediaCacheRecord): Promise<void> {
   })
 }
 
+async function getAllCachedDefault(): Promise<MediaCacheRecord[]> {
+  return withTransaction(STORES.MEDIA_CACHE, 'readonly', stores =>
+    promisifyRequest(
+      stores[STORES.MEDIA_CACHE].getAll() as IDBRequest<MediaCacheRecord[]>
+    )
+  )
+}
+
+async function clearCachedDefault(): Promise<void> {
+  await withTransaction(STORES.MEDIA_CACHE, 'readwrite', async stores => {
+    await promisifyRequest(stores[STORES.MEDIA_CACHE].clear())
+  })
+}
+
+export type MediaCacheStats = { bytes: number; count: number }
+
+/** Sum buffer sizes in media_cache (remote images only). */
+export async function getMediaCacheStats(
+  getAll: () => Promise<MediaCacheRecord[]> = getAllCachedDefault
+): Promise<MediaCacheStats> {
+  const records = await getAll()
+  let bytes = 0
+  for (const record of records) {
+    bytes += record.buffer.byteLength
+  }
+  return { bytes, count: records.length }
+}
+
+/** Clear all lazily cached remote images. Does not touch card-embedded media. */
+export async function clearMediaCache(
+  clear: () => Promise<void> = clearCachedDefault
+): Promise<void> {
+  await clear()
+}
+
 /**
  * Resolve a remote image URL to cached bytes (IDB keyed by https URL).
  * Online miss: fetch once, require image/* and ≤5MB, then store.

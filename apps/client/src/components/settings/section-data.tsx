@@ -7,7 +7,7 @@ import {
   RefreshCw
 } from 'lucide-react'
 import { AnimatePresence } from 'motion/react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
 
 import {
   BackButton,
@@ -17,7 +17,13 @@ import {
   Screen
 } from '@/components'
 import { useAuth, useSync } from '@/contexts'
-import { formatSyncTime } from '@/lib'
+import {
+  clearMediaCache,
+  formatBytes,
+  formatSyncTime,
+  getStorageUsage,
+  type StorageUsage
+} from '@/lib'
 import { getSyncDiagnostics } from '@/services'
 import {
   SettingsActionRow,
@@ -27,6 +33,29 @@ import {
 
 type SectionDataProps = {
   isOpen: boolean
+}
+
+function formatUsedValue(stats: StorageUsage | null): ReactNode {
+  if (!stats) return '…'
+  if (!stats.estimateAvailable) return 'Unavailable'
+  const label = `${formatBytes(stats.usage)} of ${formatBytes(stats.quota)}`
+  const ratio = stats.quota > 0 ? stats.usage / stats.quota : 0
+  const className =
+    ratio >= 0.9 ? 'text-danger' : ratio >= 0.8 ? 'text-warning' : undefined
+  return className ? <span className={className}>{label}</span> : label
+}
+
+function formatTopicsCards(stats: StorageUsage | null): string {
+  if (!stats) return '…'
+  const topics = `${stats.topicCount} topic${stats.topicCount === 1 ? '' : 's'}`
+  const cards = `${stats.cardCount.toLocaleString()} card${stats.cardCount === 1 ? '' : 's'}`
+  return `${topics} · ${cards}`
+}
+
+function formatCachedImages(stats: StorageUsage | null): string {
+  if (!stats) return '…'
+  const images = `${stats.cacheCount.toLocaleString()} image${stats.cacheCount === 1 ? '' : 's'}`
+  return `${formatBytes(stats.cacheBytes)} · ${images}`
 }
 
 export default function SectionData({ isOpen }: SectionDataProps) {
@@ -49,6 +78,17 @@ export default function SectionData({ isOpen }: SectionDataProps) {
     lastPulledAt: string
     wsState: string
   } | null>(null)
+  const [storage, setStorage] = useState<StorageUsage | null>(null)
+  const [isClearingCache, setIsClearingCache] = useState(false)
+
+  const refreshStorage = useCallback(() => {
+    void getStorageUsage().then(setStorage)
+  }, [])
+
+  useEffect(() => {
+    if (!isOpen) return
+    refreshStorage()
+  }, [isOpen, refreshStorage])
 
   useEffect(() => {
     if (!isOpen || !user) return
@@ -56,6 +96,21 @@ export default function SectionData({ isOpen }: SectionDataProps) {
       setDiagnostics({ lastPulledAt: d.lastPulledAt, wsState: d.wsState })
     )
   }, [isOpen, user, status, lastSyncedAt])
+
+  const handleClearCache = async () => {
+    if (!storage || storage.cacheCount === 0) return
+    const ok = window.confirm(
+      'Clear cached images? Remote images will download again when you review cards online. Card media from Anki packs is not deleted.'
+    )
+    if (!ok) return
+    setIsClearingCache(true)
+    try {
+      await clearMediaCache()
+      refreshStorage()
+    } finally {
+      setIsClearingCache(false)
+    }
+  }
 
   const statusLabel = !isOnline
     ? 'Offline'
@@ -74,6 +129,27 @@ export default function SectionData({ isOpen }: SectionDataProps) {
       </Header>
 
       <div className="flex flex-col gap-6 overflow-y-auto h-[92dvh] p-4 pb-30">
+        <SettingsGroup
+          label="Storage"
+          footer="Approximate. Includes cards, images, and app cache. Cached images download again when you review online."
+        >
+          <SettingsInfoRow label="Used" value={formatUsedValue(storage)} />
+          <SettingsInfoRow
+            label="Topics & cards"
+            value={formatTopicsCards(storage)}
+          />
+          <SettingsInfoRow
+            label="Cached images"
+            value={formatCachedImages(storage)}
+          />
+          <SettingsActionRow
+            label="Clear cached images"
+            onClick={() => void handleClearCache()}
+            disabled={!storage || storage.cacheCount === 0 || isClearingCache}
+            destructive
+          />
+        </SettingsGroup>
+
         <SettingsGroup label="Backup">
           <SettingsActionRow
             icon={<Download size={18} />}
