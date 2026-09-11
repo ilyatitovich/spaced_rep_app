@@ -1,5 +1,10 @@
 import { enqueueSync, triggerSync } from './sync.service'
-import { withTransaction, STORES, normalizeCardData } from '@/lib'
+import {
+  withTransaction,
+  STORES,
+  CARDS_TOPIC_LEVEL_INDEX,
+  LEVELS
+} from '@/lib'
 import { encodeCardData } from '@/lib/sync-serialize'
 import { Topic, Card, updateWeek } from '@/models'
 
@@ -62,7 +67,7 @@ export async function getAllTopics(): Promise<Topic[]> {
 
 export async function getTopicById(
   topicId: string
-): Promise<{ topic: Topic; cards: Record<number, Card[]> }> {
+): Promise<{ topic: Topic; levelCounts: Record<number, number> }> {
   return withTransaction(
     [STORES.TOPICS, STORES.CARDS],
     'readonly',
@@ -72,7 +77,7 @@ export async function getTopicById(
 
       const topicRequest = topicStore.get(topicId)
 
-      let topic = await new Promise<Topic | undefined>((resolve, reject) => {
+      const topic = await new Promise<Topic | undefined>((resolve, reject) => {
         topicRequest.onsuccess = () => resolve(topicRequest.result)
         topicRequest.onerror = () =>
           reject(topicRequest.error ?? new Error('Failed to fetch topic'))
@@ -82,28 +87,29 @@ export async function getTopicById(
         throw new Error(`Topic with ID ${topicId} not found`)
       }
 
-      const cardsIndex = cardStore.index('topicId')
-      const cardsRequest = cardsIndex.getAll(IDBKeyRange.only(topicId))
+      const levelIndex = cardStore.index(CARDS_TOPIC_LEVEL_INDEX)
+      const levelCounts: Record<number, number> = {}
 
-      const cards = await new Promise<Card[]>((resolve, reject) => {
-        cardsRequest.onsuccess = () => resolve(cardsRequest.result)
-        cardsRequest.onerror = () =>
-          reject(cardsRequest.error ?? new Error('Failed to fetch cards'))
-      })
+      await Promise.all(
+        LEVELS.map(
+          level =>
+            new Promise<void>((resolve, reject) => {
+              const req = levelIndex.count(
+                IDBKeyRange.only([topicId, level])
+              )
+              req.onsuccess = () => {
+                levelCounts[level] = req.result
+                resolve()
+              }
+              req.onerror = () =>
+                reject(
+                  req.error ?? new Error(`Failed to count cards at level ${level}`)
+                )
+            })
+        )
+      )
 
-      const topicCards = cards.reduce<Record<number, Card[]>>((acc, card) => {
-        const level = card.level
-        if (!acc[level]) {
-          acc[level] = []
-        }
-        acc[level].push({
-          ...card,
-          data: normalizeCardData(card.data)
-        })
-        return acc
-      }, {})
-
-      return { topic, cards: topicCards }
+      return { topic, levelCounts }
     }
   )
 }

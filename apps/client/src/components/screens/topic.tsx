@@ -17,7 +17,11 @@ import {
 } from '@/components'
 import { getToday, LEVELS } from '@/lib'
 import { Topic, Card } from '@/models'
-import { getTopicById, subscribeSyncData } from '@/services'
+import {
+  getTopicById,
+  getCardsByTopicAndLevel,
+  subscribeSyncData
+} from '@/services'
 
 type TopicPageProps = {
   isOpen: boolean
@@ -31,7 +35,8 @@ export default function TopicScreen({
   onClose
 }: TopicPageProps) {
   const [topic, setTopic] = useState<Topic | null>(null)
-  const [cards, setCards] = useState<Record<number, Card[]>>({})
+  const [levelCounts, setLevelCounts] = useState<Record<number, number>>({})
+  const [levelCards, setLevelCards] = useState<Card[]>([])
 
   const contentRef = useRef<HTMLDivElement>(null)
 
@@ -44,9 +49,9 @@ export default function TopicScreen({
 
   const fetchTopic = useCallback(async (): Promise<void> => {
     try {
-      const { topic, cards } = await getTopicById(topicId)
+      const { topic, levelCounts } = await getTopicById(topicId)
       setTopic(topic)
-      setCards(cards)
+      setLevelCounts(levelCounts)
       const contentEl = contentRef.current
       if (contentEl) {
         contentEl.scrollTop = 0
@@ -56,6 +61,19 @@ export default function TopicScreen({
     }
   }, [topicId])
 
+  const fetchLevelCards = useCallback(async (): Promise<void> => {
+    if (!topicId || !levelId) {
+      setLevelCards([])
+      return
+    }
+    try {
+      const cards = await getCardsByTopicAndLevel(topicId, Number(levelId))
+      setLevelCards(cards)
+    } catch (error) {
+      console.error('Failed to fetch level cards:', error)
+    }
+  }, [topicId, levelId])
+
   useEffect(() => {
     if (!topicId) return
 
@@ -63,11 +81,33 @@ export default function TopicScreen({
   }, [topicId, isTest, fetchTopic])
 
   useEffect(() => {
+    let cancelled = false
+
+    if (!topicId || !levelId) {
+      setLevelCards([])
+      return
+    }
+
+    void getCardsByTopicAndLevel(topicId, Number(levelId))
+      .then(cards => {
+        if (!cancelled) setLevelCards(cards)
+      })
+      .catch(error => {
+        if (!cancelled) console.error('Failed to fetch level cards:', error)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [topicId, levelId])
+
+  useEffect(() => {
     if (!isOpen || !topicId) return
     return subscribeSyncData(() => {
       void fetchTopic()
+      void fetchLevelCards()
     })
-  }, [isOpen, topicId, fetchTopic])
+  }, [isOpen, topicId, fetchTopic, fetchLevelCards])
 
   const handleOpenAddCard = (): void => {
     setSearchParams(prev => {
@@ -78,13 +118,13 @@ export default function TopicScreen({
   }
 
   const handleAddCard = (card: { level: number; card: Card }): void => {
-    setCards(prevCards => {
-      const levelCards = prevCards[card.level] || []
-      return {
-        ...prevCards,
-        [card.level]: [...levelCards, card.card]
-      }
-    })
+    setLevelCounts(prev => ({
+      ...prev,
+      [card.level]: (prev[card.level] ?? 0) + 1
+    }))
+    if (levelId && Number(levelId) === card.level) {
+      setLevelCards(prev => [...prev, card.card])
+    }
   }
 
   return (
@@ -122,7 +162,7 @@ export default function TopicScreen({
                 <LevelRow
                   key={level}
                   levelId={level}
-                  cardsNumber={cards[level]?.length ?? 0}
+                  cardsNumber={levelCounts[level] ?? 0}
                   onLevelOpen={() =>
                     setSearchParams(prev => {
                       const params = new URLSearchParams(prev)
@@ -159,7 +199,6 @@ export default function TopicScreen({
           />
           <TestScreen
             isOpen={!isAddingCard && isTest}
-            topicCards={cards}
             topic={topic}
           />
 
@@ -170,32 +209,37 @@ export default function TopicScreen({
               topic.week[getToday()]!.isDone &&
               topic.week[getToday()]!.todayLevels.includes(Number(levelId))
             }
-            cards={levelId ? (cards[Number(levelId)] ?? []) : []}
+            cards={levelCards}
             startDate={topic.pivot}
             onDeleteCards={(cards: Card[]) => {
-              setCards(prev => ({
+              setLevelCards(cards)
+              setLevelCounts(prev => ({
                 ...prev,
-                [Number(levelId)]: cards
+                [Number(levelId)]: cards.length
               }))
             }}
             onMoveCards={(remaining, moved, toLevel) => {
-              setCards(prev => ({
+              setLevelCards(remaining)
+              setLevelCounts(prev => ({
                 ...prev,
-                [Number(levelId)]: remaining,
-                [toLevel]: [...(prev[toLevel] ?? []), ...moved]
+                [Number(levelId)]: remaining.length,
+                [toLevel]: (prev[toLevel] ?? 0) + moved.length
               }))
             }}
           />
           <CardDetailsScreen
             isOpen={!!cardId}
-            cards={levelId ? (cards[Number(levelId)] ?? []) : []}
+            cards={levelCards}
             cardId={cardId}
             onUpdate={card => {
               if (levelId !== '0') return
-              setCards(prevCards => ({
-                ...prevCards,
-                [0]: prevCards[0].filter(c => c.id !== card.id),
-                [1]: [...(prevCards[1] || []), card]
+              setLevelCards(prevCards =>
+                prevCards.filter(c => c.id !== card.id)
+              )
+              setLevelCounts(prev => ({
+                ...prev,
+                [0]: Math.max(0, (prev[0] ?? 0) - 1),
+                [1]: (prev[1] ?? 0) + 1
               }))
               setSearchParams(prev => {
                 const params = new URLSearchParams(prev)
@@ -209,7 +253,10 @@ export default function TopicScreen({
             isOpen={isSettingsOpen}
             topic={topic}
             onClose={onClose}
-            onCardsImport={fetchTopic}
+            onCardsImport={async () => {
+              await fetchTopic()
+              await fetchLevelCards()
+            }}
           />
         </>
       )}

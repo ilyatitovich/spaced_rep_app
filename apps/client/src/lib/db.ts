@@ -1,5 +1,5 @@
 const DB_NAME = 'spacedRepApp'
-const DB_VERSION = 4
+const DB_VERSION = 5
 export const STORES = {
   TOPICS: 'topics',
   CARDS: 'cards',
@@ -13,6 +13,9 @@ export const STORES = {
   SETTINGS_OUTBOX: 'settings_outbox'
 }
 
+/** Compound index on cards for level-scoped queries */
+export const CARDS_TOPIC_LEVEL_INDEX = 'topicId_level'
+
 function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION)
@@ -20,6 +23,7 @@ function openDatabase(): Promise<IDBDatabase> {
     request.onupgradeneeded = event => {
       const db = (event.target as IDBOpenDBRequest).result
       const tx = (event.target as IDBOpenDBRequest).transaction
+      const oldVersion = event.oldVersion
 
       if (!db.objectStoreNames.contains(STORES.TOPICS)) {
         const topicStore = db.createObjectStore(STORES.TOPICS, {
@@ -31,6 +35,9 @@ function openDatabase(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(STORES.CARDS)) {
         const cardStore = db.createObjectStore(STORES.CARDS, { keyPath: 'id' })
         cardStore.createIndex('topicId', 'topicId', { unique: false })
+        cardStore.createIndex(CARDS_TOPIC_LEVEL_INDEX, ['topicId', 'level'], {
+          unique: false
+        })
       }
 
       if (!db.objectStoreNames.contains(STORES.SYNC_QUEUE)) {
@@ -67,7 +74,15 @@ function openDatabase(): Promise<IDBDatabase> {
 
       // v3: queue items may gain opId/attempts/nextRetryAt — no schema change needed
       // v4: user settings stores
-      void tx
+      // v5: cards compound index [topicId, level]
+      if (oldVersion > 0 && oldVersion < 5 && tx) {
+        const cardStore = tx.objectStore(STORES.CARDS)
+        if (!cardStore.indexNames.contains(CARDS_TOPIC_LEVEL_INDEX)) {
+          cardStore.createIndex(CARDS_TOPIC_LEVEL_INDEX, ['topicId', 'level'], {
+            unique: false
+          })
+        }
+      }
     }
 
     request.onsuccess = () => resolve(request.result)

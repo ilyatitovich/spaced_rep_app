@@ -1,8 +1,29 @@
 import { enqueueSync, triggerSync } from './sync.service'
-import { withTransaction, STORES } from '@/lib/db'
+import { withTransaction, STORES, CARDS_TOPIC_LEVEL_INDEX } from '@/lib/db'
 import { normalizeCardData } from '@/lib/normalize-card'
 import { decodeCardData } from '@/lib/sync-serialize'
 import { Card } from '@/models'
+
+export async function getCardsByTopicAndLevel(
+  topicId: string,
+  level: number
+): Promise<Card[]> {
+  return withTransaction([STORES.CARDS], 'readonly', async stores => {
+    const index = stores[STORES.CARDS].index(CARDS_TOPIC_LEVEL_INDEX)
+    const request = index.getAll(IDBKeyRange.only([topicId, level]))
+
+    const cards = await new Promise<Card[]>((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result as Card[])
+      request.onerror = () =>
+        reject(request.error ?? new Error('Failed to fetch cards by level'))
+    })
+
+    return cards.map(card => ({
+      ...card,
+      data: normalizeCardData(card.data)
+    }))
+  })
+}
 
 export async function createCard(card: Card): Promise<void> {
   try {

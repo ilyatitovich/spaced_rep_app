@@ -12,19 +12,14 @@ import {
 } from '@/components'
 import { getToday, isAnotherDay } from '@/lib'
 import { Card as CardModel, Topic } from '@/models'
-import { updateCard, updateTopic } from '@/services'
+import { getCardsByTopicAndLevel, updateCard, updateTopic } from '@/services'
 
 type TestScreenProps = {
   isOpen: boolean
   topic: Topic
-  topicCards: Record<number, CardModel[]>
 }
 
-export default function TestScreen({
-  isOpen,
-  topic,
-  topicCards
-}: TestScreenProps) {
+export default function TestScreen({ isOpen, topic }: TestScreenProps) {
   const [isFlipped, setIsFlipped] = useState(false)
   const [cards, setCards] = useState<CardModel[] | null>(null)
   const [isFirstCardActive, setIsFirstCardActive] = useState(true)
@@ -79,16 +74,18 @@ export default function TestScreen({
   }
 
   const handleOpen = useCallback(() => {
-    const testCards = topic.week[getToday()]!.todayLevels.flatMap(
-      levelId => topicCards[levelId]
-    ).filter(
-      card =>
-        card !== undefined &&
-        (!card.reviewDate || isAnotherDay(card.reviewDate))
-    )
-    setCards(testCards)
-    totalCardsRef.current = testCards.length
-  }, [topic.week, topicCards])
+    void (async () => {
+      const todayLevels = topic.week[getToday()]!.todayLevels
+      const byLevel = await Promise.all(
+        todayLevels.map(level => getCardsByTopicAndLevel(topic.id, level))
+      )
+      const testCards = byLevel
+        .flat()
+        .filter(card => !card.reviewDate || isAnotherDay(card.reviewDate))
+      setCards(testCards)
+      totalCardsRef.current = testCards.length
+    })()
+  }, [topic.id, topic.week])
 
   const handleClose = useCallback(() => {
     setIsFlipped(false)
@@ -138,7 +135,7 @@ export default function TestScreen({
           )}
 
           {cards.length === 0 && !isFirstCardActive ? (
-            <div className="absolute w-[80vw] max-w-[350px] h-[60dvh] max-h-[500px] scale-up">
+            <div className="absolute w-[80vw] max-w-87.5 h-[60dvh] max-h-125 scale-up">
               <TestDoneMessage />
             </div>
           ) : (
