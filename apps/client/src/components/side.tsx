@@ -184,16 +184,9 @@ export default forwardRef(function Side(
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
     <div
-      ref={scrollRef}
-      className={`absolute w-full h-full backface-hidden px-4 pt-4 pb-4 border-foreground border-6 rounded-4xl bg-card overscroll-y-contain ${
+      className={`absolute w-full h-full backface-hidden border-foreground border-6 rounded-4xl bg-card ${
         isVisible ? '' : 'pointer-events-none'
-      } ${
-        data.side === 'back' ? 'rotate-y-180' : ''
-      } ${
-        shouldCenter
-          ? 'flex justify-center items-center'
-          : 'overflow-y-auto scrollbar-hidden'
-      }`.trim()}
+      } ${data.side === 'back' ? 'rotate-y-180' : ''}`.trim()}
       onClick={focusEmptySide}
     >
       <TextFormatToolbar
@@ -205,7 +198,15 @@ export default forwardRef(function Side(
         onBulletList={() => activeEditor()?.chain().toggleBulletList().run()}
         onNumberedList={() => activeEditor()?.chain().toggleOrderedList().run()}
       />
-      <div className="flex flex-col gap-4 w-full">
+      <div
+        ref={scrollRef}
+        className={`h-full w-full px-4 pt-4 pb-4 overscroll-y-contain ${
+          shouldCenter
+            ? 'flex justify-center items-center'
+            : 'overflow-y-auto scrollbar-hidden'
+        }`}
+      >
+        <div className="flex flex-col gap-4 w-full">
           {data.blocks.map((block, index) => {
             if (block.type === 'text') {
               if (!isEditable) {
@@ -384,6 +385,7 @@ export default forwardRef(function Side(
               </div>
             )
           })}
+        </div>
       </div>
     </div>
   )

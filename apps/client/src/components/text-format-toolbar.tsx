@@ -120,7 +120,10 @@ export default function TextFormatToolbar({
 
   const rememberRange = () => {
     const sel = editor?.state.selection
-    if (!sel || sel.empty) return
+    if (!sel || sel.empty) {
+      rangeRef.current = null
+      return
+    }
     rangeRef.current = { from: sel.from, to: sel.to }
   }
 
