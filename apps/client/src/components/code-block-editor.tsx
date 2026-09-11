@@ -85,27 +85,9 @@ export default function CodeBlockEditor({
         </button>
       )}
 
-      {isEditable ? (
-        <select
-          value={lang}
-          aria-label="Language"
-          className="absolute top-1.5 right-2 z-10 appearance-none bg-transparent border-0 p-0 text-[10px] font-semibold uppercase tracking-wide text-foreground-muted outline-none cursor-pointer"
-          onChange={e => {
-            const next = e.target.value as CodeLang
-            setLang(next)
-            emit({ code, lang: next })
-          }}
-        >
-          <option value="ts">TS</option>
-          <option value="py">Python</option>
-          <option value="sql">SQL</option>
-          <option value="sh">Bash</option>
-        </select>
-      ) : (
-        <span className="absolute top-1.5 right-2 text-[10px] font-semibold uppercase tracking-wide text-foreground-muted">
-          {LANG_LABEL[lang] ?? lang}
-        </span>
-      )}
+      <span className="absolute top-1.5 right-2 text-[10px] font-semibold uppercase tracking-wide text-foreground-muted">
+        {LANG_LABEL[lang] ?? lang}
+      </span>
 
       <CodeMirror
         className="overflow-hidden rounded-md bg-transparent"
