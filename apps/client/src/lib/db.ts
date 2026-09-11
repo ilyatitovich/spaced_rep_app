@@ -1,5 +1,5 @@
 const DB_NAME = 'spacedRepApp'
-const DB_VERSION = 5
+const DB_VERSION = 6
 export const STORES = {
   TOPICS: 'topics',
   CARDS: 'cards',
@@ -10,7 +10,8 @@ export const STORES = {
   USER_NOTIFICATION_SETTINGS: 'user_notification_settings',
   NOTIFICATION_REMINDERS: 'notification_reminders',
   SUBSCRIPTION_CACHE: 'subscription_cache',
-  SETTINGS_OUTBOX: 'settings_outbox'
+  SETTINGS_OUTBOX: 'settings_outbox',
+  MEDIA_CACHE: 'media_cache'
 }
 
 /** Compound index on cards for level-scoped queries */
@@ -72,9 +73,14 @@ function openDatabase(): Promise<IDBDatabase> {
         db.createObjectStore(STORES.SETTINGS_OUTBOX, { keyPath: 'id' })
       }
 
+      if (!db.objectStoreNames.contains(STORES.MEDIA_CACHE)) {
+        db.createObjectStore(STORES.MEDIA_CACHE, { keyPath: 'url' })
+      }
+
       // v3: queue items may gain opId/attempts/nextRetryAt — no schema change needed
       // v4: user settings stores
       // v5: cards compound index [topicId, level]
+      // v6: media_cache for remote Anki images keyed by URL
       if (oldVersion > 0 && oldVersion < 5 && tx) {
         const cardStore = tx.objectStore(STORES.CARDS)
         if (!cardStore.indexNames.contains(CARDS_TOPIC_LEVEL_INDEX)) {
