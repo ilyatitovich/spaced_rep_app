@@ -3,7 +3,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 
 import Side, { type SideHandle } from './side'
 import { useTap } from '@/hooks'
-import { normalizeCardData } from '@/lib'
+import { isIos, normalizeCardData } from '@/lib'
 import type { CardData, CardHandle, SideBlock, SideName } from '@/types'
 
 type CardProps = {
@@ -62,6 +62,8 @@ export default forwardRef(function Card(
 
   useEffect(() => {
     if (!isEditable || !autoFocus) return
+    // iOS fires focus (toolbar) but won't open the keyboard outside a tap stack.
+    if (isIos()) return
     const id = requestAnimationFrame(() => {
       if (isFlipped) backRef.current?.focusFirstText()
       else frontRef.current?.focusFirstText()
