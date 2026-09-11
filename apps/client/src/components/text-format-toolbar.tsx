@@ -153,6 +153,7 @@ export default function TextFormatToolbar({
   if (!visible) return null
 
   return (
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
     <div
       data-text-toolbar
       className="absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 select-none"

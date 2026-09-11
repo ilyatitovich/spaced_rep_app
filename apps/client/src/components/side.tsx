@@ -336,7 +336,7 @@ export default forwardRef(function Side(
 
             if (block.type === 'image') {
               return (
-                // oxlint-disable-next-line jsx-a11y/click-events-have-key-events
+                // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
                 <div
                   key={`image-${index}`}
                   className="relative w-full"
@@ -367,7 +367,7 @@ export default forwardRef(function Side(
                       {url => (
                         <img
                           src={url}
-                          alt={`${data.side} image`}
+                          alt={`${data.side} side`}
                           className="max-w-full max-h-[40dvh] mx-auto object-contain"
                         />
                       )}
@@ -378,6 +378,7 @@ export default forwardRef(function Side(
             }
 
             return (
+              // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
               <div
                 key={`audio-${index}`}
                 className="relative w-full"
@@ -416,6 +417,7 @@ export default forwardRef(function Side(
                 )}
                 <ObjectUrl record={block.content}>
                   {url => (
+                    // eslint-disable-next-line jsx-a11y/media-has-caption
                     <audio controls src={url} className="w-full max-w-full" />
                   )}
                 </ObjectUrl>
