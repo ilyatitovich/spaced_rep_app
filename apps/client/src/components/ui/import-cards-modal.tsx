@@ -88,7 +88,8 @@ export default function ImportCardsModal({
             Choose JSON or Anki (.apkg)
             <input
               type="file"
-              accept=".json,.apkg,application/json,application/zip"
+              // iOS Files hides unknown extensions (.apkg) when listed in accept
+              accept="*/*"
               className="hidden"
               onChange={handleFileSelect}
             />
