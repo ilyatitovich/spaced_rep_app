@@ -100,7 +100,8 @@ export default forwardRef(function Side(
       setIsPainted(true)
       return
     }
-    const id = window.setTimeout(() => setIsPainted(false), FLIP_MS)
+    // Hide at 90° so iOS cannot keep painting the outgoing img/audio layer.
+    const id = window.setTimeout(() => setIsPainted(false), FLIP_MS / 2)
     return () => window.clearTimeout(id)
   }, [isVisible])
 
@@ -232,10 +233,10 @@ export default forwardRef(function Side(
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
     <div
-      className={`absolute w-full h-full backface-hidden ${
+      className={`card-face absolute w-full h-full ${
         isVisible ? '' : 'pointer-events-none'
-      } ${isPainted ? '' : 'invisible'} ${
-        data.side === 'back' ? 'rotate-y-180' : ''
+      } ${isPainted ? '' : 'hidden'} ${
+        data.side === 'back' ? 'card-face-back' : ''
       }`.trim()}
       onClick={focusEmptySide}
     >

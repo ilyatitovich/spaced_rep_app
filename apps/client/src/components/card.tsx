@@ -71,13 +71,13 @@ export default forwardRef(function Card(
 
   return (
     <div
-      className={`perspective-[1000px] w-[80vw] max-w-87.5 h-[60dvh] max-h-125 absolute ${className}`.trim()}
+      className={`card-stage w-[80vw] max-w-87.5 h-[60dvh] max-h-125 absolute ${className}`.trim()}
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
       <div
-        className={`w-full h-full relative transform-style-preserve-3d transition-transform duration-600 ${
-          isFlipped ? 'rotate-y-180' : ''
+        className={`card-rotator w-full h-full relative ${
+          isFlipped ? 'is-flipped' : ''
         }`.trim()}
       >
         <Side

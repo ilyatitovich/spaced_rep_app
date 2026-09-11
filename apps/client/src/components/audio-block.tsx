@@ -60,7 +60,7 @@ export default function AudioBlock({
           <audio
             controls
             src={url}
-            className="w-full max-w-full backface-hidden"
+            className="w-full max-w-full"
           />
         )}
       </ObjectUrl>

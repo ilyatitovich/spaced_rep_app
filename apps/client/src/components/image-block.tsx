@@ -92,7 +92,7 @@ export default function ImageBlock({
                 <ImageFrame
                   src={url}
                   alt={alt}
-                  className="w-60 max-h-[48dvh] rounded-xl object-contain backface-hidden"
+                  className="w-60 max-h-[48dvh] rounded-xl object-contain"
                   placeholderClassName="w-60 h-40 rounded-xl bg-muted"
                   onFailedChange={setHasLoadFailed}
                 />
@@ -114,7 +114,7 @@ export default function ImageBlock({
                 <ImageFrame
                   src={url}
                   alt={alt}
-                  className="max-w-full max-h-[40dvh] mx-auto object-contain backface-hidden"
+                  className="max-w-full max-h-[40dvh] mx-auto object-contain"
                   placeholderClassName="w-full h-32 rounded-xl mx-auto bg-muted"
                   onFailedChange={setHasLoadFailed}
                 />
@@ -128,7 +128,7 @@ export default function ImageBlock({
                   <ImageFrame
                     src={url}
                     alt={alt}
-                    className="max-w-full max-h-[40dvh] mx-auto object-contain backface-hidden"
+                    className="max-w-full max-h-[40dvh] mx-auto object-contain"
                     placeholderClassName="w-full h-32 rounded-xl mx-auto bg-muted"
                     onFailedChange={setHasLoadFailed}
                   />

@@ -202,8 +202,33 @@ html[data-theme='light'] {
 }
 
 @layer utilities {
-  .transform-style-preserve-3d {
+  .card-stage {
+    -webkit-perspective: 1000px;
+    perspective: 1000px;
+  }
+
+  .card-rotator {
+    -webkit-transform-style: preserve-3d;
     transform-style: preserve-3d;
+    -webkit-transition: -webkit-transform 0.6s ease;
+    transition: transform 0.6s ease;
+  }
+
+  .card-rotator.is-flipped {
+    -webkit-transform: rotateY(180deg);
+    transform: rotateY(180deg);
+  }
+
+  .card-face {
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
+
+  .card-face-back {
+    -webkit-transform: rotateY(180deg) translateZ(0);
+    transform: rotateY(180deg) translateZ(0);
   }
 
   .bg-lvl-1 {
@@ -251,7 +276,6 @@ html[data-theme='light'] {
   .scrollbar-hidden {
     -ms-overflow-style: none;
     scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
   }
 }
 
