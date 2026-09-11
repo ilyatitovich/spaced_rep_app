@@ -1,6 +1,7 @@
-import { AuthMethods, BackButton, Header, Screen } from '@/components'
+import { BackButton, Header, Screen } from '@/components'
 import { AuthStep } from '@/types'
 import { useCallback, useState } from 'react'
+import AuthMethods from '../auth/auth-methods'
 
 type AuthScreenProps = {
   isOpen: boolean

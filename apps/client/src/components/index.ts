@@ -15,4 +15,3 @@ export { default as TextFormatToolbar } from './content/text-block/text-format-t
 export { default as DesktopMessage } from './desktop-message'
 export { default as QrCode } from './qrcode'
 export { default as Logo } from './logo'
-export { default as AuthMethods } from './auth-methods'

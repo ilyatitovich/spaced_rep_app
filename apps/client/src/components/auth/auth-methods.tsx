@@ -5,7 +5,7 @@ import { browserSupportsWebAuthn } from '@simplewebauthn/browser'
 
 import AuthEmailForm from './auth-email-form'
 import AuthOtpForm from './auth-otp-form'
-import { GoogleIcon } from './ui/icons/google'
+import { GoogleIcon } from '../ui/icons/google'
 import { useAuth } from '@/contexts'
 import { getAuthErrorMessage } from '@/lib/auth-errors'
 import { AuthStep } from '@/types'

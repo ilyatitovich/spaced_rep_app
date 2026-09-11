@@ -1,9 +1,10 @@
 import { Rocket } from 'lucide-react'
 
-import { Logo, AuthMethods } from '@/components'
+import { Logo } from '@/components'
 import { completeOnboarding } from '@/lib'
 import { useState } from 'react'
 import { AuthStep } from '@/types'
+import AuthMethods from '../auth/auth-methods'
 
 type StartScreenProps = {
   onStart: () => void
