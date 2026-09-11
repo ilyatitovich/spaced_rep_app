@@ -73,7 +73,7 @@ function TextBlockEditorInner(
   onBackspaceEmptyRef.current = onBackspaceEmpty
 
   const editor = useEditor({
-    immediatelyRender: false,
+    immediatelyRender: true,
     extensions,
     content: html || '<p></p>',
     editable: isEditable,
@@ -143,7 +143,22 @@ function TextBlockEditorInner(
         (ed?.getText().length ?? 0) > LONGTEXT_THRESHOLD
     }) ?? false
 
-  if (!editor) return null
+  if (!editor) {
+    const isLongPlaceholder =
+      html.replace(/<[^>]*>/g, '').length > LONGTEXT_THRESHOLD
+    return (
+      <div
+        className={`w-full min-h-[1.5em] ${
+          isLongPlaceholder
+            ? 'is-long text-left text-lg'
+            : 'text-center text-3xl font-card leading-10'
+        }`}
+        dangerouslySetInnerHTML={{
+          __html: sanitizeCardHtml(html || '<p></p>')
+        }}
+      />
+    )
+  }
 
   return (
     <EditorContent

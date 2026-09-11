@@ -15,18 +15,18 @@ export default function MediaToolbar({
   children
 }: MediaToolbarProps) {
   return (
-    <div className="flex w-full items-center justify-between">
+    <div className="flex w-full items-center justify-between p-2">
       <button
         type="button"
-        className="p-1"
+        className="p-1 text-foreground-muted"
         aria-label={removeLabel}
         onClick={onRemove}
       >
-        <Trash2 className="w-4 h-4" />
+        <Trash2 strokeWidth={2.5} className="w-3.5 h-3.5" />
       </button>
-      <label className="p-1 cursor-pointer">
+      <label className="p-1 text-foreground-muted cursor-pointer">
         <span className="sr-only">{changeLabel}</span>
-        <SquarePen className="w-4 h-4" />
+        <SquarePen strokeWidth={2.5} className="w-3.5 h-3.5" />
         {children}
       </label>
     </div>

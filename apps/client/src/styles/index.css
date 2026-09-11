@@ -250,11 +250,8 @@ html[data-theme='light'] {
   /* IE and Edge */
   .scrollbar-hidden {
     -ms-overflow-style: none;
-  }
-
-  /* Firefox */
-  .scrollbar-hidden {
     scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
   }
 }
 

@@ -85,6 +85,7 @@ export default forwardRef(function Card(
           ref={frontRef}
           data={normalized.front}
           isEditable={isEditable}
+          isVisible={!isFlipped}
           handleBlur={handleBlur}
           handleFocus={handleFocus}
           onChange={handleChange}
@@ -93,6 +94,7 @@ export default forwardRef(function Card(
           ref={backRef}
           data={normalized.back}
           isEditable={isEditable}
+          isVisible={isFlipped}
           handleBlur={handleBlur}
           handleFocus={handleFocus}
           onChange={handleChange}

@@ -6,6 +6,7 @@ import {
   lazy,
   Suspense,
   useCallback,
+  useEffect,
   useImperativeHandle,
   useRef,
   useState
@@ -23,6 +24,17 @@ import { LONGTEXT_THRESHOLD, sanitizeCardHtml } from '@/lib'
 
 const CodeBlockEditor = lazy(() => import('./code-block-editor'))
 
+function bindOverflowScroll(el: HTMLElement) {
+  const onWheel = (e: WheelEvent) => {
+    if (el.scrollHeight <= el.clientHeight) return
+    el.scrollTop += e.deltaY
+    e.preventDefault()
+  }
+
+  el.addEventListener('wheel', onWheel, { passive: false })
+  return () => el.removeEventListener('wheel', onWheel)
+}
+
 export type SideHandle = {
   getBlocks: () => SideBlock[]
   reset: () => void
@@ -33,13 +45,14 @@ export type SideHandle = {
 type SideProps = {
   data: CardSideData
   isEditable?: boolean
+  isVisible?: boolean
   handleFocus?: FocusEventHandler<HTMLElement>
   handleBlur?: FocusEventHandler<HTMLElement>
   onChange?: (blocks: SideBlock[], side: SideName) => void
 }
 
 export default forwardRef(function Side(
-  { data, isEditable, handleFocus, handleBlur, onChange }: SideProps,
+  { data, isEditable, isVisible = true, handleFocus, handleBlur, onChange }: SideProps,
   ref: Ref<SideHandle>
 ) {
   const [isLongText, setIsLongText] = useState(false)
@@ -48,6 +61,7 @@ export default forwardRef(function Side(
   const textEditors = useRef<Map<number, TextBlockEditorHandle>>(new Map())
   const focusedTextIndexRef = useRef<number | null>(null)
   const skipBlurRef = useRef(false)
+  const scrollRef = useRef<HTMLDivElement>(null)
   focusedTextIndexRef.current = focusedTextIndex
 
   const readBlocks = useCallback((): SideBlock[] => {
@@ -155,6 +169,12 @@ export default forwardRef(function Side(
     data.blocks.length <= 1 &&
     (isEmpty || data.blocks[0]?.type === 'text')
 
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el || shouldCenter) return
+    return bindOverflowScroll(el)
+  }, [shouldCenter])
+
   const showToolbar = !!isEditable && isTextFocused
   const focusedEditor =
     focusedTextIndex != null
@@ -162,10 +182,19 @@ export default forwardRef(function Side(
       : null
 
   return (
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
     <div
-      className={`absolute w-full h-full backface-hidden ${
+      ref={scrollRef}
+      className={`absolute w-full h-full backface-hidden px-4 pt-4 pb-4 border-foreground border-6 rounded-4xl bg-card overscroll-y-contain ${
+        isVisible ? '' : 'pointer-events-none'
+      } ${
         data.side === 'back' ? 'rotate-y-180' : ''
+      } ${
+        shouldCenter
+          ? 'flex justify-center items-center'
+          : 'overflow-y-auto scrollbar-hidden'
       }`.trim()}
+      onClick={focusEmptySide}
     >
       <TextFormatToolbar
         visible={showToolbar}
@@ -176,18 +205,7 @@ export default forwardRef(function Side(
         onBulletList={() => activeEditor()?.chain().toggleBulletList().run()}
         onNumberedList={() => activeEditor()?.chain().toggleOrderedList().run()}
       />
-      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
-      <div
-        className={`w-full h-full px-4 pt-4 pb-4 border-foreground border-6 rounded-4xl bg-card ${
-          shouldCenter
-            ? 'flex justify-center items-center'
-            : 'overflow-y-auto scrollbar-hidden flex flex-col'
-        }`.trim()}
-        onClick={focusEmptySide}
-      >
-        <div
-          className={`flex flex-col gap-4 w-full ${shouldCenter ? '' : 'flex-1 min-h-0'}`.trim()}
-        >
+      <div className="flex flex-col gap-4 w-full">
           {data.blocks.map((block, index) => {
             if (block.type === 'text') {
               if (!isEditable) {
@@ -309,6 +327,7 @@ export default forwardRef(function Side(
                         <img
                           src={url}
                           alt={`${data.side} side`}
+                          draggable={false}
                           className="max-w-full max-h-[40dvh] mx-auto object-contain"
                         />
                       )}
@@ -322,7 +341,7 @@ export default forwardRef(function Side(
               // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
               <div
                 key={`audio-${index}`}
-                className="relative w-full"
+                className="relative w-full bg-muted rounded-xl"
                 onClick={e => {
                   e.stopPropagation()
                   if (!isEditable) return
@@ -365,7 +384,6 @@ export default forwardRef(function Side(
               </div>
             )
           })}
-        </div>
       </div>
     </div>
   )

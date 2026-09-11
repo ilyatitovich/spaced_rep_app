@@ -422,7 +422,7 @@ export default function CardDetailsScreen({
               <Card
                 data={getCardData(prevCard)}
                 isFlipped={false}
-                isEditable={false}
+                isEditable
               />
             </CardContainer>
           </div>
@@ -450,7 +450,7 @@ export default function CardDetailsScreen({
               <Card
                 data={getCardData(nextCard)}
                 isFlipped={false}
-                isEditable={false}
+                isEditable
               />
             </CardContainer>
           </div>
