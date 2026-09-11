@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   appendSideBlocks,
+  didAppendSideBlock,
   isCardDataEqual,
   isSideEmpty,
   isTextHtmlEmpty
@@ -93,5 +94,40 @@ describe('appendSideBlocks', () => {
       { type: 'text', html: '<p>Q</p>' },
       { type: 'code', lang: 'js', code: '' }
     ])
+  })
+})
+
+describe('didAppendSideBlock', () => {
+  const image = {
+    type: 'image' as const,
+    content: { buffer: new ArrayBuffer(1), type: 'image/webp' }
+  }
+
+  it('is true when media or code is appended after existing content', () => {
+    expect(
+      didAppendSideBlock([{ type: 'text', html: '<p>long</p>' }], [
+        { type: 'text', html: '<p>long</p>' },
+        image
+      ])
+    ).toBe(true)
+    expect(
+      didAppendSideBlock([{ type: 'text', html: '<p>long</p>' }], [
+        { type: 'text', html: '<p>long</p>' },
+        { type: 'code', lang: 'ts', code: '' }
+      ])
+    ).toBe(true)
+  })
+
+  it('is true when trailing empty text is replaced by media', () => {
+    expect(didAppendSideBlock([{ type: 'text', html: '' }], [image])).toBe(true)
+  })
+
+  it('is false when only the last text changes', () => {
+    expect(
+      didAppendSideBlock(
+        [{ type: 'text', html: '<p>a</p>' }],
+        [{ type: 'text', html: '<p>ab</p>' }]
+      )
+    ).toBe(false)
   })
 })

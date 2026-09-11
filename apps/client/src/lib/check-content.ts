@@ -40,6 +40,20 @@ export function appendSideBlocks(
   return [...base, ...incoming]
 }
 
+/** True when a block was added at the end (including empty text replaced by code/media). */
+export function didAppendSideBlock(
+  prev: SideBlock[],
+  next: SideBlock[]
+): boolean {
+  if (next.length > prev.length) return true
+  return (
+    next.length === prev.length &&
+    next.length > 0 &&
+    prev.at(-1)?.type === 'text' &&
+    next.at(-1)?.type !== 'text'
+  )
+}
+
 /** @deprecated Prefer isSideEmpty / isBlockEmpty for blocks sides. */
 export function isContentEmpty(
   content: null | undefined | SideContent

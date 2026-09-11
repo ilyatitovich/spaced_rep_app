@@ -8,6 +8,7 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
+  useLayoutEffect,
   useRef,
   useState
 } from 'react'
@@ -20,7 +21,7 @@ import TextBlockEditor, {
 } from './text-block-editor'
 import TextFormatToolbar, { isToolbarTarget } from './text-format-toolbar'
 import { Spinner } from './ui'
-import { LONGTEXT_THRESHOLD, sanitizeCardHtml } from '@/lib'
+import { didAppendSideBlock, LONGTEXT_THRESHOLD, sanitizeCardHtml } from '@/lib'
 
 const CodeBlockEditor = lazy(() => import('./code-block-editor'))
 
@@ -33,6 +34,25 @@ function bindOverflowScroll(el: HTMLElement) {
 
   el.addEventListener('wheel', onWheel, { passive: false })
   return () => el.removeEventListener('wheel', onWheel)
+}
+
+function revealLastBlock(root: HTMLElement) {
+  const inner = root.firstElementChild
+  if (!(inner instanceof HTMLElement)) return
+
+  const reveal = () => {
+    root.scrollTop = root.scrollHeight - root.clientHeight
+  }
+
+  reveal()
+  const ro = new ResizeObserver(reveal)
+  ro.observe(inner)
+  // ponytail: 1s is enough for image decode / lazy code; disconnect so typing doesn't pin scroll
+  const t = window.setTimeout(() => ro.disconnect(), 1000)
+  return () => {
+    window.clearTimeout(t)
+    ro.disconnect()
+  }
 }
 
 export type SideHandle = {
@@ -52,7 +72,14 @@ type SideProps = {
 }
 
 export default forwardRef(function Side(
-  { data, isEditable, isVisible = true, handleFocus, handleBlur, onChange }: SideProps,
+  {
+    data,
+    isEditable,
+    isVisible = true,
+    handleFocus,
+    handleBlur,
+    onChange
+  }: SideProps,
   ref: Ref<SideHandle>
 ) {
   const [isTextFocused, setIsTextFocused] = useState(false)
@@ -61,6 +88,8 @@ export default forwardRef(function Side(
   const focusedTextIndexRef = useRef<number | null>(null)
   const skipBlurRef = useRef(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const prevBlocksRef = useRef<SideBlock[] | null>(null)
+  const stopRevealRef = useRef<(() => void) | null>(null)
   focusedTextIndexRef.current = focusedTextIndex
 
   const readBlocks = useCallback((): SideBlock[] => {
@@ -168,6 +197,20 @@ export default forwardRef(function Side(
     return bindOverflowScroll(el)
   }, [])
 
+  useLayoutEffect(() => {
+    const prev = prevBlocksRef.current
+    prevBlocksRef.current = data.blocks
+    if (prev == null || !didAppendSideBlock(prev, data.blocks)) return
+    const root = scrollRef.current
+    if (!root) return
+    // Don't return this as effect cleanup: text blur rewrites `blocks` and
+    // would kill the observer before lazy CodeMirror / image decode settle.
+    stopRevealRef.current?.()
+    stopRevealRef.current = revealLastBlock(root) ?? null
+  }, [data.blocks])
+
+  useEffect(() => () => stopRevealRef.current?.(), [])
+
   const showToolbar = !!isEditable && isTextFocused
   const focusedEditor =
     focusedTextIndex != null
@@ -177,7 +220,7 @@ export default forwardRef(function Side(
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
     <div
-      className={`absolute w-full h-full backface-hidden border-foreground border-6 rounded-4xl bg-card ${
+      className={`overflow-hidden absolute w-full h-full backface-hidden border-foreground border-6 rounded-4xl bg-card ${
         isVisible ? '' : 'pointer-events-none'
       } ${data.side === 'back' ? 'rotate-y-180' : ''}`.trim()}
       onClick={focusEmptySide}
