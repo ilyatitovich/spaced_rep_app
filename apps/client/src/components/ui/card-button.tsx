@@ -10,6 +10,10 @@ import {
 import type { ElementType } from 'react'
 
 import type { CodeLang } from '@/lib'
+import TsLogo from '@/assets/lang-logos/ts-14px.svg?react'
+import PythonLogo from '@/assets/lang-logos/python-14px.svg?react'
+import SqlLogo from '@/assets/lang-logos/sql-14px.svg?react'
+import BashLogo from '@/assets/lang-logos/bash-14px.svg?react'
 
 type MediaKind = 'image' | 'audio'
 
@@ -21,12 +25,13 @@ type CardButtonProps = {
   | { type: 'media'; onSelectMedia: (kind: MediaKind) => void }
 )
 
-const CODE_LANG_OPTIONS: { lang: CodeLang; label: string }[] = [
-  { lang: 'ts', label: 'TypeScript' },
-  { lang: 'py', label: 'Python' },
-  { lang: 'sql', label: 'SQL' },
-  { lang: 'sh', label: 'Bash' }
-]
+const CODE_LANG_OPTIONS: { lang: CodeLang; label: string; icon: ElementType }[] =
+  [
+    { lang: 'ts', label: 'TypeScript', icon: TsLogo },
+    { lang: 'py', label: 'Python', icon: PythonLogo },
+    { lang: 'sql', label: 'SQL', icon: SqlLogo },
+    { lang: 'sh', label: 'Bash', icon: BashLogo }
+  ]
 
 const META: Record<
   CardButtonProps['type'],
@@ -134,9 +139,10 @@ export default function CardButton(props: CardButtonProps) {
       <MenuButton
         type="code"
         isDisabled={props.isDisabled}
-        items={CODE_LANG_OPTIONS.map(({ lang, label }) => ({
+        items={CODE_LANG_OPTIONS.map(({ lang, label, icon }) => ({
           key: lang,
           label,
+          icon,
           onClick: () => props.onSelectCode(lang)
         }))}
       />
