@@ -15,8 +15,8 @@ type CodeBlockEditorProps = {
 }
 
 const LANG_LABEL: Record<CodeLang, string> = {
-  ts: 'TS',
-  js: 'JS',
+  ts: 'TypeScript',
+  js: 'JavaScript',
   py: 'Python',
   sql: 'SQL',
   sh: 'Bash'
@@ -72,7 +72,7 @@ export default function CodeBlockEditor({
   const emit = (next: CodeBlock) => onChange?.(next)
 
   return (
-    <div className="relative w-full rounded-xl bg-muted px-2 pb-2 pt-6">
+    <div className="relative w-full rounded-xl bg-muted px-2 pb-1 pt-6">
       {isEditable && onRemove && (
         <button
           type="button"
@@ -90,7 +90,7 @@ export default function CodeBlockEditor({
       </span>
 
       <CodeMirror
-        className="overflow-hidden rounded-md bg-transparent"
+        className="overflow-hidden rounded-md bg-transparent mt-1"
         value={code}
         height="auto"
         minHeight="48px"
