@@ -10,7 +10,6 @@ type CardProps = {
   data: CardData | unknown
   isFlipped: boolean
   isEditable?: boolean
-  /** Focus the visible side's text when true (active edit card only). */
   autoFocus?: boolean
   className?: string
   handleFocus?: FocusEventHandler<HTMLElement>
