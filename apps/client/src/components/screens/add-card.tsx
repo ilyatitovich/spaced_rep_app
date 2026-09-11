@@ -9,12 +9,7 @@ import {
   Screen,
   Header
 } from '@/components'
-import {
-  blobToRecord,
-  isSideEmpty,
-  processImage,
-  type CodeLang
-} from '@/lib'
+import { blobToRecord, isSideEmpty, processImage, type CodeLang } from '@/lib'
 import { Card as CardModel } from '@/models'
 import { createCard } from '@/services'
 import type {
@@ -78,9 +73,7 @@ export default function AddCardScreen({
       <Button
         key="save-draft"
         onClick={() => handleSaveCard('draft')}
-        disabled={
-          isSideEmpty(cardData.front) && isSideEmpty(cardData.back)
-        }
+        disabled={isSideEmpty(cardData.front) && isSideEmpty(cardData.back)}
       >
         Save Draft
       </Button>
@@ -101,11 +94,7 @@ export default function AddCardScreen({
       }
 
       const latest = currentCardRef.current?.getContent() ?? cardData
-      const card = new CardModel(
-        latest,
-        topicId,
-        cardStatus === 'new' ? 1 : 0
-      )
+      const card = new CardModel(latest, topicId, cardStatus === 'new' ? 1 : 0)
       await createCard(card)
       onAdd({ level: card.level, card })
       setCardData(createEmptyCardData())
@@ -262,8 +251,8 @@ export default function AddCardScreen({
           isDisabled={cardData[side].blocks.at(-1)?.type === 'text'}
           onClick={handleAddText}
         />
-        <CardButton type="code" onSelectCode={handleAddCode} />
         <CardButton type="media" onSelectMedia={handleSelectMedia} />
+        <CardButton type="code" onSelectCode={handleAddCode} />
         <CardButton type="flip" onClick={() => setIsFlipped(prev => !prev)} />
       </div>
       <input

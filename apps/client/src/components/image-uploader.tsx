@@ -87,7 +87,7 @@ export default function ImageUploader({
           <img
             src={preview}
             alt="preview"
-            className="w-60 max-h-[48dvh] rounded-xl object-contain"
+            className="w-60 max-h-[48dvh] rounded-xl object-contain border border-foreground-muted"
           />
         </div>
       ) : (
