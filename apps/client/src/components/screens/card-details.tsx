@@ -245,6 +245,7 @@ export default function CardDetailsScreen({
       appendBlocks([{ type: 'image', content: record }])
     } catch (err) {
       console.error('Failed to add image:', err)
+      toast.error('Couldn’t process that image. Try another file.')
     }
   }
 

@@ -1,8 +1,10 @@
 import type { ChangeEvent, MouseEvent, TouchEvent } from 'react'
 import { useState } from 'react'
+import { toast } from 'react-hot-toast'
 
 import MediaToolbar from './media-toolbar'
 import ObjectUrl from './object-url'
+import ImageFrame from './image-frame'
 import ImageViewer from './image-viewer'
 import ImageEditorScreen from './screens/image-editor'
 import { Spinner } from './ui'
@@ -29,6 +31,7 @@ export default function ImageBlock({
   const [isViewerOpen, setIsViewerOpen] = useState(false)
   const [isEditorOpen, setIsEditorOpen] = useState(false)
   const [isConverting, setIsConverting] = useState(false)
+  const [hasLoadFailed, setHasLoadFailed] = useState(false)
 
   const handleChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -41,6 +44,7 @@ export default function ImageBlock({
       onChange?.(await blobToRecord(webp))
     } catch (err) {
       console.error('Failed to convert image:', err)
+      toast.error('Couldn’t process that image. Try another file.')
     } finally {
       setIsConverting(false)
     }
@@ -72,7 +76,7 @@ export default function ImageBlock({
               changeLabel="Change image"
               editLabel="Crop image"
               onRemove={onRemove}
-              onEdit={() => setIsEditorOpen(true)}
+              onEdit={hasLoadFailed ? undefined : () => setIsEditorOpen(true)}
             >
               <input
                 type="file"
@@ -85,11 +89,12 @@ export default function ImageBlock({
           <ObjectUrl record={content}>
             {url => (
               <>
-                <img
+                <ImageFrame
                   src={url}
                   alt={alt}
-                  draggable={false}
                   className="w-60 max-h-[48dvh] rounded-xl object-contain backface-hidden"
+                  placeholderClassName="w-60 h-40 rounded-xl bg-muted"
+                  onFailedChange={setHasLoadFailed}
                 />
                 <ImageEditorScreen
                   isOpen={isEditorOpen}
@@ -105,21 +110,32 @@ export default function ImageBlock({
         <ObjectUrl record={content}>
           {url => (
             <>
-              <button
-                type="button"
-                className="block w-full"
-                aria-label="View image full screen"
-                onClick={() => setIsViewerOpen(true)}
-              >
-                <img
+              {hasLoadFailed ? (
+                <ImageFrame
                   src={url}
                   alt={alt}
-                  draggable={false}
                   className="max-w-full max-h-[40dvh] mx-auto object-contain backface-hidden"
+                  placeholderClassName="w-full h-32 rounded-xl mx-auto bg-muted"
+                  onFailedChange={setHasLoadFailed}
                 />
-              </button>
+              ) : (
+                <button
+                  type="button"
+                  className="block w-full"
+                  aria-label="View image full screen"
+                  onClick={() => setIsViewerOpen(true)}
+                >
+                  <ImageFrame
+                    src={url}
+                    alt={alt}
+                    className="max-w-full max-h-[40dvh] mx-auto object-contain backface-hidden"
+                    placeholderClassName="w-full h-32 rounded-xl mx-auto bg-muted"
+                    onFailedChange={setHasLoadFailed}
+                  />
+                </button>
+              )}
               <ImageViewer
-                isOpen={isViewerOpen}
+                isOpen={isViewerOpen && !hasLoadFailed}
                 imageUrl={url}
                 alt={alt}
                 onClose={() => setIsViewerOpen(false)}

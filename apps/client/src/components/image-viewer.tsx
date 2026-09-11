@@ -2,6 +2,8 @@ import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 
+import ImageFrame from './image-frame'
+
 type ImageViewerProps = {
   isOpen: boolean
   imageUrl: string
@@ -36,13 +38,19 @@ export default function ImageViewer({
           >
             <X className="w-5 h-5" />
           </button>
-          <img
-            src={imageUrl}
-            alt={alt}
-            draggable={false}
-            className="max-w-full max-h-full object-contain p-4"
+          <div
+            className="max-w-full max-h-full p-4"
             onClick={e => e.stopPropagation()}
-          />
+            onKeyDown={e => e.stopPropagation()}
+            role="presentation"
+          >
+            <ImageFrame
+              src={imageUrl}
+              alt={alt}
+              className="max-w-full max-h-[90dvh] object-contain"
+              placeholderClassName="w-60 h-40 rounded-xl bg-white/10 text-white/70"
+            />
+          </div>
         </motion.div>
       )}
     </AnimatePresence>,

@@ -2,6 +2,7 @@ import type { MediaDBRecord } from '@/types'
 import { useCallback, useEffect, useState, lazy, Suspense } from 'react'
 import { createPortal } from 'react-dom'
 import { ChevronLeft, RotateCw } from 'lucide-react'
+import { toast } from 'react-hot-toast'
 import type { Area } from 'react-easy-crop'
 
 import { Button, Header, Screen, Spinner } from '@/components'
@@ -58,6 +59,7 @@ export default function ImageEditorScreen({
       onClose()
     } catch (err) {
       console.error('Failed to save cropped image:', err)
+      toast.error('Couldn’t save the crop. Try again.')
     } finally {
       setIsSaving(false)
     }
