@@ -116,7 +116,7 @@ function MenuButton({
       {isOpen && (
         <div
           role="menu"
-          className="absolute left-1/2 bottom-full z-50 mb-1 min-w-[9rem] -translate-x-1/2 rounded-xl border border-border bg-card p-1 shadow-md"
+          className="absolute left-1/2 bottom-full z-50 mb-1 min-w-36 -translate-x-1/2 rounded-xl border border-border bg-card p-1 shadow-md"
         >
           {items.map(item => (
             <button
