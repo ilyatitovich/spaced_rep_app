@@ -1,6 +1,38 @@
-import { useEffect, useRef, useState, type MouseEvent } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useEditorState, type Editor } from '@tiptap/react'
 import { Bold, Italic, List, ListOrdered, Underline } from 'lucide-react'
+
+const KEYBOARD_GAP_PX = 8
+
+function isTouchDevice(): boolean {
+  return window.matchMedia('(pointer: coarse)').matches
+}
+
+function visualViewportBottom(): number {
+  const vv = window.visualViewport
+  if (!vv) return window.innerHeight
+  return vv.offsetTop + vv.height
+}
+
+function useKeyboardDockTop(enabled: boolean) {
+  const [top, setTop] = useState(visualViewportBottom)
+
+  useEffect(() => {
+    if (!enabled) return
+    const vv = window.visualViewport
+    const update = () => setTop(visualViewportBottom())
+    update()
+    vv?.addEventListener('resize', update)
+    vv?.addEventListener('scroll', update)
+    return () => {
+      vv?.removeEventListener('resize', update)
+      vv?.removeEventListener('scroll', update)
+    }
+  }, [enabled])
+
+  return top
+}
 
 type TextFormatToolbarProps = {
   visible: boolean
@@ -22,7 +54,7 @@ function toolbarBtnClass(active: boolean): string {
   }`
 }
 
-function keepEditorFocus(e: MouseEvent) {
+function keepEditorFocus(e: { preventDefault: () => void }) {
   e.preventDefault()
 }
 
@@ -30,12 +62,14 @@ function ListTypeButton({
   bulletActive,
   orderedActive,
   onBulletList,
-  onNumberedList
+  onNumberedList,
+  openUp
 }: {
   bulletActive: boolean
   orderedActive: boolean
   onBulletList: () => void
   onNumberedList: () => void
+  openUp: boolean
 }) {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -69,7 +103,9 @@ function ListTypeButton({
       {open && (
         <div
           role="menu"
-          className="absolute left-1/2 top-full z-50 mt-1 min-w-36 -translate-x-1/2 rounded-xl border border-border bg-card p-1 shadow-md"
+          className={`absolute left-1/2 z-50 min-w-36 -translate-x-1/2 rounded-xl border border-border bg-card p-1 shadow-md ${
+            openUp ? 'bottom-full mb-1' : 'top-full mt-1'
+          }`}
         >
           <button
             type="button"
@@ -117,6 +153,8 @@ export default function TextFormatToolbar({
   onNumberedList
 }: TextFormatToolbarProps) {
   const rangeRef = useRef<{ from: number; to: number } | null>(null)
+  const isTouch = isTouchDevice()
+  const dockTop = useKeyboardDockTop(visible && isTouch)
 
   const rememberRange = () => {
     const sel = editor?.state.selection
@@ -159,12 +197,20 @@ export default function TextFormatToolbar({
 
   if (!visible) return null
 
-  return (
+  const toolbar = (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
     <div
       data-text-toolbar
-      className="absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 select-none"
-      onPointerDownCapture={rememberRange}
+      className={
+        isTouch
+          ? 'fixed left-1/2 z-100 -translate-x-1/2 -translate-y-full select-none'
+          : 'absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 select-none'
+      }
+      style={isTouch ? { top: dockTop - KEYBOARD_GAP_PX } : undefined}
+      onPointerDownCapture={e => {
+        keepEditorFocus(e)
+        rememberRange()
+      }}
       onMouseDownCapture={keepEditorFocus}
       onClick={e => e.stopPropagation()}
     >
@@ -202,10 +248,13 @@ export default function TextFormatToolbar({
         <ListTypeButton
           bulletActive={marks.bulletList}
           orderedActive={marks.orderedList}
+          openUp={isTouch}
           onBulletList={() => apply(onBulletList)}
           onNumberedList={() => apply(onNumberedList)}
         />
       </div>
     </div>
   )
+
+  return isTouch ? createPortal(toolbar, document.body) : toolbar
 }
