@@ -1,6 +1,6 @@
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
-import { resolve } from 'path'
+import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
 import type { VitePWAOptions } from 'vite-plugin-pwa'
 import { VitePWA } from 'vite-plugin-pwa'
@@ -72,9 +72,9 @@ export default defineConfig({
   plugins: [react(), svgr(), tailwindcss(), VitePWA(pwaOptions)],
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src'),
+      '@': resolve(import.meta.dirname, 'src'),
       '@spaced-rep/sync-protocol': resolve(
-        __dirname,
+        import.meta.dirname,
         '../../packages/sync-protocol/src/index.ts'
       )
     }
