@@ -2,7 +2,6 @@ import type {
   ChangeEvent,
   FocusEvent,
   FocusEventHandler,
-  ReactNode,
   Ref
 } from 'react'
 import {
@@ -10,22 +9,22 @@ import {
   lazy,
   Suspense,
   useCallback,
-  useEffect,
   useImperativeHandle,
   useRef,
   useState
 } from 'react'
-import { SquarePen, Trash2 } from 'lucide-react'
 import type { Editor } from '@tiptap/react'
 
 import ImageUploader from './image-uploader'
+import MediaToolbar from './media-toolbar'
+import ObjectUrl from './object-url'
 import TextBlockEditor, {
   type TextBlockEditorHandle
 } from './text-block-editor'
-import TextFormatToolbar from './text-format-toolbar'
+import TextFormatToolbar, { isToolbarTarget } from './text-format-toolbar'
 import { Spinner } from './ui'
-import { LONGTEXT_THRESHOLD, recordToBlob, sanitizeCardHtml } from '@/lib'
-import type { CardSideData, MediaDBRecord, SideBlock, SideName } from '@/types'
+import { LONGTEXT_THRESHOLD, sanitizeCardHtml } from '@/lib'
+import type { CardSideData, SideBlock, SideName } from '@/types'
 
 const CodeBlockEditor = lazy(() => import('./code-block-editor'))
 
@@ -42,59 +41,6 @@ type SideProps = {
   handleFocus?: FocusEventHandler<HTMLElement>
   handleBlur?: FocusEventHandler<HTMLElement>
   onChange?: (blocks: SideBlock[], side: SideName) => void
-}
-
-function isToolbarTarget(target: EventTarget | null): boolean {
-  return target instanceof Element && !!target.closest('[data-text-toolbar]')
-}
-
-function MediaToolbar({
-  removeLabel,
-  changeLabel,
-  onRemove,
-  children
-}: {
-  removeLabel: string
-  changeLabel: string
-  onRemove: () => void
-  children: ReactNode
-}) {
-  return (
-    <div className="flex w-full items-center justify-between">
-      <button
-        type="button"
-        className="p-1"
-        aria-label={removeLabel}
-        onClick={onRemove}
-      >
-        <Trash2 className="w-4 h-4" />
-      </button>
-      <label className="p-1 cursor-pointer">
-        <span className="sr-only">{changeLabel}</span>
-        <SquarePen className="w-4 h-4" />
-        {children}
-      </label>
-    </div>
-  )
-}
-
-function ObjectUrl({
-  record,
-  children
-}: {
-  record: MediaDBRecord
-  children: (url: string) => ReactNode
-}) {
-  const [url, setUrl] = useState('')
-
-  useEffect(() => {
-    const next = URL.createObjectURL(recordToBlob(record))
-    setUrl(next)
-    return () => URL.revokeObjectURL(next)
-  }, [record])
-
-  if (!url) return null
-  return <>{children(url)}</>
 }
 
 export default forwardRef(function Side(

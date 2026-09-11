@@ -12,6 +12,10 @@ type TextFormatToolbarProps = {
   onNumberedList: () => void
 }
 
+export function isToolbarTarget(target: EventTarget | null): boolean {
+  return target instanceof Element && !!target.closest('[data-text-toolbar]')
+}
+
 function toolbarBtnClass(active: boolean): string {
   return `p-2 rounded-full ${
     active ? 'bg-primary text-background' : 'text-foreground'
