@@ -120,7 +120,7 @@ export default function TestScreen({ isOpen, topic }: TestScreenProps) {
       {cards && (
         <CardContainer>
           {cards.length === 0 && isFirstCardActive ? (
-            <div className="absolute w-[80vw] max-w-[350px] h-[60dvh] max-h-[500px] scale-up">
+            <div className="absolute w-[80vw] max-w-87.5 h-[60dvh] max-h-125 scale-up">
               <TestDoneMessage />
             </div>
           ) : (
