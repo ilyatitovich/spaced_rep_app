@@ -13,16 +13,20 @@ import {
   useState
 } from 'react'
 
-import AudioBlock from './audio-block'
-import ImageBlock from './image-block'
+import AudioBlock from './content/audio-block/audio-block'
+import ImageBlock from './content/image-block/image-block'
 import TextBlockEditor, {
   type TextBlockEditorHandle
-} from './text-block-editor'
-import TextFormatToolbar, { isToolbarTarget } from './text-format-toolbar'
+} from './content/text-block/text-block-editor'
+import TextFormatToolbar, {
+  isToolbarTarget
+} from './content/text-block/text-format-toolbar'
 import { Spinner } from './ui'
 import { didAppendSideBlock, LONGTEXT_THRESHOLD, sanitizeCardHtml } from '@/lib'
 
-const CodeBlockEditor = lazy(() => import('./code-block-editor'))
+const CodeBlockEditor = lazy(
+  () => import('./content/code-block/code-block-editor')
+)
 
 // Match `duration-600` on the card rotator in card.tsx.
 const FLIP_MS = 600

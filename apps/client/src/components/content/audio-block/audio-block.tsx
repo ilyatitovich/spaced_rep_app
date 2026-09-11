@@ -1,7 +1,7 @@
 import type { ChangeEvent } from 'react'
 import type { MediaDBRecord } from '@/types'
-import MediaToolbar from './media-toolbar'
-import ObjectUrl from './object-url'
+import MediaToolbar from '../media-toolbar'
+import ObjectUrl from '../object-url'
 import { AUDIO_FILE_ACCEPT } from '@/lib'
 
 type AudioBlockProps = {
@@ -57,11 +57,7 @@ export default function AudioBlock({
       <ObjectUrl record={content}>
         {url => (
           // eslint-disable-next-line jsx-a11y/media-has-caption
-          <audio
-            controls
-            src={url}
-            className="w-full max-w-full"
-          />
+          <audio controls src={url} className="w-full max-w-full" />
         )}
       </ObjectUrl>
     </div>

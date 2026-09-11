@@ -1,7 +1,7 @@
 import CodeMirror, { EditorView, type Extension } from '@uiw/react-codemirror'
 import { FocusEventHandler, useEffect, useState } from 'react'
 
-import { LangSelect } from './ui'
+import { LangSelect } from '../../ui'
 import { useFontSize } from '@/hooks'
 import { getLanguageExtension, placeCursorAtEnd, type CodeLang } from '@/lib'
 import type { CodeBlock } from '@/types'
