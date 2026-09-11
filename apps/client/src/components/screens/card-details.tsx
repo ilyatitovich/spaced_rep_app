@@ -19,12 +19,12 @@ import {
   isCardDataEqual,
   isSideEmpty,
   normalizeCardData,
-  processImage
+  processImage,
+  type CodeLang
 } from '@/lib'
 import { Card as CardModel } from '@/models'
 import { updateCard } from '@/services'
 import type {
-  CardAddMode,
   CardData,
   CardHandle,
   MediaDBRecord,
@@ -79,7 +79,6 @@ export default function CardDetailsScreen({
   const [cardData, setCardData] = useState<CardData>(() => getCardData(card))
   const [isEdited, setIsEdited] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
-  const [activeMode, setActiveMode] = useState<CardAddMode>('text')
 
   const cardRef = useRef<CardHandle>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -116,7 +115,6 @@ export default function CardDetailsScreen({
       setIsFlipped(false)
       setIsEdited(false)
       setIsDirty(false)
-      setActiveMode('text')
     },
     [cards]
   )
@@ -208,13 +206,13 @@ export default function CardDetailsScreen({
     setIsEdited(false)
   }
 
-  const appendBlock = (block: SideBlock) => {
+  const appendBlocks = (blocks: SideBlock[]) => {
     const latest = readLatestCardData()
     const next: CardData = {
       ...latest,
       [side]: {
         ...latest[side],
-        blocks: [...latest[side].blocks, block]
+        blocks: [...latest[side].blocks, ...blocks]
       }
     }
     cardDataRef.current = next
@@ -223,11 +221,22 @@ export default function CardDetailsScreen({
   }
 
   const handleAddText = () => {
-    appendBlock({ type: 'text', html: '' })
-    setActiveMode('text')
+    appendBlocks([{ type: 'text', html: '' }])
     requestAnimationFrame(() => {
       cardRef.current?.focusContent(side, 'last')
     })
+  }
+
+  const handleAddCode = (lang: CodeLang) => {
+    appendBlocks([
+      { type: 'code', lang, code: '' },
+      { type: 'text', html: '' }
+    ])
+  }
+
+  const handleSelectMedia = (kind: 'image' | 'audio') => {
+    if (kind === 'image') imageInputRef.current?.click()
+    else audioInputRef.current?.click()
   }
 
   const handlePickImage = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -237,8 +246,7 @@ export default function CardDetailsScreen({
     try {
       const webp = await processImage(file)
       const record = await blobToRecord(webp)
-      appendBlock({ type: 'image', content: record })
-      setActiveMode('image')
+      appendBlocks([{ type: 'image', content: record }])
     } catch (err) {
       console.error('Failed to add image:', err)
     }
@@ -251,8 +259,7 @@ export default function CardDetailsScreen({
     try {
       const buffer = await file.arrayBuffer()
       const content: MediaDBRecord = { buffer, type: file.type || 'audio/mpeg' }
-      appendBlock({ type: 'audio', content })
-      setActiveMode('audio')
+      appendBlocks([{ type: 'audio', content }])
     } catch (err) {
       console.error('Failed to add audio:', err)
     }
@@ -431,7 +438,6 @@ export default function CardDetailsScreen({
                 handleFocus={() => setIsEdited(true)}
                 handleBlur={handleBlur}
                 handleChange={handleChangeBlocks}
-                onActiveModeChange={setActiveMode}
               />
             </CardContainer>
           </div>
@@ -454,19 +460,11 @@ export default function CardDetailsScreen({
       <div className="pt-1 flex justify-center items-center gap-10">
         <CardButton
           type="text"
-          isDisabled={activeMode === 'text'}
+          isDisabled={cardData[side].blocks.at(-1)?.type === 'text'}
           onClick={handleAddText}
         />
-        <CardButton
-          type="image"
-          isDisabled={activeMode === 'image'}
-          onClick={() => imageInputRef.current?.click()}
-        />
-        <CardButton
-          type="audio"
-          isDisabled={activeMode === 'audio'}
-          onClick={() => audioInputRef.current?.click()}
-        />
+        <CardButton type="code" onSelectCode={handleAddCode} />
+        <CardButton type="media" onSelectMedia={handleSelectMedia} />
         <CardButton type="flip" onClick={() => setIsFlipped(prev => !prev)} />
       </div>
       <input

@@ -52,8 +52,6 @@ export type LegacyCardData = {
   back: LegacyCardSideData
 }
 
-export type CardAddMode = 'text' | 'image' | 'audio'
-
 export type CardHandle = {
   getContent: () => CardData
   resetContent: () => void

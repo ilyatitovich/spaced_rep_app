@@ -8,16 +8,9 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import { useEditorState, type Editor } from '@tiptap/react'
-import {
-  Bold,
-  CodeXml,
-  Italic,
-  List,
-  ListOrdered,
-  Underline
-} from 'lucide-react'
+import { Bold, Italic, List, ListOrdered, Underline } from 'lucide-react'
 
-import { isMobileDevice, type CodeLang } from '@/lib'
+import { isMobileDevice } from '@/lib'
 
 type TextFormatToolbarProps = {
   visible: boolean
@@ -31,15 +24,7 @@ type TextFormatToolbarProps = {
   onUnderline: () => void
   onBulletList: () => void
   onNumberedList: () => void
-  onInsertCode: (lang: CodeLang) => void
 }
-
-const CODE_LANG_OPTIONS: { lang: CodeLang; label: string }[] = [
-  { lang: 'ts', label: 'TypeScript' },
-  { lang: 'py', label: 'Python' },
-  { lang: 'sql', label: 'SQL' },
-  { lang: 'sh', label: 'Bash' }
-]
 
 function useKeyboardOffset(enabled: boolean): number {
   const [offset, setOffset] = useState(0)
@@ -199,66 +184,6 @@ function ListTypeButton({
   )
 }
 
-function CodeLangButton({
-  menuAbove,
-  onInsertCode
-}: {
-  menuAbove: boolean
-  onInsertCode: (lang: CodeLang) => void
-}) {
-  const [open, setOpen] = useState(false)
-  const rootRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    const onPointerDown = (e: PointerEvent) => {
-      if (rootRef.current?.contains(e.target as Node)) return
-      setOpen(false)
-    }
-    document.addEventListener('pointerdown', onPointerDown)
-    return () => document.removeEventListener('pointerdown', onPointerDown)
-  }, [open])
-
-  return (
-    <div ref={rootRef} className="relative">
-      <button
-        type="button"
-        className={toolbarBtnClass(false)}
-        aria-label="Insert code block"
-        aria-haspopup="menu"
-        aria-expanded={open}
-        tabIndex={-1}
-        onClick={() => setOpen(v => !v)}
-      >
-        <CodeXml className="w-4 h-4" strokeWidth={3} />
-      </button>
-      {open && (
-        <div
-          role="menu"
-          className={`absolute left-1/2 z-50 min-w-[9rem] -translate-x-1/2 rounded-xl border border-border bg-card p-1 shadow-md ${
-            menuAbove ? 'bottom-full mb-1' : 'top-full mt-1'
-          }`}
-        >
-          {CODE_LANG_OPTIONS.map(({ lang, label }) => (
-            <button
-              key={lang}
-              type="button"
-              role="menuitem"
-              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-muted"
-              onClick={() => {
-                onInsertCode(lang)
-                setOpen(false)
-              }}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
 export default function TextFormatToolbar({
   visible,
   editor,
@@ -268,8 +193,7 @@ export default function TextFormatToolbar({
   onItalic,
   onUnderline,
   onBulletList,
-  onNumberedList,
-  onInsertCode
+  onNumberedList
 }: TextFormatToolbarProps) {
   const keyboardOffset = useKeyboardOffset(placement === 'keyboard' && visible)
   const anchorBox = useAnchorBox(placement === 'card' && visible, anchorRef)
@@ -351,10 +275,6 @@ export default function TextFormatToolbar({
         orderedActive={marks.orderedList}
         onBulletList={() => apply(onBulletList)}
         onNumberedList={() => apply(onNumberedList)}
-      />
-      <CodeLangButton
-        menuAbove={placement === 'keyboard'}
-        onInsertCode={lang => apply(() => onInsertCode(lang))}
       />
     </>
   )

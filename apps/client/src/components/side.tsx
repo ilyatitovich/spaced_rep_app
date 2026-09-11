@@ -9,7 +9,7 @@ import {
   forwardRef,
   lazy,
   Suspense,
-  useCallback,  
+  useCallback,
   useEffect,
   useImperativeHandle,
   useRef,
@@ -22,22 +22,10 @@ import ImageUploader from './image-uploader'
 import TextBlockEditor, {
   type TextBlockEditorHandle
 } from './text-block-editor'
-import TextFormatToolbar, {
-  getToolbarPlacement
-} from './text-format-toolbar'
+import TextFormatToolbar, { getToolbarPlacement } from './text-format-toolbar'
 import { Spinner } from './ui'
-import {
-  LONGTEXT_THRESHOLD,
-  recordToBlob,
-  sanitizeCardHtml,
-  type CodeLang
-} from '@/lib'
-import type {
-  CardSideData,
-  MediaDBRecord,
-  SideBlock,
-  SideName
-} from '@/types'
+import { LONGTEXT_THRESHOLD, recordToBlob, sanitizeCardHtml } from '@/lib'
+import type { CardSideData, MediaDBRecord, SideBlock, SideName } from '@/types'
 
 const CodeBlockEditor = lazy(() => import('./code-block-editor'))
 
@@ -54,14 +42,10 @@ type SideProps = {
   handleFocus?: FocusEventHandler<HTMLElement>
   handleBlur?: FocusEventHandler<HTMLElement>
   onChange?: (blocks: SideBlock[], side: SideName) => void
-  onActiveModeChange?: (mode: 'text' | 'image' | 'audio') => void
 }
 
 function isToolbarTarget(target: EventTarget | null): boolean {
-  return (
-    target instanceof Element &&
-    !!target.closest('[data-text-toolbar]')
-  )
+  return target instanceof Element && !!target.closest('[data-text-toolbar]')
 }
 
 function MediaToolbar({
@@ -119,8 +103,7 @@ export default forwardRef(function Side(
     isEditable,
     handleFocus,
     handleBlur,
-    onChange,
-    onActiveModeChange
+    onChange
   }: SideProps,
   ref: Ref<SideHandle>
 ) {
@@ -211,21 +194,6 @@ export default forwardRef(function Side(
     })
   }
 
-  const insertCodeBlock = (lang: CodeLang) => {
-    const blocks = readBlocks()
-    const insertAt =
-      focusedTextIndexRef.current != null
-        ? focusedTextIndexRef.current + 1
-        : blocks.length
-    const next = [...blocks]
-    next.splice(insertAt, 0, { type: 'code', lang, code: '' })
-    // Empty text after code so you can keep writing below (Notes-style).
-    if (next[insertAt + 1]?.type !== 'text') {
-      next.splice(insertAt + 1, 0, { type: 'text', html: '' })
-    }
-    emit(next)
-  }
-
   const focusEmptySide = useCallback(() => {
     if (!isEditable) return
 
@@ -284,10 +252,7 @@ export default forwardRef(function Side(
         onItalic={() => activeEditor()?.chain().toggleItalic().run()}
         onUnderline={() => activeEditor()?.chain().toggleUnderline().run()}
         onBulletList={() => activeEditor()?.chain().toggleBulletList().run()}
-        onNumberedList={() =>
-          activeEditor()?.chain().toggleOrderedList().run()
-        }
-        onInsertCode={insertCodeBlock}
+        onNumberedList={() => activeEditor()?.chain().toggleOrderedList().run()}
       />
 
       <div
@@ -331,7 +296,6 @@ export default forwardRef(function Side(
                   onFocus={e => {
                     setFocusedTextIndex(index)
                     setIsTextFocused(true)
-                    onActiveModeChange?.('text')
                     handleFocus?.(e)
                   }}
                   onBlur={e => {
@@ -367,15 +331,12 @@ export default forwardRef(function Side(
                     isEditable={isEditable}
                     onFocus={() => {
                       setIsTextFocused(false)
-                      onActiveModeChange?.('text')
                       handleFocus?.({} as FocusEvent<HTMLElement>)
                     }}
                     onChange={value =>
                       updateBlock(index, { type: 'code', ...value })
                     }
-                    onRemove={
-                      isEditable ? () => removeBlock(index) : undefined
-                    }
+                    onRemove={isEditable ? () => removeBlock(index) : undefined}
                   />
                 </Suspense>
               </div>
@@ -384,6 +345,7 @@ export default forwardRef(function Side(
 
           if (block.type === 'image') {
             return (
+              // oxlint-disable-next-line jsx-a11y/click-events-have-key-events
               <div
                 key={`image-${index}`}
                 className="relative w-full"
@@ -391,7 +353,6 @@ export default forwardRef(function Side(
                   e.stopPropagation()
                   if (!isEditable) return
                   setIsTextFocused(false)
-                  onActiveModeChange?.('image')
                   handleFocus?.({} as FocusEvent<HTMLElement>)
                 }}
               >
@@ -433,42 +394,41 @@ export default forwardRef(function Side(
                 e.stopPropagation()
                 if (!isEditable) return
                 setIsTextFocused(false)
-                onActiveModeChange?.('audio')
                 handleFocus?.({} as FocusEvent<HTMLElement>)
               }}
-              >
-                {isEditable && (
-                  <MediaToolbar
-                    removeLabel="Remove audio"
-                    changeLabel="Change audio"
-                    onRemove={() => removeBlock(index)}
-                  >
-                    <input
-                      type="file"
-                      accept="audio/*"
-                      className="hidden"
-                      onChange={async (e: ChangeEvent<HTMLInputElement>) => {
-                        const file = e.target.files?.[0]
-                        e.target.value = ''
-                        if (!file) return
-                        const buffer = await file.arrayBuffer()
-                        updateBlock(index, {
-                          type: 'audio',
-                          content: {
-                            buffer,
-                            type: file.type || 'audio/mpeg'
-                          }
-                        })
-                      }}
-                    />
-                  </MediaToolbar>
+            >
+              {isEditable && (
+                <MediaToolbar
+                  removeLabel="Remove audio"
+                  changeLabel="Change audio"
+                  onRemove={() => removeBlock(index)}
+                >
+                  <input
+                    type="file"
+                    accept="audio/*"
+                    className="hidden"
+                    onChange={async (e: ChangeEvent<HTMLInputElement>) => {
+                      const file = e.target.files?.[0]
+                      e.target.value = ''
+                      if (!file) return
+                      const buffer = await file.arrayBuffer()
+                      updateBlock(index, {
+                        type: 'audio',
+                        content: {
+                          buffer,
+                          type: file.type || 'audio/mpeg'
+                        }
+                      })
+                    }}
+                  />
+                </MediaToolbar>
+              )}
+              <ObjectUrl record={block.content}>
+                {url => (
+                  <audio controls src={url} className="w-full max-w-full" />
                 )}
-                <ObjectUrl record={block.content}>
-                  {url => (
-                    <audio controls src={url} className="w-full max-w-full" />
-                  )}
-                </ObjectUrl>
-              </div>
+              </ObjectUrl>
+            </div>
           )
         })}
       </div>

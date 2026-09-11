@@ -4,7 +4,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 import Side, { type SideHandle } from './side'
 import { useTap } from '@/hooks'
 import { normalizeCardData } from '@/lib'
-import type { CardData, CardAddMode, CardHandle, SideBlock, SideName } from '@/types'
+import type { CardData, CardHandle, SideBlock, SideName } from '@/types'
 
 type CardProps = {
   data: CardData | unknown
@@ -17,7 +17,6 @@ type CardProps = {
   handleBlur?: FocusEventHandler<HTMLElement>
   handleClick?: () => void
   handleChange?: (blocks: SideBlock[], side: SideName) => void
-  onActiveModeChange?: (mode: CardAddMode) => void
 }
 
 export default forwardRef(function Card(
@@ -30,8 +29,7 @@ export default forwardRef(function Card(
     handleClick,
     handleBlur,
     handleFocus,
-    handleChange,
-    onActiveModeChange
+    handleChange
   }: CardProps,
   ref: Ref<CardHandle>
 ) {
@@ -90,7 +88,6 @@ export default forwardRef(function Card(
           handleBlur={handleBlur}
           handleFocus={handleFocus}
           onChange={handleChange}
-          onActiveModeChange={onActiveModeChange}
         />
         <Side
           ref={backRef}
@@ -99,7 +96,6 @@ export default forwardRef(function Card(
           handleBlur={handleBlur}
           handleFocus={handleFocus}
           onChange={handleChange}
-          onActiveModeChange={onActiveModeChange}
         />
       </div>
     </div>
