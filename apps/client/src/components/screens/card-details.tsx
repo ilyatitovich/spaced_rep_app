@@ -1,32 +1,27 @@
 import { useState, useRef, useCallback, useLayoutEffect } from 'react'
-import type { ChangeEvent, PointerEvent as ReactPointerEvent } from 'react'
+import type { PointerEvent as ReactPointerEvent } from 'react'
 import { toast } from 'react-hot-toast'
 
 import {
   Button,
   Card,
   Screen,
-  CardButton,
+  CardToolbar,
   CardContainer,
   BackButton,
   Header
 } from '@/components'
 import {
   appendSideBlocks,
-  AUDIO_FILE_ACCEPT,
-  blobToRecord,
   isCardDataEqual,
   isSideEmpty,
-  normalizeCardData,
-  processImage,
-  type CodeLang
+  normalizeCardData
 } from '@/lib'
 import { Card as CardModel } from '@/models'
 import { updateCard } from '@/services'
 import type {
   CardData,
   CardHandle,
-  MediaDBRecord,
   SideBlock,
   SideName
 } from '@/types'
@@ -84,8 +79,6 @@ export default function CardDetailsScreen({
   const trackRef = useRef<HTMLDivElement>(null)
   const cardDataRef = useRef(cardData)
   const savedCardDataRef = useRef(getCardData(card))
-  const imageInputRef = useRef<HTMLInputElement>(null)
-  const audioInputRef = useRef<HTMLInputElement>(null)
 
   cardDataRef.current = cardData
 
@@ -217,49 +210,6 @@ export default function CardDetailsScreen({
     cardDataRef.current = next
     setDirtyFrom(next)
     setCardData(next)
-  }
-
-  const handleAddText = () => {
-    appendBlocks([{ type: 'text', html: '' }])
-    requestAnimationFrame(() => {
-      cardRef.current?.focusContent(side, 'last')
-    })
-  }
-
-  const handleAddCode = (lang: CodeLang) => {
-    appendBlocks([{ type: 'code', lang, code: '' }])
-  }
-
-  const handleSelectMedia = (kind: 'image' | 'audio') => {
-    if (kind === 'image') imageInputRef.current?.click()
-    else audioInputRef.current?.click()
-  }
-
-  const handlePickImage = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (!file) return
-    try {
-      const webp = await processImage(file)
-      const record = await blobToRecord(webp)
-      appendBlocks([{ type: 'image', content: record }])
-    } catch (err) {
-      console.error('Failed to add image:', err)
-      toast.error('Couldn’t process that image. Try another file.')
-    }
-  }
-
-  const handlePickAudio = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (!file) return
-    try {
-      const buffer = await file.arrayBuffer()
-      const content: MediaDBRecord = { buffer, type: file.type || 'audio/mpeg' }
-      appendBlocks([{ type: 'audio', content }])
-    } catch (err) {
-      console.error('Failed to add audio:', err)
-    }
   }
 
   const handleChangeBlocks = (blocks: SideBlock[], sideName: SideName) => {
@@ -446,29 +396,11 @@ export default function CardDetailsScreen({
         </div>
       </div>
 
-      <div className="pt-1 flex justify-center items-center gap-10">
-        <CardButton
-          type="text"
-          isDisabled={cardData[side].blocks.at(-1)?.type === 'text'}
-          onClick={handleAddText}
-        />
-        <CardButton type="code" onSelectCode={handleAddCode} />
-        <CardButton type="media" onSelectMedia={handleSelectMedia} />
-        <CardButton type="flip" onClick={() => setIsFlipped(prev => !prev)} />
-      </div>
-      <input
-        ref={imageInputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={handlePickImage}
-      />
-      <input
-        ref={audioInputRef}
-        type="file"
-        accept={AUDIO_FILE_ACCEPT}
-        className="hidden"
-        onChange={handlePickAudio}
+      <CardToolbar
+        isTextDisabled={cardData[side].blocks.at(-1)?.type === 'text'}
+        onAddBlocks={appendBlocks}
+        onFocusLast={() => cardRef.current?.focusContent(side, 'last')}
+        onFlip={() => setIsFlipped(prev => !prev)}
       />
     </Screen>
   )
