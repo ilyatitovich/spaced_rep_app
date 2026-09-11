@@ -9,7 +9,13 @@ import {
   Screen,
   Header
 } from '@/components'
-import { blobToRecord, isSideEmpty, processImage, type CodeLang } from '@/lib'
+import {
+  appendSideBlocks,
+  blobToRecord,
+  isSideEmpty,
+  processImage,
+  type CodeLang
+} from '@/lib'
 import { Card as CardModel } from '@/models'
 import { createCard } from '@/services'
 import type {
@@ -129,7 +135,7 @@ export default function AddCardScreen({
       ...latest,
       [side]: {
         ...latest[side],
-        blocks: [...latest[side].blocks, ...blocks]
+        blocks: appendSideBlocks(latest[side].blocks, blocks)
       }
     }
     if (
@@ -149,10 +155,7 @@ export default function AddCardScreen({
   }
 
   const handleAddCode = (lang: CodeLang) => {
-    appendBlocks([
-      { type: 'code', lang, code: '' },
-      { type: 'text', html: '' }
-    ])
+    appendBlocks([{ type: 'code', lang, code: '' }])
   }
 
   const handleSelectMedia = (kind: 'image' | 'audio') => {

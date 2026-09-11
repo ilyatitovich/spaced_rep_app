@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  appendSideBlocks,
   isCardDataEqual,
   isSideEmpty,
   isTextHtmlEmpty
@@ -61,5 +62,36 @@ describe('isSideEmpty / isCardDataEqual', () => {
     }
     expect(isCardDataEqual(a, b)).toBe(true)
     expect(isCardDataEqual(a, c)).toBe(false)
+  })
+})
+
+describe('appendSideBlocks', () => {
+  it('replaces a trailing empty text when adding code or media', () => {
+    expect(
+      appendSideBlocks(
+        [{ type: 'text', html: '' }],
+        [{ type: 'code', lang: 'ts', code: '' }]
+      )
+    ).toEqual([{ type: 'code', lang: 'ts', code: '' }])
+
+    const image = {
+      type: 'image' as const,
+      content: { buffer: new ArrayBuffer(1), type: 'image/webp' }
+    }
+    expect(appendSideBlocks([{ type: 'text', html: '<p></p>' }], [image])).toEqual(
+      [image]
+    )
+  })
+
+  it('keeps written text and does not insert a trailing empty text', () => {
+    expect(
+      appendSideBlocks(
+        [{ type: 'text', html: '<p>Q</p>' }],
+        [{ type: 'code', lang: 'js', code: '' }]
+      )
+    ).toEqual([
+      { type: 'text', html: '<p>Q</p>' },
+      { type: 'code', lang: 'js', code: '' }
+    ])
   })
 })

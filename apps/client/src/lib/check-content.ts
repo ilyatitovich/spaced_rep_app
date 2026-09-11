@@ -27,6 +27,19 @@ export function isSideEmpty(side: CardSideData): boolean {
   return side.blocks.length === 0 || side.blocks.every(isBlockEmpty)
 }
 
+/** Drop a trailing empty text so adding code/media doesn't leave a blank editor. */
+export function appendSideBlocks(
+  existing: SideBlock[],
+  incoming: SideBlock[]
+): SideBlock[] {
+  const last = existing.at(-1)
+  const base =
+    last?.type === 'text' && isTextHtmlEmpty(last.html)
+      ? existing.slice(0, -1)
+      : existing
+  return [...base, ...incoming]
+}
+
 /** @deprecated Prefer isSideEmpty / isBlockEmpty for blocks sides. */
 export function isContentEmpty(
   content: null | undefined | SideContent

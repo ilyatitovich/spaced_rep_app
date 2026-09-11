@@ -12,6 +12,7 @@ import {
   Header
 } from '@/components'
 import {
+  appendSideBlocks,
   blobToRecord,
   isCardDataEqual,
   isSideEmpty,
@@ -209,7 +210,7 @@ export default function CardDetailsScreen({
       ...latest,
       [side]: {
         ...latest[side],
-        blocks: [...latest[side].blocks, ...blocks]
+        blocks: appendSideBlocks(latest[side].blocks, blocks)
       }
     }
     cardDataRef.current = next
@@ -225,10 +226,7 @@ export default function CardDetailsScreen({
   }
 
   const handleAddCode = (lang: CodeLang) => {
-    appendBlocks([
-      { type: 'code', lang, code: '' },
-      { type: 'text', html: '' }
-    ])
+    appendBlocks([{ type: 'code', lang, code: '' }])
   }
 
   const handleSelectMedia = (kind: 'image' | 'audio') => {
