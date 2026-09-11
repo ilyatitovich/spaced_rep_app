@@ -1,8 +1,5 @@
 export const LONGTEXT_THRESHOLD = 70
 
-// iOS treats `audio/*` as camera/photos; extensions open the Files picker
-export const AUDIO_FILE_ACCEPT = '.mp3,.m4a,.wav,.aac,.ogg,.flac,.opus,.caf'
-
 export const TITLE_MAX_LENGTH = 30
 
 export const LEVELS = Array.from({ length: 9 }, (_, index) => index)
