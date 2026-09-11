@@ -2,28 +2,33 @@ import type { CodeLang } from '@/lib'
 
 export type SideName = 'front' | 'back'
 
-export type ImageDBRecord = { buffer: ArrayBuffer; type: string }
+export type MediaDBRecord = { buffer: ArrayBuffer; type: string }
 
 export type ImageBase64Record = { buffer: string; type: string }
 
-export type AudioDBRecord = { buffer: ArrayBuffer; type: string }
-
-/** @deprecated Whole-side code mode; prefer HTML `<pre><code>` inside a text block. */
+/** Code snippet (legacy exclusive side content, or `type: 'code'` block). */
 export type CodeBlock = {
   lang: CodeLang
   code: string
 }
 
 /** @deprecated Exclusive side content; use SideBlock list. */
-export type SideContent = string | Blob | CodeBlock | ImageDBRecord
+export type SideContent = string | Blob | CodeBlock | MediaDBRecord
 
 /** @deprecated Exclusive side modes; use SideBlock.type. */
 export type SideContentType = 'text' | 'image' | 'code'
 
+/**
+ * Ordered blocks on a card side (iPhone Notes–style).
+ * - `text`: one rich HTML doc (bold/italic/underline/lists) — no embedded code fences
+ * - `code`: CodeMirror snippet with language
+ * - `image` / `audio`: media
+ */
 export type SideBlock =
   | { type: 'text'; html: string }
-  | { type: 'image'; content: ImageDBRecord; caption?: string }
-  | { type: 'audio'; content: AudioDBRecord; caption?: string }
+  | { type: 'code'; lang: CodeLang; code: string }
+  | { type: 'image'; content: MediaDBRecord }
+  | { type: 'audio'; content: MediaDBRecord }
 
 export type CardSideData = {
   side: SideName
@@ -47,8 +52,10 @@ export type LegacyCardData = {
   back: LegacyCardSideData
 }
 
+export type CardAddMode = 'text' | 'image' | 'audio'
+
 export type CardHandle = {
-  getContent: () => LegacyCardData
+  getContent: () => CardData
   resetContent: () => void
-  focusContent: (side: SideName) => void
+  focusContent: (side: SideName, which?: 'first' | 'last') => void
 }

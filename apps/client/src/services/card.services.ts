@@ -1,5 +1,6 @@
 import { enqueueSync, triggerSync } from './sync.service'
 import { withTransaction, STORES } from '@/lib/db'
+import { normalizeCardData } from '@/lib/normalize-card'
 import { decodeCardData } from '@/lib/sync-serialize'
 import { Card } from '@/models'
 
@@ -87,26 +88,34 @@ export async function migrateCardsToNewSchema(): Promise<void> {
         const oldCards = request.result
 
         let remaining = oldCards.length
+        if (remaining === 0) {
+          resolve()
+          return
+        }
 
         for (let card of oldCards) {
-          // Set new schema
           card = {
-            id: card.id,
-            topicId: card.topicId,
-            level: card.level,
+            ...card,
             updatedAt: Date.now(),
-            data: {
+            data: normalizeCardData({
               front: {
                 type: 'text',
                 side: 'front',
-                content: card.data.front as unknown as string
+                content:
+                  typeof card.data.front === 'string'
+                    ? card.data.front
+                    : ((card.data.front as { content?: unknown })?.content ??
+                      '')
               },
               back: {
                 type: 'text',
                 side: 'back',
-                content: card.data.back as unknown as string
+                content:
+                  typeof card.data.back === 'string'
+                    ? card.data.back
+                    : ((card.data.back as { content?: unknown })?.content ?? '')
               }
-            }
+            })
           }
 
           const req = stores[STORES.CARDS].put(card)
@@ -146,7 +155,7 @@ export async function importCards(
     ...card,
     topicId,
     updatedAt: Date.now(),
-    data: decodeCardData(card.data) as Card['data']
+    data: normalizeCardData(decodeCardData(card.data))
   }))
 
   let successCount = 0

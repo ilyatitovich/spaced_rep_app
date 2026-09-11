@@ -1,10 +1,10 @@
-import { RefreshCw, ImagePlus, Type, CodeXml } from 'lucide-react'
+import { RefreshCw, ImagePlus, Type, Volume2 } from 'lucide-react'
 import type { ElementType } from 'react'
 
-import type { SideContentType } from '@/types'
+type CardButtonType = 'flip' | 'text' | 'image' | 'audio'
 
 type CardButtonProps = {
-  type: 'flip' | SideContentType
+  type: CardButtonType
   onClick: () => void
   isDisabled?: boolean
 }
@@ -30,11 +30,10 @@ export default function CardButton({
       Icon = ImagePlus
       label = 'Image'
       break
-    case 'code':
-      Icon = CodeXml
-      label = 'Code'
+    case 'audio':
+      Icon = Volume2
+      label = 'Audio'
       break
-
     default:
       return null
   }

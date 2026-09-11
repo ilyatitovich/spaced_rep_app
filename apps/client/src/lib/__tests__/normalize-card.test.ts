@@ -14,7 +14,7 @@ describe('normalizeSide', () => {
     })
   })
 
-  it('maps legacy image to an image block without caption', () => {
+  it('maps legacy image to an image block', () => {
     const buffer = new ArrayBuffer(4)
     expect(
       normalizeSide({
@@ -28,7 +28,7 @@ describe('normalizeSide', () => {
     })
   })
 
-  it('maps legacy code to a pre/code text block', () => {
+  it('maps legacy code to a code block', () => {
     expect(
       normalizeSide({
         side: 'front',
@@ -37,11 +37,27 @@ describe('normalizeSide', () => {
       })
     ).toEqual({
       side: 'front',
+      blocks: [{ type: 'code', lang: 'ts', code: 'const x = 1 < 2' }]
+    })
+  })
+
+  it('extracts embedded pre/code fences into sibling code blocks', () => {
+    expect(
+      normalizeSide({
+        side: 'front',
+        blocks: [
+          {
+            type: 'text',
+            html: '<p>before</p><pre><code class="language-py">print(1)</code></pre><p>after</p>'
+          }
+        ]
+      })
+    ).toEqual({
+      side: 'front',
       blocks: [
-        {
-          type: 'text',
-          html: '<pre><code class="language-ts">const x = 1 &lt; 2</code></pre>'
-        }
+        { type: 'text', html: '<p>before</p>' },
+        { type: 'code', lang: 'py', code: 'print(1)' },
+        { type: 'text', html: '<p>after</p>' }
       ]
     })
   })
@@ -53,12 +69,33 @@ describe('normalizeSide', () => {
         { type: 'text' as const, html: '<p>hi</p>' },
         {
           type: 'audio' as const,
-          content: { buffer: new ArrayBuffer(2), type: 'audio/mpeg' },
-          caption: 'clip'
+          content: { buffer: new ArrayBuffer(2), type: 'audio/mpeg' }
         }
       ]
     }
     expect(normalizeSide(side)).toEqual(side)
+  })
+
+  it('lifts a stored media caption into a following text block', () => {
+    const buffer = new ArrayBuffer(2)
+    expect(
+      normalizeSide({
+        side: 'front',
+        blocks: [
+          {
+            type: 'audio',
+            content: { buffer, type: 'audio/mpeg' },
+            caption: 'clip'
+          }
+        ]
+      })
+    ).toEqual({
+      side: 'front',
+      blocks: [
+        { type: 'audio', content: { buffer, type: 'audio/mpeg' } },
+        { type: 'text', html: '<p>clip</p>' }
+      ]
+    })
   })
 
   it('returns an empty side for unknown input', () => {
@@ -81,12 +118,7 @@ describe('normalizeCardData', () => {
       front: { side: 'front', blocks: [{ type: 'text', html: 'Q' }] },
       back: {
         side: 'back',
-        blocks: [
-          {
-            type: 'text',
-            html: '<pre><code class="language-js">1</code></pre>'
-          }
-        ]
+        blocks: [{ type: 'code', lang: 'js', code: '1' }]
       }
     })
   })

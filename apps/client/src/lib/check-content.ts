@@ -1,11 +1,33 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import {
+import type {
+  CardData,
+  CardSideData,
   CodeBlock,
-  ImageDBRecord,
+  MediaDBRecord,
   LegacyCardData,
+  SideBlock,
   SideContent
 } from '@/types'
 
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim()
+}
+
+export function isTextHtmlEmpty(html: string): boolean {
+  return stripHtml(html).length === 0
+}
+
+export function isBlockEmpty(block: SideBlock): boolean {
+  if (block.type === 'text') return isTextHtmlEmpty(block.html)
+  if (block.type === 'code') return block.code.trim().length === 0
+  return block.content.buffer.byteLength === 0
+}
+
+export function isSideEmpty(side: CardSideData): boolean {
+  return side.blocks.length === 0 || side.blocks.every(isBlockEmpty)
+}
+
+/** @deprecated Prefer isSideEmpty / isBlockEmpty for blocks sides. */
 export function isContentEmpty(
   content: null | undefined | SideContent
 ): boolean {
@@ -39,13 +61,49 @@ export function isCodeBlock(value: unknown): value is CodeBlock {
   )
 }
 
-export function isRecord(value: unknown): value is ImageDBRecord {
+export function isRecord(value: unknown): value is MediaDBRecord {
   return (
     typeof value === 'object' &&
     value !== null &&
     (value as any).buffer instanceof ArrayBuffer &&
     typeof (value as any).type === 'string'
   )
+}
+
+function isBufferEqual(a: ArrayBuffer, b: ArrayBuffer): boolean {
+  if (a.byteLength !== b.byteLength) return false
+  const left = new Uint8Array(a)
+  const right = new Uint8Array(b)
+  for (let i = 0; i < left.length; i++) {
+    if (left[i] !== right[i]) return false
+  }
+  return true
+}
+
+function isBlockEqual(a: SideBlock, b: SideBlock): boolean {
+  if (a.type !== b.type) return false
+  if (a.type === 'text' && b.type === 'text') {
+    return a.html.trim() === b.html.trim()
+  }
+  if (a.type === 'code' && b.type === 'code') {
+    return a.lang === b.lang && a.code === b.code
+  }
+  if (
+    (a.type === 'image' || a.type === 'audio') &&
+    (b.type === 'image' || b.type === 'audio')
+  ) {
+    return (
+      a.type === b.type &&
+      a.content.type === b.content.type &&
+      isBufferEqual(a.content.buffer, b.content.buffer)
+    )
+  }
+  return false
+}
+
+function isSideBlocksEqual(a: CardSideData, b: CardSideData): boolean {
+  if (a.blocks.length !== b.blocks.length) return false
+  return a.blocks.every((block, i) => isBlockEqual(block, b.blocks[i]!))
 }
 
 function isSideContentEqual(a: SideContent, b: SideContent): boolean {
@@ -64,21 +122,23 @@ function isSideContentEqual(a: SideContent, b: SideContent): boolean {
   }
 
   if (isRecord(a) && isRecord(b)) {
-    if (a.type !== b.type || a.buffer.byteLength !== b.buffer.byteLength) {
-      return false
-    }
-    const left = new Uint8Array(a.buffer)
-    const right = new Uint8Array(b.buffer)
-    for (let i = 0; i < left.length; i++) {
-      if (left[i] !== right[i]) return false
-    }
-    return true
+    return a.type === b.type && isBufferEqual(a.buffer, b.buffer)
   }
 
   return false
 }
 
-export function isCardDataEqual(a: LegacyCardData, b: LegacyCardData): boolean {
+export function isCardDataEqual(a: CardData, b: CardData): boolean {
+  return (
+    isSideBlocksEqual(a.front, b.front) && isSideBlocksEqual(a.back, b.back)
+  )
+}
+
+/** @deprecated Legacy exclusive sides only. */
+export function isLegacyCardDataEqual(
+  a: LegacyCardData,
+  b: LegacyCardData
+): boolean {
   return (
     a.front.type === b.front.type &&
     a.back.type === b.back.type &&

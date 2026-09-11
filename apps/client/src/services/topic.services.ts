@@ -1,5 +1,5 @@
 import { enqueueSync, triggerSync } from './sync.service'
-import { withTransaction, STORES } from '@/lib'
+import { withTransaction, STORES, normalizeCardData } from '@/lib'
 import { encodeCardData } from '@/lib/sync-serialize'
 import { Topic, Card, updateWeek } from '@/models'
 
@@ -96,7 +96,10 @@ export async function getTopicById(
         if (!acc[level]) {
           acc[level] = []
         }
-        acc[level].push(card)
+        acc[level].push({
+          ...card,
+          data: normalizeCardData(card.data)
+        })
         return acc
       }, {})
 

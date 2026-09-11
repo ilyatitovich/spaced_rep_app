@@ -1,5 +1,5 @@
 import { enqueueSync, triggerSync } from './sync.service'
-import { withTransaction, STORES } from '@/lib'
+import { normalizeCardData, withTransaction, STORES } from '@/lib'
 import { decodeCardData, encodeCardData } from '@/lib/sync-serialize'
 import { Card, Topic } from '@/models'
 
@@ -83,7 +83,7 @@ export async function importAppData(
     ...card,
     id: ensureUuid(card.id),
     topicId: topicIdMap.get(card.topicId) ?? card.topicId,
-    data: decodeCardData(card.data)
+    data: normalizeCardData(decodeCardData(card.data))
   }))
 
   const importedTopicIds: string[] = []

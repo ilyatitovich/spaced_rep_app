@@ -1,8 +1,9 @@
-import { Check } from 'lucide-react'
-import { useRef, useEffect, useState, ReactNode } from 'react'
+import { Check, Volume2 } from 'lucide-react'
+import { useRef, useLayoutEffect, useState, type ReactNode } from 'react'
 
-import { isCodeBlock, isRecord, recordToBlob } from '@/lib'
+import { isTextHtmlEmpty, normalizeCardData } from '@/lib'
 import { Card } from '@/models'
+import type { SideBlock } from '@/types'
 
 type LevelCardProps = {
   card: Card
@@ -11,6 +12,22 @@ type LevelCardProps = {
   onPress: (isPressed: boolean) => void
   onSelect: (cardId: string, add?: boolean) => void
   onOpen: () => void
+}
+
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim()
+}
+
+function previewBlock(blocks: SideBlock[]): SideBlock | undefined {
+  return (
+    blocks.find(block => block.type === 'image') ??
+    blocks.find(block => block.type === 'audio') ??
+    blocks.find(
+      block =>
+        (block.type === 'text' && !isTextHtmlEmpty(block.html)) ||
+        (block.type === 'code' && block.code.trim().length > 0)
+    )
+  )
 }
 
 export default function LevelCard({
@@ -24,46 +41,45 @@ export default function LevelCard({
   const [previewUrl, setPreviewUrl] = useState('')
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const { content: frontContent } = card.data.front
+  const front = normalizeCardData(card.data).front
+  const block = previewBlock(front.blocks)
+  const imageBuffer = block?.type === 'image' ? block.content.buffer : undefined
+  const imageType = block?.type === 'image' ? block.content.type : undefined
+
+  useLayoutEffect(() => {
+    if (!imageBuffer || !imageType) {
+      setPreviewUrl('')
+      return
+    }
+    const url = URL.createObjectURL(
+      new Blob([imageBuffer], { type: imageType })
+    )
+    setPreviewUrl(url)
+    return () => URL.revokeObjectURL(url)
+  }, [imageBuffer, imageType])
 
   let preview: ReactNode | null = null
 
-  useEffect(() => {
-    if (isRecord(frontContent)) {
-      const blob = recordToBlob(frontContent)
-      const url = URL.createObjectURL(blob)
-      setPreviewUrl(url)
-
-      return () => {
-        URL.revokeObjectURL(url)
-      }
-    }
-
-    setPreviewUrl('')
-  }, [frontContent])
-
-  if (typeof frontContent === 'string') {
+  if (block?.type === 'image' && previewUrl) {
     preview = (
-      <p>
-        {frontContent.length > 50
-          ? frontContent.slice(0, 50) + '...'
-          : frontContent}
-      </p>
+      <img
+        src={previewUrl}
+        alt="front pic"
+        className="max-h-full max-w-full object-contain"
+      />
     )
-  }
-
-  if (isCodeBlock(frontContent)) {
+  } else if (block?.type === 'audio') {
+    preview = <Volume2 className="w-8 h-8" strokeWidth={2} />
+  } else if (block?.type === 'text') {
+    const text = stripHtml(block.html)
+    preview = <p>{text.length > 50 ? text.slice(0, 50) + '...' : text}</p>
+  } else if (block?.type === 'code') {
+    const text = block.code
     preview = (
       <p className="font-mono text-[10px]">
-        {frontContent.code.length > 50
-          ? frontContent.code.slice(0, 50) + '...'
-          : frontContent.code}
+        {text.length > 50 ? text.slice(0, 50) + '...' : text}
       </p>
     )
-  }
-
-  if (previewUrl && isRecord(frontContent)) {
-    preview = <img src={previewUrl} alt="front pic" />
   }
 
   const handleTouchStart = () => {
@@ -73,7 +89,7 @@ export default function LevelCard({
       if (!isSelected) {
         onSelect(card.id)
       }
-    }, 700) // long press threshold
+    }, 700)
   }
 
   const handleTouchEnd = () => {

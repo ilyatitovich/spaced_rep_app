@@ -1,6 +1,5 @@
 import CodeMirror, { EditorView, type Extension } from '@uiw/react-codemirror'
 import { FocusEventHandler, useEffect, useState } from 'react'
-import { useDebouncedCallback } from 'use-debounce'
 
 import { LangSelect } from './ui'
 import { useFontSize } from '@/hooks'
@@ -32,52 +31,52 @@ export default function CodeEditor({
     })
   }, [lang])
 
-  const debouncedOnChange = useDebouncedCallback((code: string) => {
-    setCode(code)
-    onChange?.({ code, lang })
-  }, 300)
+  const handleCodeChange = (next: string): void => {
+    setCode(next)
+    onChange?.({ code: next, lang })
+  }
 
-  const handleLangChange = (lang: CodeLang): void => {
-    setLang(lang)
-    onChange?.({ code, lang })
+  const handleLangChange = (next: CodeLang): void => {
+    setLang(next)
+    onChange?.({ code, lang: next })
   }
 
   return (
-    <div className="h-full w-full pt-4 overflow-y-auto">
+    <div className="h-full w-full pt-2 overflow-y-auto">
       {isEditable && (
         <div className="flex justify-center">
           <LangSelect lang={lang} onChange={handleLangChange} />
         </div>
       )}
       <CodeMirror
-        className="mt-4 border border-border"
-        value={initialValue?.code ?? ''}
+        className="mt-2 border border-border"
+        value={code}
         height="auto"
         minHeight="50px"
         theme="light"
         extensions={extensions}
         editable={!!isEditable}
         basicSetup={{
-          lineNumbers: false, // Avoids horizontal scrolling on mobile
+          lineNumbers: false,
           foldGutter: false,
           highlightActiveLine: false,
           tabSize: 2,
-          autocompletion: false, // Avoids opening mobile keyboard popups
+          autocompletion: false,
           bracketMatching: true,
           highlightSpecialChars: false
         }}
-        onChange={v => debouncedOnChange(v)}
+        onChange={handleCodeChange}
         onFocus={e => {
           onFocus?.(e)
           placeCursorAtEnd(e)
         }}
         style={{
-          fontSize, // Prevents iOS zooming on input focus
+          fontSize,
           lineHeight: '1.4',
           overflow: 'hidden'
         }}
         // eslint-disable-next-line jsx-a11y/no-autofocus
-        autoFocus={isEditable && !initialValue?.code}
+        autoFocus={isEditable && !initialValue.code}
       />
     </div>
   )

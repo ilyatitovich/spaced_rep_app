@@ -1,4 +1,4 @@
-import type { ImageBase64Record, ImageDBRecord } from '@/types'
+import type { ImageBase64Record, MediaDBRecord } from '@/types'
 
 export async function processImage(file: File): Promise<Blob> {
   const maxWidth = 800,
@@ -36,17 +36,17 @@ export async function processImage(file: File): Promise<Blob> {
   })
 }
 
-export async function blobToRecord(blob: Blob): Promise<ImageDBRecord> {
+export async function blobToRecord(blob: Blob): Promise<MediaDBRecord> {
   const buffer = await blob.arrayBuffer()
   return { buffer, type: blob.type }
 }
 
-export function recordToBlob(record: ImageDBRecord): Blob {
+export function recordToBlob(record: MediaDBRecord): Blob {
   return new Blob([record.buffer], { type: record.type })
 }
 
 export function arrayBufferToBase64(
-  record: ImageDBRecord
+  record: MediaDBRecord
 ): Record<string, string> {
   let binary = ''
   const bytes = new Uint8Array(record.buffer)
@@ -62,7 +62,7 @@ export function arrayBufferToBase64(
 export function base64ToArrayBuffer({
   buffer,
   type
-}: ImageBase64Record): ImageDBRecord {
+}: ImageBase64Record): MediaDBRecord {
   const binaryString = atob(buffer)
   const len = binaryString.length
   const bytes = new Uint8Array(len)

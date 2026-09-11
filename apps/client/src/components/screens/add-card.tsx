@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useRef, useState, type ChangeEvent } from 'react'
 
 import {
   Button,
@@ -9,15 +9,16 @@ import {
   Screen,
   Header
 } from '@/components'
-import { isContentEmpty } from '@/lib'
+import { blobToRecord, isSideEmpty, processImage } from '@/lib'
 import { Card as CardModel } from '@/models'
 import { createCard } from '@/services'
 import type {
+  CardAddMode,
+  CardData,
   CardHandle,
-  LegacyCardData,
-  SideContentType,
-  SideName,
-  SideContent
+  MediaDBRecord,
+  SideBlock,
+  SideName
 } from '@/types'
 
 type NewCardPageProps = {
@@ -26,18 +27,20 @@ type NewCardPageProps = {
   onAdd: (payload: { level: number; card: CardModel }) => void
 }
 
-const initialCardData: LegacyCardData = {
-  front: { side: 'front', type: 'text', content: '' },
-  back: { side: 'back', type: 'text', content: '' }
+const emptySide = (side: SideName) => ({
+  side,
+  blocks: [{ type: 'text' as const, html: '' }]
+})
+
+const blankCardTemplate: CardData = {
+  front: emptySide('front'),
+  back: emptySide('back')
 }
 
-const initialSidesContentType: {
-  front: SideContentType
-  back: SideContentType
-} = {
-  front: 'text',
-  back: 'text'
-}
+const createEmptyCardData = (): CardData => ({
+  front: emptySide('front'),
+  back: emptySide('back')
+})
 
 export default function AddCardScreen({
   isOpen,
@@ -45,18 +48,17 @@ export default function AddCardScreen({
   onAdd
 }: NewCardPageProps) {
   const [isFlipped, setIsFlipped] = useState(false)
-  const [cardData, setCardData] = useState(initialCardData)
+  const [cardData, setCardData] = useState(createEmptyCardData)
   const [isEdited, setIsEdited] = useState(false)
   const [isDraft, setIsDraft] = useState(true)
   const [isFirstCardActive, setIsFirstCardActive] = useState(true)
   const [isInitialRender, setIsInitialRender] = useState(true)
-
-  const [sidesContentType, setSidesContentType] = useState(
-    initialSidesContentType
-  )
+  const [activeMode, setActiveMode] = useState<CardAddMode>('text')
 
   const currentCardRef = useRef<CardHandle>(null)
   const secondCardRef = useRef<CardHandle>(null)
+  const imageInputRef = useRef<HTMLInputElement>(null)
+  const audioInputRef = useRef<HTMLInputElement>(null)
 
   const side = isFlipped ? 'back' : 'front'
 
@@ -73,7 +75,9 @@ export default function AddCardScreen({
       <Button
         key="save-draft"
         onClick={() => handleSaveCard('draft')}
-        disabled={!cardData.front.content && !cardData.back.content}
+        disabled={
+          isSideEmpty(cardData.front) && isSideEmpty(cardData.back)
+        }
       >
         Save Draft
       </Button>
@@ -93,19 +97,20 @@ export default function AddCardScreen({
         return
       }
 
+      const latest = currentCardRef.current?.getContent() ?? cardData
       const card = new CardModel(
-        cardData,
+        latest,
         topicId,
         cardStatus === 'new' ? 1 : 0
       )
       await createCard(card)
       onAdd({ level: card.level, card })
-      setCardData(initialCardData)
+      setCardData(createEmptyCardData())
       setIsFlipped(false)
       setIsDraft(true)
+      setActiveMode('text')
       setIsFirstCardActive(prev => !prev)
       setIsInitialRender(false)
-      setSidesContentType(initialSidesContentType)
     } catch (error) {
       console.error('Failed to save card:', error)
     }
@@ -115,99 +120,97 @@ export default function AddCardScreen({
     if (currentCardRef.current) {
       const data = currentCardRef.current.getContent()
 
-      if (side === 'front') {
-        if (
-          isContentEmpty(data.front.content) ||
-          isContentEmpty(cardData.back.content)
-        ) {
-          setIsDraft(true)
-        }
-
-        if (
-          !isContentEmpty(data.front.content) &&
-          !isContentEmpty(cardData.back.content)
-        ) {
-          setIsDraft(false)
-        }
+      if (isSideEmpty(data.front) || isSideEmpty(data.back)) {
+        setIsDraft(true)
+      } else {
+        setIsDraft(false)
       }
 
-      if (side === 'back') {
-        if (
-          isContentEmpty(data.back.content) ||
-          isContentEmpty(cardData.front.content)
-        ) {
-          setIsDraft(true)
-        }
-
-        if (
-          !isContentEmpty(data.back.content) &&
-          !isContentEmpty(cardData.front.content)
-        ) {
-          setIsDraft(false)
-        }
-      }
-
-      setCardData(prev => ({
-        ...prev,
-        [side]: {
-          ...prev[side],
-          content: data[side].content
-        }
-      }))
+      setCardData(data)
     }
 
     setIsEdited(false)
   }
 
-  const handleChangeSideContentType = (type: SideContentType = 'text') => {
-    setSidesContentType(prev => ({
-      ...prev,
-      [side]: type
-    }))
-
-    setCardData(prev => ({
-      ...prev,
+  const appendBlock = (block: SideBlock) => {
+    const latest = currentCardRef.current?.getContent() ?? cardData
+    const next: CardData = {
+      ...latest,
       [side]: {
-        ...prev[side],
-        type,
-        content: ''
+        ...latest[side],
+        blocks: [...latest[side].blocks, block]
       }
-    }))
-
-    if (type === 'text') {
-      requestAnimationFrame(() => {
-        currentCardRef.current?.focusContent(side)
-      })
     }
-  }
-
-  const handleChangeSideContent = (value: SideContent, side: SideName) => {
-    setCardData(prev => ({
-      ...prev,
-      [side]: {
-        ...prev[side],
-        content: value
-      }
-    }))
-
     if (
-      (side === 'front' && !isContentEmpty(cardData.back.content)) ||
-      (side === 'back' && !isContentEmpty(cardData.front.content))
+      (side === 'front' && !isSideEmpty(latest.back)) ||
+      (side === 'back' && !isSideEmpty(latest.front))
     ) {
       setIsDraft(false)
     }
+    setCardData(next)
+  }
+
+  const handleAddText = () => {
+    appendBlock({ type: 'text', html: '' })
+    setActiveMode('text')
+    requestAnimationFrame(() => {
+      currentCardRef.current?.focusContent(side, 'last')
+    })
+  }
+
+  const handlePickImage = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    try {
+      const webp = await processImage(file)
+      const record = await blobToRecord(webp)
+      appendBlock({ type: 'image', content: record })
+      setActiveMode('image')
+    } catch (err) {
+      console.error('Failed to add image:', err)
+    }
+  }
+
+  const handlePickAudio = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    try {
+      const buffer = await file.arrayBuffer()
+      const content: MediaDBRecord = { buffer, type: file.type || 'audio/mpeg' }
+      appendBlock({ type: 'audio', content })
+      setActiveMode('audio')
+    } catch (err) {
+      console.error('Failed to add audio:', err)
+    }
+  }
+
+  const handleChangeBlocks = (blocks: SideBlock[], sideName: SideName) => {
+    const other = sideName === 'front' ? 'back' : 'front'
+    if (
+      !isSideEmpty(cardData[other]) &&
+      !isSideEmpty({ side: sideName, blocks })
+    ) {
+      setIsDraft(false)
+    }
+
+    setCardData(prev => ({
+      ...prev,
+      [sideName]: { ...prev[sideName], blocks }
+    }))
   }
 
   const handleClose = (): void => {
     if (isEdited) {
       setIsEdited(false)
     }
-    setCardData(initialCardData)
+    setCardData(createEmptyCardData())
     setIsFlipped(false)
     setIsDraft(true)
     setIsFirstCardActive(true)
     setIsInitialRender(true)
-    setSidesContentType(initialSidesContentType)
+    setActiveMode('text')
     currentCardRef.current?.resetContent()
     secondCardRef.current?.resetContent()
   }
@@ -223,45 +226,60 @@ export default function AddCardScreen({
         <Card
           ref={isFirstCardActive ? currentCardRef : secondCardRef}
           className={`${isFirstCardActive ? 'scale-up' : 'move-right'}`}
-          data={isFirstCardActive ? initialCardData : cardData}
-          sidesContentType={sidesContentType}
+          data={isFirstCardActive ? cardData : blankCardTemplate}
           isFlipped={isFirstCardActive ? isFlipped : false}
           isEditable={true}
+          autoFocus={isFirstCardActive}
           handleFocus={() => setIsEdited(true)}
           handleBlur={handleBlur}
-          handleChange={handleChangeSideContent}
+          handleChange={handleChangeBlocks}
+          onActiveModeChange={setActiveMode}
         />
         <Card
           ref={isFirstCardActive ? secondCardRef : currentCardRef}
           className={`${isInitialRender ? 'hidden' : ''} ${isFirstCardActive ? 'move-right' : 'scale-up'}`.trim()}
-          data={isFirstCardActive ? cardData : initialCardData}
-          sidesContentType={sidesContentType}
+          data={isFirstCardActive ? blankCardTemplate : cardData}
           isFlipped={isFirstCardActive ? false : isFlipped}
           isEditable={true}
+          autoFocus={!isFirstCardActive}
           handleFocus={() => setIsEdited(true)}
           handleBlur={handleBlur}
-          handleChange={handleChangeSideContent}
+          handleChange={handleChangeBlocks}
+          onActiveModeChange={setActiveMode}
         />
       </CardContainer>
-      {/* Buttons */}
       <div className="pt-1 flex justify-center items-center gap-10">
         <CardButton
           type="text"
-          onClick={() => handleChangeSideContentType('text')}
-          isDisabled={sidesContentType[side] === 'text'}
+          isDisabled={activeMode === 'text'}
+          onClick={handleAddText}
         />
         <CardButton
           type="image"
-          onClick={() => handleChangeSideContentType('image')}
-          isDisabled={sidesContentType[side] === 'image'}
+          isDisabled={activeMode === 'image'}
+          onClick={() => imageInputRef.current?.click()}
         />
         <CardButton
-          type="code"
-          onClick={() => handleChangeSideContentType('code')}
-          isDisabled={sidesContentType[side] === 'code'}
+          type="audio"
+          isDisabled={activeMode === 'audio'}
+          onClick={() => audioInputRef.current?.click()}
         />
         <CardButton type="flip" onClick={() => setIsFlipped(prev => !prev)} />
       </div>
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handlePickImage}
+      />
+      <input
+        ref={audioInputRef}
+        type="file"
+        accept="audio/*"
+        className="hidden"
+        onChange={handlePickAudio}
+      />
     </Screen>
   )
 }

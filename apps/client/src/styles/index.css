@@ -400,3 +400,53 @@ select {
     opacity: 1;
   }
 }
+
+/* Rich-text card sides (Notes-style HTML text blocks) */
+.card-rich-text strong,
+.card-rich-text b {
+  font-weight: 700;
+}
+
+/* Tailwind preflight removes markers — restore them. Inherit size/font from card.
+   Use outside (not inside) — inside makes the caret jump to the next line in CE.
+   Short cards: shrink-wrap + center so the mark sits on the text's left edge,
+   not the card edge. */
+.card-rich-text ul,
+.card-rich-text ol {
+  margin: 0.25rem auto;
+  padding-left: 1.25rem;
+  list-style-position: outside;
+  text-align: left;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.card-rich-text ul {
+  list-style-type: disc;
+}
+
+.card-rich-text ol {
+  list-style-type: decimal;
+}
+
+.card-rich-text li {
+  margin: 0.15rem 0;
+  display: list-item;
+}
+
+/* Long text: full-width left body list. */
+.is-long.card-rich-text ul,
+.is-long.card-rich-text ol,
+.is-long .card-rich-text ul,
+.is-long .card-rich-text ol {
+  width: auto;
+  margin-left: 0;
+  margin-right: 0;
+  font-size: 1rem;
+  font-weight: normal;
+  font-family: inherit;
+}
+
+.card-rich-text u {
+  text-decoration: underline;
+}

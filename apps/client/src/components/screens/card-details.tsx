@@ -1,5 +1,8 @@
 import { useState, useRef, useCallback, useLayoutEffect } from 'react'
-import type { PointerEvent as ReactPointerEvent } from 'react'
+import type {
+  ChangeEvent,
+  PointerEvent as ReactPointerEvent
+} from 'react'
 import { toast } from 'react-hot-toast'
 
 import {
@@ -11,14 +14,21 @@ import {
   BackButton,
   Header
 } from '@/components'
-import { isCardDataEqual, isContentEmpty } from '@/lib'
+import {
+  blobToRecord,
+  isCardDataEqual,
+  isSideEmpty,
+  normalizeCardData,
+  processImage
+} from '@/lib'
 import { Card as CardModel } from '@/models'
 import { updateCard } from '@/services'
 import type {
+  CardAddMode,
+  CardData,
   CardHandle,
-  LegacyCardData,
-  SideContent,
-  SideContentType,
+  MediaDBRecord,
+  SideBlock,
   SideName
 } from '@/types'
 
@@ -30,42 +40,26 @@ type CardDetailsScreenProps = {
 }
 
 const SWIPE_THRESHOLD_PX = 60
+const DRAG_CAPTURE_PX = 8
 const ANIMATION_MS = 250
+
+const isCarouselControl = (target: EventTarget | null) =>
+  target instanceof Element &&
+  !!target.closest('button, label, input, select, audio, textarea, a')
 
 const mod = (n: number, m: number) => ((n % m) + m) % m
 
-const getCardData = (card: CardModel | null | undefined): LegacyCardData => ({
+const getCardData = (card: CardModel | null | undefined): CardData =>
+  normalizeCardData(card?.data)
+
+const mergeTextFromEditor = (base: CardData, editor: CardData): CardData => ({
   front: {
     side: 'front',
-    content: card?.data.front.content ?? '',
-    type: card?.data.front.type ?? 'text'
+    blocks: editor.front.blocks.length ? editor.front.blocks : base.front.blocks
   },
   back: {
     side: 'back',
-    content: card?.data.back.content ?? '',
-    type: card?.data.back.type ?? 'text'
-  }
-})
-
-const getSidesContentType = (card: CardModel | null | undefined) => ({
-  front: card?.data.front.type ?? 'text',
-  back: card?.data.back.type ?? 'text'
-})
-
-const mergeTextFromEditor = (
-  base: LegacyCardData,
-  editor: LegacyCardData,
-  types: { front: SideContentType; back: SideContentType }
-): LegacyCardData => ({
-  front: {
-    ...base.front,
-    type: types.front,
-    content: types.front === 'text' ? editor.front.content : base.front.content
-  },
-  back: {
-    ...base.back,
-    type: types.back,
-    content: types.back === 'text' ? editor.back.content : base.back.content
+    blocks: editor.back.blocks.length ? editor.back.blocks : base.back.blocks
   }
 })
 
@@ -82,22 +76,20 @@ export default function CardDetailsScreen({
   const card = cards?.[currentIndex]
 
   const [isFlipped, setIsFlipped] = useState(false)
-  const [cardData, setCardData] = useState<LegacyCardData>(() => getCardData(card))
+  const [cardData, setCardData] = useState<CardData>(() => getCardData(card))
   const [isEdited, setIsEdited] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
-  const [sidesContentType, setSidesContentType] = useState(() =>
-    getSidesContentType(card)
-  )
+  const [activeMode, setActiveMode] = useState<CardAddMode>('text')
 
   const cardRef = useRef<CardHandle>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
   const cardDataRef = useRef(cardData)
   const savedCardDataRef = useRef(getCardData(card))
-  const sidesContentTypeRef = useRef(sidesContentType)
+  const imageInputRef = useRef<HTMLInputElement>(null)
+  const audioInputRef = useRef<HTMLInputElement>(null)
 
   cardDataRef.current = cardData
-  sidesContentTypeRef.current = sidesContentType
 
   const isDragging = useRef(false)
   const isAnimating = useRef(false)
@@ -110,7 +102,7 @@ export default function CardDetailsScreen({
   const prevCard = cards?.[prevIndex]
   const nextCard = cards?.[nextIndex]
 
-  const setDirtyFrom = useCallback((data: LegacyCardData) => {
+  const setDirtyFrom = useCallback((data: CardData) => {
     setIsDirty(!isCardDataEqual(data, savedCardDataRef.current))
   }, [])
 
@@ -118,15 +110,13 @@ export default function CardDetailsScreen({
     (index: number) => {
       const c = cards?.[index]
       const data = getCardData(c)
-      const types = getSidesContentType(c)
       setCardData(data)
       cardDataRef.current = data
       savedCardDataRef.current = data
-      setSidesContentType(types)
-      sidesContentTypeRef.current = types
       setIsFlipped(false)
       setIsEdited(false)
       setIsDirty(false)
+      setActiveMode('text')
     },
     [cards]
   )
@@ -134,7 +124,7 @@ export default function CardDetailsScreen({
   const saveCard = useCallback(
     async (
       cardToSave: CardModel | undefined,
-      dataToSave: LegacyCardData
+      dataToSave: CardData
     ): Promise<boolean> => {
       if (!cardToSave) return false
 
@@ -143,8 +133,8 @@ export default function CardDetailsScreen({
 
         if (
           cardToSave.level === 0 &&
-          !isContentEmpty(dataToSave.front.content) &&
-          !isContentEmpty(dataToSave.back.content)
+          !isSideEmpty(dataToSave.front) &&
+          !isSideEmpty(dataToSave.back)
         ) {
           cardToSave.level += 1
           onUpdate?.(cardToSave)
@@ -164,14 +154,10 @@ export default function CardDetailsScreen({
     [onUpdate]
   )
 
-  const readLatestCardData = useCallback((): LegacyCardData => {
+  const readLatestCardData = useCallback((): CardData => {
     const editor = cardRef.current?.getContent()
     if (!editor) return cardDataRef.current
-    return mergeTextFromEditor(
-      cardDataRef.current,
-      editor,
-      sidesContentTypeRef.current
-    )
+    return mergeTextFromEditor(cardDataRef.current, editor)
   }, [])
 
   const handleSaveCard = async (): Promise<void> => {
@@ -187,9 +173,11 @@ export default function CardDetailsScreen({
   }
 
   const snapTrackToCenter = useCallback(() => {
+    const container = containerRef.current
     const track = trackRef.current
-    const width = containerRef.current?.offsetWidth ?? 0
+    const width = container?.offsetWidth ?? 0
     if (!track) return
+    if (container) container.scrollLeft = 0
     track.style.transition = 'none'
     track.style.transform = `translateX(${-width}px)`
     void track.offsetHeight
@@ -209,7 +197,8 @@ export default function CardDetailsScreen({
   const handleOpen = useCallback(() => {
     setCurrentIndex(cardIndex)
     loadCardAtIndex(cardIndex)
-  }, [cardIndex, loadCardAtIndex])
+    snapTrackToCenter()
+  }, [cardIndex, loadCardAtIndex, snapTrackToCenter])
 
   const handleBlur = (): void => {
     const latest = readLatestCardData()
@@ -219,45 +208,61 @@ export default function CardDetailsScreen({
     setIsEdited(false)
   }
 
-  const handleChangeSideContentType = (type: SideContentType = 'text') => {
-    setSidesContentType(prev => {
-      const nextTypes = { ...prev, [side]: type }
-      sidesContentTypeRef.current = nextTypes
-      return nextTypes
-    })
-    setCardData(prev => {
-      const next = {
-        ...prev,
-        [side]: { ...prev[side], type, content: '' }
+  const appendBlock = (block: SideBlock) => {
+    const latest = readLatestCardData()
+    const next: CardData = {
+      ...latest,
+      [side]: {
+        ...latest[side],
+        blocks: [...latest[side].blocks, block]
       }
-      cardDataRef.current = next
-      setDirtyFrom(next)
-      return next
-    })
+    }
+    cardDataRef.current = next
+    setDirtyFrom(next)
+    setCardData(next)
+  }
 
-    if (type === 'text') {
-      requestAnimationFrame(() => {
-        cardRef.current?.focusContent(side)
-      })
+  const handleAddText = () => {
+    appendBlock({ type: 'text', html: '' })
+    setActiveMode('text')
+    requestAnimationFrame(() => {
+      cardRef.current?.focusContent(side, 'last')
+    })
+  }
+
+  const handlePickImage = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    try {
+      const webp = await processImage(file)
+      const record = await blobToRecord(webp)
+      appendBlock({ type: 'image', content: record })
+      setActiveMode('image')
+    } catch (err) {
+      console.error('Failed to add image:', err)
     }
   }
 
-  const handleChangeSideContent = (value: SideContent, sideName: SideName) => {
-    // Text: update dirty only — writing back into `cardData` would remount
-    // contentEditable children and reset the caret.
-    if (typeof value === 'string') {
-      const draft: LegacyCardData = {
-        ...cardDataRef.current,
-        [sideName]: { ...cardDataRef.current[sideName], content: value }
-      }
-      setDirtyFrom(draft)
-      return
+  const handlePickAudio = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    try {
+      const buffer = await file.arrayBuffer()
+      const content: MediaDBRecord = { buffer, type: file.type || 'audio/mpeg' }
+      appendBlock({ type: 'audio', content })
+      setActiveMode('audio')
+    } catch (err) {
+      console.error('Failed to add audio:', err)
     }
+  }
 
+  const handleChangeBlocks = (blocks: SideBlock[], sideName: SideName) => {
     setCardData(prev => {
       const next = {
         ...prev,
-        [sideName]: { ...prev[sideName], content: value }
+        [sideName]: { ...prev[sideName], blocks }
       }
       cardDataRef.current = next
       setDirtyFrom(next)
@@ -313,10 +318,10 @@ export default function CardDetailsScreen({
 
   const handlePointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (isEdited || isAnimating.current || total < 2) return
+    if (isCarouselControl(e.target)) return
     isDragging.current = true
     dragStartX.current = e.clientX
     dragStartY.current = e.clientY
-    containerRef.current?.setPointerCapture(e.pointerId)
   }
 
   const handlePointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -331,8 +336,16 @@ export default function CardDetailsScreen({
       return
     }
 
-    const width = containerRef.current?.offsetWidth ?? 0
+    const container = containerRef.current
     const track = trackRef.current
+    const width = container?.offsetWidth ?? 0
+    if (
+      container &&
+      Math.abs(deltaX) > DRAG_CAPTURE_PX &&
+      !container.hasPointerCapture(e.pointerId)
+    ) {
+      container.setPointerCapture(e.pointerId)
+    }
     if (track) {
       track.style.transition = 'none'
       track.style.transform = `translateX(${-width + deltaX}px)`
@@ -344,6 +357,9 @@ export default function CardDetailsScreen({
     isDragging.current = false
 
     const deltaX = e.clientX - dragStartX.current
+    const container = containerRef.current
+    const didDrag = container?.hasPointerCapture(e.pointerId) ?? false
+    if (didDrag) container.releasePointerCapture(e.pointerId)
 
     if (Math.abs(deltaX) > SWIPE_THRESHOLD_PX) {
       const direction: 1 | -1 = deltaX < 0 ? 1 : -1
@@ -351,7 +367,10 @@ export default function CardDetailsScreen({
       animateTrackTo(direction === 1 ? 'next' : 'prev', () => {
         finishSwipe(direction)
       })
-    } else {
+      return
+    }
+
+    if (didDrag) {
       isAnimating.current = true
       animateTrackTo('center', () => {
         isAnimating.current = false
@@ -376,7 +395,7 @@ export default function CardDetailsScreen({
 
       <div
         ref={containerRef}
-        className="overflow-hidden"
+        className="overflow-clip"
         style={{ touchAction: 'pan-y' }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
@@ -388,7 +407,6 @@ export default function CardDetailsScreen({
           className="flex"
           style={{ width: '300%', willChange: 'transform' }}
         >
-          {/* Previous preview card */}
           <div
             style={{ flex: '0 0 33.3333%', pointerEvents: 'none' }}
             aria-hidden
@@ -396,34 +414,28 @@ export default function CardDetailsScreen({
             <CardContainer>
               <Card
                 data={getCardData(prevCard)}
-                sidesContentType={getSidesContentType(prevCard)}
                 isFlipped={false}
                 isEditable={false}
-                handleFocus={() => {}}
-                handleBlur={() => {}}
-                handleChange={() => {}}
               />
             </CardContainer>
           </div>
 
-          {/* Current editable card */}
           <div style={{ flex: '0 0 33.3333%' }}>
             <CardContainer>
               <Card
-                key={card?.id ?? currentIndex} // force re-render when card changes by index
+                key={card?.id ?? currentIndex}
                 ref={cardRef}
                 data={cardData}
-                sidesContentType={sidesContentType}
                 isFlipped={isFlipped}
                 isEditable={true}
                 handleFocus={() => setIsEdited(true)}
                 handleBlur={handleBlur}
-                handleChange={handleChangeSideContent}
+                handleChange={handleChangeBlocks}
+                onActiveModeChange={setActiveMode}
               />
             </CardContainer>
           </div>
 
-          {/* Next preview card */}
           <div
             style={{ flex: '0 0 33.3333%', pointerEvents: 'none' }}
             aria-hidden
@@ -431,37 +443,46 @@ export default function CardDetailsScreen({
             <CardContainer>
               <Card
                 data={getCardData(nextCard)}
-                sidesContentType={getSidesContentType(nextCard)}
                 isFlipped={false}
                 isEditable={false}
-                handleFocus={() => {}}
-                handleBlur={() => {}}
-                handleChange={() => {}}
               />
             </CardContainer>
           </div>
         </div>
       </div>
 
-      {/* Buttons */}
       <div className="pt-1 flex justify-center items-center gap-10">
         <CardButton
           type="text"
-          onClick={() => handleChangeSideContentType('text')}
-          isDisabled={sidesContentType[side] === 'text'}
+          isDisabled={activeMode === 'text'}
+          onClick={handleAddText}
         />
         <CardButton
           type="image"
-          onClick={() => handleChangeSideContentType('image')}
-          isDisabled={sidesContentType[side] === 'image'}
+          isDisabled={activeMode === 'image'}
+          onClick={() => imageInputRef.current?.click()}
         />
         <CardButton
-          type="code"
-          onClick={() => handleChangeSideContentType('code')}
-          isDisabled={sidesContentType[side] === 'code'}
+          type="audio"
+          isDisabled={activeMode === 'audio'}
+          onClick={() => audioInputRef.current?.click()}
         />
         <CardButton type="flip" onClick={() => setIsFlipped(prev => !prev)} />
       </div>
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handlePickImage}
+      />
+      <input
+        ref={audioInputRef}
+        type="file"
+        accept="audio/*"
+        className="hidden"
+        onChange={handlePickAudio}
+      />
     </Screen>
   )
 }

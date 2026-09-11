@@ -18,7 +18,7 @@ function bufferEquals(a: ArrayBuffer, b: ArrayBuffer): boolean {
 }
 
 describe('encodeCardData / decodeCardData', () => {
-  it('roundtrips multi-block image+audio and preserves captions', () => {
+  it('roundtrips multi-block image+audio', () => {
     const image = bytes([1, 2, 3])
     const audio = bytes([4, 5, 6, 7])
 
@@ -29,8 +29,7 @@ describe('encodeCardData / decodeCardData', () => {
           { type: 'text', html: '<p>Q</p>' },
           {
             type: 'image',
-            content: { buffer: image, type: 'image/png' },
-            caption: 'diagram'
+            content: { buffer: image, type: 'image/png' }
           }
         ]
       },
@@ -39,8 +38,7 @@ describe('encodeCardData / decodeCardData', () => {
         blocks: [
           {
             type: 'audio',
-            content: { buffer: audio, type: 'audio/mpeg' },
-            caption: 'clip'
+            content: { buffer: audio, type: 'audio/mpeg' }
           }
         ]
       }
@@ -55,8 +53,6 @@ describe('encodeCardData / decodeCardData', () => {
     if (imageBlock.type === 'image' && audioBlock.type === 'audio') {
       expect(typeof imageBlock.content.buffer).toBe('string')
       expect(typeof audioBlock.content.buffer).toBe('string')
-      expect(imageBlock.caption).toBe('diagram')
-      expect(audioBlock.caption).toBe('clip')
     }
 
     const decoded = decodeCardData(encoded) as CardData
@@ -67,8 +63,6 @@ describe('encodeCardData / decodeCardData', () => {
     expect(decodedImage.type).toBe('image')
     expect(decodedAudio.type).toBe('audio')
     if (decodedImage.type === 'image' && decodedAudio.type === 'audio') {
-      expect(decodedImage.caption).toBe('diagram')
-      expect(decodedAudio.caption).toBe('clip')
       expect(decodedImage.content.type).toBe('image/png')
       expect(decodedAudio.content.type).toBe('audio/mpeg')
       expect(bufferEquals(decodedImage.content.buffer, image)).toBe(true)

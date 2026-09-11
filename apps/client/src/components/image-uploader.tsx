@@ -1,17 +1,20 @@
 import type { ChangeEvent } from 'react'
 import { useRef, useState, useEffect } from 'react'
+import { SquarePen, Trash2 } from 'lucide-react'
 
 import { Spinner } from './ui'
 import { blobToRecord, processImage } from '@/lib'
-import { ImageDBRecord } from '@/types'
+import { MediaDBRecord } from '@/types'
 
 type ImageUploaderProps = {
-  onChange?: (file: ImageDBRecord) => void
+  onChange?: (file: MediaDBRecord) => void
+  onRemove?: () => void
   initialPreview?: string
 }
 
 export default function ImageUploader({
   onChange,
+  onRemove,
   initialPreview
 }: ImageUploaderProps) {
   const [preview, setPreview] = useState('')
@@ -60,20 +63,32 @@ export default function ImageUploader({
   return (
     <>
       {preview ? (
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center w-full">
+          {onRemove && (
+            <div className="flex w-full items-center justify-between">
+              <button
+                type="button"
+                className="p-1"
+                aria-label="Remove image"
+                onClick={onRemove}
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                className="p-1"
+                aria-label="Change image"
+                onClick={() => inputRef.current?.click()}
+              >
+                <SquarePen className="w-4 h-4" />
+              </button>
+            </div>
+          )}
           <img
             src={preview}
             alt="preview"
             className="w-60 max-h-[48dvh] rounded-xl object-contain"
           />
-
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            className="mt-2.5 text-lg font-bold text-primary"
-          >
-            Change
-          </button>
         </div>
       ) : (
         <button

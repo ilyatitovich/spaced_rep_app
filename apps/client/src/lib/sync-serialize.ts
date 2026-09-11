@@ -4,13 +4,14 @@ import {
   base64ToArrayBuffer,
   isBase64Image
 } from './image'
+import { normalizeCardData } from './normalize-card'
 import { Card, Topic } from '@/models'
 import type { Day } from '@/models'
 import type {
   CardData,
   CardSideData,
   ImageBase64Record,
-  ImageDBRecord,
+  MediaDBRecord,
   LegacyCardData,
   LegacyCardSideData,
   SideBlock,
@@ -47,15 +48,15 @@ function isBlocksSide(side: AnyCardSide): side is CardSideData {
 }
 
 function encodeBlock(block: SideBlock): SideBlock {
-  if (block.type === 'text') return block
+  if (block.type === 'text' || block.type === 'code') return block
   return {
     ...block,
-    content: arrayBufferToBase64(block.content) as unknown as ImageDBRecord
+    content: arrayBufferToBase64(block.content) as unknown as MediaDBRecord
   }
 }
 
 function decodeBlock(block: SideBlock): SideBlock {
-  if (block.type === 'text') return block
+  if (block.type === 'text' || block.type === 'code') return block
   if (isBase64Image(block.content)) {
     return {
       ...block,
@@ -148,7 +149,7 @@ export function cardToRow(card: Card, userId: string): CardRow {
 }
 
 export function rowToCard(row: CardRow): Card {
-  const data = decodeCardData(row.data) as LegacyCardData
+  const data = normalizeCardData(decodeCardData(row.data))
   const card = new Card(data, row.topic_id, row.level)
   card.id = row.id
   card.reviewDate = row.review_date ?? undefined

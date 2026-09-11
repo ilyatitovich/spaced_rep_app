@@ -1,47 +1,43 @@
 import type { FocusEventHandler, Ref } from 'react'
-import { forwardRef, useRef, useImperativeHandle } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 
-import Side from './side'
+import Side, { type SideHandle } from './side'
 import { useTap } from '@/hooks'
-import type {
-  CardHandle,
-  LegacyCardData,
-  SideContent,
-  SideContentType,
-  SideName
-} from '@/types'
+import { normalizeCardData } from '@/lib'
+import type { CardData, CardAddMode, CardHandle, SideBlock, SideName } from '@/types'
 
 type CardProps = {
-  data: LegacyCardData
-  sidesContentType?: {
-    front: SideContentType
-    back: SideContentType
-  }
+  data: CardData | unknown
   isFlipped: boolean
   isEditable?: boolean
+  /** Focus the visible side's text when true (active edit card only). */
+  autoFocus?: boolean
   className?: string
   handleFocus?: FocusEventHandler<HTMLElement>
   handleBlur?: FocusEventHandler<HTMLElement>
   handleClick?: () => void
-  handleChange?: (value: SideContent, side: SideName) => void
+  handleChange?: (blocks: SideBlock[], side: SideName) => void
+  onActiveModeChange?: (mode: CardAddMode) => void
 }
 
 export default forwardRef(function Card(
   {
     data,
-    sidesContentType,
     isFlipped,
     className = '',
     isEditable = false,
+    autoFocus = false,
     handleClick,
     handleBlur,
     handleFocus,
-    handleChange
+    handleChange,
+    onActiveModeChange
   }: CardProps,
   ref: Ref<CardHandle>
 ) {
-  const frontRef = useRef<HTMLDivElement>(null!)
-  const backRef = useRef<HTMLDivElement>(null!)
+  const frontRef = useRef<SideHandle>(null)
+  const backRef = useRef<SideHandle>(null)
+  const normalized = normalizeCardData(data)
 
   const { onTouchStart, onTouchEnd } = useTap(handleClick)
 
@@ -49,24 +45,32 @@ export default forwardRef(function Card(
     getContent: () => ({
       front: {
         side: 'front',
-        type: sidesContentType?.front ?? 'text',
-        content: frontRef.current?.innerText.trim() || ''
+        blocks: frontRef.current?.getBlocks() ?? normalized.front.blocks
       },
       back: {
         side: 'back',
-        type: sidesContentType?.back ?? 'text',
-        content: backRef.current?.innerText.trim() || ''
+        blocks: backRef.current?.getBlocks() ?? normalized.back.blocks
       }
     }),
     resetContent: () => {
-      if (frontRef.current) frontRef.current.innerText = ''
-      if (backRef.current) backRef.current.innerText = ''
+      frontRef.current?.reset()
+      backRef.current?.reset()
     },
-    focusContent: (side: SideName) => {
-      if (side === 'front' && frontRef.current) frontRef.current.click()
-      if (side === 'back' && backRef.current) backRef.current.click()
+    focusContent: (side: SideName, which: 'first' | 'last' = 'first') => {
+      const sideRef = side === 'front' ? frontRef : backRef
+      if (which === 'last') sideRef.current?.focusLastText()
+      else sideRef.current?.focusFirstText()
     }
   }))
+
+  useEffect(() => {
+    if (!isEditable || !autoFocus) return
+    const id = requestAnimationFrame(() => {
+      if (isFlipped) backRef.current?.focusFirstText()
+      else frontRef.current?.focusFirstText()
+    })
+    return () => cancelAnimationFrame(id)
+  }, [isEditable, autoFocus, isFlipped])
 
   return (
     <div
@@ -80,22 +84,22 @@ export default forwardRef(function Card(
         }`.trim()}
       >
         <Side
-          data={data.front}
-          contentType={sidesContentType?.front}
+          ref={frontRef}
+          data={normalized.front}
           isEditable={isEditable}
-          innerRef={frontRef}
           handleBlur={handleBlur}
           handleFocus={handleFocus}
           onChange={handleChange}
+          onActiveModeChange={onActiveModeChange}
         />
         <Side
-          data={data.back}
-          contentType={sidesContentType?.back}
+          ref={backRef}
+          data={normalized.back}
           isEditable={isEditable}
-          innerRef={backRef}
           handleBlur={handleBlur}
           handleFocus={handleFocus}
           onChange={handleChange}
+          onActiveModeChange={onActiveModeChange}
         />
       </div>
     </div>
