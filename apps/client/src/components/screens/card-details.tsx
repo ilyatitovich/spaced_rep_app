@@ -14,7 +14,6 @@ import {
 import {
   appendSideBlocks,
   isCardDataEqual,
-  isSideEmpty,
   normalizeCardData
 } from '@/lib'
 import { Card as CardModel } from '@/models'
@@ -30,7 +29,6 @@ type CardDetailsScreenProps = {
   isOpen: boolean
   cards: CardModel[] | null | undefined
   cardId: string | null | undefined
-  onUpdate?: (card: CardModel) => void
 }
 
 const SWIPE_THRESHOLD_PX = 60
@@ -60,8 +58,7 @@ const mergeTextFromEditor = (base: CardData, editor: CardData): CardData => ({
 export default function CardDetailsScreen({
   isOpen,
   cards,
-  cardId,
-  onUpdate
+  cardId
 }: CardDetailsScreenProps) {
   const total = cards?.length ?? 0
 
@@ -120,28 +117,15 @@ export default function CardDetailsScreen({
 
       try {
         cardToSave.data = dataToSave
-
-        if (
-          cardToSave.level === 0 &&
-          !isSideEmpty(dataToSave.front) &&
-          !isSideEmpty(dataToSave.back)
-        ) {
-          cardToSave.level += 1
-          onUpdate?.(cardToSave)
-        }
-
         await updateCard(cardToSave)
-
-        if (cardToSave.level > 0) {
-          toast.success('Card updated!')
-        }
+        toast.success('Card updated!')
         return true
       } catch (error) {
         console.error('Failed to save card:', error)
         return false
       }
     },
-    [onUpdate]
+    []
   )
 
   const readLatestCardData = useCallback((): CardData => {

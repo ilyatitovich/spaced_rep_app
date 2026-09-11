@@ -231,22 +231,6 @@ export default function TopicScreen({
             isOpen={!!cardId}
             cards={levelCards}
             cardId={cardId}
-            onUpdate={card => {
-              if (levelId !== '0') return
-              setLevelCards(prevCards =>
-                prevCards.filter(c => c.id !== card.id)
-              )
-              setLevelCounts(prev => ({
-                ...prev,
-                [0]: Math.max(0, (prev[0] ?? 0) - 1),
-                [1]: (prev[1] ?? 0) + 1
-              }))
-              setSearchParams(prev => {
-                const params = new URLSearchParams(prev)
-                params.delete('cardId')
-                return params
-              })
-            }}
           />
 
           <TopicSettingsScreen
