@@ -48,7 +48,9 @@ const ANIMATION_MS = 250
 
 const isCarouselControl = (target: EventTarget | null) =>
   target instanceof Element &&
-  !!target.closest('button, label, input, select, audio, textarea, a')
+  !!target.closest(
+    'button, label, input, select, audio, textarea, a, [role="slider"]'
+  )
 
 const mod = (n: number, m: number) => ((n % m) + m) % m
 
