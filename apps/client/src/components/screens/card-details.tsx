@@ -1,8 +1,5 @@
 import { useState, useRef, useCallback, useLayoutEffect } from 'react'
-import type {
-  ChangeEvent,
-  PointerEvent as ReactPointerEvent
-} from 'react'
+import type { ChangeEvent, PointerEvent as ReactPointerEvent } from 'react'
 import { toast } from 'react-hot-toast'
 
 import {
@@ -366,7 +363,7 @@ export default function CardDetailsScreen({
     const deltaX = e.clientX - dragStartX.current
     const container = containerRef.current
     const didDrag = container?.hasPointerCapture(e.pointerId) ?? false
-    if (didDrag) container.releasePointerCapture(e.pointerId)
+    if (didDrag) container?.releasePointerCapture(e.pointerId)
 
     if (Math.abs(deltaX) > SWIPE_THRESHOLD_PX) {
       const direction: 1 | -1 = deltaX < 0 ? 1 : -1
@@ -419,11 +416,7 @@ export default function CardDetailsScreen({
             aria-hidden
           >
             <CardContainer>
-              <Card
-                data={getCardData(prevCard)}
-                isFlipped={false}
-                isEditable
-              />
+              <Card data={getCardData(prevCard)} isFlipped={false} isEditable />
             </CardContainer>
           </div>
 
@@ -447,11 +440,7 @@ export default function CardDetailsScreen({
             aria-hidden
           >
             <CardContainer>
-              <Card
-                data={getCardData(nextCard)}
-                isFlipped={false}
-                isEditable
-              />
+              <Card data={getCardData(nextCard)} isFlipped={false} isEditable />
             </CardContainer>
           </div>
         </div>
