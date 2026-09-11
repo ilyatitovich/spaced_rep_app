@@ -5,6 +5,7 @@ import { toast } from 'react-hot-toast'
 import {
   Button,
   Card,
+  CardButton,
   Screen,
   CardToolbar,
   CardContainer,
@@ -68,6 +69,7 @@ export default function CardDetailsScreen({
 
   const [isFlipped, setIsFlipped] = useState(false)
   const [cardData, setCardData] = useState<CardData>(() => getCardData(card))
+  const [isEditable, setIsEditable] = useState(false)
   const [isEdited, setIsEdited] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
 
@@ -102,6 +104,7 @@ export default function CardDetailsScreen({
       cardDataRef.current = data
       savedCardDataRef.current = data
       setIsFlipped(false)
+      setIsEditable(false)
       setIsEdited(false)
       setIsDirty(false)
     },
@@ -136,14 +139,17 @@ export default function CardDetailsScreen({
 
   const handleSaveCard = async (): Promise<void> => {
     const latest = readLatestCardData()
-    const saved = await saveCard(card, latest)
-    if (!saved) return
+    if (isDirty) {
+      const saved = await saveCard(card, latest)
+      if (!saved) return
 
-    setCardData(latest)
-    cardDataRef.current = latest
-    savedCardDataRef.current = latest
+      setCardData(latest)
+      cardDataRef.current = latest
+      savedCardDataRef.current = latest
+    }
     setIsDirty(false)
     setIsEdited(false)
+    setIsEditable(false)
   }
 
   const snapTrackToCenter = useCallback(() => {
@@ -255,7 +261,7 @@ export default function CardDetailsScreen({
   )
 
   const handlePointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (isEdited || isAnimating.current || total < 2) return
+    if (isEditable || isAnimating.current || total < 2) return
     if (isCarouselControl(e.target)) return
     isDragging.current = true
     dragStartX.current = e.clientX
@@ -326,9 +332,15 @@ export default function CardDetailsScreen({
       <Header>
         <BackButton />
         <span>{isFlipped ? 'Back' : 'Front'}</span>
-        <Button key="save" disabled={!isDirty} onClick={() => handleSaveCard()}>
-          Save
-        </Button>
+        {isEditable ? (
+          <Button key="save" onClick={() => handleSaveCard()}>
+            Save
+          </Button>
+        ) : (
+          <Button key="edit" onClick={() => setIsEditable(true)}>
+            Edit
+          </Button>
+        )}
       </Header>
 
       <div
@@ -350,7 +362,7 @@ export default function CardDetailsScreen({
             aria-hidden
           >
             <CardContainer>
-              <Card data={getCardData(prevCard)} isFlipped={false} isEditable />
+              <Card data={getCardData(prevCard)} isFlipped={false} />
             </CardContainer>
           </div>
 
@@ -361,7 +373,7 @@ export default function CardDetailsScreen({
                 ref={cardRef}
                 data={cardData}
                 isFlipped={isFlipped}
-                isEditable={true}
+                isEditable={isEditable}
                 handleFocus={() => setIsEdited(true)}
                 handleBlur={handleBlur}
                 handleChange={handleChangeBlocks}
@@ -374,18 +386,27 @@ export default function CardDetailsScreen({
             aria-hidden
           >
             <CardContainer>
-              <Card data={getCardData(nextCard)} isFlipped={false} isEditable />
+              <Card data={getCardData(nextCard)} isFlipped={false} />
             </CardContainer>
           </div>
         </div>
       </div>
 
-      <CardToolbar
-        isTextDisabled={cardData[side].blocks.at(-1)?.type === 'text'}
-        onAddBlocks={appendBlocks}
-        onFocusLast={() => cardRef.current?.focusContent(side, 'last')}
-        onFlip={() => setIsFlipped(prev => !prev)}
-      />
+      {isEditable ? (
+        <CardToolbar
+          isTextDisabled={cardData[side].blocks.at(-1)?.type === 'text'}
+          onAddBlocks={appendBlocks}
+          onFocusLast={() => cardRef.current?.focusContent(side, 'last')}
+          onFlip={() => setIsFlipped(prev => !prev)}
+        />
+      ) : (
+        <div className="pt-1 flex justify-center items-center">
+          <CardButton
+            type="flip"
+            onClick={() => setIsFlipped(prev => !prev)}
+          />
+        </div>
+      )}
     </Screen>
   )
 }

@@ -1,5 +1,6 @@
 import type { ChangeEvent, MouseEvent, TouchEvent } from 'react'
 import { useState } from 'react'
+import { Maximize2 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 
 import MediaToolbar from '../media-toolbar'
@@ -61,12 +62,12 @@ export default function ImageBlock({
     <div
       className="relative w-full"
       onClick={e => {
-        e.stopPropagation()
         if (!isEditable) return
+        e.stopPropagation()
         onFocus?.()
       }}
-      onTouchStart={stopCardTap}
-      onTouchEnd={stopCardTap}
+      onTouchStart={isEditable ? stopCardTap : undefined}
+      onTouchEnd={isEditable ? stopCardTap : undefined}
     >
       {isEditable ? (
         <div className="flex flex-col items-center w-full bg-muted rounded-xl pb-4">
@@ -110,7 +111,7 @@ export default function ImageBlock({
         <ObjectUrl record={content}>
           {url => (
             <>
-              {hasLoadFailed ? (
+              <div className="relative mx-auto w-fit max-w-full">
                 <ImageFrame
                   src={url}
                   alt={alt}
@@ -118,22 +119,22 @@ export default function ImageBlock({
                   placeholderClassName="w-full h-32 rounded-xl mx-auto bg-muted"
                   onFailedChange={setHasLoadFailed}
                 />
-              ) : (
-                <button
-                  type="button"
-                  className="block w-full"
-                  aria-label="View image full screen"
-                  onClick={() => setIsViewerOpen(true)}
-                >
-                  <ImageFrame
-                    src={url}
-                    alt={alt}
-                    className="max-w-full max-h-[40dvh] mx-auto object-contain"
-                    placeholderClassName="w-full h-32 rounded-xl mx-auto bg-muted"
-                    onFailedChange={setHasLoadFailed}
-                  />
-                </button>
-              )}
+                {!hasLoadFailed && (
+                  <button
+                    type="button"
+                    className="absolute top-1.5 right-1.5 p-1.5 rounded-full bg-black/50 text-white"
+                    aria-label="View image full screen"
+                    onClick={e => {
+                      e.stopPropagation()
+                      setIsViewerOpen(true)
+                    }}
+                    onTouchStart={stopCardTap}
+                    onTouchEnd={stopCardTap}
+                  >
+                    <Maximize2 className="w-4 h-4" strokeWidth={2.5} />
+                  </button>
+                )}
+              </div>
               <ImageViewer
                 isOpen={isViewerOpen && !hasLoadFailed}
                 imageUrl={url}
