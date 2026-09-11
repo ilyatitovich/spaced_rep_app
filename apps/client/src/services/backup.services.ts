@@ -1,5 +1,12 @@
 import { enqueueSync, triggerSync } from './sync.service'
 import { normalizeCardData, withTransaction, STORES } from '@/lib'
+import {
+  adjustCardMediaStats,
+  addEmbeddedMedia,
+  sumEmbeddedCardMedia,
+  subEmbeddedMedia,
+  type EmbeddedCardMedia
+} from '@/lib/card-media-stats'
 import { decodeCardData, encodeCardData } from '@/lib/sync-serialize'
 import { Card, Topic } from '@/models'
 
@@ -88,6 +95,11 @@ export async function importAppData(
 
   const importedTopicIds: string[] = []
   const importedCardIds: string[] = []
+  let mediaDelta: EmbeddedCardMedia = {
+    bytes: 0,
+    images: 0,
+    audio: 0
+  }
 
   await withTransaction(
     [STORES.TOPICS, STORES.CARDS],
@@ -112,6 +124,15 @@ export async function importAppData(
           req.onerror = () => reject(req.error)
         })
 
+      const getCard = (id: string) =>
+        new Promise<Card | undefined>((resolve, reject) => {
+          const req = stores[STORES.CARDS].get(id) as IDBRequest<
+            Card | undefined
+          >
+          req.onsuccess = () => resolve(req.result)
+          req.onerror = () => reject(req.error)
+        })
+
       for (const topic of topics) {
         const owner = titleToId.get(topic.title)
         if (owner && owner !== topic.id) {
@@ -123,11 +144,23 @@ export async function importAppData(
       }
 
       for (const card of cards) {
+        const previous = await getCard(card.id)
         await putRequest(stores[STORES.CARDS], card)
         importedCardIds.push(card.id)
+        mediaDelta = addEmbeddedMedia(
+          mediaDelta,
+          subEmbeddedMedia(
+            sumEmbeddedCardMedia(card),
+            previous
+              ? sumEmbeddedCardMedia(previous)
+              : { bytes: 0, images: 0, audio: 0 }
+          )
+        )
       }
     }
   )
+
+  await adjustCardMediaStats(mediaDelta)
 
   for (const id of importedTopicIds) {
     await enqueueSync(STORES.TOPICS, id, 'upsert')

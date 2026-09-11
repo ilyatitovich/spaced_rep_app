@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { sumEmbeddedCardMedia } from '../storage-usage'
+import {
+  addEmbeddedMedia,
+  subEmbeddedMedia,
+  sumEmbeddedCardMedia
+} from '../card-media-stats'
 
 describe('sumEmbeddedCardMedia', () => {
   it('sums image and audio ArrayBuffers and skips remote src-only images', () => {
@@ -38,5 +42,20 @@ describe('sumEmbeddedCardMedia', () => {
       images: 0,
       audio: 0
     })
+  })
+})
+
+describe('addEmbeddedMedia / subEmbeddedMedia', () => {
+  it('applies upsert and delete deltas', () => {
+    const before = { bytes: 100, images: 1, audio: 0 }
+    const after = { bytes: 250, images: 2, audio: 1 }
+    expect(subEmbeddedMedia(after, before)).toEqual({
+      bytes: 150,
+      images: 1,
+      audio: 1
+    })
+    expect(addEmbeddedMedia(before, subEmbeddedMedia(after, before))).toEqual(
+      after
+    )
   })
 })

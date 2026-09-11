@@ -5,6 +5,13 @@ import {
   CARDS_TOPIC_LEVEL_INDEX,
   LEVELS
 } from '@/lib'
+import {
+  adjustCardMediaStats,
+  addEmbeddedMedia,
+  sumEmbeddedCardMedia,
+  subEmbeddedMedia,
+  type EmbeddedCardMedia
+} from '@/lib/card-media-stats'
 import { encodeCardData } from '@/lib/sync-serialize'
 import { Topic, Card, updateWeek } from '@/models'
 
@@ -115,14 +122,13 @@ export async function getTopicById(
 }
 
 export async function deleteTopic(topicId: string): Promise<void> {
-  const deletedCardIds = await withTransaction(
+  const { deletedCardIds, mediaDelta } = await withTransaction(
     [STORES.TOPICS, STORES.CARDS],
     'readwrite',
     async stores => {
       const topicStore = stores[STORES.TOPICS]
       const cardStore = stores[STORES.CARDS]
 
-      // Delete the topic
       await new Promise<void>((resolve, reject) => {
         const request = topicStore.delete(topicId)
         request.onsuccess = () => resolve()
@@ -130,22 +136,37 @@ export async function deleteTopic(topicId: string): Promise<void> {
           reject(request.error ?? new Error('Failed to delete topic'))
       })
 
-      // Delete all cards for that topic using index
       const index = cardStore.index('topicId')
       const range = IDBKeyRange.only(topicId)
       const cardIds: string[] = []
+      let mediaDelta: EmbeddedCardMedia = {
+        bytes: 0,
+        images: 0,
+        audio: 0
+      }
 
-      return new Promise<string[]>((resolve, reject) => {
+      return new Promise<{
+        deletedCardIds: string[]
+        mediaDelta: EmbeddedCardMedia
+      }>((resolve, reject) => {
         const request = index.openCursor(range)
 
         request.onsuccess = () => {
           const cursor = request.result
           if (cursor) {
-            cardIds.push((cursor.value as Card).id)
+            const card = cursor.value as Card
+            cardIds.push(card.id)
+            mediaDelta = addEmbeddedMedia(
+              mediaDelta,
+              subEmbeddedMedia(
+                { bytes: 0, images: 0, audio: 0 },
+                sumEmbeddedCardMedia(card)
+              )
+            )
             cursor.delete()
             cursor.continue()
           } else {
-            resolve(cardIds)
+            resolve({ deletedCardIds: cardIds, mediaDelta })
           }
         }
 
@@ -155,6 +176,7 @@ export async function deleteTopic(topicId: string): Promise<void> {
     }
   )
 
+  await adjustCardMediaStats(mediaDelta)
   await enqueueSync(STORES.TOPICS, topicId, 'delete')
   for (const cardId of deletedCardIds) {
     await enqueueSync(STORES.CARDS, cardId, 'delete')

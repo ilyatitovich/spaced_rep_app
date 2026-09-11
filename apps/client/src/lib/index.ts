@@ -1,5 +1,6 @@
 export * from './format-timestamp'
 export * from './format-bytes'
+export * from './card-media-stats'
 export * from './storage-usage'
 export * from './join-numbers'
 export * from './get-today'

@@ -5,6 +5,8 @@ const MAX_REMOTE_IMAGE_BYTES = 5 * 1024 * 1024
 
 export type MediaCacheRecord = MediaDBRecord & { url: string }
 
+export type MediaCacheStats = { bytes: number; count: number }
+
 type CacheRemoteImageOptions = {
   fetch?: typeof globalThis.fetch
   isOnline?: () => boolean
@@ -44,34 +46,98 @@ async function putCachedDefault(record: MediaCacheRecord): Promise<void> {
   await withTransaction(STORES.MEDIA_CACHE, 'readwrite', async stores => {
     await promisifyRequest(stores[STORES.MEDIA_CACHE].put(record))
   })
-}
-
-async function getAllCachedDefault(): Promise<MediaCacheRecord[]> {
-  return withTransaction(STORES.MEDIA_CACHE, 'readonly', stores =>
-    promisifyRequest(
-      stores[STORES.MEDIA_CACHE].getAll() as IDBRequest<MediaCacheRecord[]>
-    )
-  )
+  await adjustMediaCacheStats({
+    bytes: record.buffer.byteLength,
+    count: 1
+  })
 }
 
 async function clearCachedDefault(): Promise<void> {
   await withTransaction(STORES.MEDIA_CACHE, 'readwrite', async stores => {
     await promisifyRequest(stores[STORES.MEDIA_CACHE].clear())
   })
+  await writeMediaCacheMeta({ bytes: 0, count: 0 })
 }
 
-export type MediaCacheStats = { bytes: number; count: number }
+const CACHE_META_KEY = 'mediaCacheStats'
 
-/** Sum buffer sizes in media_cache (remote images only). */
-export async function getMediaCacheStats(
-  getAll: () => Promise<MediaCacheRecord[]> = getAllCachedDefault
-): Promise<MediaCacheStats> {
-  const records = await getAll()
-  let bytes = 0
-  for (const record of records) {
-    bytes += record.buffer.byteLength
+async function readMediaCacheMeta(): Promise<MediaCacheStats | null> {
+  const record = await withTransaction(STORES.SYNC_META, 'readonly', stores =>
+    promisifyRequest<{ key: string; value: string } | undefined>(
+      stores[STORES.SYNC_META].get(CACHE_META_KEY)
+    )
+  )
+  if (!record?.value) return null
+  try {
+    const parsed = JSON.parse(record.value) as Partial<MediaCacheStats>
+    if (typeof parsed.bytes !== 'number' || typeof parsed.count !== 'number') {
+      return null
+    }
+    return { bytes: parsed.bytes, count: parsed.count }
+  } catch {
+    return null
   }
-  return { bytes, count: records.length }
+}
+
+async function writeMediaCacheMeta(stats: MediaCacheStats): Promise<void> {
+  await withTransaction(STORES.SYNC_META, 'readwrite', async stores => {
+    await promisifyRequest(
+      stores[STORES.SYNC_META].put({
+        key: CACHE_META_KEY,
+        value: JSON.stringify({
+          bytes: Math.max(0, stats.bytes),
+          count: Math.max(0, stats.count)
+        })
+      })
+    )
+  })
+}
+
+async function adjustMediaCacheStats(delta: MediaCacheStats): Promise<void> {
+  const current = (await readMediaCacheMeta()) ?? (await scanMediaCacheStats())
+  await writeMediaCacheMeta({
+    bytes: current.bytes + delta.bytes,
+    count: current.count + delta.count
+  })
+}
+
+async function scanMediaCacheStats(): Promise<MediaCacheStats> {
+  const stats = await withTransaction(STORES.MEDIA_CACHE, 'readonly', stores => {
+    return new Promise<MediaCacheStats>((resolve, reject) => {
+      let bytes = 0
+      let count = 0
+      const request = stores[STORES.MEDIA_CACHE].openCursor()
+      request.onsuccess = () => {
+        const cursor = request.result
+        if (!cursor) {
+          resolve({ bytes, count })
+          return
+        }
+        const record = cursor.value as MediaCacheRecord
+        bytes += record.buffer.byteLength
+        count++
+        cursor.continue()
+      }
+      request.onerror = () => reject(request.error)
+    })
+  })
+  await writeMediaCacheMeta(stats)
+  return stats
+}
+
+/** Cached media_cache size. Injectable getAll is for unit tests only. */
+export async function getMediaCacheStats(
+  getAll?: () => Promise<MediaCacheRecord[]>
+): Promise<MediaCacheStats> {
+  if (getAll) {
+    const records = await getAll()
+    let bytes = 0
+    for (const record of records) {
+      bytes += record.buffer.byteLength
+    }
+    return { bytes, count: records.length }
+  }
+  return (await readMediaCacheMeta()) ?? scanMediaCacheStats()
 }
 
 /** Clear all lazily cached remote images. Does not touch card-embedded media. */

@@ -8,6 +8,15 @@ import type {
 } from '@spaced-rep/sync-protocol'
 import { STORES, withTransaction } from '@/lib/db'
 import {
+  adjustCardMediaStats,
+  addEmbeddedMedia,
+  recordCardMediaDelete,
+  recordCardMediaUpsert,
+  sumEmbeddedCardMedia,
+  subEmbeddedMedia,
+  type EmbeddedCardMedia
+} from '@/lib/card-media-stats'
+import {
   cardToRow,
   rowToCard,
   rowToTopic,
@@ -129,12 +138,25 @@ async function getAllLocal<T>(table: SyncTable): Promise<T[]> {
 }
 
 async function putLocal(table: SyncTable, value: Topic | Card): Promise<void> {
+  if (table === STORES.CARDS) {
+    const previous = await getLocalRecord<Card>(STORES.CARDS, value.id)
+    await withTransaction(table, 'readwrite', async stores => {
+      await promisify(stores[table].put(value))
+    })
+    await recordCardMediaUpsert(previous, value as Card)
+    return
+  }
   await withTransaction(table, 'readwrite', async stores => {
     await promisify(stores[table].put(value))
   })
 }
 
 async function deleteLocalTopic(topicId: string): Promise<void> {
+  let mediaDelta: EmbeddedCardMedia = {
+    bytes: 0,
+    images: 0,
+    audio: 0
+  }
   await withTransaction(
     [STORES.TOPICS, STORES.CARDS],
     'readwrite',
@@ -148,6 +170,13 @@ async function deleteLocalTopic(topicId: string): Promise<void> {
         cursorRequest.onsuccess = () => {
           const cursor = cursorRequest.result
           if (cursor) {
+            mediaDelta = addEmbeddedMedia(
+              mediaDelta,
+              subEmbeddedMedia(
+                { bytes: 0, images: 0, audio: 0 },
+                sumEmbeddedCardMedia(cursor.value as Card)
+              )
+            )
             cursor.delete()
             cursor.continue()
           } else {
@@ -158,12 +187,15 @@ async function deleteLocalTopic(topicId: string): Promise<void> {
       })
     }
   )
+  await adjustCardMediaStats(mediaDelta)
 }
 
 async function deleteLocalCard(cardId: string): Promise<void> {
+  const previous = await getLocalRecord<Card>(STORES.CARDS, cardId)
   await withTransaction(STORES.CARDS, 'readwrite', async stores => {
     await promisify(stores[STORES.CARDS].delete(cardId))
   })
+  if (previous) await recordCardMediaDelete(previous)
 }
 
 async function getMeta(key: string): Promise<string | undefined> {
