@@ -55,7 +55,6 @@ export default forwardRef(function Side(
   { data, isEditable, isVisible = true, handleFocus, handleBlur, onChange }: SideProps,
   ref: Ref<SideHandle>
 ) {
-  const [isLongText, setIsLongText] = useState(false)
   const [isTextFocused, setIsTextFocused] = useState(false)
   const [focusedTextIndex, setFocusedTextIndex] = useState<number | null>(null)
   const textEditors = useRef<Map<number, TextBlockEditorHandle>>(new Map())
@@ -163,17 +162,11 @@ export default forwardRef(function Side(
     })
   }, [isEditable, readBlocks, emit])
 
-  const isEmpty = data.blocks.length === 0
-  const shouldCenter =
-    !isLongText &&
-    data.blocks.length <= 1 &&
-    (isEmpty || data.blocks[0]?.type === 'text')
-
   useEffect(() => {
     const el = scrollRef.current
-    if (!el || shouldCenter) return
+    if (!el) return
     return bindOverflowScroll(el)
-  }, [shouldCenter])
+  }, [])
 
   const showToolbar = !!isEditable && isTextFocused
   const focusedEditor =
@@ -200,13 +193,9 @@ export default forwardRef(function Side(
       />
       <div
         ref={scrollRef}
-        className={`h-full w-full px-4 pt-4 pb-4 overscroll-y-contain ${
-          shouldCenter
-            ? 'flex justify-center items-center'
-            : 'overflow-y-auto scrollbar-hidden'
-        }`}
+        className="h-full w-full overflow-y-auto overscroll-y-contain scrollbar-hidden"
       >
-        <div className="flex flex-col gap-4 w-full">
+        <div className="flex min-h-full w-full flex-col justify-center gap-4 px-4 py-4">
           {data.blocks.map((block, index) => {
             if (block.type === 'text') {
               if (!isEditable) {
@@ -240,7 +229,6 @@ export default forwardRef(function Side(
                     }}
                     html={block.html}
                     isEditable={isEditable}
-                    onLongTextChange={setIsLongText}
                     onBackspaceEmpty={() => removeEmptyTextBlock(index)}
                     onFocus={e => {
                       setFocusedTextIndex(index)

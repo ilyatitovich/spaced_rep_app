@@ -27,7 +27,6 @@ type TextBlockEditorProps = {
   isEditable?: boolean
   onFocus?: FocusEventHandler<HTMLElement>
   onBlur?: FocusEventHandler<HTMLElement>
-  onLongTextChange?: (isLong: boolean) => void
   /** Backspace at start of an empty doc — parent may remove this block. */
   onBackspaceEmpty?: () => void
 }
@@ -58,18 +57,15 @@ function TextBlockEditorInner(
     isEditable = false,
     onFocus,
     onBlur,
-    onLongTextChange,
     onBackspaceEmpty
   }: TextBlockEditorProps,
   ref: Ref<TextBlockEditorHandle>
 ) {
   const onFocusRef = useRef(onFocus)
   const onBlurRef = useRef(onBlur)
-  const onLongTextChangeRef = useRef(onLongTextChange)
   const onBackspaceEmptyRef = useRef(onBackspaceEmpty)
   onFocusRef.current = onFocus
   onBlurRef.current = onBlur
-  onLongTextChangeRef.current = onLongTextChange
   onBackspaceEmptyRef.current = onBackspaceEmpty
 
   const editor = useEditor({
@@ -102,11 +98,6 @@ function TextBlockEditorInner(
     },
     onCreate: ({ editor: ed }) => {
       ensureDefaultBold(ed)
-    },
-    onUpdate: ({ editor: ed }) => {
-      onLongTextChangeRef.current?.(
-        ed.getText().length > LONGTEXT_THRESHOLD
-      )
     }
   })
 
