@@ -11,6 +11,7 @@ import {
 } from '@/components'
 import {
   appendSideBlocks,
+  AUDIO_FILE_ACCEPT,
   blobToRecord,
   isSideEmpty,
   processImage,
@@ -268,7 +269,7 @@ export default function AddCardScreen({
       <input
         ref={audioInputRef}
         type="file"
-        accept="audio/*"
+        accept={AUDIO_FILE_ACCEPT}
         className="hidden"
         onChange={handlePickAudio}
       />

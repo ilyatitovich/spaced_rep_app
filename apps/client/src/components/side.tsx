@@ -1,4 +1,4 @@
-import type { ChangeEvent, FocusEvent, FocusEventHandler, Ref } from 'react'
+import type { FocusEvent, FocusEventHandler, Ref } from 'react'
 import type { CardSideData, SideBlock, SideName } from '@/types'
 import type { Editor } from '@tiptap/react'
 import {
@@ -13,8 +13,8 @@ import {
   useState
 } from 'react'
 
+import AudioBlock from './audio-block'
 import ImageUploader from './image-uploader'
-import MediaToolbar from './media-toolbar'
 import ObjectUrl from './object-url'
 import TextBlockEditor, {
   type TextBlockEditorHandle
@@ -370,50 +370,19 @@ export default forwardRef(function Side(
             }
 
             return (
-              // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
-              <div
+              <AudioBlock
                 key={`audio-${index}`}
-                className="relative w-full bg-muted rounded-xl"
-                onClick={e => {
-                  e.stopPropagation()
-                  if (!isEditable) return
+                content={block.content}
+                isEditable={isEditable}
+                onChange={content =>
+                  updateBlock(index, { type: 'audio', content })
+                }
+                onRemove={() => removeBlock(index)}
+                onFocus={() => {
                   setIsTextFocused(false)
                   handleFocus?.({} as FocusEvent<HTMLElement>)
                 }}
-              >
-                {isEditable && (
-                  <MediaToolbar
-                    removeLabel="Remove audio"
-                    changeLabel="Change audio"
-                    onRemove={() => removeBlock(index)}
-                  >
-                    <input
-                      type="file"
-                      accept="audio/*"
-                      className="hidden"
-                      onChange={async (e: ChangeEvent<HTMLInputElement>) => {
-                        const file = e.target.files?.[0]
-                        e.target.value = ''
-                        if (!file) return
-                        const buffer = await file.arrayBuffer()
-                        updateBlock(index, {
-                          type: 'audio',
-                          content: {
-                            buffer,
-                            type: file.type || 'audio/mpeg'
-                          }
-                        })
-                      }}
-                    />
-                  </MediaToolbar>
-                )}
-                <ObjectUrl record={block.content}>
-                  {url => (
-                    // eslint-disable-next-line jsx-a11y/media-has-caption
-                    <audio controls src={url} className="w-full max-w-full" />
-                  )}
-                </ObjectUrl>
-              </div>
+              />
             )
           })}
         </div>
