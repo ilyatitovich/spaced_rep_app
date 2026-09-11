@@ -91,6 +91,7 @@ export default forwardRef(function Side(
   const [isTextFocused, setIsTextFocused] = useState(false)
   const [focusedTextIndex, setFocusedTextIndex] = useState<number | null>(null)
   const textEditors = useRef<Map<number, TextBlockEditorHandle>>(new Map())
+  const codeEditors = useRef<Map<number, { focus: () => void }>>(new Map())
   const focusedTextIndexRef = useRef<number | null>(null)
   const skipBlurRef = useRef(false)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -148,9 +149,17 @@ export default forwardRef(function Side(
       if (first != null) focusTextAt(first)
     },
     focusLastText: () => {
-      const indexes = [...textEditors.current.keys()].sort((a, b) => a - b)
-      const last = indexes[indexes.length - 1]
-      if (last != null) focusTextAt(last)
+      for (let i = data.blocks.length - 1; i >= 0; i--) {
+        const type = data.blocks[i]?.type
+        if (type === 'code') {
+          codeEditors.current.get(i)?.focus()
+          return
+        }
+        if (type === 'text') {
+          focusTextAt(i)
+          return
+        }
+      }
     }
   }))
 
@@ -207,6 +216,11 @@ export default forwardRef(function Side(
       if (lastText != null) focusTextAt(lastText)
     })
   }, [isEditable, readBlocks, emit])
+
+  useEffect(() => {
+    if (!isEditable) return
+    void import('./content/code-block/code-block-editor')
+  }, [isEditable])
 
   useEffect(() => {
     const el = scrollRef.current
@@ -327,6 +341,10 @@ export default forwardRef(function Side(
                   >
                     <Suspense fallback={<Spinner />}>
                       <CodeBlockEditor
+                        ref={handle => {
+                          if (handle) codeEditors.current.set(index, handle)
+                          else codeEditors.current.delete(index)
+                        }}
                         value={{ lang: block.lang, code: block.code }}
                         isEditable={isEditable}
                         onFocus={() => {

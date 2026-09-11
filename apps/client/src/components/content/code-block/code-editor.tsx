@@ -3,7 +3,12 @@ import { FocusEventHandler, useEffect, useState } from 'react'
 
 import { LangSelect } from '../../ui'
 import { useFontSize } from '@/hooks'
-import { getLanguageExtension, placeCursorAtEnd, type CodeLang } from '@/lib'
+import {
+  canFocusForKeyboard,
+  getLanguageExtension,
+  placeCursorAtEnd,
+  type CodeLang
+} from '@/lib'
 import type { CodeBlock } from '@/types'
 
 type CodeEditorProps = {
@@ -70,13 +75,16 @@ export default function CodeEditor({
           onFocus?.(e)
           placeCursorAtEnd(e)
         }}
+        onCreateEditor={view => {
+          if (isEditable && !initialValue.code && canFocusForKeyboard()) {
+            view.focus()
+          }
+        }}
         style={{
           fontSize,
           lineHeight: '1.4',
           overflow: 'hidden'
         }}
-        // eslint-disable-next-line jsx-a11y/no-autofocus
-        autoFocus={isEditable && !initialValue.code}
       />
     </div>
   )

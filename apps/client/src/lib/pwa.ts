@@ -18,6 +18,22 @@ export function isIos(): boolean {
   )
 }
 
+// iOS opens the keyboard only for focus() inside a tap stack — not useEffect.
+let isTapFocusOpen = false
+
+export function runInTapFocus(fn: () => void) {
+  isTapFocusOpen = true
+  try {
+    fn()
+  } finally {
+    isTapFocusOpen = false
+  }
+}
+
+export function canFocusForKeyboard(): boolean {
+  return !isIos() || isTapFocusOpen
+}
+
 // Only real Safari on iOS exposes the Add to Home Screen PWA path. Chrome
 // (CriOS), Firefox (FxiOS), Edge (EdgiOS) etc. are WebKit shells without it.
 export function isIosSafari(): boolean {

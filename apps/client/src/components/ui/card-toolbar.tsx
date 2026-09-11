@@ -1,4 +1,5 @@
 import { useRef, type ChangeEvent } from 'react'
+import { flushSync } from 'react-dom'
 import { toast } from 'react-hot-toast'
 
 import CardButton from './card-button'
@@ -6,6 +7,7 @@ import {
   AUDIO_FILE_ACCEPT,
   blobToRecord,
   processImage,
+  runInTapFocus,
   type CodeLang
 } from '@/lib'
 import type { MediaDBRecord, SideBlock } from '@/types'
@@ -32,7 +34,12 @@ export default function CardToolbar({
   }
 
   const handleAddCode = (lang: CodeLang) => {
-    onAddBlocks([{ type: 'code', lang, code: '' }])
+    runInTapFocus(() => {
+      flushSync(() => {
+        onAddBlocks([{ type: 'code', lang, code: '' }])
+      })
+      onFocusLast()
+    })
   }
 
   const handleSelectMedia = (kind: 'image' | 'audio') => {
