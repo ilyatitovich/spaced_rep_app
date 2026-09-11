@@ -134,6 +134,38 @@ export async function migrateCardsToNewSchema(): Promise<void> {
   })
 }
 
+async function persistImportedCards(cards: Card[]): Promise<number> {
+  const importedIds: string[] = []
+
+  await withTransaction([STORES.CARDS], 'readwrite', async stores => {
+    const results = await Promise.allSettled(
+      cards.map(
+        card =>
+          new Promise<void>((resolve, reject) => {
+            const req = stores[STORES.CARDS].put(card)
+            req.onsuccess = () => resolve()
+            req.onerror = () => reject(req.error)
+          })
+      )
+    )
+
+    results.forEach((result, i) => {
+      if (result.status === 'fulfilled') {
+        importedIds.push(cards[i].id)
+      } else {
+        console.warn('Failed to import card:', cards[i].id, result.reason)
+      }
+    })
+  })
+
+  for (const id of importedIds) {
+    await enqueueSync(STORES.CARDS, id, 'upsert')
+  }
+  triggerSync()
+
+  return importedIds.length
+}
+
 export async function importCards(
   file: File,
   topicId: string
@@ -158,40 +190,17 @@ export async function importCards(
     data: normalizeCardData(decodeCardData(card.data))
   }))
 
-  let successCount = 0
-  const importedIds: string[] = []
+  return persistImportedCards(cardsToImport)
+}
 
-  await withTransaction([STORES.CARDS], 'readwrite', async stores => {
-    const results = await Promise.allSettled(
-      cardsToImport.map(
-        card =>
-          new Promise<void>((resolve, reject) => {
-            const req = stores[STORES.CARDS].put(card)
-            req.onsuccess = () => resolve()
-            req.onerror = () => reject(req.error)
-          })
-      )
-    )
-
-    successCount = results.filter(r => r.status === 'fulfilled').length
-
-    results.forEach((result, i) => {
-      if (result.status === 'fulfilled') {
-        importedIds.push(cardsToImport[i].id)
-      } else {
-        console.warn(
-          'Failed to import card:',
-          cardsToImport[i].id,
-          result.reason
-        )
-      }
-    })
-  })
-
-  for (const id of importedIds) {
-    await enqueueSync(STORES.CARDS, id, 'upsert')
+export async function importAnkiApkg(
+  file: File,
+  topicId: string
+): Promise<number> {
+  const { apkgToCards, parseApkg } = await import('@/lib/anki')
+  const cards = apkgToCards(await parseApkg(file), topicId)
+  if (cards.length === 0) {
+    throw new Error('No notes found in this .apkg')
   }
-  triggerSync()
-
-  return successCount
+  return persistImportedCards(cards)
 }

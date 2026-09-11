@@ -1,6 +1,12 @@
 /// <reference types="vite/client" />
 /// <reference types="vite-plugin-svgr/client" />
 
+declare module 'sql.js/dist/sql-asm.js' {
+  import type { InitSqlJsStatic } from 'sql.js'
+  const initSqlJs: InitSqlJsStatic
+  export default initSqlJs
+}
+
 interface ImportMetaEnv {
   readonly VITE_BACKEND_PROVIDER: string
   readonly VITE_SUPABASE_URL: string

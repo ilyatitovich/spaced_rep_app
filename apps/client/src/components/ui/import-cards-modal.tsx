@@ -3,12 +3,16 @@ import type { ChangeEvent } from 'react'
 import { useState } from 'react'
 
 import { Spinner } from '@/components'
-import { importCards } from '@/services'
+import { importAnkiApkg, importCards } from '@/services'
 
 type ImportCardsModal = {
   topicId: string
   onClose: () => void
   onCardsImport: () => Promise<void>
+}
+
+function isAnkiApkg(file: File): boolean {
+  return file.name.toLowerCase().endsWith('.apkg')
 }
 
 export default function ImportCardsModal({
@@ -29,7 +33,9 @@ export default function ImportCardsModal({
     setMessage(null)
 
     try {
-      const count = await importCards(file, topicId)
+      const count = isAnkiApkg(file)
+        ? await importAnkiApkg(file, topicId)
+        : await importCards(file, topicId)
       await onCardsImport()
       setMessage(`${count} cards imported successfully`)
     } catch (err) {
@@ -65,10 +71,10 @@ export default function ImportCardsModal({
 
         {!isLoading && !message && !error && (
           <label className="bg-primary text-primary-foreground w-full text-center py-4 rounded-xl cursor-pointer">
-            Choose JSON
+            Choose JSON or Anki (.apkg)
             <input
               type="file"
-              accept="application/json"
+              accept=".json,.apkg,application/json,application/zip"
               className="hidden"
               onChange={handleFileSelect}
             />
