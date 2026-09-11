@@ -66,12 +66,20 @@ function pushText(blocks: SideBlock[], html: string) {
   blocks.push({ type: 'text', html })
 }
 
+function isRemoteImageUrl(name: string): boolean {
+  return /^https?:\/\//i.test(name) || name.startsWith('//')
+}
+
 function pushMedia(
   blocks: SideBlock[],
   kind: 'image' | 'audio',
   name: string,
   mediaByName: Map<string, AnkiMediaFile>
 ) {
+  if (kind === 'image' && isRemoteImageUrl(name)) {
+    blocks.push({ type: 'image', content: { src: name } })
+    return
+  }
   const file = mediaByName.get(name)
   if (!file) {
     // Keep a plain reference so the learner still sees something was there.

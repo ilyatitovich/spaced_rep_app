@@ -43,8 +43,14 @@ export default function LevelCard({
 
   const front = normalizeCardData(card.data).front
   const block = previewBlock(front.blocks)
-  const imageBuffer = block?.type === 'image' ? block.content.buffer : undefined
-  const imageType = block?.type === 'image' ? block.content.type : undefined
+  const imageBuffer =
+    block?.type === 'image' && 'buffer' in block.content
+      ? block.content.buffer
+      : undefined
+  const imageType =
+    block?.type === 'image' && 'buffer' in block.content
+      ? block.content.type
+      : undefined
 
   useLayoutEffect(() => {
     if (!imageBuffer || !imageType) {

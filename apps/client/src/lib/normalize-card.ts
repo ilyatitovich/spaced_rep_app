@@ -4,6 +4,7 @@ import type {
   CardSideData,
   CodeBlock,
   MediaDBRecord,
+  RemoteImageContent,
   LegacyCardData,
   LegacyCardSideData,
   SideBlock,
@@ -38,6 +39,14 @@ function isImageRecord(value: unknown): value is MediaDBRecord {
     value !== null &&
     (value as MediaDBRecord).buffer instanceof ArrayBuffer &&
     typeof (value as MediaDBRecord).type === 'string'
+  )
+}
+
+function isRemoteImageContent(value: unknown): value is RemoteImageContent {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as RemoteImageContent).src === 'string'
   )
 }
 
@@ -100,7 +109,10 @@ function isSideBlock(value: unknown): value is SideBlock {
   if (block.type === 'code') {
     return typeof block.lang === 'string' && typeof block.code === 'string'
   }
-  if (block.type === 'image' || block.type === 'audio') {
+  if (block.type === 'image') {
+    return isImageRecord(block.content) || isRemoteImageContent(block.content)
+  }
+  if (block.type === 'audio') {
     return isImageRecord(block.content)
   }
   return false
@@ -156,7 +168,11 @@ function liftMediaCaptions(blocks: SideBlock[]): SideBlock[] {
       next.push(block)
       continue
     }
-    next.push({ type: block.type, content: block.content })
+    if (block.type === 'image') {
+      next.push({ type: 'image', content: block.content })
+    } else {
+      next.push({ type: 'audio', content: block.content })
+    }
     const caption = (block as { caption?: unknown }).caption
     if (typeof caption !== 'string' || !caption.trim()) continue
     next.push({

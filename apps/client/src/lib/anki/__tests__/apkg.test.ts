@@ -84,6 +84,34 @@ describe('fieldHtmlToBlocks', () => {
       { type: 'text', html: ' end' }
     ])
   })
+
+  it('keeps remote http(s) and protocol-relative img urls as { src }', () => {
+    expect(
+      fieldHtmlToBlocks(
+        '<img src="http://i.imgur.com/a.png"><img src="https://cdn.example/b.jpg"><img src="//cdn.example/c.webp">',
+        new Map()
+      )
+    ).toEqual([
+      {
+        type: 'image',
+        content: { src: 'http://i.imgur.com/a.png' }
+      },
+      {
+        type: 'image',
+        content: { src: 'https://cdn.example/b.jpg' }
+      },
+      {
+        type: 'image',
+        content: { src: '//cdn.example/c.webp' }
+      }
+    ])
+  })
+
+  it('keeps missing local image filenames as text', () => {
+    expect(
+      fieldHtmlToBlocks('<img src="missing.png">', new Map())
+    ).toEqual([{ type: 'text', html: 'missing.png' }])
+  })
 })
 
 describe('pickFrontBackHtml', () => {

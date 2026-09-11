@@ -20,6 +20,7 @@ export function isTextHtmlEmpty(html: string): boolean {
 export function isBlockEmpty(block: SideBlock): boolean {
   if (block.type === 'text') return isTextHtmlEmpty(block.html)
   if (block.type === 'code') return block.code.trim().length === 0
+  if ('src' in block.content) return block.content.src.trim().length === 0
   return block.content.buffer.byteLength === 0
 }
 
@@ -119,8 +120,15 @@ function isBlockEqual(a: SideBlock, b: SideBlock): boolean {
     (a.type === 'image' || a.type === 'audio') &&
     (b.type === 'image' || b.type === 'audio')
   ) {
+    if (a.type !== b.type) return false
+    if ('src' in a.content || 'src' in b.content) {
+      return (
+        'src' in a.content &&
+        'src' in b.content &&
+        a.content.src === b.content.src
+      )
+    }
     return (
-      a.type === b.type &&
       a.content.type === b.content.type &&
       isBufferEqual(a.content.buffer, b.content.buffer)
     )

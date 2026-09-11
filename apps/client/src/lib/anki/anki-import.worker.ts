@@ -17,7 +17,10 @@ function collectMediaBuffers(cards: Card[]): Transferable[] {
   for (const card of cards) {
     for (const side of [card.data.front, card.data.back]) {
       for (const block of side.blocks as SideBlock[]) {
-        if (block.type === 'image' || block.type === 'audio') {
+        if (
+          (block.type === 'image' || block.type === 'audio') &&
+          'buffer' in block.content
+        ) {
           seen.add(block.content.buffer)
         }
       }

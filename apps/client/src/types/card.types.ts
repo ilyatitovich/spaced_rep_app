@@ -4,6 +4,11 @@ export type SideName = 'front' | 'back'
 
 export type MediaDBRecord = { buffer: ArrayBuffer; type: string }
 
+/** Remote Anki img URL kept on the card until cached on open. */
+export type RemoteImageContent = { src: string }
+
+export type ImageContent = MediaDBRecord | RemoteImageContent
+
 export type ImageBase64Record = { buffer: string; type: string }
 
 /** Code snippet (legacy exclusive side content, or `type: 'code'` block). */
@@ -27,7 +32,7 @@ export type SideContentType = 'text' | 'image' | 'code'
 export type SideBlock =
   | { type: 'text'; html: string }
   | { type: 'code'; lang: CodeLang; code: string }
-  | { type: 'image'; content: MediaDBRecord }
+  | { type: 'image'; content: ImageContent }
   | { type: 'audio'; content: MediaDBRecord }
 
 export type CardSideData = {

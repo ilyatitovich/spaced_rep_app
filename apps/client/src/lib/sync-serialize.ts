@@ -49,6 +49,7 @@ function isBlocksSide(side: AnyCardSide): side is CardSideData {
 
 function encodeBlock(block: SideBlock): SideBlock {
   if (block.type === 'text' || block.type === 'code') return block
+  if (!('buffer' in block.content)) return block
   return {
     ...block,
     content: arrayBufferToBase64(block.content) as unknown as MediaDBRecord
@@ -57,6 +58,7 @@ function encodeBlock(block: SideBlock): SideBlock {
 
 function decodeBlock(block: SideBlock): SideBlock {
   if (block.type === 'text' || block.type === 'code') return block
+  if (!('buffer' in block.content)) return block
   if (isBase64Image(block.content)) {
     return {
       ...block,

@@ -50,7 +50,11 @@ describe('encodeCardData / decodeCardData', () => {
 
     expect(imageBlock.type).toBe('image')
     expect(audioBlock.type).toBe('audio')
-    if (imageBlock.type === 'image' && audioBlock.type === 'audio') {
+    if (
+      imageBlock.type === 'image' &&
+      'buffer' in imageBlock.content &&
+      audioBlock.type === 'audio'
+    ) {
       expect(typeof imageBlock.content.buffer).toBe('string')
       expect(typeof audioBlock.content.buffer).toBe('string')
     }
@@ -62,12 +66,43 @@ describe('encodeCardData / decodeCardData', () => {
     expect(decoded.front.blocks[0]).toEqual({ type: 'text', html: '<p>Q</p>' })
     expect(decodedImage.type).toBe('image')
     expect(decodedAudio.type).toBe('audio')
-    if (decodedImage.type === 'image' && decodedAudio.type === 'audio') {
+    if (
+      decodedImage.type === 'image' &&
+      'buffer' in decodedImage.content &&
+      decodedAudio.type === 'audio'
+    ) {
       expect(decodedImage.content.type).toBe('image/png')
       expect(decodedAudio.content.type).toBe('audio/mpeg')
       expect(bufferEquals(decodedImage.content.buffer, image)).toBe(true)
       expect(bufferEquals(decodedAudio.content.buffer, audio)).toBe(true)
     }
+  })
+
+  it('roundtrips remote image { src } without base64', () => {
+    const data: CardData = {
+      front: {
+        side: 'front',
+        blocks: [
+          {
+            type: 'image',
+            content: { src: 'https://i.imgur.com/iF4Mkb5.png' }
+          }
+        ]
+      },
+      back: { side: 'back', blocks: [{ type: 'text', html: '<p>A</p>' }] }
+    }
+
+    const encoded = encodeCardData(data) as CardData
+    expect(encoded.front.blocks[0]).toEqual({
+      type: 'image',
+      content: { src: 'https://i.imgur.com/iF4Mkb5.png' }
+    })
+
+    const decoded = decodeCardData(encoded) as CardData
+    expect(decoded.front.blocks[0]).toEqual({
+      type: 'image',
+      content: { src: 'https://i.imgur.com/iF4Mkb5.png' }
+    })
   })
 
   it('still encodes legacy exclusive image sides', () => {

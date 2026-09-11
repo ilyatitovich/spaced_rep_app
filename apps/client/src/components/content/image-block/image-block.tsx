@@ -10,10 +10,10 @@ import ImageViewer from './image-viewer'
 import ImageEditorScreen from '../../screens/image-editor'
 import { Spinner } from '@/components/ui'
 import { blobToRecord, processImage } from '@/lib'
-import type { MediaDBRecord } from '@/types'
+import type { ImageContent, MediaDBRecord } from '@/types'
 
 type ImageBlockProps = {
-  content: MediaDBRecord
+  content: ImageContent
   isEditable?: boolean
   onChange?: (content: MediaDBRecord) => void
   onRemove?: () => void
@@ -56,6 +56,9 @@ export default function ImageBlock({
   }
 
   if (isConverting) return <Spinner />
+
+  // Packed buffers only; remote { src } rendering is render-cache.
+  if (!('buffer' in content)) return null
 
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions

@@ -62,6 +62,19 @@ describe('normalizeSide', () => {
     })
   })
 
+  it('passes through remote image { src } blocks', () => {
+    const side = {
+      side: 'front' as const,
+      blocks: [
+        {
+          type: 'image' as const,
+          content: { src: 'https://i.imgur.com/iF4Mkb5.png' }
+        }
+      ]
+    }
+    expect(normalizeSide(side)).toEqual(side)
+  })
+
   it('passes through an already-normalized blocks side', () => {
     const side = {
       side: 'front' as const,
