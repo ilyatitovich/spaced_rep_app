@@ -192,29 +192,46 @@ export async function migrateCardsToNewSchema(): Promise<void> {
   })
 }
 
-async function persistImportedCards(cards: Card[]): Promise<number> {
+const IMPORT_CHUNK = 50
+
+function yieldToMain(): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, 0))
+}
+
+async function persistImportedCards(
+  cards: Card[],
+  onProgress?: (done: number, total: number) => void
+): Promise<number> {
   const importedIds: string[] = []
+  const total = cards.length
 
-  await withTransaction([STORES.CARDS], 'readwrite', async stores => {
-    const results = await Promise.allSettled(
-      cards.map(
-        card =>
-          new Promise<void>((resolve, reject) => {
-            const req = stores[STORES.CARDS].put(card)
-            req.onsuccess = () => resolve()
-            req.onerror = () => reject(req.error)
-          })
+  for (let i = 0; i < cards.length; i += IMPORT_CHUNK) {
+    const slice = cards.slice(i, i + IMPORT_CHUNK)
+
+    await withTransaction([STORES.CARDS], 'readwrite', async stores => {
+      const results = await Promise.allSettled(
+        slice.map(
+          card =>
+            new Promise<void>((resolve, reject) => {
+              const req = stores[STORES.CARDS].put(card)
+              req.onsuccess = () => resolve()
+              req.onerror = () => reject(req.error)
+            })
+        )
       )
-    )
 
-    results.forEach((result, i) => {
-      if (result.status === 'fulfilled') {
-        importedIds.push(cards[i].id)
-      } else {
-        console.warn('Failed to import card:', cards[i].id, result.reason)
-      }
+      results.forEach((result, j) => {
+        if (result.status === 'fulfilled') {
+          importedIds.push(slice[j].id)
+        } else {
+          console.warn('Failed to import card:', slice[j].id, result.reason)
+        }
+      })
     })
-  })
+
+    onProgress?.(Math.min(i + slice.length, total), total)
+    if (i + IMPORT_CHUNK < cards.length) await yieldToMain()
+  }
 
   for (const id of importedIds) {
     await enqueueSync(STORES.CARDS, id, 'upsert')
@@ -251,14 +268,68 @@ export async function importCards(
   return persistImportedCards(cardsToImport)
 }
 
+export type AnkiImportProgress =
+  | { phase: 'parsing' }
+  | { phase: 'saving'; done: number; total: number }
+
 export async function importAnkiApkg(
   file: File,
-  topicId: string
+  topicId: string,
+  onProgress?: (progress: AnkiImportProgress) => void
 ): Promise<number> {
-  const { apkgToCards, parseApkg } = await import('@/lib/anki')
-  const cards = apkgToCards(await parseApkg(file), topicId)
+  onProgress?.({ phase: 'parsing' })
+
+  const [{ runAnkiImportWorker }, { sanitizeImportedCard }] = await Promise.all([
+    import('@/lib/anki/run-anki-import-worker'),
+    import('@/lib/anki/sanitize-imported-card')
+  ])
+
+  const cards = await runAnkiImportWorker(await file.arrayBuffer(), topicId)
   if (cards.length === 0) {
     throw new Error('No notes found in this .apkg')
   }
-  return persistImportedCards(cards)
+
+  // Sanitize each chunk on main, then persist — one monotonic Saving n/total.
+  const importedIds: string[] = []
+  const total = cards.length
+
+  for (let i = 0; i < cards.length; i += IMPORT_CHUNK) {
+    const slice = cards.slice(i, i + IMPORT_CHUNK)
+    for (const card of slice) sanitizeImportedCard(card)
+
+    await withTransaction([STORES.CARDS], 'readwrite', async stores => {
+      const results = await Promise.allSettled(
+        slice.map(
+          card =>
+            new Promise<void>((resolve, reject) => {
+              const req = stores[STORES.CARDS].put(card)
+              req.onsuccess = () => resolve()
+              req.onerror = () => reject(req.error)
+            })
+        )
+      )
+
+      results.forEach((result, j) => {
+        if (result.status === 'fulfilled') {
+          importedIds.push(slice[j].id)
+        } else {
+          console.warn('Failed to import card:', slice[j].id, result.reason)
+        }
+      })
+    })
+
+    onProgress?.({
+      phase: 'saving',
+      done: Math.min(i + slice.length, total),
+      total
+    })
+    if (i + IMPORT_CHUNK < cards.length) await yieldToMain()
+  }
+
+  for (const id of importedIds) {
+    await enqueueSync(STORES.CARDS, id, 'upsert')
+  }
+  triggerSync()
+
+  return importedIds.length
 }

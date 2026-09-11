@@ -79,6 +79,10 @@ export default defineConfig({
       )
     }
   },
+  // Anki import worker pulls JSZip/sql.js; IIFE can't code-split those.
+  worker: {
+    format: 'es'
+  },
   optimizeDeps: {
     include: ['protobufjs']
   }

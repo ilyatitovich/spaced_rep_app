@@ -1,5 +1,4 @@
 import { normalizeSide } from '@/lib/normalize-card'
-import { sanitizeCardHtml } from '@/lib/sanitize-html'
 import { Card } from '@/models/card.model'
 import type { CardData, SideBlock, SideName } from '@/types'
 import type { AnkiMediaFile, ParsedAnkiNote, ParsedApkg } from './parse-apkg'
@@ -107,17 +106,14 @@ function finalizeSide(
   html: string | undefined,
   mediaByName: Map<string, AnkiMediaFile>
 ) {
+  // Sanitize on main (DOMPurify); worker must not import DOM.
   const raw = fieldHtmlToBlocks(html ?? '', mediaByName)
   const normalized = normalizeSide({ side, blocks: raw })
   return {
     side,
-    blocks: normalized.blocks
-      .map(block =>
-        block.type === 'text'
-          ? { type: 'text' as const, html: sanitizeCardHtml(block.html) }
-          : block
-      )
-      .filter(block => block.type !== 'text' || !isBlankHtml(block.html))
+    blocks: normalized.blocks.filter(
+      block => block.type !== 'text' || !isBlankHtml(block.html)
+    )
   }
 }
 

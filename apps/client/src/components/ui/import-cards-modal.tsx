@@ -3,6 +3,7 @@ import type { ChangeEvent } from 'react'
 import { useState } from 'react'
 
 import { Spinner } from '@/components'
+import type { AnkiImportProgress } from '@/services'
 import { importAnkiApkg, importCards } from '@/services'
 
 type ImportCardsModal = {
@@ -15,12 +16,18 @@ function isAnkiApkg(file: File): boolean {
   return file.name.toLowerCase().endsWith('.apkg')
 }
 
+function progressLabel(progress: AnkiImportProgress): string {
+  if (progress.phase === 'parsing') return 'Parsing…'
+  return `Saving ${progress.done}/${progress.total}…`
+}
+
 export default function ImportCardsModal({
   topicId,
   onClose,
   onCardsImport
 }: ImportCardsModal) {
   const [isLoading, setIsLoading] = useState(false)
+  const [progress, setProgress] = useState<AnkiImportProgress | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -31,11 +38,12 @@ export default function ImportCardsModal({
     setIsLoading(true)
     setError(null)
     setMessage(null)
+    setProgress(null)
 
     try {
       const anki = isAnkiApkg(file)
       const count = anki
-        ? await importAnkiApkg(file, topicId)
+        ? await importAnkiApkg(file, topicId, setProgress)
         : await importCards(file, topicId)
       await onCardsImport()
       setMessage(
@@ -49,6 +57,7 @@ export default function ImportCardsModal({
       }
     } finally {
       setIsLoading(false)
+      setProgress(null)
     }
   }
 
@@ -86,7 +95,16 @@ export default function ImportCardsModal({
           </label>
         )}
 
-        {isLoading && <Spinner />}
+        {isLoading && (
+          <div className="flex flex-col items-center gap-3">
+            <Spinner />
+            {progress && (
+              <p className="text-foreground-muted text-center text-sm">
+                {progressLabel(progress)}
+              </p>
+            )}
+          </div>
+        )}
 
         {!isLoading && message && (
           <p className="text-success text-center">{message}</p>

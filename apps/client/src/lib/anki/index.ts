@@ -4,6 +4,8 @@ export type {
   ParsedAnkiNote,
   ParsedApkg
 } from './parse-apkg'
+export { runAnkiImportWorker } from './run-anki-import-worker'
+export { sanitizeImportedCard } from './sanitize-imported-card'
 export {
   apkgToCards,
   clozeToAnswer,

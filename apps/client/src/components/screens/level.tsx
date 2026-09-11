@@ -25,11 +25,7 @@ type LevelScreenProps = {
   cards: Card[]
   startDate: number
   onDeleteCards: (cards: Card[]) => void
-  onMoveCards: (
-    remaining: Card[],
-    moved: Card[],
-    toLevel: number
-  ) => void
+  onMoveCards: (remaining: Card[], moved: Card[], toLevel: number) => void
 }
 
 const COLS = 3
@@ -188,7 +184,10 @@ export default function LevelScreen({
                           key={card.id}
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: (start + col) * 0.05 }}
+                          transition={{
+                            delay: (start + col) * 0.05,
+                            ease: 'easeInOut'
+                          }}
                         >
                           {cell}
                         </motion.div>
