@@ -26,6 +26,9 @@ export default function ImageViewer({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
+          onPointerDown={e => e.stopPropagation()}
+          onTouchStart={e => e.stopPropagation()}
+          onTouchEnd={e => e.stopPropagation()}
           role="dialog"
           aria-modal="true"
           aria-label="Full screen image"
