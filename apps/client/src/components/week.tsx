@@ -31,15 +31,12 @@ export default function Week({ week }: WeekProps) {
 
           {/* levels */}
           {day &&
-            new Array(7)
-              .fill(null)
-              .map((_, i) => (
-                <div
-                  key={i}
-                  className={`w-2 h-2 rounded-full my-0.5 ${day.todayLevels.includes(i + 1) ? `bg-lvl-${i + 1}` : 'bg-transparent'}`}
-                ></div>
-              ))
-              .reverse()}
+            Array.from({ length: 7 }, (_, i) => (
+              <div
+                key={i}
+                className={`w-2 h-2 rounded-full my-0.5 ${day.todayLevels.includes(i + 1) ? `bg-lvl-${i + 1}` : 'bg-transparent'}`}
+              ></div>
+            )).reverse()}
         </span>
       ))}
     </div>

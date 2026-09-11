@@ -1,9 +1,6 @@
-import type {
-  ChangeEvent,
-  FocusEvent,
-  FocusEventHandler,
-  Ref
-} from 'react'
+import type { ChangeEvent, FocusEvent, FocusEventHandler, Ref } from 'react'
+import type { CardSideData, SideBlock, SideName } from '@/types'
+import type { Editor } from '@tiptap/react'
 import {
   forwardRef,
   lazy,
@@ -13,7 +10,6 @@ import {
   useRef,
   useState
 } from 'react'
-import type { Editor } from '@tiptap/react'
 
 import ImageUploader from './image-uploader'
 import MediaToolbar from './media-toolbar'
@@ -24,7 +20,6 @@ import TextBlockEditor, {
 import TextFormatToolbar, { isToolbarTarget } from './text-format-toolbar'
 import { Spinner } from './ui'
 import { LONGTEXT_THRESHOLD, sanitizeCardHtml } from '@/lib'
-import type { CardSideData, SideBlock, SideName } from '@/types'
 
 const CodeBlockEditor = lazy(() => import('./code-block-editor'))
 
