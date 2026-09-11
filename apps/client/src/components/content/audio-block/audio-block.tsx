@@ -153,9 +153,7 @@ export default function AudioBlock({
               preload="metadata"
               className="hidden"
               onTimeUpdate={e => setCurrentTime(e.currentTarget.currentTime)}
-              onLoadedMetadata={e =>
-                setDuration(e.currentTarget.duration || 0)
-              }
+              onLoadedMetadata={e => setDuration(e.currentTarget.duration || 0)}
               onEnded={e => {
                 setIsPlaying(false)
                 setCurrentTime(0)
@@ -166,7 +164,7 @@ export default function AudioBlock({
             />
             <button
               type="button"
-              className="flex shrink-0 items-center justify-center w-8 h-8 rounded-full border-2 border-border text-primary"
+              className="flex shrink-0 items-center justify-center w-8 h-8 rounded-full bg-white text-primary"
               aria-label={isPlaying ? 'Stop' : 'Play'}
               onClick={e => {
                 e.stopPropagation()

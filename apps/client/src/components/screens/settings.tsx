@@ -2,10 +2,12 @@ import {
   Bell,
   Cloud,
   CreditCard,
+  Download,
   Info,
   KeyRound,
   Lock,
   LogOut,
+  RefreshCw,
   Settings2,
   Shield,
   TriangleAlert
@@ -15,6 +17,7 @@ import toast from 'react-hot-toast'
 
 import { Avatar, BackButton, Header, Screen, Spinner } from '@/components'
 import { useAuth, useSync } from '@/contexts'
+import { usePwaUpdate } from '@/hooks'
 import { useSettingsStore } from '@/store'
 import type { PlanTier } from '@/types/settings.types'
 import {
@@ -65,6 +68,7 @@ export default function SettingsScreen({ isOpen }: SettingsScreenProps) {
   const { user, isLoading, isConfigured, signOut } = useAuth()
   const { isOnline } = useSync()
   const settings = useSettingsStore(s => s.settings)
+  const { needRefresh, updateNow, checkForUpdate } = usePwaUpdate()
   const [searchParams, setSearchParams] = useSearchParams()
 
   const isPreferencesOpen = searchParams.get('preferences') === 'true'
@@ -85,6 +89,27 @@ export default function SettingsScreen({ isOpen }: SettingsScreenProps) {
     setSearchParams(prev => {
       prev.set('auth', 'true')
       return new URLSearchParams(prev)
+    })
+  }
+
+  const handleUpdateRow = () => {
+    if (needRefresh) {
+      updateNow()
+      return
+    }
+    void checkForUpdate().then(result => {
+      if (result === 'available') return
+      if (result === 'offline') {
+        toast('You’re offline — try again when connected', {
+          icon: <TriangleAlert className="text-warning" size={20} />
+        })
+        return
+      }
+      if (result === 'unavailable') {
+        toast('Updates aren’t available in this browser')
+        return
+      }
+      toast.success('You’re up to date')
     })
   }
 
@@ -134,6 +159,13 @@ export default function SettingsScreen({ isOpen }: SettingsScreenProps) {
                   icon={<Info />}
                   label="About"
                   onClick={() => openSection(setSearchParams, 'about')}
+                />
+                <SettingsNavRow
+                  icon={needRefresh ? <Download /> : <RefreshCw />}
+                  label={
+                    needRefresh ? 'Update available' : 'Check for updates'
+                  }
+                  onClick={handleUpdateRow}
                 />
                 <SettingsNavRow
                   icon={<Settings2 />}

@@ -9,7 +9,7 @@ import svgr from 'vite-plugin-svgr'
 const isDev = process.env.NODE_ENV === 'development'
 
 const pwaOptions: Partial<VitePWAOptions> = {
-  registerType: 'autoUpdate',
+  registerType: 'prompt',
   base: '/',
   includeAssets: [
     '/favicon.ico',
@@ -84,6 +84,6 @@ export default defineConfig({
     format: 'es'
   },
   optimizeDeps: {
-    include: ['protobufjs']
+    include: ['protobufjs', 'workbox-window']
   }
 })

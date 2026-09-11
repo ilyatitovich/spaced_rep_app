@@ -1,12 +1,17 @@
 import { Outlet } from 'react-router'
 
-import { DesktopMessage, InstallAppSheet } from '@/components'
-import { useIsMobile, usePwaInstall } from '@/hooks'
+import { DesktopMessage, InstallAppSheet, UpdateAppSheet } from '@/components'
+import { useIsMobile, usePwaInstall, usePwaUpdate } from '@/hooks'
 import { isOnboardingComplete } from '@/lib'
 
 export default function Root() {
   const isMobile = useIsMobile()
   const { variant, promptInstall, dismiss, dismissBanner } = usePwaInstall()
+  const {
+    showPrompt: showUpdatePrompt,
+    updateNow,
+    dismiss: dismissUpdate
+  } = usePwaUpdate()
 
   if (!isMobile) {
     return <DesktopMessage />
@@ -23,6 +28,11 @@ export default function Root() {
           onDismissBanner={dismissBanner}
         />
       )}
+      <UpdateAppSheet
+        isOpen={showUpdatePrompt}
+        onUpdate={updateNow}
+        onLater={dismissUpdate}
+      />
     </>
   )
 }
