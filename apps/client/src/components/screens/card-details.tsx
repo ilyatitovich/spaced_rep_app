@@ -85,6 +85,8 @@ export default function CardDetailsScreen({
   const isAnimating = useRef(false)
   const dragStartX = useRef(0)
   const dragStartY = useRef(0)
+  const lastDeltaX = useRef(0)
+  const detachTouch = useRef<(() => void) | null>(null)
 
   const side = isFlipped ? 'back' : 'front'
   const prevIndex = total > 0 ? mod(currentIndex - 1, total) : 0
@@ -260,50 +262,40 @@ export default function CardDetailsScreen({
     []
   )
 
-  const handlePointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (isEditable || isAnimating.current || total < 2) return
-    if (isCarouselControl(e.target)) return
-    isDragging.current = true
-    dragStartX.current = e.clientX
-    dragStartY.current = e.clientY
+  const clearTouchListeners = () => {
+    detachTouch.current?.()
+    detachTouch.current = null
   }
 
-  const handlePointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+  const applyDrag = (clientX: number, clientY: number) => {
     if (!isDragging.current) return
 
-    const deltaX = e.clientX - dragStartX.current
-    const deltaY = e.clientY - dragStartY.current
+    const deltaX = clientX - dragStartX.current
+    const deltaY = clientY - dragStartY.current
 
     if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 10) {
       isDragging.current = false
+      clearTouchListeners()
       animateTrackTo('center')
       return
     }
 
-    const container = containerRef.current
+    lastDeltaX.current = deltaX
     const track = trackRef.current
-    const width = container?.offsetWidth ?? 0
-    if (
-      container &&
-      Math.abs(deltaX) > DRAG_CAPTURE_PX &&
-      !container.hasPointerCapture(e.pointerId)
-    ) {
-      container.setPointerCapture(e.pointerId)
-    }
+    const width = containerRef.current?.offsetWidth ?? 0
     if (track) {
       track.style.transition = 'none'
       track.style.transform = `translateX(${-width + deltaX}px)`
     }
   }
 
-  const handlePointerUp = (e: ReactPointerEvent<HTMLDivElement>) => {
+  const endDrag = () => {
     if (!isDragging.current) return
     isDragging.current = false
+    clearTouchListeners()
 
-    const deltaX = e.clientX - dragStartX.current
-    const container = containerRef.current
-    const didDrag = container?.hasPointerCapture(e.pointerId) ?? false
-    if (didDrag) container?.releasePointerCapture(e.pointerId)
+    const deltaX = lastDeltaX.current
+    const didDrag = Math.abs(deltaX) > DRAG_CAPTURE_PX
 
     if (Math.abs(deltaX) > SWIPE_THRESHOLD_PX) {
       const direction: 1 | -1 = deltaX < 0 ? 1 : -1
@@ -320,6 +312,52 @@ export default function CardDetailsScreen({
         isAnimating.current = false
       })
     }
+  }
+
+  const handlePointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (isEditable || isAnimating.current || total < 2) return
+    if (isCarouselControl(e.target)) return
+    isDragging.current = true
+    dragStartX.current = e.clientX
+    dragStartY.current = e.clientY
+    lastDeltaX.current = 0
+
+    const onTouchMove = (te: TouchEvent) => {
+      if (!isDragging.current) return
+      const t = te.touches[0]
+      if (!t) return
+      const deltaX = t.clientX - dragStartX.current
+      const deltaY = t.clientY - dragStartY.current
+      const isVertical =
+        Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 10
+      if (!isVertical && te.cancelable) te.preventDefault()
+      applyDrag(t.clientX, t.clientY)
+    }
+    const onTouchEnd = (te: TouchEvent) => {
+      const t = te.changedTouches[0]
+      if (t) lastDeltaX.current = t.clientX - dragStartX.current
+      endDrag()
+    }
+    window.addEventListener('touchmove', onTouchMove, { passive: false })
+    window.addEventListener('touchend', onTouchEnd)
+    window.addEventListener('touchcancel', onTouchEnd)
+    detachTouch.current = () => {
+      window.removeEventListener('touchmove', onTouchMove)
+      window.removeEventListener('touchend', onTouchEnd)
+      window.removeEventListener('touchcancel', onTouchEnd)
+    }
+  }
+
+  const handlePointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    applyDrag(e.clientX, e.clientY)
+  }
+
+  const handlePointerUp = () => {
+    endDrag()
+  }
+
+  const handlePointerCancel = () => {
+    if (!detachTouch.current) endDrag()
   }
 
   return (
@@ -350,7 +388,7 @@ export default function CardDetailsScreen({
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
       >
         <div
           ref={trackRef}

@@ -39,11 +39,13 @@ export default function ImageFrame({
   }
 
   return (
+    // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
     <img
       src={src}
       alt={alt}
       draggable={false}
-      className={className}
+      onDragStart={event => event.preventDefault()}
+      className={`[-webkit-user-drag:none] touch-none ${className}`.trim()}
       onError={() => {
         setFailed(true)
         onFailedChange?.(true)
