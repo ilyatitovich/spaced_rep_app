@@ -25,13 +25,16 @@ type CardButtonProps = {
   | { type: 'media'; onSelectMedia: (kind: MediaKind) => void }
 )
 
-const CODE_LANG_OPTIONS: { lang: CodeLang; label: string; icon: ElementType }[] =
-  [
-    { lang: 'ts', label: 'TypeScript', icon: TsLogo },
-    { lang: 'py', label: 'Python', icon: PythonLogo },
-    { lang: 'sql', label: 'SQL', icon: SqlLogo },
-    { lang: 'sh', label: 'Bash', icon: BashLogo }
-  ]
+const CODE_LANG_OPTIONS: {
+  lang: CodeLang
+  label: string
+  icon: ElementType
+}[] = [
+  { lang: 'ts', label: 'TypeScript', icon: TsLogo },
+  { lang: 'py', label: 'Python', icon: PythonLogo },
+  { lang: 'sql', label: 'SQL', icon: SqlLogo },
+  { lang: 'sh', label: 'Bash', icon: BashLogo }
+]
 
 const META: Record<
   CardButtonProps['type'],
@@ -82,7 +85,12 @@ function MenuButton({
 }: {
   type: 'code' | 'media'
   isDisabled?: boolean
-  items: { key: string; label: string; icon?: ElementType; onClick: () => void }[]
+  items: {
+    key: string
+    label: string
+    icon?: ElementType
+    onClick: () => void
+  }[]
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -121,9 +129,7 @@ function MenuButton({
                 setIsOpen(false)
               }}
             >
-              {item.icon && (
-                <item.icon className="w-4 h-4 shrink-0" strokeWidth={3} />
-              )}
+              {item.icon && <item.icon className="size-3.5 shrink-0" />}
               {item.label}
             </button>
           ))}
@@ -173,6 +179,10 @@ export default function CardButton(props: CardButtonProps) {
   }
 
   return (
-    <Trigger type={props.type} isDisabled={props.isDisabled} onClick={props.onClick} />
+    <Trigger
+      type={props.type}
+      isDisabled={props.isDisabled}
+      onClick={props.onClick}
+    />
   )
 }
