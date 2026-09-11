@@ -127,6 +127,27 @@ export default function TopicScreen({
     }
   }
 
+  const handleDeleteCards = (cards: Card[]): void => {
+    setLevelCards(cards)
+    setLevelCounts(prev => ({
+      ...prev,
+      [Number(levelId)]: cards.length
+    }))
+  }
+
+  const handleMoveCards = (
+    remaining: Card[],
+    moved: Card[],
+    toLevel: number
+  ): void => {
+    setLevelCards(remaining)
+    setLevelCounts(prev => ({
+      ...prev,
+      [Number(levelId)]: remaining.length,
+      [toLevel]: (prev[toLevel] ?? 0) + moved.length
+    }))
+  }
+
   return (
     <>
       <div
@@ -211,26 +232,15 @@ export default function TopicScreen({
             }
             cards={levelCards}
             startDate={topic.pivot}
-            onDeleteCards={(cards: Card[]) => {
-              setLevelCards(cards)
-              setLevelCounts(prev => ({
-                ...prev,
-                [Number(levelId)]: cards.length
-              }))
-            }}
-            onMoveCards={(remaining, moved, toLevel) => {
-              setLevelCards(remaining)
-              setLevelCounts(prev => ({
-                ...prev,
-                [Number(levelId)]: remaining.length,
-                [toLevel]: (prev[toLevel] ?? 0) + moved.length
-              }))
-            }}
+            onDeleteCards={handleDeleteCards}
+            onMoveCards={handleMoveCards}
           />
           <CardDetailsScreen
             isOpen={!!cardId}
             cards={levelCards}
             cardId={cardId}
+            onDeleteCards={handleDeleteCards}
+            onMoveCards={handleMoveCards}
           />
 
           <TopicSettingsScreen

@@ -1,5 +1,7 @@
 import { useState, useRef, useCallback, useLayoutEffect } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
+import { AnimatePresence } from 'motion/react'
+import { useSearchParams } from 'react-router'
 import { toast } from 'react-hot-toast'
 
 import {
@@ -10,15 +12,17 @@ import {
   CardToolbar,
   CardContainer,
   BackButton,
-  Header
+  Header,
+  SelectionModeFooter
 } from '@/components'
 import {
   appendSideBlocks,
   isCardDataEqual,
-  normalizeCardData
+  normalizeCardData,
+  removeLastSearchParam
 } from '@/lib'
 import { Card as CardModel } from '@/models'
-import { updateCard } from '@/services'
+import { deleteCardsBulk, updateCard, updateCardsLevelBulk } from '@/services'
 import type {
   CardData,
   CardHandle,
@@ -30,6 +34,12 @@ type CardDetailsScreenProps = {
   isOpen: boolean
   cards: CardModel[] | null | undefined
   cardId: string | null | undefined
+  onDeleteCards: (remaining: CardModel[]) => void
+  onMoveCards: (
+    remaining: CardModel[],
+    moved: CardModel[],
+    toLevel: number
+  ) => void
 }
 
 const SWIPE_THRESHOLD_PX = 60
@@ -59,11 +69,14 @@ const mergeTextFromEditor = (base: CardData, editor: CardData): CardData => ({
 export default function CardDetailsScreen({
   isOpen,
   cards,
-  cardId
+  cardId,
+  onDeleteCards,
+  onMoveCards
 }: CardDetailsScreenProps) {
+  const [, setSearchParams] = useSearchParams()
   const total = cards?.length ?? 0
 
-  const cardIndex = cards?.findIndex(card => card.id === cardId) ?? 0
+  const cardIndex = Math.max(0, cards?.findIndex(card => card.id === cardId) ?? 0)
   const [currentIndex, setCurrentIndex] = useState(cardIndex)
   const card = cards?.[currentIndex]
 
@@ -99,8 +112,8 @@ export default function CardDetailsScreen({
   }, [])
 
   const loadCardAtIndex = useCallback(
-    (index: number) => {
-      const c = cards?.[index]
+    (index: number, list = cards) => {
+      const c = list?.[index]
       const data = getCardData(c)
       setCardData(data)
       cardDataRef.current = data
@@ -112,6 +125,40 @@ export default function CardDetailsScreen({
     },
     [cards]
   )
+
+  const showNextOrClose = (remaining: CardModel[]) => {
+    if (remaining.length === 0) {
+      setSearchParams(prev => removeLastSearchParam(prev))
+      return
+    }
+    const nextIndex = Math.min(currentIndex, remaining.length - 1)
+    setCurrentIndex(nextIndex)
+    loadCardAtIndex(nextIndex, remaining)
+  }
+
+  const handleDeleteCard = async (): Promise<void> => {
+    if (!card) return
+    try {
+      await deleteCardsBulk([card.id])
+      const remaining = (cards ?? []).filter(item => item.id !== card.id)
+      onDeleteCards(remaining)
+      showNextOrClose(remaining)
+    } catch (error) {
+      console.error('Failed to delete card:', error)
+    }
+  }
+
+  const handleMoveCard = async (toLevel: number): Promise<void> => {
+    if (!card) return
+    try {
+      await updateCardsLevelBulk([card], toLevel)
+      const remaining = (cards ?? []).filter(item => item.id !== card.id)
+      onMoveCards(remaining, [card], toLevel)
+      showNextOrClose(remaining)
+    } catch (error) {
+      console.error('Failed to move card:', error)
+    }
+  }
 
   const saveCard = useCallback(
     async (
@@ -438,13 +485,25 @@ export default function CardDetailsScreen({
           onFlip={() => setIsFlipped(prev => !prev)}
         />
       ) : (
-        <div className="pt-1 flex justify-center items-center">
+        <div className="pt-1 pb-20 flex justify-center items-center">
           <CardButton
             type="flip"
             onClick={() => setIsFlipped(prev => !prev)}
           />
         </div>
       )}
+
+      <AnimatePresence>
+        {!isEditable && (
+          <SelectionModeFooter
+            countItemsForDelete={card ? 1 : 0}
+            nameItemsForDelete="card"
+            handleDelete={handleDeleteCard}
+            handleMove={handleMoveCard}
+            currentLevel={card?.level ?? 0}
+          />
+        )}
+      </AnimatePresence>
     </Screen>
   )
 }

@@ -1,6 +1,6 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { AnimatePresence, motion } from 'motion/react'
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router'
 
 import {
@@ -68,6 +68,10 @@ export default function LevelScreen({
     setLevelCards([])
     setCurrentLevelId('')
   }, [cancelSelectionMode])
+
+  useEffect(() => {
+    if (isOpen) setLevelCards(cards)
+  }, [isOpen, cards])
 
   const handleSelectAll = (isSelectAll: boolean): void => {
     selectAll(
