@@ -10,6 +10,7 @@ import {
   RefreshCw,
   Settings2,
   Shield,
+  Sparkles,
   TriangleAlert
 } from 'lucide-react'
 import { useSearchParams } from 'react-router'
@@ -29,7 +30,8 @@ import {
   SectionPrivacy,
   SectionData,
   SectionPasskeys,
-  SectionAbout
+  SectionAbout,
+  SectionCreateWithAi
 } from '@/components/settings'
 
 const PLAN_LABELS: Record<PlanTier, string> = {
@@ -45,7 +47,8 @@ const SECTION_PARAMS = [
   'subscription',
   'privacy',
   'data',
-  'about'
+  'about',
+  'create-with-ai'
 ] as const
 
 type SectionParam = (typeof SECTION_PARAMS)[number]
@@ -78,6 +81,7 @@ export default function SettingsScreen({ isOpen }: SettingsScreenProps) {
   const isPrivacyOpen = searchParams.get('privacy') === 'true'
   const isDataOpen = searchParams.get('data') === 'true'
   const isAboutOpen = searchParams.get('about') === 'true'
+  const isCreateWithAiOpen = searchParams.get('create-with-ai') === 'true'
 
   const handleSignInOpen = () => {
     if (!isOnline) {
@@ -161,6 +165,11 @@ export default function SettingsScreen({ isOpen }: SettingsScreenProps) {
                   onClick={() => openSection(setSearchParams, 'about')}
                 />
                 <SettingsNavRow
+                  icon={<Sparkles />}
+                  label="Create with AI"
+                  onClick={() => openSection(setSearchParams, 'create-with-ai')}
+                />
+                <SettingsNavRow
                   icon={needRefresh ? <Download /> : <RefreshCw />}
                   label={
                     needRefresh ? 'Update available' : 'Check for updates'
@@ -237,6 +246,7 @@ export default function SettingsScreen({ isOpen }: SettingsScreenProps) {
       <SectionPrivacy isOpen={isPrivacyOpen} />
       <SectionData isOpen={isDataOpen} />
       <SectionAbout isOpen={isAboutOpen} />
+      <SectionCreateWithAi isOpen={isCreateWithAiOpen} />
     </Screen>
   )
 }

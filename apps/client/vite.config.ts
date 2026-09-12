@@ -17,7 +17,7 @@ const pwaOptions: Partial<VitePWAOptions> = {
     'assets/fonts/*.woff2'
   ],
   workbox: {
-    globPatterns: ['**/*.{js,css,html,woff2}']
+    globPatterns: ['**/*.{js,css,html,woff2,md}']
   },
   manifest: {
     id: '/',

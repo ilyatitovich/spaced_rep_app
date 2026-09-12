@@ -346,6 +346,8 @@ export async function importCards(
 
   const cardsToImport: Card[] = data.cards.map((card: Card) => ({
     ...card,
+    id: card.id || crypto.randomUUID(),
+    level: typeof card.level === 'number' ? card.level : 0,
     topicId,
     updatedAt: Date.now(),
     data: normalizeCardData(decodeCardData(card.data))
