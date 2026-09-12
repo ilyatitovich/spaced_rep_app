@@ -74,7 +74,15 @@ Escape literal `&`, `<`, and `>` in text, but not the allowed tags.
 { "type": "image", "content": { "src": "https://example.com/img.png" } }
 ```
 
-Never invent image URLs. Do **not** emit `audio`, `data:`/`blob:` URLs, or base64/binary media buffers.
+**audio** (optional) — only when the user supplied base64 audio data and its
+MIME type:
+
+```json
+{ "type": "audio", "content": { "buffer": "<base64>", "type": "audio/mpeg" } }
+```
+
+Never invent image URLs or audio data. Do **not** emit remote audio,
+`data:`/`blob:` URLs, or placeholder media buffers.
 
 ## Writing rules
 
