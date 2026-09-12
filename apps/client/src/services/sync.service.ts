@@ -243,6 +243,65 @@ function backoffMs(attempts: number): number {
   return Math.min(300_000, 1000 * 2 ** attempts) + Math.random() * 1000
 }
 
+export type SyncEnqueueOp = {
+  table: SyncTable
+  recordId: string
+  operation: SyncOperation
+}
+
+async function coalesceAndPutQueueItem(
+  queueStore: IDBObjectStore,
+  table: SyncTable,
+  recordId: string,
+  operation: SyncOperation
+): Promise<void> {
+  const queueId = `${table}:${recordId}`
+  const existing = await promisify<QueueItem | undefined>(
+    queueStore.get(queueId)
+  )
+
+  let opId: string = crypto.randomUUID()
+  let createdAt = Date.now()
+  if (existing?.operation === operation) {
+    opId = existing.opId
+    createdAt = existing.createdAt
+  }
+
+  await promisify(
+    queueStore.put({
+      id: queueId,
+      opId,
+      table,
+      recordId,
+      operation,
+      createdAt,
+      attempts: 0,
+      nextRetryAt: 0
+    } satisfies QueueItem)
+  )
+}
+
+/** Write queue ops into an open IDBObjectStore (same transaction as local deletes). */
+export async function putSyncQueueOps(
+  queueStore: IDBObjectStore,
+  ops: SyncEnqueueOp[]
+): Promise<void> {
+  if (!isBackendConfigured() || ops.length === 0) return
+  for (const op of ops) {
+    await coalesceAndPutQueueItem(
+      queueStore,
+      op.table,
+      op.recordId,
+      op.operation
+    )
+  }
+}
+
+export async function refreshSyncQueueDepth(): Promise<void> {
+  if (!isBackendConfigured()) return
+  setState({ queueDepth: (await getQueue()).length })
+}
+
 export async function enqueueSync(
   table: SyncTable,
   recordId: string,
@@ -250,40 +309,26 @@ export async function enqueueSync(
 ): Promise<void> {
   if (!isBackendConfigured()) return
 
-  const queueId = `${table}:${recordId}`
-  const existing = await withTransaction(
-    STORES.SYNC_QUEUE,
-    'readonly',
-    stores =>
-      promisify<QueueItem | undefined>(stores[STORES.SYNC_QUEUE].get(queueId))
-  )
-
-  let opId: string = crypto.randomUUID()
-  let createdAt = Date.now()
-  if (existing) {
-    if (existing.operation === operation) {
-      opId = existing.opId
-      createdAt = existing.createdAt
-    }
-  }
-
-  const item: QueueItem = {
-    id: queueId,
-    opId,
-    table,
-    recordId,
-    operation,
-    createdAt,
-    attempts: 0,
-    nextRetryAt: 0
-  }
-
   await withTransaction(STORES.SYNC_QUEUE, 'readwrite', async stores => {
-    await promisify(stores[STORES.SYNC_QUEUE].put(item))
+    await coalesceAndPutQueueItem(
+      stores[STORES.SYNC_QUEUE],
+      table,
+      recordId,
+      operation
+    )
   })
 
-  const depth = (await getQueue()).length
-  setState({ queueDepth: depth })
+  await refreshSyncQueueDepth()
+}
+
+export async function enqueueSyncBulk(ops: SyncEnqueueOp[]): Promise<void> {
+  if (!isBackendConfigured() || ops.length === 0) return
+
+  await withTransaction(STORES.SYNC_QUEUE, 'readwrite', async stores => {
+    await putSyncQueueOps(stores[STORES.SYNC_QUEUE], ops)
+  })
+
+  await refreshSyncQueueDepth()
 }
 
 async function getQueue(): Promise<QueueItem[]> {

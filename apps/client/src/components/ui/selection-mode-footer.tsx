@@ -6,7 +6,7 @@ import { ConfirmDeleteModal, MoveToLevelModal } from '@/components'
 type SelectionModeFooterProps = {
   countItemsForDelete: number
   nameItemsForDelete: 'topic' | 'card'
-  handleDelete: () => void
+  handleDelete: () => void | Promise<void>
   handleMove?: (level: number) => void
   currentLevel?: number
   isHidden?: boolean

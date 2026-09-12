@@ -1,4 +1,9 @@
-import { enqueueSync, triggerSync } from './sync.service'
+import {
+  enqueueSync,
+  putSyncQueueOps,
+  refreshSyncQueueDepth,
+  triggerSync
+} from './sync.service'
 import {
   withTransaction,
   STORES,
@@ -121,66 +126,93 @@ export async function getTopicById(
   )
 }
 
+const DELETE_CHUNK = 50
+
+function yieldToMain(): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, 0))
+}
+
+function promisifyRequest<T>(request: IDBRequest<T>): Promise<T> {
+  return new Promise((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result)
+    request.onerror = () => reject(request.error)
+  })
+}
+
 export async function deleteTopic(topicId: string): Promise<void> {
-  const { deletedCardIds, mediaDelta } = await withTransaction(
-    [STORES.TOPICS, STORES.CARDS],
-    'readwrite',
-    async stores => {
-      const topicStore = stores[STORES.TOPICS]
-      const cardStore = stores[STORES.CARDS]
+  const cards = await withTransaction(STORES.CARDS, 'readonly', async stores => {
+    const index = stores[STORES.CARDS].index('topicId')
+    return promisifyRequest<Card[]>(
+      index.getAll(IDBKeyRange.only(topicId)) as IDBRequest<Card[]>
+    )
+  })
 
-      await new Promise<void>((resolve, reject) => {
-        const request = topicStore.delete(topicId)
-        request.onsuccess = () => resolve()
-        request.onerror = () =>
-          reject(request.error ?? new Error('Failed to delete topic'))
-      })
+  let mediaDelta: EmbeddedCardMedia = {
+    bytes: 0,
+    images: 0,
+    audio: 0
+  }
 
-      const index = cardStore.index('topicId')
-      const range = IDBKeyRange.only(topicId)
-      const cardIds: string[] = []
-      let mediaDelta: EmbeddedCardMedia = {
-        bytes: 0,
-        images: 0,
-        audio: 0
-      }
+  for (let i = 0; i < cards.length; i += DELETE_CHUNK) {
+    const slice = cards.slice(i, i + DELETE_CHUNK)
 
-      return new Promise<{
-        deletedCardIds: string[]
-        mediaDelta: EmbeddedCardMedia
-      }>((resolve, reject) => {
-        const request = index.openCursor(range)
+    const chunkDelta = await withTransaction(
+      [STORES.CARDS, STORES.SYNC_QUEUE],
+      'readwrite',
+      async stores => {
+        let delta: EmbeddedCardMedia = {
+          bytes: 0,
+          images: 0,
+          audio: 0
+        }
+        const deletedIds: string[] = []
 
-        request.onsuccess = () => {
-          const cursor = request.result
-          if (cursor) {
-            const card = cursor.value as Card
-            cardIds.push(card.id)
-            mediaDelta = addEmbeddedMedia(
-              mediaDelta,
-              subEmbeddedMedia(
-                { bytes: 0, images: 0, audio: 0 },
-                sumEmbeddedCardMedia(card)
-              )
+        for (const card of slice) {
+          await promisifyRequest(stores[STORES.CARDS].delete(card.id))
+          deletedIds.push(card.id)
+          delta = addEmbeddedMedia(
+            delta,
+            subEmbeddedMedia(
+              { bytes: 0, images: 0, audio: 0 },
+              sumEmbeddedCardMedia(card)
             )
-            cursor.delete()
-            cursor.continue()
-          } else {
-            resolve({ deletedCardIds: cardIds, mediaDelta })
-          }
+          )
         }
 
-        request.onerror = () =>
-          reject(request.error ?? new Error('Failed to delete topic cards'))
-      })
+        await putSyncQueueOps(
+          stores[STORES.SYNC_QUEUE],
+          deletedIds.map(recordId => ({
+            table: STORES.CARDS,
+            recordId,
+            operation: 'delete' as const
+          }))
+        )
+
+        return delta
+      }
+    )
+
+    mediaDelta = addEmbeddedMedia(mediaDelta, chunkDelta)
+    if (i + DELETE_CHUNK < cards.length) await yieldToMain()
+  }
+
+  await withTransaction(
+    [STORES.TOPICS, STORES.SYNC_QUEUE],
+    'readwrite',
+    async stores => {
+      await promisifyRequest(stores[STORES.TOPICS].delete(topicId))
+      await putSyncQueueOps(stores[STORES.SYNC_QUEUE], [
+        {
+          table: STORES.TOPICS,
+          recordId: topicId,
+          operation: 'delete'
+        }
+      ])
     }
   )
 
   await adjustCardMediaStats(mediaDelta)
-  await enqueueSync(STORES.TOPICS, topicId, 'delete')
-  for (const cardId of deletedCardIds) {
-    await enqueueSync(STORES.CARDS, cardId, 'delete')
-  }
+  await refreshSyncQueueDepth()
   triggerSync()
 }
 

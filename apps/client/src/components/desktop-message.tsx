@@ -1,4 +1,4 @@
-import QrCode from './qrcode'
+import QrCode from './ui/qrcode'
 import { APP_URL, openNarrowWindow } from '@/lib'
 
 export default function DesktopMessage() {

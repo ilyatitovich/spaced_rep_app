@@ -1,4 +1,10 @@
-import { enqueueSync, triggerSync } from './sync.service'
+import {
+  enqueueSync,
+  enqueueSyncBulk,
+  putSyncQueueOps,
+  refreshSyncQueueDepth,
+  triggerSync
+} from './sync.service'
 import {
   recordCardMediaDelete,
   recordCardMediaUpsert,
@@ -12,6 +18,12 @@ import { withTransaction, STORES, CARDS_TOPIC_LEVEL_INDEX } from '@/lib/db'
 import { normalizeCardData } from '@/lib/normalize-card'
 import { decodeCardData } from '@/lib/sync-serialize'
 import { Card } from '@/models'
+
+const IMPORT_CHUNK = 50
+
+function yieldToMain(): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, 0))
+}
 
 function promisifyRequest<T>(request: IDBRequest<T>): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -104,54 +116,64 @@ export async function deleteCardById(cardId: string): Promise<void> {
 }
 
 export async function deleteCardsBulk(cardIds: string[]): Promise<void> {
-  const previous = await withTransaction(STORES.CARDS, 'readonly', async stores => {
-    const cards: Card[] = []
-    for (const id of cardIds) {
-      const card = await promisifyRequest<Card | undefined>(
-        stores[STORES.CARDS].get(id) as IDBRequest<Card | undefined>
-      )
-      if (card) cards.push(card)
-    }
-    return cards
-  })
-
-  await withTransaction([STORES.CARDS], 'readwrite', async stores => {
-    return new Promise<void>((resolve, reject) => {
-      let remaining = cardIds.length
-
-      for (const id of cardIds) {
-        const req = stores[STORES.CARDS].delete(id)
-
-        req.onerror = () => {
-          reject(req.error ?? new Error(`Failed to delete card ${id}`))
-        }
-
-        req.onsuccess = () => {
-          remaining -= 1
-          if (remaining === 0) resolve()
-        }
-      }
-    })
-  })
+  if (cardIds.length === 0) return
 
   let mediaDelta: EmbeddedCardMedia = {
     bytes: 0,
     images: 0,
     audio: 0
   }
-  for (const card of previous) {
-    mediaDelta = addEmbeddedMedia(
-      mediaDelta,
-      subEmbeddedMedia(
-        { bytes: 0, images: 0, audio: 0 },
-        sumEmbeddedCardMedia(card)
-      )
+
+  for (let i = 0; i < cardIds.length; i += IMPORT_CHUNK) {
+    const slice = cardIds.slice(i, i + IMPORT_CHUNK)
+
+    const chunkDelta = await withTransaction(
+      [STORES.CARDS, STORES.SYNC_QUEUE],
+      'readwrite',
+      async stores => {
+        let delta: EmbeddedCardMedia = {
+          bytes: 0,
+          images: 0,
+          audio: 0
+        }
+        const deletedIds: string[] = []
+
+        for (const id of slice) {
+          const card = await promisifyRequest<Card | undefined>(
+            stores[STORES.CARDS].get(id) as IDBRequest<Card | undefined>
+          )
+          await promisifyRequest(stores[STORES.CARDS].delete(id))
+          if (card) {
+            deletedIds.push(id)
+            delta = addEmbeddedMedia(
+              delta,
+              subEmbeddedMedia(
+                { bytes: 0, images: 0, audio: 0 },
+                sumEmbeddedCardMedia(card)
+              )
+            )
+          }
+        }
+
+        await putSyncQueueOps(
+          stores[STORES.SYNC_QUEUE],
+          deletedIds.map(recordId => ({
+            table: STORES.CARDS,
+            recordId,
+            operation: 'delete' as const
+          }))
+        )
+
+        return delta
+      }
     )
+
+    mediaDelta = addEmbeddedMedia(mediaDelta, chunkDelta)
+    if (i + IMPORT_CHUNK < cardIds.length) await yieldToMain()
   }
+
   await adjustCardMediaStats(mediaDelta)
-  for (const id of cardIds) {
-    await enqueueSync(STORES.CARDS, id, 'delete')
-  }
+  await refreshSyncQueueDepth()
   triggerSync()
 }
 
@@ -186,9 +208,13 @@ export async function updateCardsLevelBulk(
     })
   })
 
-  for (const card of cards) {
-    await enqueueSync(STORES.CARDS, card.id, 'upsert')
-  }
+  await enqueueSyncBulk(
+    cards.map(card => ({
+      table: STORES.CARDS,
+      recordId: card.id,
+      operation: 'upsert' as const
+    }))
+  )
   triggerSync()
 }
 
@@ -247,12 +273,6 @@ export async function migrateCardsToNewSchema(): Promise<void> {
   })
 }
 
-const IMPORT_CHUNK = 50
-
-function yieldToMain(): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, 0))
-}
-
 async function persistImportedCards(
   cards: Card[],
   onProgress?: (done: number, total: number) => void
@@ -295,9 +315,13 @@ async function persistImportedCards(
 
   await adjustCardMediaStats(mediaDelta)
 
-  for (const id of importedIds) {
-    await enqueueSync(STORES.CARDS, id, 'upsert')
-  }
+  await enqueueSyncBulk(
+    importedIds.map(id => ({
+      table: STORES.CARDS,
+      recordId: id,
+      operation: 'upsert' as const
+    }))
+  )
   triggerSync()
 
   return importedIds.length
@@ -397,9 +421,13 @@ export async function importAnkiApkg(
 
   await adjustCardMediaStats(mediaDelta)
 
-  for (const id of importedIds) {
-    await enqueueSync(STORES.CARDS, id, 'upsert')
-  }
+  await enqueueSyncBulk(
+    importedIds.map(id => ({
+      table: STORES.CARDS,
+      recordId: id,
+      operation: 'upsert' as const
+    }))
+  )
   triggerSync()
 
   return importedIds.length
