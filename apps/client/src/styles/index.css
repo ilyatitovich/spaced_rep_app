@@ -214,6 +214,7 @@ html[data-theme='light'] {
       env(safe-area-inset-right, 0px),
       env(safe-area-inset-bottom, 0px)
     );
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
   }
 
   .card-stage {

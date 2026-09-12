@@ -39,7 +39,7 @@ export default function SelectionModeFooter({
     <>
       <div
         ref={footerRef}
-        className={`absolute bottom-0 left-0 right-0 z-50 w-full flex ${justifyContent} items-center gap-10 pt-4 pb-2 px-safe-margins bg-background transition-[opacity,translate] duration-300 ease-in-out ${
+        className={`absolute bottom-0 left-0 right-0 z-50 w-full flex ${justifyContent} items-center gap-10 pt-4 px-safe-margins bg-background transition-[opacity,translate] duration-300 ease-in-out ${
           isHidden
             ? 'pointer-events-none translate-y-full opacity-0'
             : 'translate-y-0 opacity-100 starting:translate-y-full starting:opacity-0'
