@@ -1,5 +1,4 @@
 import { CircleUserRound, List } from 'lucide-react'
-import { AnimatePresence, motion } from 'motion/react'
 import { useEffect } from 'react'
 import { useSearchParams } from 'react-router'
 import { useDebouncedCallback } from 'use-debounce'
@@ -22,17 +21,6 @@ import { useSelectionMode } from '@/hooks'
 import { Topic } from '@/models'
 import { useTopicsStore } from '@/store'
 import AuthScreen from '@/components/screens/auth'
-
-const listVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.05 } }
-}
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -20, transition: { duration: 0.25 } }
-}
 
 export default function HomePage() {
   const topics = useTopicsStore(state => state.topics)
@@ -123,31 +111,19 @@ export default function HomePage() {
             </div>
           </div>
         ) : (
-          <motion.ul
-            variants={listVariants}
-            initial="hidden"
-            animate="visible"
-            className="h-full px-4 pt-0 pb-20 overflow-y-auto"
-          >
-            <AnimatePresence>
-              {topics.map(topic => (
-                <motion.li
-                  key={topic.id}
-                  variants={itemVariants}
-                  layout
-                  exit="exit"
-                >
-                  <TopicItem
-                    topic={topic}
-                    isSelectionMode={isSelectionMode}
-                    isSelected={selectedItems.includes(topic.id)}
-                    onSelect={selectItem}
-                    onOpen={() => setSearchParams({ topicId: topic.id })}
-                  />
-                </motion.li>
-              ))}
-            </AnimatePresence>
-          </motion.ul>
+          <ul className="h-full px-4 pt-0 pb-20 overflow-y-auto">
+            {topics.map(topic => (
+              <li key={topic.id}>
+                <TopicItem
+                  topic={topic}
+                  isSelectionMode={isSelectionMode}
+                  isSelected={selectedItems.includes(topic.id)}
+                  onSelect={selectItem}
+                  onOpen={() => setSearchParams({ topicId: topic.id })}
+                />
+              </li>
+            ))}
+          </ul>
         )}
       </div>
       <CreateTopicButton
