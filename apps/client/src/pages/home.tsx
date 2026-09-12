@@ -89,16 +89,13 @@ export default function HomePage() {
 
   return (
     <main>
-      <AnimatePresence>
-        {isSelectionMode && (
-          <SelectionModeHeader
-            handleCancel={cancelSelectionMode}
-            selectedItemsCount={selectedItems.length}
-            isAllSelected={selectedItems.length === topics.length}
-            handleSelectAll={handleSelectAll}
-          />
-        )}
-      </AnimatePresence>
+      <SelectionModeHeader
+        isHidden={!isSelectionMode}
+        handleCancel={cancelSelectionMode}
+        selectedItemsCount={selectedItems.length}
+        isAllSelected={selectedItems.length === topics.length}
+        handleSelectAll={handleSelectAll}
+      />
 
       <Header>
         <Button onClick={() => setIsSelectionMode(true)}>

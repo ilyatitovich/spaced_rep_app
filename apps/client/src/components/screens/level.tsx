@@ -1,5 +1,4 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { AnimatePresence } from 'motion/react'
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router'
 
@@ -112,16 +111,13 @@ export default function LevelScreen({
 
   return (
     <Screen isOpen={isOpen} onClose={onClose} onOpen={onOpen}>
-      <AnimatePresence>
-        {isSelectionMode && (
-          <SelectionModeHeader
-            handleCancel={cancelSelectionMode}
-            selectedItemsCount={selectedItems.length}
-            isAllSelected={selectedItems.length === levelCards.length}
-            handleSelectAll={handleSelectAll}
-          />
-        )}
-      </AnimatePresence>
+      <SelectionModeHeader
+        isHidden={!isSelectionMode}
+        handleCancel={cancelSelectionMode}
+        selectedItemsCount={selectedItems.length}
+        isAllSelected={selectedItems.length === levelCards.length}
+        handleSelectAll={handleSelectAll}
+      />
 
       <Header>
         <BackButton />

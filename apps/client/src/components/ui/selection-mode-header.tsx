@@ -1,27 +1,35 @@
 import { X, ListCheck } from 'lucide-react'
-import { motion } from 'motion/react'
+import { useEffect, useRef } from 'react'
 
 type SelectionModeHeaderProps = {
   selectedItemsCount: number
   isAllSelected: boolean
   handleCancel: () => void
   handleSelectAll: (isSelect: boolean) => void
+  isHidden?: boolean
 }
 
 export default function SelectionModeHeader({
   selectedItemsCount,
   isAllSelected = false,
   handleCancel,
-  handleSelectAll
+  handleSelectAll,
+  isHidden = false
 }: SelectionModeHeaderProps) {
+  const headerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (headerRef.current) headerRef.current.inert = isHidden
+  }, [isHidden])
+
   return (
-    <motion.div
-      key="selection-mode-header"
-      initial={{ opacity: 0, y: '-100%' }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: '-100%' }}
-      transition={{ duration: 0.3, ease: 'easeInOut' }}
-      className="absolute top-0 left-0 right-0 z-50 w-full flex justify-between items-center p-4 bg-background"
+    <div
+      ref={headerRef}
+      className={`absolute top-0 left-0 right-0 z-50 w-full flex justify-between items-center p-4 bg-background transition-[opacity,translate] duration-300 ease-in-out ${
+        isHidden
+          ? 'pointer-events-none -translate-y-full opacity-0'
+          : 'translate-y-0 opacity-100 starting:-translate-y-full starting:opacity-0'
+      }`}
     >
       <button onClick={handleCancel}>
         <X />
@@ -36,6 +44,6 @@ export default function SelectionModeHeader({
           className={`${isAllSelected ? 'text-primary' : 'text-foreground'}`}
         />
       </button>
-    </motion.div>
+    </div>
   )
 }
