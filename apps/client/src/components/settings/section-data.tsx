@@ -6,14 +6,12 @@ import {
   Download,
   RefreshCw
 } from 'lucide-react'
-import { AnimatePresence } from 'motion/react'
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 
 import {
   BackButton,
-  ExportAppDataModal,
+  FileModal,
   Header,
-  ImportAppDataModal,
   Screen
 } from '@/components'
 import { useAuth, useSync } from '@/contexts'
@@ -241,16 +239,16 @@ export default function SectionData({ isOpen }: SectionDataProps) {
         )}
       </div>
 
-      <AnimatePresence>
-        {isImportModalOpen && (
-          <ImportAppDataModal onClose={() => setIsImportModalOpen(false)} />
-        )}
-      </AnimatePresence>
-      <AnimatePresence>
-        {isExportModalOpen && (
-          <ExportAppDataModal onClose={() => setIsExportModalOpen(false)} />
-        )}
-      </AnimatePresence>
+      <FileModal
+        kind="import-app"
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+      />
+      <FileModal
+        kind="export-app"
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+      />
     </Screen>
   )
 }

@@ -1,5 +1,4 @@
 import { ArrowUpFromLine, Download, Pencil, Trash } from 'lucide-react'
-import { AnimatePresence } from 'motion/react'
 import type { ChangeEvent, FormEvent } from 'react'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'react-hot-toast'
@@ -7,8 +6,7 @@ import { toast } from 'react-hot-toast'
 import {
   BackButton,
   ConfirmDeleteModal,
-  ExportTopicModal,
-  ImportCardsModal,
+  FileModal,
   Header,
   Screen
 } from '@/components'
@@ -170,23 +168,19 @@ export default function TopicSettings({
         count={1}
         itemName="topic"
       />
-      <AnimatePresence>
-        {isImportModalOpen && (
-          <ImportCardsModal
-            onClose={() => setIsImportModalOpen(false)}
-            topicId={topic.id}
-            onCardsImport={onCardsImport}
-          />
-        )}
-      </AnimatePresence>
-      <AnimatePresence>
-        {isExportModalOpen && (
-          <ExportTopicModal
-            onClose={() => setIsExportModalOpen(false)}
-            topicId={topic.id}
-          />
-        )}
-      </AnimatePresence>
+      <FileModal
+        kind="import-cards"
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        topicId={topic.id}
+        onCardsImport={onCardsImport}
+      />
+      <FileModal
+        kind="export-topic"
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        topicId={topic.id}
+      />
     </Screen>
   )
 }
