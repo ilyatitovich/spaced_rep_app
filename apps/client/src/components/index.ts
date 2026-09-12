@@ -1,7 +1,7 @@
 export * from './ui'
 export * from './screens'
 export * from './wrappers'
-
+export * from './modals'
 export { default as Card } from './card'
 export { default as LevelRow } from './level-row'
 export { default as Week } from './week'

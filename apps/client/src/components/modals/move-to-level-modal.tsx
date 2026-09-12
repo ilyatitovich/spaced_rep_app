@@ -1,4 +1,4 @@
-import Modal from './modal'
+import Modal from '../ui/modal'
 import { LEVELS, levelLabel } from '@/lib'
 
 type MoveToLevelModalProps = {

@@ -1,8 +1,7 @@
 import { FolderInput, Trash } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
-import ConfirmDeleteModal from './confirm-delete-modal'
-import MoveToLevelModal from './move-to-level-modal'
+import { ConfirmDeleteModal, MoveToLevelModal } from '@/components'
 
 type SelectionModeFooterProps = {
   countItemsForDelete: number

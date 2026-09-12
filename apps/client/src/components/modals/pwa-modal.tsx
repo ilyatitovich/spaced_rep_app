@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { Share } from 'lucide-react'
 
-import Modal from './modal'
+import Modal from '../ui/modal'
 import { usePwaInstall, usePwaUpdate } from '@/hooks'
 import { isOnboardingComplete } from '@/lib'
 
