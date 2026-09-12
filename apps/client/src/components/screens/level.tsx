@@ -1,5 +1,5 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence } from 'motion/react'
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router'
 
@@ -31,7 +31,6 @@ type LevelScreenProps = {
 const COLS = 3
 /** h-30 (120px) + gap-4 (16px) */
 const ROW_SIZE = 136
-const MOTION_LIMIT = 40
 
 export default function LevelScreen({
   isOpen,
@@ -103,7 +102,6 @@ export default function LevelScreen({
   }
 
   const rowCount = Math.ceil(levelCards.length / COLS)
-  const useMotion = levelCards.length > 0 && levelCards.length <= MOTION_LIMIT
 
   const rowVirtualizer = useVirtualizer({
     count: rowCount,
@@ -161,7 +159,7 @@ export default function LevelScreen({
                       transform: `translateY(${virtualRow.start}px)`
                     }}
                   >
-                    {rowCards.map((card, col) => {
+                    {rowCards.map(card => {
                       const cell = (
                         <LevelCard
                           card={card}
@@ -179,23 +177,7 @@ export default function LevelScreen({
                         />
                       )
 
-                      if (!useMotion) {
-                        return <div key={card.id}>{cell}</div>
-                      }
-
-                      return (
-                        <motion.div
-                          key={card.id}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{
-                            delay: (start + col) * 0.05,
-                            ease: 'easeInOut'
-                          }}
-                        >
-                          {cell}
-                        </motion.div>
-                      )
+                      return <div key={card.id}>{cell}</div>
                     })}
                   </div>
                 )

@@ -202,6 +202,20 @@ html[data-theme='light'] {
 }
 
 @layer utilities {
+  /*
+    iOS toolbar pattern: bar is edge-to-edge, items use layoutMargins
+    (16pt floor + safe area). Portrait L/R insets are 0; the home-indicator
+    inset (~34pt) is what actually clears Super Retina corner radius.
+  */
+  .px-safe-margins {
+    padding-inline: max(
+      1rem,
+      env(safe-area-inset-left, 0px),
+      env(safe-area-inset-right, 0px),
+      env(safe-area-inset-bottom, 0px)
+    );
+  }
+
   .card-stage {
     -webkit-perspective: 1000px;
     perspective: 1000px;
