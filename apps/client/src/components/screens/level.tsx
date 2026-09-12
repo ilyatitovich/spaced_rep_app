@@ -211,17 +211,14 @@ export default function LevelScreen({
         </div>
       </div>
 
-      <AnimatePresence>
-        {isSelectionMode && (
-          <SelectionModeFooter
-            countItemsForDelete={selectedItems.length}
-            handleDelete={handleDeleteSelectedItems}
-            handleMove={handleMoveSelectedItems}
-            currentLevel={Number(currentLevelId)}
-            nameItemsForDelete="card"
-          />
-        )}
-      </AnimatePresence>
+      <SelectionModeFooter
+        isHidden={!isSelectionMode}
+        countItemsForDelete={selectedItems.length}
+        handleDelete={handleDeleteSelectedItems}
+        handleMove={handleMoveSelectedItems}
+        currentLevel={Number(currentLevelId)}
+        nameItemsForDelete="card"
+      />
     </Screen>
   )
 }

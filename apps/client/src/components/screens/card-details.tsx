@@ -1,6 +1,5 @@
 import { useState, useRef, useCallback, useLayoutEffect } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
-import { AnimatePresence } from 'motion/react'
 import { useSearchParams } from 'react-router'
 import { toast } from 'react-hot-toast'
 
@@ -23,12 +22,7 @@ import {
 } from '@/lib'
 import { Card as CardModel } from '@/models'
 import { deleteCardsBulk, updateCard, updateCardsLevelBulk } from '@/services'
-import type {
-  CardData,
-  CardHandle,
-  SideBlock,
-  SideName
-} from '@/types'
+import type { CardData, CardHandle, SideBlock, SideName } from '@/types'
 
 type CardDetailsScreenProps = {
   isOpen: boolean
@@ -78,7 +72,10 @@ export default function CardDetailsScreen({
   const [, setSearchParams] = useSearchParams()
   const total = cards?.length ?? 0
 
-  const cardIndex = Math.max(0, cards?.findIndex(card => card.id === cardId) ?? 0)
+  const cardIndex = Math.max(
+    0,
+    cards?.findIndex(card => card.id === cardId) ?? 0
+  )
   const [currentIndex, setCurrentIndex] = useState(cardIndex)
   const card = cards?.[currentIndex]
 
@@ -488,24 +485,17 @@ export default function CardDetailsScreen({
         />
       ) : (
         <div className="pt-1 pb-20 flex justify-center items-center">
-          <CardButton
-            type="flip"
-            onClick={() => setIsFlipped(prev => !prev)}
-          />
+          <CardButton type="flip" onClick={() => setIsFlipped(prev => !prev)} />
         </div>
       )}
 
-      <AnimatePresence>
-        {!isEditable && (
-          <SelectionModeFooter
-            countItemsForDelete={card ? 1 : 0}
-            nameItemsForDelete="card"
-            handleDelete={handleDeleteCard}
-            handleMove={handleMoveCard}
-            currentLevel={card?.level ?? 0}
-          />
-        )}
-      </AnimatePresence>
+      <SelectionModeFooter
+        countItemsForDelete={card ? 1 : 0}
+        nameItemsForDelete="card"
+        handleDelete={handleDeleteCard}
+        handleMove={handleMoveCard}
+        currentLevel={card?.level ?? 0}
+      />
     </Screen>
   )
 }

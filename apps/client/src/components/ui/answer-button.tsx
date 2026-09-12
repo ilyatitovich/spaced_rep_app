@@ -3,6 +3,9 @@ type AnswerButtonProps = {
   onAnswer: (isCorrect: boolean) => void
 }
 
+const correctGradient = 'from-success to-success-hover'
+const wrongGradient = 'from-danger to-danger-hover'
+
 export default function AnswerButton({
   isCorrect,
   onAnswer
@@ -10,7 +13,7 @@ export default function AnswerButton({
   return (
     <button
       onClick={() => onAnswer(isCorrect)}
-      className={`w-full font-black text-primary-foreground bg-linear-to-br ${isCorrect ? 'from-success to-success-hover' : 'from-danger to-danger-hover'} py-4 px-10 rounded-xl shadow-lg active:scale-95 transition-all duration-200`}
+      className={`w-full font-black text-primary-foreground bg-linear-to-br ${isCorrect ? correctGradient : wrongGradient} py-4 px-10 rounded-xl shadow-lg active:scale-95 transition-all duration-200`}
     >
       {isCorrect ? 'Correct' : 'Wrong'}
     </button>

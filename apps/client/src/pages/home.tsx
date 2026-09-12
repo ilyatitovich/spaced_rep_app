@@ -157,15 +157,12 @@ export default function HomePage() {
         isHidden={isSelectionMode}
         onClick={() => setSearchParams({ create: 'true' })}
       />
-      <AnimatePresence>
-        {isSelectionMode && (
-          <SelectionModeFooter
-            countItemsForDelete={selectedItems.length}
-            nameItemsForDelete="topic"
-            handleDelete={handleDeleteSelectedItems}
-          />
-        )}
-      </AnimatePresence>
+      <SelectionModeFooter
+        isHidden={!isSelectionMode}
+        countItemsForDelete={selectedItems.length}
+        nameItemsForDelete="topic"
+        handleDelete={handleDeleteSelectedItems}
+      />
 
       <CreateTopicScreen isOpen={isCreating} onCreate={handleCreateTopic} />
 
