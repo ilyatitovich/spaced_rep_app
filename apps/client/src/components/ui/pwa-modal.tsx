@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import { Share } from 'lucide-react'
 
 import Modal from './modal'
 import { usePwaInstall, usePwaUpdate } from '@/hooks'
@@ -11,25 +12,6 @@ type Kind =
   | 'ios-open-safari'
   | 'soft-banner'
 
-function ShareIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className="inline-block h-5 w-5 align-text-bottom text-primary"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M12 16V4" />
-      <path d="m8 8 4-4 4 4" />
-      <path d="M4 12v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6" />
-    </svg>
-  )
-}
-
 const btnSecondary =
   'flex-1 rounded-xl bg-secondary text-foreground py-3 active:scale-95'
 const btnPrimary =
@@ -37,8 +19,11 @@ const btnPrimary =
 
 export default function PwaModal() {
   const { variant, promptInstall, dismiss, dismissBanner } = usePwaInstall()
-  const { showPrompt: isUpdateOpen, updateNow, dismiss: dismissUpdate } =
-    usePwaUpdate()
+  const {
+    showPrompt: isUpdateOpen,
+    updateNow,
+    dismiss: dismissUpdate
+  } = usePwaUpdate()
 
   const installKind =
     isOnboardingComplete() && variant !== 'hidden' ? variant : null
@@ -63,7 +48,11 @@ export default function PwaModal() {
             improvements.
           </p>
           <div className="flex gap-3">
-            <button type="button" onClick={handleClose} className={btnSecondary}>
+            <button
+              type="button"
+              onClick={handleClose}
+              className={btnSecondary}
+            >
               Later
             </button>
             <button type="button" onClick={updateNow} className={btnPrimary}>
@@ -82,10 +71,18 @@ export default function PwaModal() {
             It&apos;s better to install for the best experience.
           </p>
           <div className="flex gap-3">
-            <button type="button" onClick={handleClose} className={btnSecondary}>
+            <button
+              type="button"
+              onClick={handleClose}
+              className={btnSecondary}
+            >
               Maybe later
             </button>
-            <button type="button" onClick={promptInstall} className={btnPrimary}>
+            <button
+              type="button"
+              onClick={promptInstall}
+              className={btnPrimary}
+            >
               Install
             </button>
           </div>
@@ -102,7 +99,7 @@ export default function PwaModal() {
           </p>
           <ol className="mb-6 space-y-3 text-sm text-foreground">
             <li>
-              1. Tap the Share icon <ShareIcon /> in the Safari toolbar.
+              1. Tap the Share icon <Share /> in the Safari toolbar.
             </li>
             <li>
               2. Scroll and choose{' '}
