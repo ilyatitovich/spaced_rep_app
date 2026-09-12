@@ -1,4 +1,4 @@
-import Modal from '../ui/modal'
+import Modal from './modal'
 
 interface ConfirmDeleteModalProps {
   isOpen: boolean

@@ -1,6 +1,6 @@
 import { useEffect, useState, type ChangeEvent } from 'react'
 
-import Modal from '../ui/modal'
+import Modal from './modal'
 import Spinner from '../ui/spinner'
 import { isAnkiApkg } from '@/lib'
 import {
