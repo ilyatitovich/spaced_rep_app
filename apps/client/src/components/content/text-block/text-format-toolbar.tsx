@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useEditorState, type Editor } from '@tiptap/react'
-import { Bold, Italic, List, ListOrdered, Underline } from 'lucide-react'
+import { Bold, Italic, List, ListOrdered, Sigma, Underline } from 'lucide-react'
 
 const KEYBOARD_GAP_PX = 8
 
@@ -178,6 +178,27 @@ export default function TextFormatToolbar({
     requestAnimationFrame(restore)
   }
 
+  const insertMath = () => {
+    if (!editor) return
+    const range = rangeRef.current
+    if (range) editor.commands.setTextSelection(range)
+
+    const { from, to, empty } = editor.state.selection
+    if (empty) {
+      editor.commands.insertContent('\\(\\)')
+      editor.commands.setTextSelection(from + 2)
+      rangeRef.current = null
+      return
+    }
+
+    const text = editor.state.doc.textBetween(from, to)
+    const wrapped = `\\(${text}\\)`
+    editor.commands.insertContent(wrapped)
+    const next = { from, to: from + wrapped.length }
+    editor.commands.setTextSelection(next)
+    rangeRef.current = next
+  }
+
   const marks = useEditorState({
     editor,
     selector: ({ editor: ed }) => ({
@@ -252,6 +273,15 @@ export default function TextFormatToolbar({
           onBulletList={() => apply(onBulletList)}
           onNumberedList={() => apply(onNumberedList)}
         />
+        <button
+          type="button"
+          tabIndex={-1}
+          className={toolbarBtnClass(false)}
+          aria-label="Math"
+          onClick={insertMath}
+        >
+          <Sigma className="w-4 h-4" strokeWidth={3} />
+        </button>
       </div>
     </div>
   )
