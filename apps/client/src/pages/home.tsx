@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router'
 import { useDebouncedCallback } from 'use-debounce'
 
 import {
+  Avatar,
   SettingsScreen,
   Button,
   CreateTopicScreen,
@@ -17,7 +18,7 @@ import {
   Search,
   ScreenLayer
 } from '@/components'
-import { useSync } from '@/contexts'
+import { useAuth, useSync } from '@/contexts'
 import { useSelectionMode } from '@/hooks'
 import { Topic } from '@/models'
 import { useTopicsStore } from '@/store'
@@ -32,6 +33,7 @@ export default function HomePage() {
   const searchTopics = useTopicsStore(state => state.searchTopics)
 
   const { status } = useSync()
+  const { user } = useAuth()
 
   const {
     isSelectionMode,
@@ -48,6 +50,9 @@ export default function HomePage() {
   const currentTopic = searchParams.get('topicId')
   const isSettingsOpen = searchParams.get('settings') === 'true'
   const isAuthScreenOpen = searchParams.get('auth') === 'true'
+
+  const avatarUrl = user?.user_metadata?.avatar_url
+  const avatarInitial = (user?.email?.[0] ?? '?').toUpperCase()
 
   useEffect(() => {
     if (!isCreating && !currentTopic) {
@@ -96,7 +101,11 @@ export default function HomePage() {
             ariaLabel="Account"
             onClick={() => setSearchParams({ settings: 'true' })}
           >
-            <CircleUserRound size={24} />
+            {user ? (
+              <Avatar url={avatarUrl} initial={avatarInitial} size="sm" />
+            ) : (
+              <CircleUserRound size={24} />
+            )}
           </Button>
         </Header>
         <Search onSearch={handleSearch} placeholder="Search topics" />
