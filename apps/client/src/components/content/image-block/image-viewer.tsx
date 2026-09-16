@@ -37,6 +37,7 @@ export default function ImageViewer({
       <button
         type="button"
         aria-label="Close"
+        data-dismiss=""
         className="absolute inset-0 bg-black/95"
         onClick={onClose}
         onPointerDown={e => e.stopPropagation()}

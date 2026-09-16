@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react'
+import { useSearchParams } from 'react-router'
 
+import { removeLastSearchParam } from '@/lib'
 import {
-  clickBackButton,
+  dismissTop,
   globalRules,
   matchShortcut,
   trapTab,
@@ -39,7 +41,14 @@ export function useShortcuts(
 }
 
 export function useKeyboardManager(): void {
-  useShortcuts(globalRules, { back: clickBackButton })
+  const [, setSearchParams] = useSearchParams()
+
+  useShortcuts(globalRules, {
+    back: () => {
+      if (dismissTop()) return
+      setSearchParams(prev => removeLastSearchParam(prev))
+    }
+  })
 
   useEffect(() => {
     window.addEventListener('keydown', trapTab)

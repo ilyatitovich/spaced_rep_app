@@ -95,7 +95,7 @@ export default function ImageEditorScreen({
     <Screen isOpen={isVisible} isVertical onClose={handleClose} className="z-60">
       <div className="h-full bg-background flex flex-col overflow-hidden">
         <Header>
-          <Button ariaLabel="Cancel" onClick={onClose}>
+          <Button ariaLabel="Cancel" data-dismiss="" onClick={onClose}>
             <ChevronLeft size={28} />
           </Button>
           <span>Edit image</span>

@@ -1,4 +1,4 @@
-import { useEffect, useState, type ChangeEvent } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 
 import Modal from './modal'
 import Spinner from '../ui/spinner'
@@ -44,6 +44,7 @@ export default function FileModal(props: FileModalProps) {
   const [message, setMessage] = useState<string | null>(null)
   const [progress, setProgress] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!isOpen) return
@@ -185,17 +186,22 @@ export default function FileModal(props: FileModalProps) {
 
       {isImport && !isLoading && !message && (
         <>
-          <label className="bg-primary text-primary-foreground w-full text-center py-4 rounded-xl cursor-pointer">
+          <button
+            type="button"
+            className="bg-primary text-primary-foreground w-full text-center py-4 rounded-xl"
+            onClick={() => fileInputRef.current?.click()}
+          >
             {kind === 'import-app'
               ? 'Choose JSON'
               : 'Choose JSON or Anki (.apkg)'}
-            <input
-              type="file"
-              accept={kind === 'import-app' ? 'application/json' : '*/*'}
-              className="hidden"
-              onChange={handleFileSelect}
-            />
-          </label>
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={kind === 'import-app' ? 'application/json' : '*/*'}
+            className="hidden"
+            onChange={handleFileSelect}
+          />
           <textarea
             aria-label="Paste JSON"
             placeholder="Or paste JSON"

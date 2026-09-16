@@ -1,5 +1,5 @@
-export const BACK_BUTTON_ATTR = 'data-back-button'
 export const SCREEN_ATTR = 'data-screen'
+export const DISMISS_ATTR = 'data-dismiss'
 
 const TABBABLE_SELECTOR = [
   'a[href]',
@@ -51,24 +51,17 @@ export function matchShortcut(
   return null
 }
 
-function isInViewport(el: HTMLElement): boolean {
-  const rect = el.getBoundingClientRect()
-  return (
-    rect.width > 0 &&
-    rect.height > 0 &&
-    rect.bottom > 0 &&
-    rect.right > 0 &&
-    rect.top < window.innerHeight &&
-    rect.left < window.innerWidth
-  )
-}
+export function dismissTop(): boolean {
+  const top = getTopScreen()
+  if (!top) return false
 
-export function clickBackButton(): void {
-  const buttons = document.querySelectorAll<HTMLElement>(
-    `[${BACK_BUTTON_ATTR}]`
-  )
-  const visible = Array.from(buttons).filter(isInViewport)
-  visible.at(-1)?.click()
+  const dismiss = Array.from(
+    top.querySelectorAll<HTMLElement>(`[${DISMISS_ATTR}]`)
+  ).find(el => el.closest(`[${SCREEN_ATTR}]`) === top)
+  if (!dismiss) return false
+
+  dismiss.click()
+  return true
 }
 
 export function getTopScreen(): HTMLElement | null {
@@ -80,7 +73,12 @@ export function getTopScreen(): HTMLElement | null {
 export function getTabbables(root: HTMLElement): HTMLElement[] {
   return Array.from(
     root.querySelectorAll<HTMLElement>(TABBABLE_SELECTOR)
-  ).filter(el => !el.closest('[inert]') && el.getClientRects().length > 0)
+  ).filter(
+    el =>
+      el.tabIndex >= 0 &&
+      !el.closest('[inert]') &&
+      el.getClientRects().length > 0
+  )
 }
 
 export function trapTab(event: KeyboardEvent): void {

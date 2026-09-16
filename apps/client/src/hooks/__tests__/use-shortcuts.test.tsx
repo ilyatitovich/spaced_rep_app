@@ -1,44 +1,25 @@
 import { render } from '@testing-library/react'
-import { MemoryRouter } from 'react-router'
-import { describe, expect, it, vi } from 'vitest'
-
-import BackButton from '@/components/ui/back-button'
-import { BACK_BUTTON_ATTR } from '@/lib/keyboard'
+import { MemoryRouter, useSearchParams } from 'react-router'
+import { describe, expect, it } from 'vitest'
 
 import { useKeyboardManager } from '../use-shortcuts'
 
 function Harness() {
   useKeyboardManager()
-  return (
-    <MemoryRouter>
-      <BackButton />
-    </MemoryRouter>
-  )
+  const [params] = useSearchParams()
+  return <span data-testid="qs">{params.toString()}</span>
 }
 
 describe('useKeyboardManager', () => {
-  it('clicks the back button on Escape', () => {
-    const { getByRole } = render(<Harness />)
-    const button = getByRole('button', { name: 'Back' })
-    button.getBoundingClientRect = () =>
-      ({
-        width: 40,
-        height: 40,
-        top: 8,
-        left: 8,
-        bottom: 48,
-        right: 48,
-        x: 8,
-        y: 8,
-        toJSON() {}
-      }) as DOMRect
-
-    const onClick = vi.fn()
-    button.addEventListener('click', onClick)
+  it('closes the current screen on Escape', () => {
+    const { getByTestId } = render(
+      <MemoryRouter initialEntries={['/?topicId=abc&levelId=2']}>
+        <Harness />
+      </MemoryRouter>
+    )
 
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
 
-    expect(onClick).toHaveBeenCalledOnce()
-    expect(button).toHaveAttribute(BACK_BUTTON_ATTR)
+    expect(getByTestId('qs')).toHaveTextContent('topicId=abc')
   })
 })

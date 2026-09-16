@@ -40,7 +40,9 @@ export default function Modal({
     >
       <button
         type="button"
+        tabIndex={-1}
         aria-label="Close"
+        data-dismiss=""
         className={`absolute inset-0 bg-background-overlay transition-opacity duration-300 ${
           isOpen ? 'opacity-100 starting:opacity-0' : 'opacity-0'
         }`}

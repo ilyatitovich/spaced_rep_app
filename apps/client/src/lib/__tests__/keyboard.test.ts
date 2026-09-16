@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import {
-  BACK_BUTTON_ATTR,
-  clickBackButton,
+  DISMISS_ATTR,
+  dismissTop,
+  getTabbables,
   globalRules,
   matchShortcut,
   SCREEN_ATTR,
@@ -71,47 +72,58 @@ describe('matchShortcut', () => {
   })
 })
 
-describe('clickBackButton', () => {
-  it('clicks the topmost in-viewport back button', () => {
-    const behind = document.createElement('button')
-    const top = document.createElement('button')
-    behind.setAttribute(BACK_BUTTON_ATTR, '')
-    top.setAttribute(BACK_BUTTON_ATTR, '')
-    placeInViewport(behind)
-    placeInViewport(top)
-    document.body.append(behind, top)
+describe('dismissTop', () => {
+  it('closes the top overlay and leaves the screen underneath', () => {
+    const screen = document.createElement('div')
+    screen.setAttribute(SCREEN_ATTR, '')
 
-    const clicks: string[] = []
-    behind.addEventListener('click', () => clicks.push('behind'))
-    top.addEventListener('click', () => clicks.push('top'))
+    const modal = document.createElement('div')
+    modal.setAttribute(SCREEN_ATTR, '')
+    const close = document.createElement('button')
+    close.setAttribute(DISMISS_ATTR, '')
+    modal.append(close)
 
-    clickBackButton()
+    document.body.append(screen, modal)
 
-    expect(clicks).toEqual(['top'])
-    behind.remove()
-    top.remove()
+    const onClose = vi.fn()
+    close.addEventListener('click', onClose)
+
+    expect(dismissTop()).toBe(true)
+    expect(onClose).toHaveBeenCalledOnce()
+
+    screen.remove()
+    modal.remove()
   })
 
-  it('skips off-screen back buttons from closed screens', () => {
-    const closed = document.createElement('button')
-    const open = document.createElement('button')
-    closed.setAttribute(BACK_BUTTON_ATTR, '')
-    open.setAttribute(BACK_BUTTON_ATTR, '')
-    placeInViewport(closed, 2000)
-    placeInViewport(open)
-    document.body.append(closed, open)
+  it('returns false when the top layer is a screen', () => {
+    const screen = document.createElement('div')
+    screen.setAttribute(SCREEN_ATTR, '')
+    document.body.append(screen)
 
-    const onClosed = vi.fn()
-    const onOpen = vi.fn()
-    closed.addEventListener('click', onClosed)
-    open.addEventListener('click', onOpen)
+    expect(dismissTop()).toBe(false)
 
-    clickBackButton()
+    screen.remove()
+  })
 
-    expect(onClosed).not.toHaveBeenCalled()
-    expect(onOpen).toHaveBeenCalledOnce()
-    closed.remove()
-    open.remove()
+  it('ignores a closed modal nested inside the current screen', () => {
+    const screen = document.createElement('div')
+    screen.setAttribute(SCREEN_ATTR, '')
+    const modal = document.createElement('div')
+    modal.setAttribute(SCREEN_ATTR, '')
+    modal.inert = true
+    const close = document.createElement('button')
+    close.setAttribute(DISMISS_ATTR, '')
+    modal.append(close)
+    screen.append(modal)
+    document.body.append(screen)
+
+    const onClose = vi.fn()
+    close.addEventListener('click', onClose)
+
+    expect(dismissTop()).toBe(false)
+    expect(onClose).not.toHaveBeenCalled()
+
+    screen.remove()
   })
 })
 
@@ -203,5 +215,30 @@ describe('trapTab', () => {
 
     behind.remove()
     top.remove()
+  })
+})
+
+describe('getTabbables', () => {
+  it('includes a file-picker button and skips hidden inputs and the backdrop', () => {
+    const root = document.createElement('div')
+    const backdrop = document.createElement('button')
+    backdrop.tabIndex = -1
+    const pick = document.createElement('button')
+    pick.textContent = 'Choose JSON'
+    const hidden = document.createElement('input')
+    hidden.type = 'file'
+    hidden.hidden = true
+    const close = document.createElement('button')
+    close.textContent = 'Close'
+    root.append(backdrop, pick, hidden, close)
+    document.body.append(root)
+    for (const el of [root, backdrop, pick, close]) placeInViewport(el)
+
+    expect(getTabbables(root).map(el => el.textContent)).toEqual([
+      'Choose JSON',
+      'Close'
+    ])
+
+    root.remove()
   })
 })
