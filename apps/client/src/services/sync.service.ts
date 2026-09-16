@@ -72,6 +72,8 @@ const DEVICE_ID_KEY = 'deviceId'
 const LAST_SYNC_AT_KEY = 'lastSyncAt'
 const FAILED_OPS_KEY = 'failedOps'
 const MAX_PUSH_BATCH = 50
+/** Server HTTP/WS payload limit is 1mb; leave headroom for the envelope wrapper. */
+const MAX_PUSH_BYTES = 700_000
 const MAX_ATTEMPTS = 10
 
 let currentUserId: string | null = null
@@ -422,6 +424,22 @@ async function buildMutations(items: QueueItem[]): Promise<{
   const deviceId = await getDeviceId()
   const mutations: Mutation[] = []
   const included: QueueItem[] = []
+  // ponytail: count+byte caps; blob store later if single cards exceed 1mb
+  let approxBytes = 256
+
+  const tryAdd = (item: QueueItem, mutation: Mutation): boolean => {
+    const addBytes = JSON.stringify(mutation).length + 1
+    if (
+      mutations.length > 0 &&
+      approxBytes + addBytes > MAX_PUSH_BYTES
+    ) {
+      return false
+    }
+    mutations.push(mutation)
+    included.push(item)
+    approxBytes += addBytes
+    return true
+  }
 
   for (const item of items) {
     if (item.nextRetryAt > Date.now()) continue
@@ -437,8 +455,7 @@ async function buildMutations(items: QueueItem[]): Promise<{
     }
 
     if (item.operation === 'delete') {
-      mutations.push(base)
-      included.push(item)
+      if (!tryAdd(item, base)) break
       continue
     }
 
@@ -448,24 +465,30 @@ async function buildMutations(items: QueueItem[]): Promise<{
         await removeQueueItem(item.id)
         continue
       }
-      mutations.push({
-        ...base,
-        updatedAt: topic.updatedAt ?? Date.now(),
-        topic: topicToRecord(topic)
-      })
-      included.push(item)
+      if (
+        !tryAdd(item, {
+          ...base,
+          updatedAt: topic.updatedAt ?? Date.now(),
+          topic: topicToRecord(topic)
+        })
+      ) {
+        break
+      }
     } else {
       const card = await getLocalRecord<Card>(STORES.CARDS, item.recordId)
       if (!card) {
         await removeQueueItem(item.id)
         continue
       }
-      mutations.push({
-        ...base,
-        updatedAt: card.updatedAt ?? Date.now(),
-        card: cardToRecord(card)
-      })
-      included.push(item)
+      if (
+        !tryAdd(item, {
+          ...base,
+          updatedAt: card.updatedAt ?? Date.now(),
+          card: cardToRecord(card)
+        })
+      ) {
+        break
+      }
     }
   }
 
