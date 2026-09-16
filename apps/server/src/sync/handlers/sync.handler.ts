@@ -35,7 +35,8 @@ export async function pushHandler(
     const { userId } = requireAuthUser(req)
     await enforceRateLimit({
       key: `sync:push:${userId}`,
-      limit: 100,
+      // Burst drain after sign-in can need many batches (50 ops each).
+      limit: 500,
       windowSeconds: 60,
       message: 'Sync rate limit exceeded'
     })

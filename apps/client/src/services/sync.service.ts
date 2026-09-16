@@ -25,6 +25,7 @@ import {
 import { Card, Topic } from '@/models'
 import { isBackendConfigured, sync as syncBackend } from '@/providers'
 import type { SyncRealtimeHandle } from '@/providers/types'
+import { ApiError } from '@/lib/api'
 import type { WsConnectionState } from './sync-ws.manager'
 
 type SyncTable = typeof STORES.TOPICS | typeof STORES.CARDS
@@ -84,11 +85,19 @@ let state: SyncState = {
   failedOps: []
 }
 let triggerTimer: ReturnType<typeof setTimeout> | null = null
-let syncInFlight = false
+let syncMutex: Promise<void> | null = null
 let realtime: SyncRealtimeHandle | null = null
 
 const listeners = new Set<(state: SyncState) => void>()
 const dataListeners = new Set<() => void>()
+
+function withSyncMutex(fn: () => Promise<void>): Promise<void> {
+  if (syncMutex) return syncMutex
+  syncMutex = fn().finally(() => {
+    syncMutex = null
+  })
+  return syncMutex
+}
 
 function setState(next: Partial<SyncState>): void {
   state = { ...state, ...next }
@@ -580,30 +589,50 @@ async function applyPullDelta(delta: PullDelta): Promise<void> {
 
 async function pushChanges(deviceId: string): Promise<void> {
   if (!syncBackend) return
-  const queue = await getQueue()
-  if (queue.length === 0) return
 
-  const { mutations, items } = await buildMutations(queue)
-  if (mutations.length === 0) return
+  let rateLimitDelayMs = 2_000
 
-  let ack: PushAck
-  if (realtime?.isActive() && realtime.pushBatch) {
+  // Drain in batches — one MAX_PUSH_BATCH push leaves the rest stranded.
+  while (true) {
+    const queue = await getQueue()
+    if (queue.length === 0) return
+
+    const { mutations, items } = await buildMutations(queue)
+    if (mutations.length === 0) return
+
     try {
-      ack = await realtime.pushBatch(mutations)
-      setState({ connection: 'ws' })
-    } catch {
-      ack = await syncBackend.push({ deviceId, mutations })
-      setState({ connection: 'http' })
+      let ack: PushAck
+      if (realtime?.isActive() && realtime.pushBatch) {
+        try {
+          ack = await realtime.pushBatch(mutations)
+          setState({ connection: 'ws' })
+        } catch {
+          ack = await syncBackend.push({ deviceId, mutations })
+          setState({ connection: 'http' })
+        }
+      } else {
+        ack = await syncBackend.push({ deviceId, mutations })
+        setState({ connection: 'http' })
+      }
+
+      await applyPushAck(ack, items)
+
+      for (const conflict of ack.conflicts) {
+        await applyTopicConflict(conflict)
+      }
+      rateLimitDelayMs = 2_000
+    } catch (err) {
+      const limited =
+        err instanceof ApiError &&
+        (err.code === 'RATE_LIMITED' || err.status === 429)
+      if (!limited) throw err
+
+      // #region agent log
+      fetch('http://127.0.0.1:7521/ingest/1bb57655-e58e-4cb4-86e4-aa8c75592027',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'039367'},body:JSON.stringify({sessionId:'039367',runId:'post-fix',hypothesisId:'E',location:'sync.service.ts:pushChanges',message:'rate limited, backing off',data:{delayMs:rateLimitDelayMs,queueDepth:queue.length},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
+      await new Promise<void>(resolve => setTimeout(resolve, rateLimitDelayMs))
+      rateLimitDelayMs = Math.min(60_000, rateLimitDelayMs * 2)
     }
-  } else {
-    ack = await syncBackend.push({ deviceId, mutations })
-    setState({ connection: 'http' })
-  }
-
-  await applyPushAck(ack, items)
-
-  for (const conflict of ack.conflicts) {
-    await applyTopicConflict(conflict)
   }
 }
 
@@ -688,51 +717,69 @@ async function connectRealtime(): Promise<void> {
 }
 
 export async function syncAll(_userId: string): Promise<void> {
-  if (!isBackendConfigured() || !syncBackend) return
-  if (syncInFlight) return
+  if (!isBackendConfigured() || !syncBackend) {
+    // #region agent log
+    fetch('http://127.0.0.1:7521/ingest/1bb57655-e58e-4cb4-86e4-aa8c75592027',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'039367'},body:JSON.stringify({sessionId:'039367',runId:'post-fix',hypothesisId:'B',location:'sync.service.ts:syncAll',message:'syncAll skipped: backend',data:{configured:isBackendConfigured(),hasBackend:Boolean(syncBackend)},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+    return
+  }
 
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
     setState({ status: 'offline', connection: 'offline' })
     return
   }
 
-  syncInFlight = true
-  setState({ status: 'syncing', lastError: null })
-
-  try {
-    const deviceId = await getDeviceId()
-    setState({ deviceId })
-
-    const lastSyncAt = await getMeta(LAST_SYNC_AT_KEY)
-    if (
-      lastSyncAt !== undefined &&
-      Date.now() - Number(lastSyncAt) > ACTIVE_WINDOW_MS
-    ) {
-      await reconcile()
-    }
-
-    await pushChanges(deviceId)
-    await pullChanges(deviceId)
-
-    await setMeta(LAST_SYNC_AT_KEY, String(Date.now()))
-    setState({
-      status: 'idle',
-      lastSyncedAt: Date.now(),
-      queueDepth: (await getQueue()).length
-    })
-
-    if (realtime && !realtime.isActive()) {
-      await connectRealtime()
-    }
-  } catch (error) {
-    console.error('Sync failed:', error)
-    setState({
-      status: 'error',
-      lastError: error instanceof Error ? error.message : 'Sync failed'
-    })
-  } finally {
-    syncInFlight = false
+  if (syncMutex) {
+    // #region agent log
+    fetch('http://127.0.0.1:7521/ingest/1bb57655-e58e-4cb4-86e4-aa8c75592027',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'039367'},body:JSON.stringify({sessionId:'039367',runId:'post-fix',hypothesisId:'C',location:'sync.service.ts:syncAll',message:'syncAll joined mutex',data:{currentUserId},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+    return syncMutex
   }
+
+  return withSyncMutex(async () => {
+    setState({ status: 'syncing', lastError: null })
+
+    try {
+      const deviceId = await getDeviceId()
+      setState({ deviceId })
+
+      const lastSyncAt = await getMeta(LAST_SYNC_AT_KEY)
+      if (
+        lastSyncAt !== undefined &&
+        Date.now() - Number(lastSyncAt) > ACTIVE_WINDOW_MS
+      ) {
+        await reconcile()
+      }
+
+      const queueBefore = (await getQueue()).length
+      await pushChanges(deviceId)
+      await pullChanges(deviceId)
+      const queueAfter = (await getQueue()).length
+      // #region agent log
+      fetch('http://127.0.0.1:7521/ingest/1bb57655-e58e-4cb4-86e4-aa8c75592027',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'039367'},body:JSON.stringify({sessionId:'039367',runId:'post-fix',hypothesisId:'D',location:'sync.service.ts:syncAll',message:'syncAll completed',data:{queueBefore,queueAfter,deviceId},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
+
+      await setMeta(LAST_SYNC_AT_KEY, String(Date.now()))
+      setState({
+        status: 'idle',
+        lastSyncedAt: Date.now(),
+        queueDepth: queueAfter
+      })
+
+      if (realtime && !realtime.isActive()) {
+        await connectRealtime()
+      }
+    } catch (error) {
+      console.error('Sync failed:', error)
+      // #region agent log
+      fetch('http://127.0.0.1:7521/ingest/1bb57655-e58e-4cb4-86e4-aa8c75592027',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'039367'},body:JSON.stringify({sessionId:'039367',runId:'post-fix',hypothesisId:'E',location:'sync.service.ts:syncAll',message:'syncAll failed',data:{error:error instanceof Error?error.message:String(error)},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
+      setState({
+        status: 'error',
+        lastError: error instanceof Error ? error.message : 'Sync failed'
+      })
+    }
+  })
 }
 
 async function migrateLocalToCloud(): Promise<void> {
@@ -768,48 +815,79 @@ export function setSyncUser(userId: string | null): void {
 }
 
 export async function initialSync(userId: string): Promise<void> {
-  if (!isBackendConfigured() || !syncBackend) return
-
-  wireRealtimeListeners()
-
-  const migratedUserId = await getMeta('migratedUserId')
-  if (migratedUserId !== userId) {
-    await migrateLocalToCloud()
-    await setMeta('migratedUserId', userId)
+  if (!isBackendConfigured() || !syncBackend) {
+    // #region agent log
+    fetch('http://127.0.0.1:7521/ingest/1bb57655-e58e-4cb4-86e4-aa8c75592027',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'039367'},body:JSON.stringify({sessionId:'039367',runId:'post-fix',hypothesisId:'B',location:'sync.service.ts:initialSync',message:'initialSync skipped: backend',data:{configured:isBackendConfigured(),hasBackend:Boolean(syncBackend)},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+    return
   }
 
-  const deviceId = await getDeviceId()
-  setState({ deviceId })
-
-  try {
-    setState({ status: 'syncing' })
-    const lastPulledAt = (await getMeta('lastPulledAt')) ?? EPOCH_ISO
-    const delta = await syncBackend.bootstrap({
-      deviceId,
-      lastPulledAt,
-      pendingOpCount: (await getQueue()).length
-    })
-    await applyPullDelta(delta)
-    await pushChanges(deviceId)
-    await setMeta(LAST_SYNC_AT_KEY, String(Date.now()))
-    setState({
-      status: 'idle',
-      lastSyncedAt: Date.now(),
-      queueDepth: (await getQueue()).length
-    })
-  } catch (error) {
-    console.error('Initial sync failed:', error)
-    setState({
-      status: 'error',
-      lastError: error instanceof Error ? error.message : 'Initial sync failed'
-    })
+  if (syncMutex) {
+    // #region agent log
+    fetch('http://127.0.0.1:7521/ingest/1bb57655-e58e-4cb4-86e4-aa8c75592027',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'039367'},body:JSON.stringify({sessionId:'039367',runId:'post-fix',hypothesisId:'C',location:'sync.service.ts:initialSync',message:'initialSync joined mutex',data:{userId},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+    return syncMutex
   }
 
-  await connectRealtime()
+  return withSyncMutex(async () => {
+    wireRealtimeListeners()
+
+    const migratedUserId = await getMeta('migratedUserId')
+    const didMigrate = migratedUserId !== userId
+    if (didMigrate) {
+      await migrateLocalToCloud()
+      await setMeta('migratedUserId', userId)
+    }
+
+    const deviceId = await getDeviceId()
+    setState({ deviceId })
+    const queueAfterMigrate = (await getQueue()).length
+    // #region agent log
+    fetch('http://127.0.0.1:7521/ingest/1bb57655-e58e-4cb4-86e4-aa8c75592027',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'039367'},body:JSON.stringify({sessionId:'039367',runId:'post-fix',hypothesisId:'A',location:'sync.service.ts:initialSync:start',message:'initialSync start',data:{didMigrate,queueAfterMigrate,deviceId,hadMigratedUserId:Boolean(migratedUserId)},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+
+    try {
+      setState({ status: 'syncing' })
+      const lastPulledAt = (await getMeta('lastPulledAt')) ?? EPOCH_ISO
+      const delta = await syncBackend!.bootstrap({
+        deviceId,
+        lastPulledAt,
+        pendingOpCount: (await getQueue()).length
+      })
+      await applyPullDelta(delta)
+      await pushChanges(deviceId)
+      const queueAfterPush = (await getQueue()).length
+      // #region agent log
+      fetch('http://127.0.0.1:7521/ingest/1bb57655-e58e-4cb4-86e4-aa8c75592027',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'039367'},body:JSON.stringify({sessionId:'039367',runId:'post-fix',hypothesisId:'D',location:'sync.service.ts:initialSync:done',message:'initialSync push done',data:{queueAfterMigrate,queueAfterPush,deltaRecords:delta.records.length,maxBatch:MAX_PUSH_BATCH},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
+      await setMeta(LAST_SYNC_AT_KEY, String(Date.now()))
+      setState({
+        status: 'idle',
+        lastSyncedAt: Date.now(),
+        queueDepth: queueAfterPush
+      })
+    } catch (error) {
+      console.error('Initial sync failed:', error)
+      // #region agent log
+      fetch('http://127.0.0.1:7521/ingest/1bb57655-e58e-4cb4-86e4-aa8c75592027',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'039367'},body:JSON.stringify({sessionId:'039367',runId:'post-fix',hypothesisId:'E',location:'sync.service.ts:initialSync:error',message:'initialSync failed',data:{error:error instanceof Error?error.message:String(error)},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
+      setState({
+        status: 'error',
+        lastError: error instanceof Error ? error.message : 'Initial sync failed'
+      })
+    }
+
+    await connectRealtime()
+  })
 }
 
 export function syncNow(): void {
-  if (!currentUserId) return
+  if (!currentUserId) {
+    // #region agent log
+    fetch('http://127.0.0.1:7521/ingest/1bb57655-e58e-4cb4-86e4-aa8c75592027',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'039367'},body:JSON.stringify({sessionId:'039367',runId:'pre-fix',hypothesisId:'C',location:'sync.service.ts:syncNow',message:'syncNow skipped: no currentUserId',data:{},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+    return
+  }
   void syncAll(currentUserId)
 }
 
