@@ -1,5 +1,43 @@
-import type { ReactNode } from 'react'
-import { useState, useEffect, useRef } from 'react'
+import type { ReactNode, TransitionEvent } from 'react'
+import { useState, useEffect, useId, useRef } from 'react'
+
+import { useScreenStackStore } from '@/store'
+
+type ScreenLayerProps = {
+  isOpen?: boolean
+  className?: string
+  children: ReactNode
+}
+
+export function ScreenLayer({
+  isOpen = true,
+  className = 'h-full',
+  children
+}: ScreenLayerProps) {
+  const id = useId()
+  const push = useScreenStackStore(state => state.push)
+  const pop = useScreenStackStore(state => state.pop)
+  const isBehind = useScreenStackStore(state => {
+    const index = state.stack.indexOf(id)
+    return index !== -1 && index < state.stack.length - 1
+  })
+
+  useEffect(() => {
+    if (!isOpen) return
+    push(id)
+    return () => pop(id)
+  }, [id, isOpen, pop, push])
+
+  return (
+    <div
+      className={`${className} transition-transform duration-300 ease-in-out ${
+        isBehind ? '-translate-x-1/4' : 'translate-x-0'
+      }`}
+    >
+      {children}
+    </div>
+  )
+}
 
 type ScreenProps = {
   isOpen: boolean
@@ -35,7 +73,8 @@ export default function Screen({
     }
   }, [isInitialRender, isOpen, onOpen])
 
-  const handleTransitionEnd = () => {
+  const handleTransitionEnd = (event: TransitionEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) return
     if (isOpen) return
     onClose?.()
   }
@@ -55,7 +94,9 @@ export default function Screen({
       } transition-transform duration-300 ease-in-out fixed inset-0 bg-background ${className}`.trim()}
       onTransitionEnd={handleTransitionEnd}
     >
-      {!isInitialRender && children}
+      <ScreenLayer isOpen={isOpen && !isVertical}>
+        {!isInitialRender && children}
+      </ScreenLayer>
     </div>
   )
 }

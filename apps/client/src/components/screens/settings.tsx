@@ -131,7 +131,8 @@ export default function SettingsScreen({ isOpen }: SettingsScreenProps) {
         : 'Light'
 
   return (
-    <Screen isOpen={isOpen}>
+    <>
+      <Screen isOpen={isOpen}>
       <div className="h-full bg-background flex flex-col">
         <Header>
           <BackButton />
@@ -238,15 +239,16 @@ export default function SettingsScreen({ isOpen }: SettingsScreenProps) {
           )}
         </div>
       </div>
-
-      <SectionPreferences isOpen={isPreferencesOpen} />
-      <SectionNotifications isOpen={isNotificationsOpen} />
-      <SectionPasskeys isOpen={isPasskeysOpen} />
-      <SectionSubscription isOpen={isSubscriptionOpen} />
-      <SectionPrivacy isOpen={isPrivacyOpen} />
-      <SectionData isOpen={isDataOpen} />
-      <SectionAbout isOpen={isAboutOpen} />
-      <SectionCreateWithAi isOpen={isCreateWithAiOpen} />
     </Screen>
+
+    <SectionPreferences isOpen={isPreferencesOpen} />
+    <SectionNotifications isOpen={isNotificationsOpen} />
+    <SectionPasskeys isOpen={isPasskeysOpen} />
+    <SectionSubscription isOpen={isSubscriptionOpen} />
+    <SectionPrivacy isOpen={isPrivacyOpen} />
+    <SectionData isOpen={isDataOpen} />
+    <SectionAbout isOpen={isAboutOpen} />
+    <SectionCreateWithAi isOpen={isCreateWithAiOpen} />
+    </>
   )
 }

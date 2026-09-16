@@ -14,7 +14,8 @@ import {
   TopicScreen,
   CreateTopicButton,
   Header,
-  Search
+  Search,
+  ScreenLayer
 } from '@/components'
 import { useSync } from '@/contexts'
 import { useSelectionMode } from '@/hooks'
@@ -77,65 +78,67 @@ export default function HomePage() {
 
   return (
     <main>
-      <SelectionModeHeader
-        isHidden={!isSelectionMode}
-        handleCancel={cancelSelectionMode}
-        selectedItemsCount={selectedItems.length}
-        isAllSelected={selectedItems.length === topics.length}
-        handleSelectAll={handleSelectAll}
-      />
+      <ScreenLayer className="relative h-dvh">
+        <SelectionModeHeader
+          isHidden={!isSelectionMode}
+          handleCancel={cancelSelectionMode}
+          selectedItemsCount={selectedItems.length}
+          isAllSelected={selectedItems.length === topics.length}
+          handleSelectAll={handleSelectAll}
+        />
 
-      <Header>
-        <Button onClick={() => setIsSelectionMode(true)}>
-          <List />
-        </Button>
-        <span className="font-bold">Topics</span>
-        <Button
-          ariaLabel="Account"
-          onClick={() => setSearchParams({ settings: 'true' })}
-        >
-          <CircleUserRound size={24} />
-        </Button>
-      </Header>
-      <Search onSearch={handleSearch} placeholder="Search topics" />
+        <Header>
+          <Button onClick={() => setIsSelectionMode(true)}>
+            <List />
+          </Button>
+          <span className="font-bold">Topics</span>
+          <Button
+            ariaLabel="Account"
+            onClick={() => setSearchParams({ settings: 'true' })}
+          >
+            <CircleUserRound size={24} />
+          </Button>
+        </Header>
+        <Search onSearch={handleSearch} placeholder="Search topics" />
 
-      <div className="relative h-[calc(100dvh-60px)]">
-        <div className="absolute w-full h-4 bg-linear-to-b from-background to-background/30" />
-        {isLoading || (status === 'syncing' && topics.length === 0) ? (
-          <Spinner />
-        ) : topics.length === 0 ? (
-          <div className="h-full flex items-center justify-center">
-            <div className="text-center text-foreground-muted">
-              <p>No topics found.</p>
-              <p>Click the + button to create one!</p>
+        <div className="relative h-[calc(100dvh-60px)]">
+          <div className="absolute w-full h-4 bg-linear-to-b from-background to-background/30" />
+          {isLoading || (status === 'syncing' && topics.length === 0) ? (
+            <Spinner />
+          ) : topics.length === 0 ? (
+            <div className="h-full flex items-center justify-center">
+              <div className="text-center text-foreground-muted">
+                <p>No topics found.</p>
+                <p>Click the + button to create one!</p>
+              </div>
             </div>
-          </div>
-        ) : (
-          <ul className="h-full px-4 pt-0 pb-20 overflow-y-auto">
-            {topics.map(topic => (
-              <li key={topic.id}>
-                <TopicItem
-                  topic={topic}
-                  isSelectionMode={isSelectionMode}
-                  isSelected={selectedItems.includes(topic.id)}
-                  onSelect={selectItem}
-                  onOpen={() => setSearchParams({ topicId: topic.id })}
-                />
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-      <CreateTopicButton
-        isHidden={isSelectionMode}
-        onClick={() => setSearchParams({ create: 'true' })}
-      />
-      <SelectionModeFooter
-        isHidden={!isSelectionMode}
-        countItemsForDelete={selectedItems.length}
-        nameItemsForDelete="topic"
-        handleDelete={handleDeleteSelectedItems}
-      />
+          ) : (
+            <ul className="h-full px-4 pt-0 pb-20 overflow-y-auto">
+              {topics.map(topic => (
+                <li key={topic.id}>
+                  <TopicItem
+                    topic={topic}
+                    isSelectionMode={isSelectionMode}
+                    isSelected={selectedItems.includes(topic.id)}
+                    onSelect={selectItem}
+                    onOpen={() => setSearchParams({ topicId: topic.id })}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <CreateTopicButton
+          isHidden={isSelectionMode}
+          onClick={() => setSearchParams({ create: 'true' })}
+        />
+        <SelectionModeFooter
+          isHidden={!isSelectionMode}
+          countItemsForDelete={selectedItems.length}
+          nameItemsForDelete="topic"
+          handleDelete={handleDeleteSelectedItems}
+        />
+      </ScreenLayer>
 
       <CreateTopicScreen isOpen={isCreating} onCreate={handleCreateTopic} />
 
