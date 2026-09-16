@@ -1,5 +1,4 @@
 import { KeyRound, Lock, Plus, Trash2 } from 'lucide-react'
-import { AnimatePresence, motion } from 'motion/react'
 import { useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import toast from 'react-hot-toast'
@@ -21,6 +20,7 @@ import {
 import { getAuthErrorMessage } from '@/lib/auth-errors'
 import { getAuthSession } from '@/lib/auth-storage'
 import { getDevicePlatform } from '@/lib/get-device-platform'
+import Modal from '../modals/modal'
 import { SettingsActionRow, SettingsGroup } from './settings-ui'
 
 function formatDate(iso: string | null): string {
@@ -85,6 +85,8 @@ export default function SectionPasskeys({ isOpen }: SectionPasskeysProps) {
   const [pendingDelete, setPendingDelete] = useState<PasskeySummary | null>(
     null
   )
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+  const [isDeletingLast, setIsDeletingLast] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [supported] = useState(() => browserSupportsWebAuthn())
 
@@ -107,10 +109,16 @@ export default function SectionPasskeys({ isOpen }: SectionPasskeysProps) {
   useEffect(() => {
     if (isOpen && session) void loadPasskeys()
     if (!isOpen) {
+      setIsDeleteOpen(false)
       setPendingDelete(null)
       setPasskeys([])
     }
   }, [isOpen, session, loadPasskeys])
+
+  const closeDeleteModal = () => {
+    if (isDeleting) return
+    setIsDeleteOpen(false)
+  }
 
   const handleSignIn = () => {
     setSearchParams(prev => {
@@ -178,8 +186,8 @@ export default function SectionPasskeys({ isOpen }: SectionPasskeysProps) {
     try {
       await deletePasskey(token, pendingDelete.id)
       toast.success('Passkey removed')
+      setIsDeleteOpen(false)
       setPasskeys(prev => prev.filter(p => p.id !== pendingDelete.id))
-      setPendingDelete(null)
     } catch (err) {
       toast.error(getAuthErrorMessage(err))
     } finally {
@@ -262,7 +270,11 @@ export default function SectionPasskeys({ isOpen }: SectionPasskeysProps) {
                   </div>
                   <button
                     type="button"
-                    onClick={() => setPendingDelete(passkey)}
+                    onClick={() => {
+                      setPendingDelete(passkey)
+                      setIsDeletingLast(passkeys.length === 1)
+                      setIsDeleteOpen(true)
+                    }}
                     className="text-danger p-2 shrink-0"
                     aria-label={`Remove ${passkey.name || 'passkey'}`}
                   >
@@ -284,64 +296,45 @@ export default function SectionPasskeys({ isOpen }: SectionPasskeysProps) {
         )}
       </div>
 
-      <AnimatePresence>
-        {pendingDelete && (
-          <>
-            <motion.div
-              className="fixed inset-0 bg-background-overlay z-60"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => !isDeleting && setPendingDelete(null)}
-            />
-            <motion.div
-              className="fixed bottom-4 left-4 right-4 z-60 bg-background border border-border rounded-3xl p-6"
-              initial={{ y: '110%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '110%' }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            >
-              <h2 className="text-xl font-semibold text-center mb-2">
-                Remove passkey?
-              </h2>
-              <p className="text-foreground-muted text-center mb-6">
-                {passkeys.length === 1 ? (
-                  <>
-                    This is your only passkey. You’ll need Google or email to
-                    sign in until you add another.
-                  </>
-                ) : (
-                  <>
-                    Devices that used{' '}
-                    <span className="font-medium">
-                      {pendingDelete.name || 'this passkey'}
-                    </span>{' '}
-                    won’t be able to sign in with it anymore.
-                  </>
-                )}
-              </p>
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setPendingDelete(null)}
-                  disabled={isDeleting}
-                  className="flex-1 py-3 rounded-xl border border-border active:scale-95 disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleConfirmDelete()}
-                  disabled={isDeleting}
-                  className="flex-1 py-3 rounded-xl bg-danger text-danger-foreground active:scale-95 disabled:opacity-50"
-                >
-                  {isDeleting ? 'Removing…' : 'Remove'}
-                </button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+      <Modal isOpen={isDeleteOpen} onClose={closeDeleteModal}>
+        <h2 className="text-xl font-semibold text-center mb-2">
+          Remove passkey?
+        </h2>
+        <p className="text-foreground-muted text-center mb-6">
+          {isDeletingLast ? (
+            <>
+              This is your only passkey. You’ll need Google or email to sign in
+              until you add another.
+            </>
+          ) : (
+            <>
+              Devices that used{' '}
+              <span className="font-medium">
+                {pendingDelete?.name || 'this passkey'}
+              </span>{' '}
+              won’t be able to sign in with it anymore.
+            </>
+          )}
+        </p>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={closeDeleteModal}
+            disabled={isDeleting}
+            className="flex-1 py-3 rounded-xl border border-border active:scale-95 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleConfirmDelete()}
+            disabled={isDeleting}
+            className="flex-1 py-3 rounded-xl bg-danger text-danger-foreground active:scale-95 disabled:opacity-50"
+          >
+            {isDeleting ? 'Removing…' : 'Remove'}
+          </button>
+        </div>
+      </Modal>
     </Screen>
   )
 }
