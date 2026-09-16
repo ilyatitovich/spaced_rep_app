@@ -21,7 +21,7 @@ function getLastUsedAuthMethod(): AuthMethodId | null {
     : null
 }
 
-function setLastUsedAuthMethod(id: AuthMethodId) {
+function persistLastUsedAuthMethod(id: AuthMethodId) {
   localStorage.setItem(LAST_USED_KEY, id)
 }
 
@@ -77,7 +77,9 @@ export default function AuthMethods({
   onStepChange,
   onSuccess
 }: AuthMethodsProps) {
-  const [lastUsed] = useState<AuthMethodId | null>(getLastUsedAuthMethod)
+  const [lastUsed, setLastUsed] = useState<AuthMethodId | null>(
+    getLastUsedAuthMethod
+  )
 
   const [pendingEmail, setPendingEmail] = useState('')
   const [passkeyLoading, setPasskeyLoading] = useState(false)
@@ -90,15 +92,20 @@ export default function AuthMethods({
     capabilities
   } = useAuth()
 
+  const markLastUsed = (id: AuthMethodId) => {
+    persistLastUsedAuthMethod(id)
+    setLastUsed(id)
+  }
+
   const handleGoogle = () => {
-    setLastUsedAuthMethod('google')
+    // Persist before redirect so the badge is correct on return.
+    markLastUsed('google')
     void signInWithGoogle().catch(err => {
       toast.error(err instanceof Error ? err.message : 'Google sign-in failed.')
     })
   }
 
   const handleEmail = () => {
-    setLastUsedAuthMethod('email')
     onStepChange('email')
   }
 
@@ -110,10 +117,12 @@ export default function AuthMethods({
       return
     }
 
-    setLastUsedAuthMethod('passkey')
     setPasskeyLoading(true)
     void signInWithPasskey()
-      .then(() => onSuccess?.())
+      .then(() => {
+        markLastUsed('passkey')
+        onSuccess?.()
+      })
       .catch(err => {
         toast.error(getAuthErrorMessage(err))
       })
@@ -132,6 +141,7 @@ export default function AuthMethods({
 
   const handleVerifyOtp = async (token: string) => {
     await verifyEmailOtp(pendingEmail, token)
+    markLastUsed('email')
     onSuccess?.()
   }
 
