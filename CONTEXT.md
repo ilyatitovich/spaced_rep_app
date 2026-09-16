@@ -1,14 +1,8 @@
 # Project Overview
 
-**Spaced Repetition** is a mobile-first, offline-capable Progressive Web App (PWA) for memorizing information via spaced repetition. Users create **topics**, add flashcards (**cards**) with text / image / code content, and review them on a weekly, level-based schedule. The app is **local-first**: IndexedDB is the runtime source of truth; an optional cloud backend syncs data for authenticated users.
+**Spaced Repetition** is a mobile-first, offline-capable Progressive Web App (PWA) for memorizing information via spaced repetition. Users create **topics**, add flashcards (**cards**) with text / image / code content, and review them on a weekly, level-based schedule. The app is **local-first**: IndexedDB is the runtime source of truth; an optional Express backend (`VITE_API_URL`) syncs data for authenticated users. Without `VITE_API_URL`, the app runs fully local.
 
-Cloud backends are selected at build/init with `VITE_BACKEND_PROVIDER`:
-
-- `custom` — Express + Prisma + protobuf sync (`VITE_API_URL`)
-- `supabase` — Supabase Auth (Google) + PostgREST HTTP sync
-- unset — infers from env (`VITE_API_URL` → custom, Supabase vars → supabase), else fully local
-
-Ports live under `apps/client/src/providers` (`auth` / `sync` / `settings`). See [`apps/client/BACKEND_PROVIDERS.md`](apps/client/BACKEND_PROVIDERS.md).
+Ports live under `apps/client/src/providers` (`auth` / `sync` / `settings`) and talk to `apps/server`.
 
 _Confidence: High_
 
@@ -21,7 +15,7 @@ models / types      (domain entities + content shapes)
       ↓
 lib/db.ts           (IndexedDB access: STORES, withTransaction)
 lib/sync-serialize  (model ↔ row mapping, LWW comparator)
-providers/          (AuthPort / SyncPort / SettingsPort — custom | supabase)
+providers/          (AuthPort / SyncPort / SettingsPort → Express API)
       ↓
 services/           (CRUD + sync engine; the only writers of persistence)
       ↓
@@ -35,13 +29,13 @@ Major building blocks:
 
 - **Domain layer** (`src/models`, `src/types`) — entities and scheduling logic; no I/O.
 - **Persistence layer** (`src/lib/db.ts`) — IndexedDB database `spacedRepApp`.
-- **Provider layer** (`src/providers`) — backend abstraction; UI/services never branch on provider name.
+- **Provider layer** (`src/providers`) — Express backend ports (`auth` / `sync` / `settings`); null when `VITE_API_URL` is unset (local-only).
 - **Services layer** (`src/services`) — CRUD + sync orchestration (queue, LWW apply).
 - **State layer** (`src/store`) — Zustand topics list.
 - **Context layer** (`src/contexts`) — `AuthProvider`, `SyncProvider`.
 - **UI layer** — React Router; AuthMethods gated by `auth.capabilities`.
 
-Server (`apps/server`) is the **custom** provider implementation (Express, Prisma, Redis). Shared app DDL must match Supabase migrations under `apps/client/supabase/migrations`.
+Server (`apps/server`) is Express + Prisma + Redis. Schema source of truth: `apps/server/prisma`.
 
 _Confidence: High_
 
@@ -51,7 +45,7 @@ _Confidence: High_
 | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/models/`                                   | Domain entities: `topic.model.ts`, `card.model.ts` (`Card` class), `day.model.ts` (`Day` class + review-level scheduling).                                                                                          |
 | `src/types/`                                    | Content/shape types (`card.types.ts`): `CardData`, `SideContent`, `CodeBlock`, image records, editor handles.                                                                                                       |
-| `src/lib/`                                      | Framework-agnostic utilities: `db.ts` (IndexedDB), `supabase.ts`, `sync-serialize.ts`, plus many small helpers (formatting, onboarding, search, image, auth-errors, etc.). All re-exported from `src/lib/index.ts`. |
+| `src/lib/`                                      | Framework-agnostic utilities: `db.ts` (IndexedDB), `sync-serialize.ts`, `api.ts`, plus many small helpers (formatting, onboarding, search, image, auth-errors, etc.). All re-exported from `src/lib/index.ts`. |
 | `src/services/`                                 | `topic.services.ts`, `card.services.ts`, `sync.service.ts`. Persistence + cloud sync.                                                                                                                               |
 | `src/store/`                                    | Zustand store (`topics-store.ts`).                                                                                                                                                                                  |
 | `src/contexts/`                                 | `auth-context.tsx`, `sync-context.tsx`.                                                                                                                                                                             |
@@ -60,7 +54,7 @@ _Confidence: High_
 | `src/components/`                               | UI, split into `ui/` (primitives), `screens/` (full-screen overlays), `wrappers/` (layout shells), and top-level domain components.                                                                                 |
 | `src/styles/`                                   | `index.css` — Tailwind v4 import + `@theme` design tokens.                                                                                                                                                          |
 | `src/__tests__/`                                | Jest tests, mirroring source paths (e.g. `__tests__/lib/...`).                                                                                                                                                      |
-| `supabase/migrations/`                          | SQL schema for the cloud mirror (`001_cloud_sync.sql`).                                                                                                                                                             |
+| `src/providers/`                                | Backend ports wiring Express auth/sync/settings when `VITE_API_URL` is set.                                                                                                                                         |
 | `src/router.tsx`, `src/app.tsx`, `src/main.tsx` | Router definition, provider composition, and bootstrap.                                                                                                                                                             |
 
 _Confidence: High_
@@ -83,13 +77,13 @@ _Confidence: High_
 
 1. UI (or a store action) calls a **service** (`createTopic`, `updateCard`, `deleteTopic`, ...).
 2. The service writes IndexedDB via `withTransaction`.
-3. If a user is signed in **and** Supabase is configured, the service calls `enqueueSync(table, recordId, operation)` then `triggerSync()`.
+3. If a user is signed in **and** the backend is configured (`VITE_API_URL`), the service calls `enqueueSync(table, recordId, operation)` then `triggerSync()`.
 4. `triggerSync()` debounces (1500 ms) and runs `syncAll(userId)`: **push** the queue, then **pull** deltas.
 
 **Sync engine (`sync.service.ts`):**
 
-- **Push** — process `sync_queue` FIFO. `upsert` reads the local record, serializes via `topicToRow`/`cardToRow`, and calls Supabase `.upsert`. `delete` issues a soft delete (`deleted_at` + `updated_at`). Queue items are removed on success.
-- **Pull** — query rows where `user_id = userId AND updated_at > lastPulledAt` (`lastPulledAt` stored in `sync_meta`). For each row: if `deleted_at` is set, **hard-delete locally**; otherwise apply if `shouldApplyRemote(local.updatedAt, remoteMs)` (last-write-wins). Advance `lastPulledAt`. If any local mutation occurred, call `emitSyncData()`.
+- **Push** — process `sync_queue` FIFO via the `SyncPort` (HTTP protobuf / optional WebSocket to Express). Queue items are removed on success.
+- **Pull** — fetch deltas since `lastPulledAt` (`sync_meta`). For each row: if soft-deleted, **hard-delete locally**; otherwise apply if `shouldApplyRemote(local.updatedAt, remoteMs)` (last-write-wins). Advance `lastPulledAt`. If any local mutation occurred, call `emitSyncData()`.
 
 **Reactive UI update:** the Zustand store subscribes to `subscribeSyncData()`; when a pull mutates the local DB, the store calls `refreshTopics()` (re-reads IndexedDB) and subscribed components re-render.
 
@@ -118,15 +112,15 @@ _Confidence: High_
   - `sync_meta` — keyPath `key`; used keys: `lastPulledAt`, `migratedUserId`.
 - **`withTransaction(storeNames, mode, callback)`** is the single entry point for all IndexedDB access; it opens the DB, runs the callback with a `stores` map, resolves on `oncomplete`, and aborts on error.
 - **Deletes are asymmetric:** local deletes are **hard**; cloud pushes are **soft** (`deleted_at` tombstone); pulled tombstones become local hard deletes. This lets tombstones propagate across devices.
-- **Cloud mirror** (`supabase/migrations/001_cloud_sync.sql`): `public.topics` and `public.cards` with `user_id` FK to `auth.users`, `updated_at`/`deleted_at`, JSONB `week`/`data`, RLS `FOR ALL` policies gated by `auth.uid() = user_id`, and a unique `(user_id, title) WHERE deleted_at IS NULL` index mirroring the local unique `title` index.
+- **Cloud schema** lives in `apps/server/prisma` (`topics`, `cards`, sync tables, settings, auth).
 
 _Confidence: High_
 
 # Networking
 
-- **Supabase** is the only external service. The client is created once in `src/lib/supabase.ts` using `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`. If either is missing, `isSupabaseConfigured` is `false` and the client falls back to harmless placeholder credentials so construction never throws; all real network calls are gated on `isSupabaseConfigured` (and a current user).
-- All Supabase reads/writes are confined to `sync.service.ts` (data) and `auth-context.tsx` (auth: OAuth, email OTP, session). No other module talks to the network directly.
-- **Connectivity detection**: `useOnline` (via `useSyncExternalStore` on browser online/offline events) and `useOnline` (adds a periodic HEAD ping to `/favicon.ico`). `SyncProvider` uses `useOnline`.
+- **Express API** (`apps/server`) is the cloud backend. Client ports in `src/providers` call it when `VITE_API_URL` is set (`isBackendConfigured()`). Without that env var, auth/sync are local-only no-ops.
+- Network I/O for data goes through `SyncPort` / `SettingsPort`; auth through `AuthPort`. UI never calls `fetch` against the API directly except via `lib/api` helpers used by the custom adapters.
+- **Connectivity detection**: `useOnline` (via `useSyncExternalStore` on browser online/offline events) and periodic HEAD ping. `SyncProvider` uses `useOnline`.
 
 _Confidence: High_
 
@@ -149,14 +143,14 @@ _Confidence: High_
 Allowed dependency direction (top may depend on lower; never the reverse):
 
 1. `models` / `types` — depend on nothing app-specific.
-2. `lib` (`db`, `sync-serialize`, `supabase`, helpers) — may depend on `models`/`types`.
-3. `services` — the **only** modules that write persistence and talk to Supabase for data; depend on `lib` + `models`.
+2. `lib` (`db`, `sync-serialize`, helpers) — may depend on `models`/`types`.
+3. `services` — the **only** modules that write persistence and orchestrate cloud sync; depend on `lib` + `models` + `providers`.
 4. `store` + `contexts` — depend on `services` (+ `lib`/`hooks`); own reactive state.
 5. `pages` / `components` / `hooks` — depend on `store`, `contexts`, `services`, `lib`.
 
 Conventions consistently observed:
 
-- UI and store **never** touch IndexedDB or Supabase directly — always through services.
+- UI and store **never** touch IndexedDB or the network directly — always through services / ports.
 - `withTransaction` is the sole IndexedDB access mechanism.
 - The sync engine writes to IndexedDB via internal `putLocal`/`deleteLocal*` helpers that **never re-enqueue**, preventing sync loops.
 - Cross-module communication uses **barrels** (`@/components`, `@/services`, `@/lib`, `@/contexts`, `@/hooks`, `@/models`, `@/store`, `@/pages`) and the observer pattern (`subscribeSync`, `subscribeSyncData`).
@@ -170,7 +164,7 @@ Stable interfaces intended for consumption by other layers (import via the barre
 - `@/services` — `createTopic`, `getAllTopics`, `getTopicById`, `updateTopic(s)`, `deleteTopic`, `exportTopic`; `createCard`, `updateCard`, `deleteCardById`, `deleteCardsBulk`, `importCards`; sync control: `setSyncUser`, `initialSync`, `syncNow`, `triggerSync`, `enqueueSync`, `getSyncState`, `subscribeSync`, `subscribeSyncData`, plus `SyncState`/`SyncStatus` types.
 - `@/store` — `useTopicsStore`.
 - `@/contexts` — `AuthProvider`/`useAuth`, `SyncProvider`/`useSync`.
-- `@/lib` — `withTransaction`, `STORES`, `supabase`, `isSupabaseConfigured`, `sync-serialize` mappers, and utility helpers.
+- `@/lib` — `withTransaction`, `STORES`, `sync-serialize` mappers, and utility helpers.
 - `@/models` — entities + factory/scheduling functions. `@/types` — content/shape types.
 
 **Do not import directly** (treat as internal): the low-level `putLocal`/`deleteLocal*`/`getQueue` helpers in `sync.service.ts` (not exported), and deep file paths that a barrel already re-exports.
@@ -186,7 +180,7 @@ _Confidence: Medium_ (the "public vs internal" distinction is inferred from expo
 - **`Screen` wrapper** for slide-in overlays gated by `isOpen`.
 - **Fine-grained Zustand selectors** rather than consuming the whole store.
 - **Last-write-wins** conflict resolution keyed on `updatedAt`; soft-delete tombstones for cross-device deletes.
-- **Graceful degradation**: every network/sync path is guarded by `isSupabaseConfigured` and a current user, enabling local-only mode.
+- **Graceful degradation**: every network/sync path is guarded by `isBackendConfigured()` and a current user, enabling local-only mode.
 
 _Confidence: High_
 
@@ -197,7 +191,7 @@ _Confidence: High_
 - **Hooks:** `useX` camelCase, **named** exports.
 - **Contexts:** `XProvider` + `useX`, named exports.
 - **Services/utilities/store:** named exports; store hook is `use<Entity>Store`.
-- **Types/interfaces:** PascalCase; Supabase row types use snake_case fields (`TopicRow`, `CardRow`) matching SQL columns, while models use camelCase.
+- **Types/interfaces:** PascalCase; sync row types use snake_case fields (`TopicRow`, `CardRow`) matching SQL columns, while models use camelCase.
 - **Constants:** `UPPER_SNAKE_CASE` (`STORES`, `TRIGGER_DEBOUNCE_MS`, `TITLE_MAX_LENGTH`).
 
 _Confidence: High_
@@ -234,7 +228,7 @@ _Confidence: High_
 
 # Important Architectural Decisions
 
-1. **Local-first with IndexedDB as source of truth**; Supabase is an optional per-user mirror. The app is fully functional offline / unconfigured.
+1. **Local-first with IndexedDB as source of truth**; Express (`VITE_API_URL`) is an optional per-user sync backend. The app is fully functional offline / unconfigured.
 2. **Offline sync queue + debounced push/pull** decouples user actions from network; a single `sync.service.ts` owns all data networking.
 3. **Last-write-wins conflict resolution** on `updatedAt`, with **soft-delete tombstones** propagated from cloud and applied as local hard deletes.
 4. **Observer bridge (`subscribeSyncData`) → Zustand refresh** makes remote pulls reactively update the UI without coupling sync to React.
@@ -247,9 +241,9 @@ _Confidence: High_
 
 # AI Working Guidelines
 
-- **Respect the layering.** Never read/write IndexedDB or Supabase from components, hooks, contexts, or the store — go through `src/services`. Use `withTransaction` for any new IndexedDB access.
+- **Respect the layering.** Never read/write IndexedDB or call the API from components, hooks, contexts, or the store — go through `src/services` / ports. Use `withTransaction` for any new IndexedDB access.
 - **Extend existing modules** rather than adding parallel ones. New topic/card operations belong in the existing service files; new list state belongs in `useTopicsStore`.
-- **Keep the write pattern:** any mutating service must write the DB, then `enqueueSync(...)`, then `triggerSync()`, and must guard on `isSupabaseConfigured` + current user.
+- **Keep the write pattern:** any mutating service must write the DB, then `enqueueSync(...)`, then `triggerSync()`, and must guard on `isBackendConfigured()` + current user.
 - **Preserve reactivity:** if a new remote-applied mutation should update the UI, ensure the pull path triggers `emitSyncData()` and that the relevant store refreshes (currently only the topics list listens; topic/card screens fetch on their own).
 - **Follow navigation conventions:** open screens by setting search params and gate with `isOpen`; use `removeLastSearchParam`/`BackButton` for back. Do not introduce new URL routes without strong justification.
 - **Use barrels and the `@/` alias** for imports; add new exports to the appropriate `index.ts`. Import screens by their `Screen`-suffixed barrel name.

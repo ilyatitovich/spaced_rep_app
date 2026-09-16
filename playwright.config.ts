@@ -87,7 +87,6 @@ export default defineConfig({
       timeout: 120_000,
       env: {
         ...process.env,
-        VITE_BACKEND_PROVIDER: 'custom',
         VITE_API_URL: serverUrl,
         VITE_TURNSTILE_SITE_KEY: '1x00000000000000000000AA'
       }

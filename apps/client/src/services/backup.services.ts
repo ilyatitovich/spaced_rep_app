@@ -83,7 +83,7 @@ export async function importAppData(
     throw new Error('Invalid backup file: missing topics[] or cards[]')
   }
 
-  // Old nanoid IDs fail Supabase uuid columns — remapped here so sync can upsert.
+  // Old nanoid IDs are remapped to UUIDs so sync can upsert into Postgres.
   const topicIdMap = new Map<string, string>()
   const topics = (data.topics as Topic[]).map(topic => {
     const id = ensureUuid(topic.id)

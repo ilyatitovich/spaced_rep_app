@@ -12,9 +12,6 @@ import type {
   UserPreferences,
   UserSettingsDocument
 } from '@/types/settings.types'
-import type { BackendProvider } from './resolve-provider'
-
-export type { BackendProvider }
 
 export type AuthCapabilities = {
   google: boolean
@@ -87,7 +84,6 @@ export type SettingsPort = {
 }
 
 export type BackendPorts = {
-  provider: BackendProvider
   auth: AuthPort
   sync: SyncPort
   settings: SettingsPort

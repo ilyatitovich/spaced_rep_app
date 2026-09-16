@@ -11,7 +11,7 @@ import {
   type AuthSession
 } from '@/lib/auth-storage'
 import { googleRedirectUri } from '@/lib/pkce'
-import { getBackendProvider } from '@/providers'
+import { isBackendConfigured } from '@/providers'
 
 let loginOnce: Promise<AuthSession> | null = null
 
@@ -24,7 +24,7 @@ export default function OAuthGoogleCallbackPage() {
     let cancelled = false
 
     async function run() {
-      if (getBackendProvider() !== 'custom') {
+      if (!isBackendConfigured()) {
         navigate('/', { replace: true })
         return
       }
