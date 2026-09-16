@@ -14,12 +14,7 @@ import {
 import { appendSideBlocks, isSideEmpty } from '@/lib'
 import { Card as CardModel } from '@/models'
 import { createCard } from '@/services'
-import type {
-  CardData,
-  CardHandle,
-  SideBlock,
-  SideName
-} from '@/types'
+import type { CardData, CardHandle, SideBlock, SideName } from '@/types'
 
 type NewCardPageProps = {
   isOpen: boolean
@@ -209,7 +204,7 @@ export default function AddCardScreen({
         onFocusLast={() => currentCardRef.current?.focusContent(side, 'last')}
         onFlip={() => setIsFlipped(prev => !prev)}
       />
-      <div className="absolute bottom-0 left-0 right-0 px-safe-margins">
+      <div className="absolute bottom-0 left-0 right-0 px-safe-margins mt-2">
         <button
           type="button"
           className="border border-border p-4 rounded-xl flex gap-2 justify-center items-center w-full"
