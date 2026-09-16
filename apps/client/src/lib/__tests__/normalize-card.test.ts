@@ -62,6 +62,40 @@ describe('normalizeSide', () => {
     })
   })
 
+  it('guesses lang for an unlabeled python fence', () => {
+    expect(
+      normalizeSide({
+        side: 'front',
+        blocks: [
+          {
+            type: 'text',
+            html: '<pre><code>print(1)</code></pre>'
+          }
+        ]
+      })
+    ).toEqual({
+      side: 'front',
+      blocks: [{ type: 'code', lang: 'py', code: 'print(1)' }]
+    })
+  })
+
+  it('uses code lang for an unlabeled non-code-looking fence', () => {
+    expect(
+      normalizeSide({
+        side: 'front',
+        blocks: [
+          {
+            type: 'text',
+            html: '<pre><code>hello world</code></pre>'
+          }
+        ]
+      })
+    ).toEqual({
+      side: 'front',
+      blocks: [{ type: 'code', lang: 'code', code: 'hello world' }]
+    })
+  })
+
   it('passes through remote image { src } blocks', () => {
     const side = {
       side: 'front' as const,

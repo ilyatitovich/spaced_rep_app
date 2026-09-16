@@ -33,7 +33,8 @@ const LANG_LABEL: Record<CodeLang, string> = {
   js: 'JavaScript',
   py: 'Python',
   sql: 'SQL',
-  sh: 'Bash'
+  sh: 'Bash',
+  code: 'code'
 }
 
 const grayEditorTheme = EditorView.theme({

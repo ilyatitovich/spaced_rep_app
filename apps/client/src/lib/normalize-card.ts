@@ -1,4 +1,4 @@
-import type { CodeLang } from './code-lang'
+import { toCodeLang } from './code-lang'
 import type {
   CardData,
   CardSideData,
@@ -57,16 +57,6 @@ function isCodeBlock(value: unknown): value is CodeBlock {
     typeof (value as CodeBlock).lang === 'string' &&
     typeof (value as CodeBlock).code === 'string'
   )
-}
-
-function toCodeLang(raw: string | undefined): CodeLang {
-  const lang = (raw ?? 'ts').toLowerCase()
-  if (lang === 'python' || lang === 'py') return 'py'
-  if (lang === 'typescript' || lang === 'ts') return 'ts'
-  if (lang === 'javascript' || lang === 'js') return 'js'
-  if (lang === 'sql') return 'sql'
-  if (lang === 'bash' || lang === 'sh' || lang === 'shell') return 'sh'
-  return 'ts'
 }
 
 const FENCE_RE =
