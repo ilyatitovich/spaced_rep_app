@@ -84,7 +84,7 @@ export default function SettingsScreen({ isOpen }: SettingsScreenProps) {
   const isCreateWithAiOpen = searchParams.get('create-with-ai') === 'true'
 
   const handleSignInOpen = () => {
-    if (!isOnline) {
+    if (isConfigured && !isOnline) {
       toast('Server temporarily unavailable', {
         icon: <TriangleAlert className="text-warning" size={20} />
       })
@@ -141,11 +141,7 @@ export default function SettingsScreen({ isOpen }: SettingsScreenProps) {
         </Header>
 
         <div className="flex flex-col gap-6 overflow-y-auto h-[92dvh] p-4 pb-30">
-          {!isConfigured ? (
-            <p className="text-center text-foreground-muted">
-              Cloud sync is not configured for this build.
-            </p>
-          ) : isLoading ? (
+          {isConfigured && isLoading ? (
             <Spinner />
           ) : (
             <>

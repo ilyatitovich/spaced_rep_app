@@ -1,4 +1,5 @@
 import { BackButton, Header, Screen } from '@/components'
+import { useAuth } from '@/contexts'
 import { AuthStep } from '@/types'
 import { useCallback, useState } from 'react'
 import { useSearchParams } from 'react-router'
@@ -10,6 +11,7 @@ type AuthScreenProps = {
 }
 
 export default function AuthScreen({ isOpen }: AuthScreenProps) {
+  const { isConfigured } = useAuth()
   const [step, setStep] = useState<AuthStep>('methods')
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -32,11 +34,17 @@ export default function AuthScreen({ isOpen }: AuthScreenProps) {
           <span className="font-bold">Sign in</span>
         </Header>
         <div className="pt-4">
-          <AuthMethods
-            step={step}
-            onStepChange={setStep}
-            onSuccess={handleSuccess}
-          />
+          {isConfigured ? (
+            <AuthMethods
+              step={step}
+              onStepChange={setStep}
+              onSuccess={handleSuccess}
+            />
+          ) : (
+            <p className="text-center text-foreground-muted px-4">
+              Cloud sync is not configured for this build.
+            </p>
+          )}
         </div>
       </div>
     </Screen>
