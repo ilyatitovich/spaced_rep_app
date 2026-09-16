@@ -17,6 +17,20 @@ export type AuthSession = {
 export type PkcePending = {
   codeVerifier: string
   state: string
+  /** Path + search to restore after OAuth (auth param already stripped). */
+  returnTo?: string
+}
+
+/** Same-origin relative path only; rejects open redirects. */
+export function safeAuthReturnTo(raw: string | null | undefined): string {
+  if (!raw || !raw.startsWith('/') || raw.startsWith('//')) return '/'
+  return raw
+}
+
+export function captureAuthReturnTo(): string {
+  const url = new URL(window.location.href)
+  url.searchParams.delete('auth')
+  return safeAuthReturnTo(`${url.pathname}${url.search}`)
 }
 
 export function getAuthSession(): AuthSession | null {

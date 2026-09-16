@@ -17,6 +17,7 @@ import {
   patchSettingsPreferences
 } from '@/lib/api'
 import {
+  captureAuthReturnTo,
   clearAuthSession,
   getAuthSession,
   setPkcePending,
@@ -86,7 +87,11 @@ export function createCustomAuthAdapter(): AuthPort {
       }
       const { codeVerifier, codeChallenge, state } = await createPkcePair()
       const redirectUri = googleRedirectUri()
-      setPkcePending({ codeVerifier, state })
+      setPkcePending({
+        codeVerifier,
+        state,
+        returnTo: captureAuthReturnTo()
+      })
       window.location.assign(
         buildGoogleAuthorizeUrl({
           clientId,

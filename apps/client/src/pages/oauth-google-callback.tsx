@@ -8,12 +8,14 @@ import { exchangeGoogleCode } from '@/lib/api'
 import {
   clearPkcePending,
   getPkcePending,
+  safeAuthReturnTo,
   type AuthSession
 } from '@/lib/auth-storage'
 import { googleRedirectUri } from '@/lib/pkce'
 import { isBackendConfigured } from '@/providers'
 
 let loginOnce: Promise<AuthSession> | null = null
+let returnToOnce = '/'
 
 export default function OAuthGoogleCallbackPage() {
   const navigate = useNavigate()
@@ -41,7 +43,10 @@ export default function OAuthGoogleCallbackPage() {
         if (!cancelled) {
           setMessage(text)
           toast.error(text)
-          navigate('/', { replace: true })
+          navigate(safeAuthReturnTo(getPkcePending()?.returnTo), {
+            replace: true
+          })
+          clearPkcePending()
         }
         return
       }
@@ -51,6 +56,7 @@ export default function OAuthGoogleCallbackPage() {
           const code = params.get('code')
           const state = params.get('state')
           const pending = getPkcePending()
+          returnToOnce = safeAuthReturnTo(pending?.returnTo)
 
           if (!code || !state || !pending || pending.state !== state) {
             throw new Error('Invalid or expired Google sign-in state.')
@@ -68,7 +74,8 @@ export default function OAuthGoogleCallbackPage() {
         const session = await loginOnce
         if (cancelled) return
         completeGoogleLogin(session)
-        navigate('/', { replace: true })
+        toast.success('Signed in')
+        navigate(returnToOnce, { replace: true })
       } catch (err) {
         loginOnce = null
         const text =
@@ -76,7 +83,7 @@ export default function OAuthGoogleCallbackPage() {
         if (!cancelled) {
           setMessage(text)
           toast.error(text)
-          navigate('/', { replace: true })
+          navigate(returnToOnce, { replace: true })
         }
       }
     }
