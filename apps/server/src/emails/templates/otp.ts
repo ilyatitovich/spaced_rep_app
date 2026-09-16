@@ -92,7 +92,7 @@ export function renderOtpEmailHtml({
                     <p style="margin:0 0 6px;font-size:12px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:${brand.gray};">
                       Verification code
                     </p>
-                    <p style="margin:0;font-size:36px;font-weight:700;letter-spacing:0.35em;color:${brand.black};font-family:'SF Mono',SFMono-Regular,Consolas,'Liberation Mono',Menlo,monospace;">
+                    <p style="margin:0;font-size:36px;font-weight:700;letter-spacing:0.12em;color:${brand.black};font-family:'SF Mono',SFMono-Regular,Consolas,'Liberation Mono',Menlo,monospace;">
                       ${code}
                     </p>
                   </td>

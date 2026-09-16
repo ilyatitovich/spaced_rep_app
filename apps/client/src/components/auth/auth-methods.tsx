@@ -69,9 +69,14 @@ function AuthMethodButton({
 type AuthMethodsProps = {
   step: AuthStep
   onStepChange: (step: AuthStep) => void
+  onSuccess?: () => void
 }
 
-export default function AuthMethods({ step, onStepChange }: AuthMethodsProps) {
+export default function AuthMethods({
+  step,
+  onStepChange,
+  onSuccess
+}: AuthMethodsProps) {
   const [lastUsed] = useState<AuthMethodId | null>(getLastUsedAuthMethod)
 
   const [pendingEmail, setPendingEmail] = useState('')
@@ -108,6 +113,7 @@ export default function AuthMethods({ step, onStepChange }: AuthMethodsProps) {
     setLastUsedAuthMethod('passkey')
     setPasskeyLoading(true)
     void signInWithPasskey()
+      .then(() => onSuccess?.())
       .catch(err => {
         toast.error(getAuthErrorMessage(err))
       })
@@ -126,6 +132,7 @@ export default function AuthMethods({ step, onStepChange }: AuthMethodsProps) {
 
   const handleVerifyOtp = async (token: string) => {
     await verifyEmailOtp(pendingEmail, token)
+    onSuccess?.()
   }
 
   const handleResendOtp = async (turnstileToken: string) => {

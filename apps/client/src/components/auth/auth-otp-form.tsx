@@ -8,6 +8,11 @@ import { OTPInput, REGEXP_ONLY_DIGITS, type SlotProps } from 'input-otp'
 const OTP_LENGTH = 6
 const RESEND_COOLDOWN_SECONDS = 60
 
+/** Email clients often insert spaces when copying letter-spaced codes. */
+function digitsOnly(text: string): string {
+  return text.replace(/\D/g, '').slice(0, OTP_LENGTH)
+}
+
 type AuthOtpFormProps = {
   email: string
   onVerify: (token: string) => Promise<void>
@@ -124,9 +129,11 @@ export default function AuthOtpForm({
             value={code}
             onChange={handleChange}
             onComplete={handleComplete}
+            pasteTransformer={digitsOnly}
             pattern={REGEXP_ONLY_DIGITS}
             inputMode="numeric"
             autoFocus
+            autoComplete="one-time-code"
             disabled={isLoading}
             aria-invalid={Boolean(error)}
             aria-describedby={error ? 'auth-otp-error' : undefined}
