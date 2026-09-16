@@ -16,6 +16,7 @@ import {
 } from '@/lib/card-media-stats'
 import { withTransaction, STORES, CARDS_TOPIC_LEVEL_INDEX } from '@/lib/db'
 import { normalizeCardData } from '@/lib/normalize-card'
+import { parseImportJson } from '@/lib/parse-import-json'
 import { decodeCardData } from '@/lib/sync-serialize'
 import { Card } from '@/models'
 
@@ -300,7 +301,9 @@ async function persistImportedCards(
             mediaDelta,
             subEmbeddedMedia(
               sumEmbeddedCardMedia(card),
-              previous ? sumEmbeddedCardMedia(previous) : { bytes: 0, images: 0, audio: 0 }
+              previous
+                ? sumEmbeddedCardMedia(previous)
+                : { bytes: 0, images: 0, audio: 0 }
             )
           )
         } catch (reason) {
@@ -328,14 +331,14 @@ async function persistImportedCards(
 }
 
 export async function importCards(
-  file: File,
+  source: File | string,
   topicId: string
 ): Promise<number> {
-  const text = await file.text()
-  let data
+  const text = typeof source === 'string' ? source : await source.text()
+  let data: { cards?: Card[] }
 
   try {
-    data = JSON.parse(text)
+    data = parseImportJson(text) as { cards?: Card[] }
   } catch {
     throw new Error('Invalid JSON in import file')
   }

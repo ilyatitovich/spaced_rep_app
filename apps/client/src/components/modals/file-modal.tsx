@@ -40,6 +40,7 @@ export default function FileModal(props: FileModalProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
   const [fileName, setFileName] = useState('')
+  const [pastedText, setPastedText] = useState('')
   const [message, setMessage] = useState<string | null>(null)
   const [progress, setProgress] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -52,6 +53,7 @@ export default function FileModal(props: FileModalProps) {
     setProgress(null)
     setDownloadUrl(null)
     setFileName('')
+    setPastedText('')
 
     if (kind !== 'export-app' && kind !== 'export-topic') {
       setIsLoading(false)
@@ -93,10 +95,7 @@ export default function FileModal(props: FileModalProps) {
     }
   }, [isOpen, kind, topicId])
 
-  const handleFileSelect = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
+  const runImport = async (source: File | string) => {
     setIsLoading(true)
     setError(null)
     setMessage(null)
@@ -104,7 +103,7 @@ export default function FileModal(props: FileModalProps) {
 
     try {
       if (kind === 'import-app') {
-        const { topics, cards } = await importAppData(file)
+        const { topics, cards } = await importAppData(source)
         await loadTopics()
         setMessage(`Imported ${topics} topics and ${cards} cards`)
         return
@@ -112,16 +111,16 @@ export default function FileModal(props: FileModalProps) {
 
       if (kind !== 'import-cards') return
 
-      const anki = isAnkiApkg(file)
+      const anki = source instanceof File && isAnkiApkg(source)
       const count = anki
-        ? await importAnkiApkg(file, props.topicId, current => {
+        ? await importAnkiApkg(source, props.topicId, current => {
             setProgress(
               current.phase === 'parsing'
                 ? 'Parsing…'
                 : `Saving ${current.done}/${current.total}…`
             )
           })
-        : await importCards(file, props.topicId)
+        : await importCards(source, props.topicId)
       await props.onCardsImport()
       setMessage(
         anki
@@ -136,6 +135,17 @@ export default function FileModal(props: FileModalProps) {
       setIsLoading(false)
       setProgress(null)
     }
+  }
+
+  const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    void runImport(file)
+  }
+
+  const handlePasteImport = () => {
+    if (!pastedText.trim()) return
+    void runImport(pastedText)
   }
 
   const isImport = kind === 'import-app' || kind === 'import-cards'
@@ -173,18 +183,35 @@ export default function FileModal(props: FileModalProps) {
         </a>
       )}
 
-      {isImport && !isLoading && !message && !error && (
-        <label className="bg-primary text-primary-foreground w-full text-center py-4 rounded-xl cursor-pointer">
-          {kind === 'import-app'
-            ? 'Choose JSON'
-            : 'Choose JSON or Anki (.apkg)'}
-          <input
-            type="file"
-            accept={kind === 'import-app' ? 'application/json' : '*/*'}
-            className="hidden"
-            onChange={handleFileSelect}
+      {isImport && !isLoading && !message && (
+        <>
+          <label className="bg-primary text-primary-foreground w-full text-center py-4 rounded-xl cursor-pointer">
+            {kind === 'import-app'
+              ? 'Choose JSON'
+              : 'Choose JSON or Anki (.apkg)'}
+            <input
+              type="file"
+              accept={kind === 'import-app' ? 'application/json' : '*/*'}
+              className="hidden"
+              onChange={handleFileSelect}
+            />
+          </label>
+          <textarea
+            aria-label="Paste JSON"
+            placeholder="Or paste JSON"
+            value={pastedText}
+            onChange={e => setPastedText(e.target.value)}
+            className="w-full min-h-32 p-4 rounded-xl border border-border focus:border-input-focus focus:outline-none transition resize-y text-sm font-mono"
           />
-        </label>
+          <button
+            type="button"
+            disabled={!pastedText.trim()}
+            onClick={handlePasteImport}
+            className="bg-secondary text-foreground w-full py-4 rounded-xl disabled:opacity-50"
+          >
+            Import pasted JSON
+          </button>
+        </>
       )}
 
       <button className="text-foreground-muted w-full" onClick={onClose}>

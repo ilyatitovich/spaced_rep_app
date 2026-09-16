@@ -1,4 +1,5 @@
 export * from './is-anki-apkg'
+export * from './parse-import-json'
 export * from './format-timestamp'
 export * from './format-bytes'
 export * from './card-media-stats'

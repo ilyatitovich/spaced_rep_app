@@ -1,5 +1,10 @@
 import { enqueueSync, triggerSync } from './sync.service'
-import { normalizeCardData, withTransaction, STORES } from '@/lib'
+import {
+  normalizeCardData,
+  parseImportJson,
+  withTransaction,
+  STORES
+} from '@/lib'
 import {
   adjustCardMediaStats,
   addEmbeddedMedia,
@@ -63,13 +68,13 @@ export async function exportAppData(): Promise<Record<string, string>> {
 }
 
 export async function importAppData(
-  file: File
+  source: File | string
 ): Promise<{ topics: number; cards: number }> {
-  const text = await file.text()
-  let data
+  const text = typeof source === 'string' ? source : await source.text()
+  let data: { topics?: Topic[]; cards?: Card[] }
 
   try {
-    data = JSON.parse(text)
+    data = parseImportJson(text) as { topics?: Topic[]; cards?: Card[] }
   } catch {
     throw new Error('Invalid JSON in backup file')
   }

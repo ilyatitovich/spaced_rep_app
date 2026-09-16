@@ -39,8 +39,9 @@ export default function SectionCreateWithAi({
           <p className="px-4 py-3.5 text-sm text-foreground-muted leading-relaxed">
             Copy the prompt or skill into ChatGPT, Claude, Cursor, or another
             LLM, then send your topic and notes in the same message (for
-            example: “Topic: React hooks” plus your notes). Save the JSON it
-            returns, then open a topic → Settings → Import cards.
+            example: “Topic: React hooks” plus your notes). Paste the JSON it
+            returns, or save a file, then open a topic → Settings → Import
+            cards.
           </p>
         </SettingsGroup>
 
