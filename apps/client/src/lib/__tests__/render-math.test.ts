@@ -39,4 +39,34 @@ describe('renderMathInHtml', () => {
     const out = renderMathInHtml('<p>[$]\\frac{[/$]</p>')
     expect(out).toMatch(/\\frac|katex-error/)
   })
+
+  it('renders the common formula smoke set', () => {
+    const samples = [
+      '<p>\\(x^2 + y^2 = z^2\\)</p>',
+      '<p>\\[\\frac{a}{b} = \\frac{c}{d}\\]</p>',
+      '<p>\\[\\sqrt{x^2 + y^2}\\]</p>',
+      '<p>\\[\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}\\]</p>',
+      '<p>\\[\\int_0^1 x^2\\,dx = \\frac{1}{3}\\]</p>',
+      '<p>\\[\\lim_{x \\to 0} \\frac{\\sin x}{x} = 1\\]</p>',
+      '<p>\\[\\mathbf{F} = m\\mathbf{a}\\]</p>',
+      '<p>\\[E = mc^2\\]</p>',
+      `<p>\\[A =
+\\begin{pmatrix}
+1 & 2 \\\\
+3 & 4
+\\end{pmatrix}
+\\]</p>`
+    ]
+
+    for (const html of samples) {
+      const out = renderMathInHtml(html)
+      expect(out).toContain('katex')
+      expect(out).not.toContain('katex-error')
+      expect(out).not.toContain('\\(')
+      expect(out).not.toContain('\\[')
+    }
+
+    expect(renderMathInHtml(samples[0]!)).not.toContain('katex-display')
+    expect(renderMathInHtml(samples[1]!)).toContain('katex-display')
+  })
 })
