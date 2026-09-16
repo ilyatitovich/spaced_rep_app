@@ -1,4 +1,4 @@
-import { toCodeLang } from './code-lang'
+import { resolveCodeLang } from './code-lang'
 import type {
   CardData,
   CardSideData,
@@ -60,7 +60,7 @@ function isCodeBlock(value: unknown): value is CodeBlock {
 }
 
 const FENCE_RE =
-  /<pre[^>]*>\s*<code(?:\s+class="language-([^"]*)")?[^>]*>([\s\S]*?)<\/code>\s*<\/pre>/gi
+  /<pre[^>]*>\s*<code(?:\s[^>]*?\bclass="([^"]*)")?[^>]*>([\s\S]*?)<\/code>\s*<\/pre>/gi
 
 /** Pull HTML code fences out of a text block into sibling `code` blocks. */
 export function splitTextAndCodeBlocks(html: string): SideBlock[] {
@@ -76,10 +76,11 @@ export function splitTextAndCodeBlocks(html: string): SideBlock[] {
     } else if (before.trim()) {
       blocks.push({ type: 'text', html: before })
     }
+    const code = decodeEntities(match[2] ?? '')
     blocks.push({
       type: 'code',
-      lang: toCodeLang(match[1]),
-      code: decodeEntities(match[2] ?? '')
+      lang: resolveCodeLang(match[1], code),
+      code
     })
     last = match.index + match[0].length
   }
