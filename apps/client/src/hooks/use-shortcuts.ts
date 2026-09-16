@@ -4,6 +4,7 @@ import {
   clickBackButton,
   globalRules,
   matchShortcut,
+  trapTab,
   type ShortcutRule
 } from '@/lib/keyboard'
 
@@ -39,4 +40,9 @@ export function useShortcuts(
 
 export function useKeyboardManager(): void {
   useShortcuts(globalRules, { back: clickBackButton })
+
+  useEffect(() => {
+    window.addEventListener('keydown', trapTab)
+    return () => window.removeEventListener('keydown', trapTab)
+  }, [])
 }

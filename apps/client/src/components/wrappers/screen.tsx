@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 type ScreenProps = {
   isOpen: boolean
@@ -19,6 +19,11 @@ export default function Screen({
   children
 }: ScreenProps) {
   const [isInitialRender, setIsInitialRender] = useState(true)
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (rootRef.current) rootRef.current.inert = !isOpen
+  }, [isOpen])
 
   useEffect(() => {
     if (!isOpen) return
@@ -37,6 +42,8 @@ export default function Screen({
 
   return (
     <div
+      ref={rootRef}
+      data-screen=""
       className={`${
         isOpen
           ? isVertical

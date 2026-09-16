@@ -39,6 +39,7 @@ export default function TopicScreen({
   const [levelCards, setLevelCards] = useState<Card[]>([])
 
   const contentRef = useRef<HTMLDivElement>(null)
+  const screenRef = useRef<HTMLDivElement>(null)
 
   const [searchParams, setSearchParams] = useSearchParams()
   const isAddingCard = searchParams.get('addCard') === 'true'
@@ -109,6 +110,10 @@ export default function TopicScreen({
     })
   }, [isOpen, topicId, fetchTopic, fetchLevelCards])
 
+  useEffect(() => {
+    if (screenRef.current) screenRef.current.inert = !isOpen
+  }, [isOpen])
+
   const handleOpenAddCard = (): void => {
     setSearchParams(prev => {
       const params = new URLSearchParams(prev)
@@ -151,6 +156,8 @@ export default function TopicScreen({
   return (
     <>
       <div
+        ref={screenRef}
+        data-screen=""
         className={`${isOpen ? 'translate-x-0' : 'translate-x-full'} transition-transform duration-300 ease-in-out fixed inset-0 z-50 bg-background`}
       >
         <Header>

@@ -1,4 +1,15 @@
 export const BACK_BUTTON_ATTR = 'data-back-button'
+export const SCREEN_ATTR = 'data-screen'
+
+const TABBABLE_SELECTOR = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled]):not([type="hidden"])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[contenteditable="true"]',
+  '[tabindex]:not([tabindex="-1"])'
+].join(',')
 
 export interface ShortcutRule {
   id: string
@@ -58,4 +69,47 @@ export function clickBackButton(): void {
   )
   const visible = Array.from(buttons).filter(isInViewport)
   visible.at(-1)?.click()
+}
+
+export function getTopScreen(): HTMLElement | null {
+  const screens = document.querySelectorAll<HTMLElement>(`[${SCREEN_ATTR}]`)
+  const open = Array.from(screens).filter(el => !el.inert)
+  return open.at(-1) ?? null
+}
+
+export function getTabbables(root: HTMLElement): HTMLElement[] {
+  return Array.from(
+    root.querySelectorAll<HTMLElement>(TABBABLE_SELECTOR)
+  ).filter(el => !el.closest('[inert]') && el.getClientRects().length > 0)
+}
+
+export function trapTab(event: KeyboardEvent): void {
+  if (event.key !== 'Tab') return
+
+  const screen = getTopScreen()
+  if (!screen) return
+
+  const tabbables = getTabbables(screen)
+  if (tabbables.length === 0) {
+    event.preventDefault()
+    return
+  }
+
+  const first = tabbables[0]
+  const last = tabbables[tabbables.length - 1]
+  const active = document.activeElement
+  const isInside = active instanceof Node && screen.contains(active)
+
+  if (event.shiftKey) {
+    if (!isInside || active === first) {
+      event.preventDefault()
+      last.focus()
+    }
+    return
+  }
+
+  if (!isInside || active === last) {
+    event.preventDefault()
+    first.focus()
+  }
 }

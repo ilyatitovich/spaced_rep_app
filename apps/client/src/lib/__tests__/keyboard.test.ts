@@ -4,7 +4,9 @@ import {
   BACK_BUTTON_ATTR,
   clickBackButton,
   globalRules,
-  matchShortcut
+  matchShortcut,
+  SCREEN_ATTR,
+  trapTab
 } from '../keyboard'
 
 function keydown(
@@ -20,18 +22,28 @@ function keydown(
 }
 
 function placeInViewport(el: HTMLElement, left = 8) {
-  el.getBoundingClientRect = () =>
-    ({
-      width: 40,
-      height: 40,
-      top: 8,
-      left,
-      bottom: 48,
-      right: left + 40,
-      x: left,
-      y: 8,
-      toJSON() {}
-    }) as DOMRect
+  const rect = {
+    width: 40,
+    height: 40,
+    top: 8,
+    left,
+    bottom: 48,
+    right: left + 40,
+    x: left,
+    y: 8,
+    toJSON() {}
+  } as DOMRect
+  el.getBoundingClientRect = () => rect
+  el.getClientRects = () => [rect] as unknown as DOMRectList
+}
+
+function tabEvent(shift = false) {
+  return new KeyboardEvent('keydown', {
+    key: 'Tab',
+    shiftKey: shift,
+    bubbles: true,
+    cancelable: true
+  })
 }
 
 describe('matchShortcut', () => {
@@ -100,5 +112,96 @@ describe('clickBackButton', () => {
     expect(onOpen).toHaveBeenCalledOnce()
     closed.remove()
     open.remove()
+  })
+})
+
+describe('trapTab', () => {
+  it('wraps Tab from the last control to the first on the top screen', () => {
+    const behind = document.createElement('div')
+    const top = document.createElement('div')
+    behind.setAttribute(SCREEN_ATTR, '')
+    top.setAttribute(SCREEN_ATTR, '')
+
+    const prev = document.createElement('button')
+    const first = document.createElement('button')
+    const last = document.createElement('button')
+    behind.append(prev)
+    top.append(first, last)
+    document.body.append(behind, top)
+    for (const el of [behind, top, prev, first, last]) placeInViewport(el)
+
+    last.focus()
+    const event = tabEvent()
+    trapTab(event)
+
+    expect(event.defaultPrevented).toBe(true)
+    expect(document.activeElement).toBe(first)
+
+    behind.remove()
+    top.remove()
+  })
+
+  it('wraps Shift+Tab from the first control to the last', () => {
+    const top = document.createElement('div')
+    top.setAttribute(SCREEN_ATTR, '')
+    const first = document.createElement('button')
+    const last = document.createElement('button')
+    top.append(first, last)
+    document.body.append(top)
+    for (const el of [top, first, last]) placeInViewport(el)
+
+    first.focus()
+    const event = tabEvent(true)
+    trapTab(event)
+
+    expect(event.defaultPrevented).toBe(true)
+    expect(document.activeElement).toBe(last)
+
+    top.remove()
+  })
+
+  it('does not steal Tab between controls inside the screen', () => {
+    const top = document.createElement('div')
+    top.setAttribute(SCREEN_ATTR, '')
+    const first = document.createElement('button')
+    const last = document.createElement('button')
+    top.append(first, last)
+    document.body.append(top)
+    for (const el of [top, first, last]) placeInViewport(el)
+
+    first.focus()
+    const event = tabEvent()
+    trapTab(event)
+
+    expect(event.defaultPrevented).toBe(false)
+    expect(document.activeElement).toBe(first)
+
+    top.remove()
+  })
+
+  it('ignores inert screens underneath the top overlay', () => {
+    const behind = document.createElement('div')
+    const top = document.createElement('div')
+    behind.setAttribute(SCREEN_ATTR, '')
+    top.setAttribute(SCREEN_ATTR, '')
+    behind.inert = true
+
+    const prev = document.createElement('button')
+    const first = document.createElement('button')
+    const last = document.createElement('button')
+    behind.append(prev)
+    top.append(first, last)
+    document.body.append(behind, top)
+    for (const el of [behind, top, prev, first, last]) placeInViewport(el)
+
+    first.focus()
+    const event = tabEvent(true)
+    trapTab(event)
+
+    expect(event.defaultPrevented).toBe(true)
+    expect(document.activeElement).toBe(last)
+
+    behind.remove()
+    top.remove()
   })
 })

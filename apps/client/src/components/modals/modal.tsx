@@ -35,6 +35,7 @@ export default function Modal({
   return (
     <div
       ref={rootRef}
+      data-screen=""
       className={`fixed inset-0 z-50 ${isOpen ? '' : 'pointer-events-none'}`}
     >
       <button
