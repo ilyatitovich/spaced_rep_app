@@ -3,9 +3,11 @@ import { RouterProvider } from 'react-router'
 
 import router from './router'
 import { AuthProvider, SyncProvider } from '@/contexts'
-import { PwaUpdateProvider } from '@/hooks'
+import { PwaUpdateProvider, useKeyboardManager } from '@/hooks'
 
 export default function App() {
+  useKeyboardManager()
+
   return (
     <AuthProvider>
       <SyncProvider>

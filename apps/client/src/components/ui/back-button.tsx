@@ -13,6 +13,8 @@ export default function BackButton({ icon = 'chevron' }: BackButtonProps) {
 
   return (
     <Button
+      ariaLabel="Back"
+      data-back-button=""
       onClick={() => {
         setSearchParams(prev => removeLastSearchParam(prev))
       }}
