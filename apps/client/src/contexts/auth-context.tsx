@@ -86,9 +86,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    // #region agent log
-    fetch('http://127.0.0.1:7521/ingest/1bb57655-e58e-4cb4-86e4-aa8c75592027',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'039367'},body:JSON.stringify({sessionId:'039367',runId:'pre-fix',hypothesisId:'A',location:'auth-context.tsx:userIdEffect',message:'auth userId effect',data:{hasUserId:Boolean(userId),backendConfigured:isBackendConfigured()},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
     setSyncUser(userId)
     useSettingsStore.getState().setUser(userId)
     if (userId) {

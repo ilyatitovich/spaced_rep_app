@@ -32,9 +32,6 @@ async function postEnvelope(
 
   const accessToken = await getAccessToken()
   if (!accessToken) {
-    // #region agent log
-    fetch('http://127.0.0.1:7521/ingest/1bb57655-e58e-4cb4-86e4-aa8c75592027',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'039367'},body:JSON.stringify({sessionId:'039367',runId:'pre-fix',hypothesisId:'E',location:'sync-http.client.ts:postEnvelope',message:'sync HTTP missing token',data:{path},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
     throw new ApiError(401, 'Not authenticated', 'UNAUTHORIZED')
   }
 
@@ -60,15 +57,9 @@ async function postEnvelope(
     } catch {
       // ignore non-JSON error bodies
     }
-    // #region agent log
-    fetch('http://127.0.0.1:7521/ingest/1bb57655-e58e-4cb4-86e4-aa8c75592027',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'039367'},body:JSON.stringify({sessionId:'039367',runId:'pre-fix',hypothesisId:'E',location:'sync-http.client.ts:postEnvelope',message:'sync HTTP error',data:{path,status:response.status,code,message},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
     throw new ApiError(response.status, message, code)
   }
 
-  // #region agent log
-  fetch('http://127.0.0.1:7521/ingest/1bb57655-e58e-4cb4-86e4-aa8c75592027',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'039367'},body:JSON.stringify({sessionId:'039367',runId:'pre-fix',hypothesisId:'D',location:'sync-http.client.ts:postEnvelope',message:'sync HTTP ok',data:{path,kind:envelope.kind,mutationCount:envelope.kind==='pushBatch'?envelope.pushBatch.mutations.length:undefined},timestamp:Date.now()})}).catch(()=>{});
-  // #endregion
   return decodeEnvelope(await response.json())
 }
 
