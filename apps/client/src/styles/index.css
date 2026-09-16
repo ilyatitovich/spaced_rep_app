@@ -201,6 +201,13 @@ html[data-theme='light'] {
   color-scheme: light;
 }
 
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
+
 @layer utilities {
   /*
     iOS toolbar pattern: bar is edge-to-edge, items use layoutMargins
@@ -329,11 +336,6 @@ html[data-theme='light'] {
 
 .settings-switch:disabled {
   opacity: 0.5;
-}
-
-.settings-switch:focus-visible {
-  outline: 2px solid var(--color-focus-ring);
-  outline-offset: 2px;
 }
 
 ::selection {
