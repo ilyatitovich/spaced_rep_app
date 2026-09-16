@@ -762,11 +762,11 @@ export async function syncAll(_userId: string): Promise<void> {
       }
 
       const maxPushedAt = await pushChanges(deviceId)
-      // WS path: remote deltas arrive via onDelta; HTTP pull only echoed our own
-      // push (LWW no-op) while advancing watermark — do that locally instead.
-      if (realtime?.isActive()) {
-        await advanceWatermarkFromPush(maxPushedAt)
-      } else {
+      // After a push, HTTP pull only echoed our own records (LWW no-op). Advance
+      // watermark locally instead. Remotes: WS onDelta, or idle HTTP pull when
+      // the queue was empty.
+      await advanceWatermarkFromPush(maxPushedAt)
+      if (!realtime?.isActive() && maxPushedAt === 0) {
         await pullChanges(deviceId)
       }
 
@@ -863,7 +863,8 @@ export async function initialSync(userId: string): Promise<void> {
       console.error('Initial sync failed:', error)
       setState({
         status: 'error',
-        lastError: error instanceof Error ? error.message : 'Initial sync failed'
+        lastError:
+          error instanceof Error ? error.message : 'Initial sync failed'
       })
     }
 
