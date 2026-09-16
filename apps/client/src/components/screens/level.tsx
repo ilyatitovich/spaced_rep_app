@@ -139,7 +139,7 @@ export default function LevelScreen({
         <div ref={scrollRef} className="flex-1 overflow-y-auto">
           {levelCards.length > 0 && (
             <div
-              className="relative w-full"
+              className="relative w-full mt-1"
               style={{ height: rowVirtualizer.getTotalSize() }}
             >
               {rowVirtualizer.getVirtualItems().map(virtualRow => {
