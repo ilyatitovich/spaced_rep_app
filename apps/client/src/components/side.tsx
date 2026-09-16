@@ -22,7 +22,12 @@ import TextFormatToolbar, {
   isToolbarTarget
 } from './content/text-block/text-format-toolbar'
 import { Spinner } from './ui'
-import { didAppendSideBlock, LONGTEXT_THRESHOLD, sanitizeCardHtml } from '@/lib'
+import {
+  didAppendSideBlock,
+  LONGTEXT_THRESHOLD,
+  renderMathInHtml,
+  sanitizeCardHtml
+} from '@/lib'
 
 const CodeBlockEditor = lazy(
   () => import('./content/code-block/code-block-editor')
@@ -286,7 +291,7 @@ export default forwardRef(function Side(
                           : 'text-center text-3xl font-card leading-10'
                       }`}
                       dangerouslySetInnerHTML={{
-                        __html: sanitizeCardHtml(block.html)
+                        __html: renderMathInHtml(sanitizeCardHtml(block.html))
                       }}
                     />
                   )
