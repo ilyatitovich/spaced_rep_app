@@ -1,13 +1,13 @@
 import type { Request, Response, NextFunction } from 'express'
 import {
   PROTOCOL_VERSION,
+  SyncEnvelopeSchema,
   createEnvelopeId,
-  decodeEnvelope,
-  encodeEnvelope,
   type SyncEnvelope
 } from '@spaced-rep/sync-protocol'
 import { enforceRateLimit } from '../../shared/lib/redis.js'
 import { BadRequestError } from '../../shared/lib/errors.js'
+import { parseBody } from '../../shared/lib/http.js'
 import {
   applyPushBatch,
   bootstrap,
@@ -22,25 +22,8 @@ function requireAuthUser(req: Request): { userId: string } {
   return { userId: req.auth.userId }
 }
 
-async function readBinaryBody(req: Request): Promise<Uint8Array> {
-  if (Buffer.isBuffer(req.body)) {
-    return new Uint8Array(req.body)
-  }
-  if (req.body instanceof Uint8Array) {
-    return req.body
-  }
-  throw new BadRequestError(
-    'Expected application/x-protobuf body',
-    'VALIDATION_ERROR'
-  )
-}
-
-function sendProtobuf(res: Response, envelope: SyncEnvelope): void {
-  const bytes = encodeEnvelope(envelope)
-  res
-    .status(200)
-    .set('Content-Type', 'application/x-protobuf')
-    .send(Buffer.from(bytes))
+function sendEnvelope(res: Response, envelope: SyncEnvelope): void {
+  res.status(200).json(envelope)
 }
 
 export async function pushHandler(
@@ -57,8 +40,7 @@ export async function pushHandler(
       message: 'Sync rate limit exceeded'
     })
 
-    const bytes = await readBinaryBody(req)
-    const envelope = decodeEnvelope(bytes)
+    const envelope = parseBody(SyncEnvelopeSchema, req.body)
     if (envelope.kind !== 'pushBatch') {
       throw new BadRequestError(
         'Expected PushBatch envelope',
@@ -72,7 +54,7 @@ export async function pushHandler(
       mutations: envelope.pushBatch.mutations
     })
 
-    sendProtobuf(res, {
+    sendEnvelope(res, {
       version: PROTOCOL_VERSION,
       messageId: createEnvelopeId(),
       correlationId: envelope.messageId,
@@ -93,8 +75,7 @@ export async function pullHandler(
 ): Promise<void> {
   try {
     const { userId } = requireAuthUser(req)
-    const bytes = await readBinaryBody(req)
-    const envelope = decodeEnvelope(bytes)
+    const envelope = parseBody(SyncEnvelopeSchema, req.body)
     if (envelope.kind !== 'pullRequest') {
       throw new BadRequestError(
         'Expected PullRequest envelope',
@@ -114,7 +95,7 @@ export async function pullHandler(
       userAgent: req.get('user-agent')
     })
 
-    sendProtobuf(res, {
+    sendEnvelope(res, {
       version: PROTOCOL_VERSION,
       messageId: createEnvelopeId(),
       correlationId: envelope.messageId,
@@ -135,8 +116,7 @@ export async function bootstrapHandler(
 ): Promise<void> {
   try {
     const { userId } = requireAuthUser(req)
-    const bytes = await readBinaryBody(req)
-    const envelope = decodeEnvelope(bytes)
+    const envelope = parseBody(SyncEnvelopeSchema, req.body)
 
     let lastPulledAt = new Date(0).toISOString()
     if (envelope.kind === 'hello') {
@@ -151,7 +131,7 @@ export async function bootstrapHandler(
       lastPulledAt
     })
 
-    sendProtobuf(res, {
+    sendEnvelope(res, {
       version: PROTOCOL_VERSION,
       messageId: createEnvelopeId(),
       correlationId: envelope.messageId,

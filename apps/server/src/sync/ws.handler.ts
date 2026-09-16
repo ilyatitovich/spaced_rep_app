@@ -3,8 +3,8 @@ import { WebSocketServer, WebSocket } from 'ws'
 import {
   PROTOCOL_VERSION,
   createEnvelopeId,
-  decodeFrame,
-  encodeFrame,
+  decodeEnvelope,
+  encodeEnvelope,
   type SyncEnvelope
 } from '@spaced-rep/sync-protocol'
 import { verifyAccessToken } from '../auth/services/index.js'
@@ -29,7 +29,7 @@ function connKey(userId: string, deviceId: string): string {
 
 function send(ws: WebSocket, envelope: SyncEnvelope): void {
   if (ws.readyState !== WebSocket.OPEN) return
-  ws.send(encodeFrame(envelope))
+  ws.send(encodeEnvelope(envelope))
 }
 
 async function authenticateUpgrade(
@@ -71,10 +71,10 @@ async function authenticateUpgrade(
   }
 }
 
-async function handleMessage(conn: Conn, data: Buffer): Promise<void> {
+async function handleMessage(conn: Conn, data: string): Promise<void> {
   let envelope: SyncEnvelope
   try {
-    envelope = decodeFrame(new Uint8Array(data))
+    envelope = decodeEnvelope(data)
   } catch (err) {
     send(conn.ws, {
       version: PROTOCOL_VERSION,
@@ -229,13 +229,11 @@ export function createSyncWss(server: HttpServer): WebSocketServer {
     }
   })
 
-  void startFanoutSubscriber((userId, frame, excludeDeviceId) => {
+  void startFanoutSubscriber((userId, envelope, excludeDeviceId) => {
     for (const conn of connections.values()) {
       if (conn.userId !== userId) continue
       if (excludeDeviceId && conn.deviceId === excludeDeviceId) continue
-      if (conn.ws.readyState === WebSocket.OPEN) {
-        conn.ws.send(frame)
-      }
+      send(conn.ws, envelope)
     }
   })
 
@@ -291,7 +289,15 @@ export function createSyncWss(server: HttpServer): WebSocketServer {
       logger.info({ userId: auth.userId }, 'ws.connect')
 
       ws.on('message', data => {
-        void handleMessage(conn, data as Buffer).catch(err => {
+        const text =
+          typeof data === 'string'
+            ? data
+            : Buffer.isBuffer(data)
+              ? data.toString('utf8')
+              : Array.isArray(data)
+                ? Buffer.concat(data).toString('utf8')
+                : Buffer.from(data).toString('utf8')
+        void handleMessage(conn, text).catch(err => {
           logger.error({ err }, 'ws.message handler error')
         })
       })

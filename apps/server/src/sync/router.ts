@@ -1,4 +1,4 @@
-import { Router, raw } from 'express'
+import { Router } from 'express'
 import { requireAuth } from '../shared/middleware/require-auth.js'
 import {
   bootstrapHandler,
@@ -8,11 +8,6 @@ import {
 
 export const syncRouter = Router()
 
-const protobufBody = raw({
-  type: ['application/x-protobuf', 'application/octet-stream'],
-  limit: '1mb'
-})
-
-syncRouter.post('/push', requireAuth, protobufBody, pushHandler)
-syncRouter.post('/pull', requireAuth, protobufBody, pullHandler)
-syncRouter.post('/bootstrap', requireAuth, protobufBody, bootstrapHandler)
+syncRouter.post('/push', requireAuth, pushHandler)
+syncRouter.post('/pull', requireAuth, pullHandler)
+syncRouter.post('/bootstrap', requireAuth, bootstrapHandler)

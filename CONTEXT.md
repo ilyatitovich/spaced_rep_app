@@ -82,7 +82,7 @@ _Confidence: High_
 
 **Sync engine (`sync.service.ts`):**
 
-- **Push** — process `sync_queue` FIFO via the `SyncPort` (HTTP protobuf / optional WebSocket to Express). Queue items are removed on success.
+- **Push** — process `sync_queue` FIFO via the `SyncPort` (HTTP JSON / optional WebSocket to Express). Queue items are removed on success.
 - **Pull** — fetch deltas since `lastPulledAt` (`sync_meta`). For each row: if soft-deleted, **hard-delete locally**; otherwise apply if `shouldApplyRemote(local.updatedAt, remoteMs)` (last-write-wins). Advance `lastPulledAt`. If any local mutation occurred, call `emitSyncData()`.
 
 **Reactive UI update:** the Zustand store subscribes to `subscribeSyncData()`; when a pull mutates the local DB, the store calls `refreshTopics()` (re-reads IndexedDB) and subscribed components re-render.

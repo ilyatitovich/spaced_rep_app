@@ -22,7 +22,7 @@ async function getAccessToken(): Promise<string | null> {
   return fresh?.accessToken ?? getAuthSession()?.accessToken ?? null
 }
 
-async function postProtobuf(
+async function postEnvelope(
   path: string,
   envelope: SyncEnvelope
 ): Promise<SyncEnvelope> {
@@ -39,11 +39,10 @@ async function postProtobuf(
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/x-protobuf'
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
     },
-    body: new Blob([Uint8Array.from(encodeEnvelope(envelope))], {
-      type: 'application/x-protobuf'
-    })
+    body: encodeEnvelope(envelope)
   })
 
   if (!response.ok) {
@@ -56,13 +55,12 @@ async function postProtobuf(
       message = json.error?.message ?? message
       code = json.error?.code
     } catch {
-      // binary error body — ignore
+      // ignore non-JSON error bodies
     }
     throw new ApiError(response.status, message, code)
   }
 
-  const buffer = new Uint8Array(await response.arrayBuffer())
-  return decodeEnvelope(buffer)
+  return decodeEnvelope(await response.json())
 }
 
 export async function httpPushBatch(input: {
@@ -78,7 +76,7 @@ export async function httpPushBatch(input: {
     pushBatch: { mutations: input.mutations }
   }
 
-  const response = await postProtobuf('/sync/push', envelope)
+  const response = await postEnvelope('/sync/push', envelope)
   if (response.kind !== 'pushAck') {
     throw new Error('Expected PushAck from /sync/push')
   }
@@ -98,7 +96,7 @@ export async function httpPull(input: {
     pullRequest: { since: input.since }
   }
 
-  const response = await postProtobuf('/sync/pull', envelope)
+  const response = await postEnvelope('/sync/pull', envelope)
   if (response.kind !== 'pullDelta') {
     throw new Error('Expected PullDelta from /sync/pull')
   }
@@ -123,7 +121,7 @@ export async function httpBootstrap(input: {
     }
   }
 
-  const response = await postProtobuf('/sync/bootstrap', envelope)
+  const response = await postEnvelope('/sync/bootstrap', envelope)
   if (response.kind !== 'pullDelta') {
     throw new Error('Expected PullDelta from /sync/bootstrap')
   }

@@ -84,6 +84,6 @@ export default defineConfig({
     format: 'es'
   },
   optimizeDeps: {
-    include: ['protobufjs', 'workbox-window']
+    include: ['workbox-window']
   }
 })

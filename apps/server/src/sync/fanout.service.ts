@@ -1,7 +1,6 @@
 import { getRedis } from '../shared/lib/redis.js'
 import { logger } from '../shared/lib/logger.js'
 import type { SyncEnvelope } from '@spaced-rep/sync-protocol'
-import { encodeFrame } from '@spaced-rep/sync-protocol'
 
 export type FanoutHandler = (
   userId: string,
@@ -39,7 +38,7 @@ export async function publishFanout(input: {
 
     const payload = JSON.stringify({
       excludeDeviceId: input.excludeDeviceId ?? null,
-      frame: Buffer.from(encodeFrame(input.envelope)).toString('base64')
+      envelope: input.envelope
     })
     await redis.publish(channel(input.userId), payload)
   } catch (err) {
@@ -52,7 +51,7 @@ let subscriberStarted = false
 export async function startFanoutSubscriber(
   onRemote: (
     userId: string,
-    frame: Uint8Array,
+    envelope: SyncEnvelope,
     excludeDeviceId?: string
   ) => void
 ): Promise<void> {
@@ -70,10 +69,9 @@ export async function startFanoutSubscriber(
       try {
         const parsed = JSON.parse(message) as {
           excludeDeviceId: string | null
-          frame: string
+          envelope: SyncEnvelope
         }
-        const frame = new Uint8Array(Buffer.from(parsed.frame, 'base64'))
-        onRemote(userId, frame, parsed.excludeDeviceId ?? undefined)
+        onRemote(userId, parsed.envelope, parsed.excludeDeviceId ?? undefined)
       } catch (err) {
         logger.error({ err }, 'sync.fanout subscriber parse error')
       }

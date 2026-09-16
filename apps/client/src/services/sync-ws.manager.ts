@@ -1,8 +1,8 @@
 import {
   PROTOCOL_VERSION,
   createEnvelopeId,
-  decodeFrame,
-  encodeFrame,
+  decodeEnvelope,
+  encodeEnvelope,
   type Mutation,
   type PullDelta,
   type PushAck,
@@ -93,7 +93,6 @@ export class SyncWsManager {
     url.searchParams.set('access_token', session.accessToken)
 
     const ws = new WebSocket(url.toString())
-    ws.binaryType = 'arraybuffer'
     this.ws = ws
 
     ws.onopen = () => {
@@ -114,7 +113,11 @@ export class SyncWsManager {
     }
 
     ws.onmessage = event => {
-      void this.onMessage(event.data)
+      if (typeof event.data !== 'string') {
+        console.error('WS expected JSON text frame')
+        return
+      }
+      this.onMessage(event.data)
     }
 
     ws.onclose = event => {
@@ -208,18 +211,13 @@ export class SyncWsManager {
 
   private send(envelope: SyncEnvelope): void {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return
-    this.ws.send(Uint8Array.from(encodeFrame(envelope)))
+    this.ws.send(encodeEnvelope(envelope))
   }
 
-  private async onMessage(data: ArrayBuffer | Blob): Promise<void> {
-    const buffer =
-      data instanceof ArrayBuffer
-        ? new Uint8Array(data)
-        : new Uint8Array(await data.arrayBuffer())
-
+  private onMessage(data: string): void {
     let envelope: SyncEnvelope
     try {
-      envelope = decodeFrame(buffer)
+      envelope = decodeEnvelope(data)
     } catch (err) {
       console.error('WS decode error:', err)
       return

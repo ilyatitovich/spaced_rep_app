@@ -2,9 +2,7 @@ import {
   PROTOCOL_VERSION,
   createEnvelopeId,
   decodeEnvelope,
-  decodeFrame,
   encodeEnvelope,
-  encodeFrame,
   type SyncEnvelope
 } from './index.js'
 
@@ -23,8 +21,7 @@ describe('sync-protocol codec', () => {
       }
     }
 
-    const bytes = encodeEnvelope(envelope)
-    const decoded = decodeEnvelope(bytes)
+    const decoded = decodeEnvelope(encodeEnvelope(envelope))
 
     expect(decoded.kind).toBe('hello')
     if (decoded.kind === 'hello') {
@@ -73,19 +70,8 @@ describe('sync-protocol codec', () => {
     }
   })
 
-  it('round-trips framed envelopes', () => {
-    const envelope: SyncEnvelope = {
-      version: PROTOCOL_VERSION,
-      messageId: 'msg-1',
-      deviceId: 'dev-1',
-      sentAt: 42,
-      kind: 'ping',
-      ping: { timestamp: 42 }
-    }
-    const frame = encodeFrame(envelope)
-    expect(frame[0]).toBe(0x53)
-    const decoded = decodeFrame(frame)
-    expect(decoded.kind).toBe('ping')
+  it('rejects invalid envelopes', () => {
+    expect(() => decodeEnvelope({ kind: 'hello' })).toThrow()
   })
 
   it('round-trips pull delta with card', () => {
