@@ -6,6 +6,8 @@ import {
   cacheRemoteImage,
   isTextHtmlEmpty,
   normalizeCardData,
+  renderMathInHtml,
+  sanitizeCardHtml,
   toHttpsImageUrl
 } from '@/lib'
 import { Card } from '@/models'
@@ -138,7 +140,19 @@ export default function LevelCard({
     preview = <Volume2 className="w-8 h-8" strokeWidth={2} />
   } else if (block?.type === 'text') {
     const text = stripHtml(block.html)
-    preview = <p>{text.length > 50 ? text.slice(0, 50) + '...' : text}</p>
+    const clipped = text.length > 50 ? text.slice(0, 50) + '...' : text
+    preview = (
+      <div
+        className="max-h-full w-full overflow-hidden [&_.katex-display]:my-0"
+        dangerouslySetInnerHTML={{
+          __html: renderMathInHtml(
+            sanitizeCardHtml(
+              `<p>${clipped.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</p>`
+            )
+          )
+        }}
+      />
+    )
   } else if (block?.type === 'code') {
     const text = block.code
     preview = (
