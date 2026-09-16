@@ -22,6 +22,11 @@ export const globalRules: ShortcutRule[] = [
   { id: 'back', key: 'Escape', when: 'notTyping' }
 ]
 
+export const carouselRules: ShortcutRule[] = [
+  { id: 'prevCard', key: 'ArrowLeft', when: 'notTyping' },
+  { id: 'nextCard', key: 'ArrowRight', when: 'notTyping' }
+]
+
 export function isMod(event: KeyboardEvent): boolean {
   return event.metaKey || event.ctrlKey
 }

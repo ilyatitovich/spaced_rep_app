@@ -14,8 +14,11 @@ import {
   Header,
   SelectionModeFooter
 } from '@/components'
+import { useShortcuts } from '@/hooks'
 import {
   appendSideBlocks,
+  carouselRules,
+  getTopScreen,
   isCardDataEqual,
   normalizeCardData,
   removeLastSearchParam
@@ -308,6 +311,35 @@ export default function CardDetailsScreen({
     []
   )
 
+  const commitSwipe = useCallback(
+    (direction: 1 | -1) => {
+      if (isAnimating.current || total < 2) return
+      isAnimating.current = true
+      animateTrackTo(direction === 1 ? 'next' : 'prev', () => {
+        finishSwipe(direction)
+      })
+    },
+    [total, animateTrackTo, finishSwipe]
+  )
+
+  const handlePrevCard = () => {
+    const screen = getTopScreen()
+    if (!screen?.contains(containerRef.current)) return
+    commitSwipe(-1)
+  }
+
+  const handleNextCard = () => {
+    const screen = getTopScreen()
+    if (!screen?.contains(containerRef.current)) return
+    commitSwipe(1)
+  }
+
+  useShortcuts(
+    carouselRules,
+    { prevCard: handlePrevCard, nextCard: handleNextCard },
+    { enabled: isOpen && !isEditable }
+  )
+
   const clearTouchListeners = () => {
     detachTouch.current?.()
     detachTouch.current = null
@@ -344,11 +376,7 @@ export default function CardDetailsScreen({
     const didDrag = Math.abs(deltaX) > DRAG_CAPTURE_PX
 
     if (Math.abs(deltaX) > SWIPE_THRESHOLD_PX) {
-      const direction: 1 | -1 = deltaX < 0 ? 1 : -1
-      isAnimating.current = true
-      animateTrackTo(direction === 1 ? 'next' : 'prev', () => {
-        finishSwipe(direction)
-      })
+      commitSwipe(deltaX < 0 ? 1 : -1)
       return
     }
 

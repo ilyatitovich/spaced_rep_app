@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import {
+  carouselRules,
   DISMISS_ATTR,
   dismissTop,
   getTabbables,
@@ -68,6 +69,22 @@ describe('matchShortcut', () => {
   it('ignores Escape with a modifier', () => {
     expect(
       matchShortcut(keydown('Escape', { ctrlKey: true }), globalRules)
+    ).toBeNull()
+  })
+
+  it('matches ArrowLeft and ArrowRight to carousel rules', () => {
+    expect(matchShortcut(keydown('ArrowLeft'), carouselRules)?.id).toBe(
+      'prevCard'
+    )
+    expect(matchShortcut(keydown('ArrowRight'), carouselRules)?.id).toBe(
+      'nextCard'
+    )
+  })
+
+  it('ignores carousel arrows while typing', () => {
+    const input = document.createElement('input')
+    expect(
+      matchShortcut(keydown('ArrowLeft', { target: input }), carouselRules)
     ).toBeNull()
   })
 })
