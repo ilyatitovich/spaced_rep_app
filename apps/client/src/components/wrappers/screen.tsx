@@ -79,19 +79,16 @@ export default function Screen({
     onClose?.()
   }
 
+  const onscreenClass = isVertical ? 'translate-y-0' : 'translate-x-0'
+  const offscreenClass = isVertical
+    ? 'translate-y-[100vh]'
+    : 'translate-x-[100vw]'
+
   return (
     <div
       ref={rootRef}
       data-screen=""
-      className={`${
-        isOpen
-          ? isVertical
-            ? 'translate-y-0'
-            : 'translate-x-0'
-          : isVertical
-            ? 'translate-y-[100vh]'
-            : 'translate-x-[100vw]'
-      } transition-transform duration-300 ease-in-out fixed inset-0 bg-background ${className}`.trim()}
+      className={`${isOpen ? onscreenClass : offscreenClass} transition-transform duration-300 ease-in-out fixed inset-0 bg-background ${className}`.trim()}
       onTransitionEnd={handleTransitionEnd}
     >
       <ScreenLayer isOpen={isOpen && !isVertical}>
