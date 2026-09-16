@@ -1,3 +1,4 @@
+import { Download } from 'lucide-react'
 import { useRef, useState } from 'react'
 
 import {
@@ -6,6 +7,7 @@ import {
   BackButton,
   CardToolbar,
   CardContainer,
+  FileModal,
   Screen,
   Header
 } from '@/components'
@@ -23,6 +25,7 @@ type NewCardPageProps = {
   isOpen: boolean
   topicId: string
   onAdd: (payload: { level: number; card: CardModel }) => void
+  onCardsImport: () => Promise<void>
 }
 
 const emptySide = (side: SideName) => ({
@@ -43,7 +46,8 @@ const createEmptyCardData = (): CardData => ({
 export default function AddCardScreen({
   isOpen,
   topicId,
-  onAdd
+  onAdd,
+  onCardsImport
 }: NewCardPageProps) {
   const [isFlipped, setIsFlipped] = useState(false)
   const [cardData, setCardData] = useState(createEmptyCardData)
@@ -51,6 +55,7 @@ export default function AddCardScreen({
   const [isDraft, setIsDraft] = useState(true)
   const [isFirstCardActive, setIsFirstCardActive] = useState(true)
   const [isInitialRender, setIsInitialRender] = useState(true)
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false)
 
   const currentCardRef = useRef<CardHandle>(null)
   const secondCardRef = useRef<CardHandle>(null)
@@ -164,6 +169,7 @@ export default function AddCardScreen({
     setIsInitialRender(true)
     currentCardRef.current?.resetContent()
     secondCardRef.current?.resetContent()
+    setIsImportModalOpen(false)
   }
 
   return (
@@ -202,6 +208,23 @@ export default function AddCardScreen({
         onAddBlocks={appendBlocks}
         onFocusLast={() => currentCardRef.current?.focusContent(side, 'last')}
         onFlip={() => setIsFlipped(prev => !prev)}
+      />
+      <div className="absolute bottom-0 left-0 right-0 px-safe-margins">
+        <button
+          type="button"
+          className="border border-border p-4 rounded-xl flex gap-2 justify-center items-center w-full"
+          onClick={() => setIsImportModalOpen(true)}
+        >
+          <Download size={18} />
+          <span>Import cards</span>
+        </button>
+      </div>
+      <FileModal
+        kind="import-cards"
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        topicId={topicId}
+        onCardsImport={onCardsImport}
       />
     </Screen>
   )

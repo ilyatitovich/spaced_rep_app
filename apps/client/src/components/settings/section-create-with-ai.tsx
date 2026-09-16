@@ -40,7 +40,7 @@ export default function SectionCreateWithAi({
             Copy the prompt or skill into ChatGPT, Claude, Cursor, or another
             LLM, then send your topic and notes in the same message (for
             example: “Topic: React hooks” plus your notes). Paste the JSON it
-            returns, or save a file, then open a topic → Settings → Import
+            returns, or save a file, then open a topic → Add Card → Import
             cards.
           </p>
         </SettingsGroup>

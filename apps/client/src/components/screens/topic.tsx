@@ -175,7 +175,7 @@ export default function TopicScreen({
 
             <div className="flex items-center justify-between mt-10 py-2">
               <span className="font-bold">Levels</span>
-              <Button onClick={handleOpenAddCard}>Add Card</Button>
+              <Button onClick={handleOpenAddCard}>Add Cards</Button>
             </div>
 
             <ul>
@@ -217,11 +217,12 @@ export default function TopicScreen({
             isOpen={isAddingCard}
             topicId={topicId}
             onAdd={handleAddCard}
+            onCardsImport={async () => {
+              await fetchTopic()
+              await fetchLevelCards()
+            }}
           />
-          <TestScreen
-            isOpen={!isAddingCard && isTest}
-            topic={topic}
-          />
+          <TestScreen isOpen={!isAddingCard && isTest} topic={topic} />
 
           <LevelScreen
             isOpen={levelId !== ''}
@@ -247,10 +248,6 @@ export default function TopicScreen({
             isOpen={isSettingsOpen}
             topic={topic}
             onClose={onClose}
-            onCardsImport={async () => {
-              await fetchTopic()
-              await fetchLevelCards()
-            }}
           />
         </>
       )}

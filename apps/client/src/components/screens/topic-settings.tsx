@@ -1,4 +1,4 @@
-import { ArrowUpFromLine, Download, Pencil, Trash } from 'lucide-react'
+import { ArrowUpFromLine, Pencil, Trash } from 'lucide-react'
 import type { ChangeEvent, FormEvent } from 'react'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'react-hot-toast'
@@ -18,21 +18,18 @@ type TopicSettingsProps = {
   isOpen: boolean
   topic: Topic
   onClose: () => void
-  onCardsImport: () => Promise<void>
 }
 
 export default function TopicSettings({
   isOpen,
   topic,
-  onClose,
-  onCardsImport
+  onClose
 }: TopicSettingsProps) {
   const [title, setTitle] = useState('')
   const [error, setError] = useState('')
   const [isConfirmDeleteModalOpen, setIsConfirmDeleteModalOpen] =
     useState(false)
   const [isExportModalOpen, setIsExportModalOpen] = useState(false)
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false)
   const deleteTopics = useTopicsStore(state => state.deleteTopics)
   const updateTopic = useTopicsStore(state => state.updateTopic)
 
@@ -132,14 +129,6 @@ export default function TopicSettings({
             </div>
           </form>
 
-          {/* Export/import buttons */}
-          <button
-            className="border border-border p-4 rounded-xl flex gap-2 justify-center items-center"
-            onClick={() => setIsImportModalOpen(true)}
-          >
-            <Download size={18} />
-            <span>Import cards</span>
-          </button>
           <button
             className="border border-border p-4 rounded-xl flex gap-2 justify-center items-center"
             onClick={() => setIsExportModalOpen(true)}
@@ -167,13 +156,6 @@ export default function TopicSettings({
         onClose={() => setIsConfirmDeleteModalOpen(false)}
         count={1}
         itemName="topic"
-      />
-      <FileModal
-        kind="import-cards"
-        isOpen={isImportModalOpen}
-        onClose={() => setIsImportModalOpen(false)}
-        topicId={topic.id}
-        onCardsImport={onCardsImport}
       />
       <FileModal
         kind="export-topic"
