@@ -20,6 +20,7 @@ import {
 } from '@/lib/api'
 import { getAuthErrorMessage } from '@/lib/auth-errors'
 import { getAuthSession } from '@/lib/auth-storage'
+import { getDevicePlatform } from '@/lib/get-device-platform'
 import { SettingsActionRow, SettingsGroup } from './settings-ui'
 
 function formatDate(iso: string | null): string {
@@ -42,6 +43,32 @@ function deviceLabel(passkey: PasskeySummary): string {
   if (passkey.deviceType === 'multiDevice') return 'Synced across devices'
   if (passkey.backedUp) return 'Backed up'
   return 'This device only'
+}
+
+function isDeviceOnly(passkey: PasskeySummary): boolean {
+  return passkey.deviceType !== 'multiDevice' && !passkey.backedUp
+}
+
+function defaultPasskeyName(existing: PasskeySummary[]): string {
+  const platform = getDevicePlatform()
+  const base =
+    platform === 'iOS'
+      ? 'iPhone'
+      : platform === 'Other'
+        ? 'This device'
+        : platform
+  const count = existing.filter(p => (p.name ?? '').startsWith(base)).length
+  return count === 0 ? base : `${base} (${count + 1})`
+}
+
+function listFooter(passkeys: PasskeySummary[]): string {
+  if (passkeys.length === 1 && isDeviceOnly(passkeys[0]!)) {
+    return 'Add another passkey on a second device so you aren’t locked out if you lose this one.'
+  }
+  if (passkeys.length === 1) {
+    return 'A second passkey on another device is a good backup.'
+  }
+  return 'Passkeys let you sign in with Face ID, Touch ID, or your device PIN.'
 }
 
 type SectionPasskeysProps = {
@@ -123,7 +150,11 @@ export default function SectionPasskeys({ isOpen }: SectionPasskeysProps) {
         throw err
       }
 
-      await passkeyRegisterVerify({ accessToken: token, credential })
+      await passkeyRegisterVerify({
+        accessToken: token,
+        credential,
+        name: defaultPasskeyName(passkeys)
+      })
       toast.success('Passkey added')
       await loadPasskeys()
     } catch (err) {
@@ -187,8 +218,8 @@ export default function SectionPasskeys({ isOpen }: SectionPasskeysProps) {
             <div className="flex flex-col gap-2">
               <p className="font-bold">No passkeys yet</p>
               <p className="text-sm text-foreground-muted">
-                Add a passkey to sign in faster on this device — no password
-                needed.
+                Add a passkey to sign in with Face ID, Touch ID, or your device
+                PIN — no password needed.
               </p>
             </div>
             <button
@@ -202,43 +233,54 @@ export default function SectionPasskeys({ isOpen }: SectionPasskeysProps) {
             </button>
           </div>
         ) : (
-          <SettingsGroup
-            label={`${passkeys.length} passkey${passkeys.length === 1 ? '' : 's'}`}
-            footer="Passkeys let you sign in with Face ID, Touch ID, or your device PIN."
-          >
-            {passkeys.map(passkey => (
-              <div
-                key={passkey.id}
-                className="flex items-center gap-3 px-4 py-3.5"
-              >
-                <KeyRound
-                  size={18}
-                  className="shrink-0 text-foreground-muted mt-0.5 self-start"
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">
-                    {passkey.name || 'Passkey'}
-                  </p>
-                  <p className="text-xs text-foreground-muted mt-0.5">
-                    {deviceLabel(passkey)}
-                  </p>
-                  <p className="text-xs text-foreground-subtle mt-0.5">
-                    Added {formatDate(passkey.createdAt)}
-                    {' · '}
-                    Last used {formatDate(passkey.lastUsedAt)}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setPendingDelete(passkey)}
-                  className="text-danger p-2 shrink-0"
-                  aria-label={`Remove ${passkey.name || 'passkey'}`}
+          <>
+            <SettingsGroup
+              label={`${passkeys.length} passkey${passkeys.length === 1 ? '' : 's'}`}
+              footer={listFooter(passkeys)}
+            >
+              {passkeys.map(passkey => (
+                <div
+                  key={passkey.id}
+                  className="flex items-center gap-3 px-4 py-3.5"
                 >
-                  <Trash2 size={18} />
-                </button>
-              </div>
-            ))}
-          </SettingsGroup>
+                  <KeyRound
+                    size={18}
+                    className="shrink-0 text-foreground-muted mt-0.5 self-start"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">
+                      {passkey.name || 'Passkey'}
+                    </p>
+                    <p className="text-xs text-foreground-muted mt-0.5">
+                      {deviceLabel(passkey)}
+                    </p>
+                    <p className="text-xs text-foreground-subtle mt-0.5">
+                      Added {formatDate(passkey.createdAt)}
+                      {' · '}
+                      Last used {formatDate(passkey.lastUsedAt)}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPendingDelete(passkey)}
+                    className="text-danger p-2 shrink-0"
+                    aria-label={`Remove ${passkey.name || 'passkey'}`}
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              ))}
+            </SettingsGroup>
+
+            <SettingsGroup footer="Use a different device or security key when adding another.">
+              <SettingsActionRow
+                icon={<Plus size={18} />}
+                label={isAdding ? 'Adding…' : 'Add another passkey'}
+                onClick={() => void handleAddPasskey()}
+                disabled={isAdding || !isOnline}
+              />
+            </SettingsGroup>
+          </>
         )}
       </div>
 
@@ -263,11 +305,20 @@ export default function SectionPasskeys({ isOpen }: SectionPasskeysProps) {
                 Remove passkey?
               </h2>
               <p className="text-foreground-muted text-center mb-6">
-                You’ll need another sign-in method on devices that used{' '}
-                <span className="font-medium">
-                  {pendingDelete.name || 'this passkey'}
-                </span>
-                .
+                {passkeys.length === 1 ? (
+                  <>
+                    This is your only passkey. You’ll need Google or email to
+                    sign in until you add another.
+                  </>
+                ) : (
+                  <>
+                    Devices that used{' '}
+                    <span className="font-medium">
+                      {pendingDelete.name || 'this passkey'}
+                    </span>{' '}
+                    won’t be able to sign in with it anymore.
+                  </>
+                )}
               </p>
               <div className="flex gap-3">
                 <button
