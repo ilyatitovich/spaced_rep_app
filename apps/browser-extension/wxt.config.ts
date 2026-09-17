@@ -8,9 +8,10 @@ const extensionRoot = path.dirname(fileURLToPath(import.meta.url))
 const apiOrigin = new URL(
   process.env.WXT_PUBLIC_API_URL ?? 'http://localhost:3000'
 ).origin
-const appHost = new URL(
+const appOrigin = new URL(
   process.env.WXT_PUBLIC_APP_URL ?? 'http://localhost:5173'
-).hostname
+).origin
+const appHost = new URL(appOrigin).hostname
 const webauthnHostPermission =
   appHost === 'localhost' || appHost === '127.0.0.1'
     ? 'http://localhost/*'
@@ -58,7 +59,7 @@ export default defineConfig({
       'storage',
       'unlimitedStorage'
     ],
-    host_permissions: [`${apiOrigin}/*`, webauthnHostPermission],
+    host_permissions: [`${apiOrigin}/*`, webauthnHostPermission, `${appOrigin}/*`],
     optional_host_permissions: ['http://*/*', 'https://*/*'],
     action: {
       default_title: 'Create a flashcard'

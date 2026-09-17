@@ -1,6 +1,7 @@
-import { flushOutbox } from '../src/lib/sync'
+import { isAppUrl } from '../src/lib/app-url'
 import type { RawCapture } from '../src/lib/capture'
-import { clearEphemeralStorage, PENDING_KEY } from '../src/lib/storage'
+import { PENDING_KEY } from '../src/lib/storage'
+import { flushOutbox } from '../src/lib/sync'
 import type { RuntimeMessage, SideName } from '../src/types'
 
 async function activeTab(): Promise<chrome.tabs.Tab> {
@@ -11,6 +12,7 @@ async function activeTab(): Promise<chrome.tabs.Tab> {
   if (!tab?.id || !tab.windowId) throw new Error('No active web page')
   if (!/^https?:/.test(tab.url ?? ''))
     throw new Error('This page cannot be captured')
+  if (isAppUrl(tab.url)) throw new Error('Use the extension on other sites')
   return tab
 }
 
@@ -63,7 +65,19 @@ async function captureScreenshot(side: SideName): Promise<void> {
   })
 }
 
+function openPanel(tab?: chrome.tabs.Tab): void {
+  if (!tab?.id || isAppUrl(tab.url)) return
+  void chrome.sidePanel.setOptions({
+    tabId: tab.id,
+    path: 'sidepanel.html',
+    enabled: true
+  })
+  void chrome.sidePanel.open({ tabId: tab.id })
+}
+
 export default defineBackground(() => {
+  void chrome.sidePanel.setOptions({ enabled: false })
+
   chrome.runtime.onInstalled.addListener(() => {
     chrome.contextMenus.removeAll(() => {
       chrome.contextMenus.create({
@@ -85,16 +99,21 @@ export default defineBackground(() => {
     chrome.alarms.create('sync-outbox', { periodInMinutes: 5 })
   })
 
-  chrome.action.onClicked.addListener(async tab => {
-    if (tab.windowId) await chrome.sidePanel.open({ windowId: tab.windowId })
+  chrome.action.onClicked.addListener(tab => openPanel(tab))
+
+  chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
+    const url = info.url ?? tab.url
+    if (!url || !isAppUrl(url)) return
+    void chrome.sidePanel.setOptions({ tabId, enabled: false })
   })
 
   chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+    if (isAppUrl(tab?.url ?? info.pageUrl)) return
     if (info.srcUrl) {
       const origin = `${new URL(info.srcUrl).origin}/*`
       await chrome.permissions.request({ origins: [origin] }).catch(() => false)
     }
-    if (tab?.windowId) await chrome.sidePanel.open({ windowId: tab.windowId })
+    openPanel(tab)
     const raw: RawCapture = {
       html: info.selectionText,
       text: info.selectionText,
@@ -106,10 +125,6 @@ export default defineBackground(() => {
     await send({ type: 'RAW_CAPTURE', side: 'front', raw })
   })
 
-  chrome.runtime.onConnect.addListener(port => {
-    if (port.name !== 'sidepanel') return
-    port.onDisconnect.addListener(() => void clearEphemeralStorage())
-  })
   chrome.runtime.onMessage.addListener((message: RuntimeMessage) => {
     if (message.type === 'CAPTURE_SELECTION')
       void captureSelection(message.side)
