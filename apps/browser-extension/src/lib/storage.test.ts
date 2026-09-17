@@ -1,9 +1,12 @@
 import {
   appendBlocks,
+  clearEphemeralStorage,
   createBackup,
+  DRAFT_KEY,
   emptyCardData,
   ensureLocalTopic,
   isSideEmpty,
+  PENDING_KEY,
   saveCard
 } from './storage'
 
@@ -16,7 +19,10 @@ beforeEach(() => {
       local: {
         get: async (key: string) => ({ [key]: values[key] }),
         set: async (next: Record<string, unknown>) =>
-          Object.assign(values, next)
+          Object.assign(values, next),
+        remove: async (key: string | string[]) => {
+          for (const k of Array.isArray(key) ? key : [key]) delete values[k]
+        }
       }
     }
   } as unknown as typeof chrome
@@ -66,4 +72,14 @@ it('exports locally saved cards in the app backup format', async () => {
     buffer: 'AQID',
     type: 'image/png'
   })
+})
+
+it('clears draft and pending capture without touching saved cards', async () => {
+  values[DRAFT_KEY] = { front: {} }
+  values[PENDING_KEY] = { type: 'RAW_CAPTURE' }
+  values.cards = [{ id: 'keep' }]
+  await clearEphemeralStorage()
+  expect(values[DRAFT_KEY]).toBeUndefined()
+  expect(values[PENDING_KEY]).toBeUndefined()
+  expect(values.cards).toEqual([{ id: 'keep' }])
 })

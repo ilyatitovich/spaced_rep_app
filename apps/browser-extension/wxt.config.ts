@@ -1,6 +1,7 @@
 import tailwindcss from '@tailwindcss/vite'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import svgr from 'vite-plugin-svgr'
 import { defineConfig } from 'wxt'
 
 const apiOrigin = new URL(
@@ -14,7 +15,7 @@ const clientSource = path.resolve(
 export default defineConfig({
   modules: ['@wxt-dev/module-react'],
   vite: () => ({
-    plugins: [tailwindcss()]
+    plugins: [svgr(), tailwindcss()]
   }),
   alias: {
     '@/assets': path.join(clientSource, 'assets'),

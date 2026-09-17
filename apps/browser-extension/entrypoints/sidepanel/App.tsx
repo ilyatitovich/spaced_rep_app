@@ -1,46 +1,34 @@
 import {
   Camera,
-  Code2,
   Download,
-  FileAudio,
-  Image,
   LogIn,
   LogOut,
   MousePointer2,
-  RefreshCw,
-  RotateCcw,
-  Type
+  RefreshCw
 } from 'lucide-react'
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type ChangeEvent
-} from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import toast, { Toaster } from 'react-hot-toast'
 
 import Card from '@/components/card'
+import CardToolbar from '@/components/ui/card-toolbar'
 import { appendSideBlocks, isSideEmpty } from '@/lib/check-content'
-import { blobToRecord, processImage } from '@/lib/image'
 import type { CardData, CardHandle, SideBlock, SideName } from '@/types'
 import { signIn, signOut, getSession } from '../../src/lib/auth'
 import { normalizeCapture } from '../../src/lib/capture'
 import {
   createBackup,
   decodeCardData,
+  DRAFT_KEY,
   emptyCardData,
   encodeCardData,
   ensureLocalTopic,
   getCards,
   getTopics,
+  PENDING_KEY,
   saveCard
 } from '../../src/lib/storage'
 import { bootstrapTopics, flushOutbox, hasPro } from '../../src/lib/sync'
 import type { ExtensionSession, RuntimeMessage, Topic } from '../../src/types'
-
-const DRAFT_KEY = 'card.draft'
-const PENDING_KEY = 'capture.pending'
 
 export default function App() {
   const cardRef = useRef<CardHandle>(null)
@@ -183,32 +171,10 @@ export default function App() {
     URL.revokeObjectURL(url)
   }
 
-  const addFile = async (
-    event: ChangeEvent<HTMLInputElement>,
-    kind: 'image' | 'audio'
-  ) => {
-    const file = event.target.files?.[0]
-    event.target.value = ''
-    if (!file) return
-    if (kind === 'image') {
-      appendBlocks([
-        { type: 'image', content: await blobToRecord(await processImage(file)) }
-      ])
-    } else {
-      appendBlocks([
-        {
-          type: 'audio',
-          content: { buffer: await file.arrayBuffer(), type: file.type }
-        }
-      ])
-    }
-  }
-
   return (
     <main className="h-full flex flex-col">
       <Toaster position="top-center" />
       <header className="h-14 px-3 border-b border-border flex items-center justify-between gap-2">
-        <span />
         <button
           className="text-sm font-medium min-w-12"
           onClick={() => setIsFlipped(value => !value)}
@@ -254,50 +220,12 @@ export default function App() {
       </section>
 
       <div className="px-3">
-        <nav className="flex items-center justify-around py-2">
-          <button
-            title="Add text"
-            className="p-2"
-            disabled={card[side].blocks.at(-1)?.type === 'text'}
-            onClick={() => appendBlocks([{ type: 'text', html: '' }])}
-          >
-            <Type size={20} />
-          </button>
-          <label title="Add image" className="p-2 cursor-pointer">
-            <Image size={20} />
-            <input
-              className="hidden"
-              type="file"
-              accept="image/*"
-              onChange={event => void addFile(event, 'image')}
-            />
-          </label>
-          <label title="Add audio" className="p-2 cursor-pointer">
-            <FileAudio size={20} />
-            <input
-              className="hidden"
-              type="file"
-              accept="audio/*"
-              onChange={event => void addFile(event, 'audio')}
-            />
-          </label>
-          <button
-            title="Add code"
-            className="p-2"
-            onClick={() =>
-              appendBlocks([{ type: 'code', lang: 'code', code: '' }])
-            }
-          >
-            <Code2 size={20} />
-          </button>
-          <button
-            title="Flip card"
-            className="p-2"
-            onClick={() => setIsFlipped(value => !value)}
-          >
-            <RotateCcw size={20} />
-          </button>
-        </nav>
+        <CardToolbar
+          isTextDisabled={card[side].blocks.at(-1)?.type === 'text'}
+          onAddBlocks={appendBlocks}
+          onFocusLast={() => cardRef.current?.focusContent(side, 'last')}
+          onFlip={() => setIsFlipped(value => !value)}
+        />
         <div className="grid grid-cols-2 gap-2 py-2">
           <button
             className="border border-border rounded-lg py-2 text-sm flex items-center justify-center gap-2"

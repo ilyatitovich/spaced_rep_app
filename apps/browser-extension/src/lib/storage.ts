@@ -7,7 +7,9 @@ import {
 const CARDS_KEY = 'cards'
 const TOPICS_KEY = 'topics'
 const OUTBOX_KEY = 'sync.outbox'
-const TOPIC_TITLE = 'Browser Cards'
+export const DRAFT_KEY = 'card.draft'
+export const PENDING_KEY = 'capture.pending'
+const TOPIC_TITLE = 'Anonymus Topic'
 
 export type OutboxItem = {
   id: string
@@ -61,6 +63,9 @@ async function setList<T>(key: string, values: T[]): Promise<void> {
 export const getCards = () => list<Card>(CARDS_KEY)
 export const getTopics = () => list<Topic>(TOPICS_KEY)
 export const getOutbox = () => list<OutboxItem>(OUTBOX_KEY)
+
+export const clearEphemeralStorage = () =>
+  chrome.storage.local.remove([DRAFT_KEY, PENDING_KEY])
 
 export async function getCard(id: string): Promise<Card | undefined> {
   return (await getCards()).find(card => card.id === id)

@@ -1,8 +1,7 @@
 import { flushOutbox } from '../src/lib/sync'
 import type { RawCapture } from '../src/lib/capture'
+import { clearEphemeralStorage, PENDING_KEY } from '../src/lib/storage'
 import type { RuntimeMessage, SideName } from '../src/types'
-
-const pendingKey = 'capture.pending'
 
 async function activeTab(): Promise<chrome.tabs.Tab> {
   const [tab] = await chrome.tabs.query({
@@ -16,7 +15,7 @@ async function activeTab(): Promise<chrome.tabs.Tab> {
 }
 
 async function send(message: RuntimeMessage): Promise<void> {
-  await chrome.storage.local.set({ [pendingKey]: message })
+  await chrome.storage.local.set({ [PENDING_KEY]: message })
   await chrome.runtime.sendMessage(message).catch(() => undefined)
 }
 
@@ -107,6 +106,10 @@ export default defineBackground(() => {
     await send({ type: 'RAW_CAPTURE', side: 'front', raw })
   })
 
+  chrome.runtime.onConnect.addListener(port => {
+    if (port.name !== 'sidepanel') return
+    port.onDisconnect.addListener(() => void clearEphemeralStorage())
+  })
   chrome.runtime.onMessage.addListener((message: RuntimeMessage) => {
     if (message.type === 'CAPTURE_SELECTION')
       void captureSelection(message.side)
