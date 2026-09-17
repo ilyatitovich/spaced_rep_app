@@ -91,6 +91,7 @@ model User {
   learningSettings      UserLearningSettings?
   notificationSettings  UserNotificationSettings?
   notificationReminders NotificationReminder[]
+  pushSubscriptions     PushSubscription[]
   subscription          Subscription?
 
   @@map("users")
@@ -351,6 +352,23 @@ model NotificationReminder {
   @@index([userId, sortOrder])
   @@index([enabled, timeLocal])
   @@map("notification_reminders")
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  endpoint  String   @unique @db.Text
+  p256dh    String   @db.Text
+  auth      String   @db.Text
+  deviceId  String?  @map("device_id") @db.Uuid
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscriptions")
 }
 
 model Subscription {

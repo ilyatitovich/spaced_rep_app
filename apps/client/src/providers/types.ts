@@ -81,6 +81,15 @@ export type SettingsPort = {
       deviceId: string
     }
   ): Promise<UserNotificationSettings & { applied?: boolean }>
+  fetchVapidPublicKey(): Promise<{ publicKey: string }>
+  putPushSubscription(body: {
+    endpoint: string
+    keys: { p256dh: string; auth: string }
+    deviceId?: string
+  }): Promise<{ id: string; endpoint: string; deviceId: string | null }>
+  deletePushSubscription(body: {
+    endpoint: string
+  }): Promise<{ deleted: boolean }>
 }
 
 export type BackendPorts = {

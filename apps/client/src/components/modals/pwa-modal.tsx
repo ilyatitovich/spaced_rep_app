@@ -95,18 +95,20 @@ export default function PwaModal() {
             Add to Home Screen
           </h2>
           <p className="mb-4 text-center text-foreground-muted">
-            Install this app for the best experience.
+            Install this app for the best experience — including push
+            notifications on iPhone and iPad.
           </p>
           <ol className="mb-6 space-y-3 text-sm text-foreground">
             <li>
-              1. Tap the Share icon <Share /> in the Safari toolbar.
+              1. Tap the Share icon <Share /> in the browser toolbar.
             </li>
             <li>
               2. Scroll and choose{' '}
               <span className="font-medium">Add to Home Screen</span>.
             </li>
             <li>
-              3. Tap <span className="font-medium">Add</span> to finish.
+              3. Tap <span className="font-medium">Add</span>, then open the
+              app from your Home Screen.
             </li>
           </ol>
           <button type="button" onClick={handleClose} className={btnSecondary}>
@@ -118,14 +120,14 @@ export default function PwaModal() {
       {shown === 'ios-open-safari' && (
         <>
           <h2 className="mb-2 text-center text-xl font-semibold">
-            Open in Safari to install
+            Add to Home Screen
           </h2>
           <p className="mb-6 text-center text-foreground-muted">
-            Installing to your home screen is only available in Safari on iOS.
-            Open this page in Safari to add the app.
+            Use Share → Add to Home Screen in this browser, then open the app
+            from the icon to enable install features and push.
           </p>
           <button type="button" onClick={handleClose} className={btnSecondary}>
-            Maybe later
+            Got it
           </button>
         </>
       )}

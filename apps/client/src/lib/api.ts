@@ -297,6 +297,27 @@ async function putJson<T>(
   return json.data
 }
 
+async function deleteJson<T>(
+  path: string,
+  body: unknown,
+  accessToken: string
+): Promise<T> {
+  if (!apiUrl) {
+    throw new ApiError(0, 'VITE_API_URL is not configured')
+  }
+
+  const response = await fetch(`${apiUrl}${path}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`
+    },
+    body: JSON.stringify(body)
+  })
+  const json = await parseJson<{ data: T }>(response)
+  return json.data
+}
+
 export async function fetchSettings(
   accessToken: string
 ): Promise<UserSettingsDocument> {
@@ -345,6 +366,30 @@ export async function fetchSubscription(
   accessToken: string
 ): Promise<SubscriptionSnapshot> {
   return getJson('/settings/subscription', accessToken)
+}
+
+export async function fetchVapidPublicKey(
+  accessToken: string
+): Promise<{ publicKey: string }> {
+  return getJson('/notifications/vapid-public-key', accessToken)
+}
+
+export async function putPushSubscription(
+  accessToken: string,
+  body: {
+    endpoint: string
+    keys: { p256dh: string; auth: string }
+    deviceId?: string
+  }
+): Promise<{ id: string; endpoint: string; deviceId: string | null }> {
+  return putJson('/notifications/subscriptions', body, accessToken)
+}
+
+export async function deletePushSubscription(
+  accessToken: string,
+  body: { endpoint: string }
+): Promise<{ deleted: boolean }> {
+  return deleteJson('/notifications/subscriptions', body, accessToken)
 }
 
 export function isAuthConfigured(): boolean {

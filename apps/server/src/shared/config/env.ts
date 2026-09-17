@@ -63,7 +63,16 @@ const envSchema = z.object({
         .filter(Boolean)
     )
     .pipe(z.array(z.string().url()).min(1)),
-  WEBAUTHN_CHALLENGE_TTL_SECONDS: z.coerce.number().int().positive().default(60)
+  WEBAUTHN_CHALLENGE_TTL_SECONDS: z.coerce.number().int().positive().default(60),
+  VAPID_PUBLIC_KEY: z.string().min(1, 'VAPID_PUBLIC_KEY is required'),
+  VAPID_PRIVATE_KEY: z.string().min(1, 'VAPID_PRIVATE_KEY is required'),
+  VAPID_SUBJECT: z
+    .string()
+    .min(1, 'VAPID_SUBJECT is required')
+    .refine(
+      value => value.startsWith('mailto:') || value.startsWith('https://'),
+      'VAPID_SUBJECT must be a mailto: or https: URL'
+    )
 })
 
 const parsed = envSchema.safeParse(process.env)

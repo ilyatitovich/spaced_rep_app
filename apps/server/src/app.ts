@@ -4,6 +4,7 @@ import helmet from 'helmet'
 import compression from 'compression'
 import { pinoHttp } from 'pino-http'
 import { authRouter } from './auth/router.js'
+import { notificationsRouter } from './notifications/router.js'
 import { settingsRouter } from './settings/router.js'
 import { syncRouter } from './sync/router.js'
 import { env } from './shared/config/env.js'
@@ -30,6 +31,7 @@ export function createApp() {
   app.use('/auth', authRouter)
   app.use('/settings', settingsRouter)
   app.use('/sync', syncRouter)
+  app.use('/notifications', notificationsRouter)
 
   app.use(errorHandler)
 

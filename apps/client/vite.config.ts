@@ -10,14 +10,17 @@ const isDev = process.env.NODE_ENV === 'development'
 
 const pwaOptions: Partial<VitePWAOptions> = {
   registerType: 'prompt',
+  strategies: 'injectManifest',
+  srcDir: 'src',
+  filename: 'sw.ts',
   base: '/',
   includeAssets: [
     '/favicon.ico',
     '/apple-touch-icon.png',
     'assets/fonts/*.woff2'
   ],
-  workbox: {
-    globPatterns: ['**/*.{js,css,html,woff2,md}']
+  injectManifest: {
+    globPatterns: ['**/*.{js,css,html,woff2,md,png,svg,ico}']
   },
   manifest: {
     id: '/',
@@ -63,7 +66,8 @@ const pwaOptions: Partial<VitePWAOptions> = {
   },
 
   devOptions: {
-    enabled: isDev
+    enabled: isDev,
+    type: 'module'
   }
 }
 

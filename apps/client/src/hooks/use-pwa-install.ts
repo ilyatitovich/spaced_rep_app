@@ -6,7 +6,6 @@ import {
   hasRelatedAppInstalled,
   isInstallPromptDismissed,
   isIos,
-  isIosSafari,
   isSoftBannerDismissed,
   isStandaloneDisplay
 } from '@/lib'
@@ -66,10 +65,9 @@ export function usePwaInstall() {
     } else if (!dismissed) {
       if (deferredPrompt) {
         variant = 'chromium-install'
-      } else if (isIosSafari()) {
-        variant = 'ios-safari-a2hs'
       } else if (isIos()) {
-        variant = 'ios-open-safari'
+        // Safari, Chrome 113+, Edge: Share → Add to Home Screen
+        variant = 'ios-safari-a2hs'
       }
     }
   }

@@ -279,10 +279,28 @@ async function getOutbox(): Promise<SettingsOutboxItem[]> {
   )
 }
 
+async function getOutboxItem(
+  id: string
+): Promise<SettingsOutboxItem | undefined> {
+  return withTransaction(STORES.SETTINGS_OUTBOX, 'readonly', stores =>
+    promisify<SettingsOutboxItem | undefined>(
+      stores[STORES.SETTINGS_OUTBOX].get(id)
+    )
+  )
+}
+
 async function removeOutbox(id: string): Promise<void> {
   await withTransaction(STORES.SETTINGS_OUTBOX, 'readwrite', async stores => {
     await promisify(stores[STORES.SETTINGS_OUTBOX].delete(id))
   })
+}
+
+/** Drop outbox row only if it is still the same op we just flushed. */
+async function removeOutboxIfUnchanged(item: SettingsOutboxItem): Promise<boolean> {
+  const latest = await getOutboxItem(item.id)
+  if (!latest || latest.opId !== item.opId) return false
+  await removeOutbox(item.id)
+  return true
 }
 
 async function bumpOutbox(item: SettingsOutboxItem): Promise<void> {
@@ -304,8 +322,10 @@ export async function flushSettingsOutbox(): Promise<void> {
   if (!session) return
 
   flushInFlight = true
+  let pendingAfterFlush = false
   try {
     const now = Date.now()
+    const deviceId = await getDeviceId()
     const items = (await getOutbox()).filter(
       i => i.attempts < MAX_ATTEMPTS && i.nextRetryAt <= now
     )
@@ -318,23 +338,38 @@ export async function flushSettingsOutbox(): Promise<void> {
               typeof settingsBackend.patchPreferences
             >[0]
           )
-          await writePreferences(currentOwnerKey, canonical)
+          const local = (await readDoc(currentOwnerKey)).preferences
+          // Prefer newer local edits made while this request was in flight
+          await writePreferences(
+            currentOwnerKey,
+            mergePreferences(local, canonical, deviceId)
+          )
         } else if (item.section === 'learning') {
           const canonical = await settingsBackend.patchLearning(
             item.payload as Parameters<typeof settingsBackend.patchLearning>[0]
           )
-          await writeLearning(currentOwnerKey, canonical)
+          const local = (await readDoc(currentOwnerKey)).learning
+          await writeLearning(
+            currentOwnerKey,
+            mergeLearning(local, canonical, deviceId)
+          )
         } else if (item.section === 'notifications') {
           const canonical = await settingsBackend.patchNotifications(
             item.payload as Parameters<
               typeof settingsBackend.patchNotifications
             >[0]
           )
-          await writeNotifications(currentOwnerKey, canonical)
+          const local = (await readDoc(currentOwnerKey)).notifications
+          await writeNotifications(
+            currentOwnerKey,
+            mergeNotifications(local, canonical, deviceId)
+          )
         }
-        await removeOutbox(item.id)
+        // Newer enqueue while in-flight keeps its row (same id, new opId)
+        if (!(await removeOutboxIfUnchanged(item))) pendingAfterFlush = true
       } catch {
         await bumpOutbox(item)
+        pendingAfterFlush = true
       }
     }
 
@@ -344,6 +379,8 @@ export async function flushSettingsOutbox(): Promise<void> {
   } finally {
     flushInFlight = false
   }
+
+  if (pendingAfterFlush) triggerSettingsFlush()
 }
 
 /** Seed local defaults if missing; hydrate memory + theme. */

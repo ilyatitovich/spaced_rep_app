@@ -90,7 +90,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     useSettingsStore.getState().setUser(userId)
     if (userId) {
       void initialSync(userId)
-      void useSettingsStore.getState().pullRemote(userId)
+      void useSettingsStore
+        .getState()
+        .pullRemote(userId)
+        .then(async () => {
+          const reminders =
+            useSettingsStore.getState().settings?.notifications.reminders ?? []
+          const { ensurePushSubscription } = await import(
+            '@/services/push.service'
+          )
+          await ensurePushSubscription(reminders)
+        })
     } else {
       void useSettingsStore.getState().loadLocal()
     }

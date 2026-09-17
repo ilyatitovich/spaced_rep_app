@@ -12,9 +12,12 @@ import {
   verifyEmailOtp as verifyEmailOtpApi,
   fetchSettings,
   fetchSubscription,
+  fetchVapidPublicKey,
   patchSettingsLearning,
   patchSettingsNotifications,
-  patchSettingsPreferences
+  patchSettingsPreferences,
+  putPushSubscription,
+  deletePushSubscription
 } from '@/lib/api'
 import {
   captureAuthReturnTo,
@@ -205,6 +208,15 @@ export function createCustomSettingsAdapter(): SettingsPort {
     },
     async patchNotifications(body) {
       return patchSettingsNotifications(await token(), body)
+    },
+    async fetchVapidPublicKey() {
+      return fetchVapidPublicKey(await token())
+    },
+    async putPushSubscription(body) {
+      return putPushSubscription(await token(), body)
+    },
+    async deletePushSubscription(body) {
+      return deletePushSubscription(await token(), body)
     }
   }
 }

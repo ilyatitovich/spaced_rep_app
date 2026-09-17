@@ -48,6 +48,15 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
       if (document.visibilityState !== 'visible') return
       if (!navigator.onLine) return
       void registrationRef.current?.update()
+      void (async () => {
+        const { useSettingsStore } = await import('@/store/settings-store')
+        const { ensurePushSubscription } = await import(
+          '@/services/push.service'
+        )
+        const reminders =
+          useSettingsStore.getState().settings?.notifications.reminders ?? []
+        await ensurePushSubscription(reminders)
+      })()
     }
 
     document.addEventListener('visibilitychange', onVisibilityChange)
