@@ -10,7 +10,10 @@ import type {
 } from '@/types'
 
 function stripHtml(html: string): string {
-  return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim()
+  return html
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .trim()
 }
 
 export function isTextHtmlEmpty(html: string): boolean {
@@ -26,6 +29,19 @@ export function isBlockEmpty(block: SideBlock): boolean {
 
 export function isSideEmpty(side: CardSideData): boolean {
   return side.blocks.length === 0 || side.blocks.every(isBlockEmpty)
+}
+
+/** Insert after `index`. Replaces that slot when it is empty text. */
+export function insertSideBlock(
+  blocks: SideBlock[],
+  index: number,
+  incoming: SideBlock
+): SideBlock[] {
+  const at = blocks[index]
+  if (at?.type === 'text' && isTextHtmlEmpty(at.html)) {
+    return [...blocks.slice(0, index), incoming, ...blocks.slice(index + 1)]
+  }
+  return [...blocks.slice(0, index + 1), incoming, ...blocks.slice(index + 1)]
 }
 
 /** Drop a trailing empty text so adding code/media doesn't leave a blank editor. */

@@ -12,6 +12,7 @@ import {
   useRef,
   useState
 } from 'react'
+import { toast } from 'react-hot-toast'
 
 import AudioBlock from './content/audio-block/audio-block'
 import ImageBlock from './content/image-block/image-block'
@@ -22,8 +23,13 @@ import TextFormatToolbar, {
   isToolbarTarget
 } from './content/text-block/text-format-toolbar'
 import Spinner from './ui/spinner'
-import { didAppendSideBlock } from '@/lib/check-content'
+import {
+  didAppendSideBlock,
+  insertSideBlock,
+  isTextHtmlEmpty
+} from '@/lib/check-content'
 import { LONGTEXT_THRESHOLD } from '@/lib/constants'
+import { blobToRecord, processImage } from '@/lib/image'
 import { sanitizeCardHtml } from '@/lib/sanitize-html'
 
 const CodeBlockEditor = lazy(
@@ -171,6 +177,30 @@ export default forwardRef(function Side(
     emit(blocks)
   }
 
+  const pasteImageAt = (index: number, file: File) => {
+    void (async () => {
+      try {
+        const record = await blobToRecord(await processImage(file))
+        const blocks = readBlocks()
+        const at = blocks[index]
+        if (at?.type === 'text' && isTextHtmlEmpty(at.html)) {
+          skipBlurRef.current = true
+          setIsTextFocused(false)
+          setFocusedTextIndex(null)
+        }
+        emit(
+          insertSideBlock(blocks, index, {
+            type: 'image',
+            content: record
+          })
+        )
+      } catch (err) {
+        console.error('Failed to paste image:', err)
+        toast.error('Couldn’t process that image. Try another file.')
+      }
+    })()
+  }
+
   const removeBlock = (index: number) => {
     emit(readBlocks().filter((_, i) => i !== index))
   }
@@ -309,6 +339,7 @@ export default forwardRef(function Side(
                       html={block.html}
                       isEditable={isEditable}
                       onBackspaceEmpty={() => removeEmptyTextBlock(index)}
+                      onPasteImage={file => pasteImageAt(index, file)}
                       onFocus={e => {
                         setFocusedTextIndex(index)
                         setIsTextFocused(true)

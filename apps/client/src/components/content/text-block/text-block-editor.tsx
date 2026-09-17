@@ -9,6 +9,7 @@ import type { FocusEvent, FocusEventHandler, Ref } from 'react'
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 
 import { LONGTEXT_THRESHOLD } from '@/lib/constants'
+import { getClipboardImage } from '@/lib/image'
 import { sanitizeCardHtml } from '@/lib/sanitize-html'
 
 export type TextBlockEditorHandle = {
@@ -25,6 +26,8 @@ type TextBlockEditorProps = {
   onBlur?: FocusEventHandler<HTMLElement>
   /** Backspace at start of an empty doc — parent may remove this block. */
   onBackspaceEmpty?: () => void
+  /** Clipboard image (PrtSc / copy) — parent saves it as an image block. */
+  onPasteImage?: (file: File) => void
 }
 
 const extensions = [
@@ -53,16 +56,19 @@ function TextBlockEditorInner(
     isEditable = false,
     onFocus,
     onBlur,
-    onBackspaceEmpty
+    onBackspaceEmpty,
+    onPasteImage
   }: TextBlockEditorProps,
   ref: Ref<TextBlockEditorHandle>
 ) {
   const onFocusRef = useRef(onFocus)
   const onBlurRef = useRef(onBlur)
   const onBackspaceEmptyRef = useRef(onBackspaceEmpty)
+  const onPasteImageRef = useRef(onPasteImage)
   onFocusRef.current = onFocus
   onBlurRef.current = onBlur
   onBackspaceEmptyRef.current = onBackspaceEmpty
+  onPasteImageRef.current = onPasteImage
 
   const editor = useEditor({
     immediatelyRender: true,
@@ -83,6 +89,12 @@ function TextBlockEditorInner(
           onBlurRef.current?.(event as unknown as FocusEvent<HTMLElement>)
           return false
         }
+      },
+      handlePaste: (_view, event) => {
+        const file = getClipboardImage(event.clipboardData)
+        if (!file || !onPasteImageRef.current) return false
+        onPasteImageRef.current(file)
+        return true
       },
       handleKeyDown: (view, event) => {
         if (event.key !== 'Backspace') return false

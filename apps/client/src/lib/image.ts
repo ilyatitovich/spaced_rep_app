@@ -121,16 +121,29 @@ export async function getCroppedImage(
   )
 
   const croppedBlob = await new Promise<Blob>((resolve, reject) => {
-    cropped.toBlob(
-      blob => {
-        if (!blob) return reject(new Error('Failed to crop image'))
-        resolve(blob)
-      },
-      'image/png'
-    )
+    cropped.toBlob(blob => {
+      if (!blob) return reject(new Error('Failed to crop image'))
+      resolve(blob)
+    }, 'image/png')
   })
 
   return processImage(croppedBlob)
+}
+
+/** First image file on a paste/drop DataTransfer (PrtSc, copy image). */
+export function getClipboardImage(
+  data: DataTransfer | null | undefined
+): File | null {
+  if (!data) return null
+  for (const item of data.items) {
+    if (item.kind !== 'file' || !item.type.startsWith('image/')) continue
+    const file = item.getAsFile()
+    if (file) return file
+  }
+  for (const file of data.files) {
+    if (file.type.startsWith('image/')) return file
+  }
+  return null
 }
 
 export async function blobToRecord(blob: Blob): Promise<MediaDBRecord> {

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   appendSideBlocks,
   didAppendSideBlock,
+  insertSideBlock,
   isCardDataEqual,
   isSideEmpty,
   isTextHtmlEmpty
@@ -66,6 +67,25 @@ describe('isSideEmpty / isCardDataEqual', () => {
   })
 })
 
+describe('insertSideBlock', () => {
+  const image = {
+    type: 'image' as const,
+    content: { buffer: new ArrayBuffer(1), type: 'image/webp' }
+  }
+
+  it('replaces empty focused text', () => {
+    expect(
+      insertSideBlock([{ type: 'text', html: '<p></p>' }], 0, image)
+    ).toEqual([image])
+  })
+
+  it('inserts after written text without dropping it', () => {
+    expect(
+      insertSideBlock([{ type: 'text', html: '<p>Q</p>' }], 0, image)
+    ).toEqual([{ type: 'text', html: '<p>Q</p>' }, image])
+  })
+})
+
 describe('appendSideBlocks', () => {
   it('replaces a trailing empty text when adding code or media', () => {
     expect(
@@ -79,9 +99,9 @@ describe('appendSideBlocks', () => {
       type: 'image' as const,
       content: { buffer: new ArrayBuffer(1), type: 'image/webp' }
     }
-    expect(appendSideBlocks([{ type: 'text', html: '<p></p>' }], [image])).toEqual(
-      [image]
-    )
+    expect(
+      appendSideBlocks([{ type: 'text', html: '<p></p>' }], [image])
+    ).toEqual([image])
   })
 
   it('keeps written text and does not insert a trailing empty text', () => {
@@ -105,16 +125,19 @@ describe('didAppendSideBlock', () => {
 
   it('is true when media or code is appended after existing content', () => {
     expect(
-      didAppendSideBlock([{ type: 'text', html: '<p>long</p>' }], [
-        { type: 'text', html: '<p>long</p>' },
-        image
-      ])
+      didAppendSideBlock(
+        [{ type: 'text', html: '<p>long</p>' }],
+        [{ type: 'text', html: '<p>long</p>' }, image]
+      )
     ).toBe(true)
     expect(
-      didAppendSideBlock([{ type: 'text', html: '<p>long</p>' }], [
-        { type: 'text', html: '<p>long</p>' },
-        { type: 'code', lang: 'ts', code: '' }
-      ])
+      didAppendSideBlock(
+        [{ type: 'text', html: '<p>long</p>' }],
+        [
+          { type: 'text', html: '<p>long</p>' },
+          { type: 'code', lang: 'ts', code: '' }
+        ]
+      )
     ).toBe(true)
   })
 
