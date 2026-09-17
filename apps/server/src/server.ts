@@ -8,6 +8,10 @@ import { env } from './shared/config/env.js'
 import { logger } from './shared/lib/logger.js'
 import { disconnectPrisma } from './shared/lib/prisma.js'
 import { connectRedis, getRedis } from './shared/lib/redis.js'
+import {
+  startBillingReconciler,
+  stopBillingReconciler
+} from './settings/billing/billing.service.js'
 import { broadcastGracefulShutdown, createSyncWss } from './sync/ws.handler.js'
 
 const app = createApp()
@@ -19,6 +23,7 @@ async function main() {
     logger.info(`Server is running on port ${env.PORT} in ${env.NODE_ENV} mode`)
   })
   createSyncWss(server)
+  startBillingReconciler()
   startReminderTicker()
 }
 
@@ -29,6 +34,7 @@ void main().catch(err => {
 
 function shutdown(signal: string) {
   logger.info(`${signal} received, shutting down gracefully`)
+  stopBillingReconciler()
   stopReminderTicker()
   broadcastGracefulShutdown('server_restart')
 

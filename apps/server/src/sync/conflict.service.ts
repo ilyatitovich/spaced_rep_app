@@ -81,6 +81,7 @@ export async function countOtherActiveDevices(
     where: {
       userId,
       id: { not: deviceId },
+      revokedAt: null,
       lastSeenAt: { gt: cutoff }
     }
   })
@@ -90,7 +91,7 @@ export async function purgeSyncedTombstones(userId: string): Promise<void> {
   const ttlCutoff = new Date(Date.now() - ACTIVE_WINDOW_MS)
 
   const activeDevices = await prisma.syncDevice.findMany({
-    where: { userId, lastSeenAt: { gt: ttlCutoff } },
+    where: { userId, revokedAt: null, lastSeenAt: { gt: ttlCutoff } },
     select: { lastPulledAt: true }
   })
 
@@ -100,7 +101,7 @@ export async function purgeSyncedTombstones(userId: string): Promise<void> {
       : ttlCutoff
 
   await prisma.syncDevice.deleteMany({
-    where: { userId, lastSeenAt: { lte: ttlCutoff } }
+    where: { userId, revokedAt: null, lastSeenAt: { lte: ttlCutoff } }
   })
 
   await prisma.card.deleteMany({

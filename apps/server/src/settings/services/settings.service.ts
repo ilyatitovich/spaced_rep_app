@@ -15,8 +15,30 @@ import {
   type SettingsDocumentDto,
   type SubscriptionDto
 } from '../mappers.js'
+import {
+  isSubscriptionVerificationStale,
+  reconcileSubscription
+} from '../billing/billing.service.js'
+import { logger } from '../../shared/lib/logger.js'
 import { ensureUserSettings } from './ensure.service.js'
 import { assertPlan } from './plan.service.js'
+
+async function getVerifiedSubscriptionRow(userId: string) {
+  let row = await prisma.subscription.findUniqueOrThrow({ where: { userId } })
+  if (
+    row.provider === 'LEMON_SQUEEZY' &&
+    row.providerSubscriptionId &&
+    isSubscriptionVerificationStale(row.lastVerifiedAt)
+  ) {
+    try {
+      await reconcileSubscription(userId, row.providerSubscriptionId)
+      row = await prisma.subscription.findUniqueOrThrow({ where: { userId } })
+    } catch (err) {
+      logger.error({ err, userId }, 'Stale subscription reconciliation failed')
+    }
+  }
+  return row
+}
 
 export async function getSettingsDocument(
   userId: string
@@ -29,7 +51,7 @@ export async function getSettingsDocument(
       prisma.userLearningSettings.findUniqueOrThrow({ where: { userId } }),
       prisma.userNotificationSettings.findUniqueOrThrow({ where: { userId } }),
       prisma.notificationReminder.findMany({ where: { userId } }),
-      prisma.subscription.findUniqueOrThrow({ where: { userId } })
+      getVerifiedSubscriptionRow(userId)
     ])
 
   return {
@@ -239,6 +261,6 @@ export async function getSubscriptionDto(
   userId: string
 ): Promise<SubscriptionDto> {
   await ensureUserSettings(userId)
-  const row = await prisma.subscription.findUniqueOrThrow({ where: { userId } })
+  const row = await getVerifiedSubscriptionRow(userId)
   return subscriptionToDto(row)
 }

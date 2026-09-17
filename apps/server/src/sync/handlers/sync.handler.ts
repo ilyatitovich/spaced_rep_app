@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from 'express'
+import { z } from 'zod'
 import {
   PROTOCOL_VERSION,
   SyncEnvelopeSchema,
@@ -7,14 +8,25 @@ import {
 } from '@spaced-rep/sync-protocol'
 import { enforceRateLimit } from '../../shared/lib/redis.js'
 import { BadRequestError } from '../../shared/lib/errors.js'
-import { parseBody } from '../../shared/lib/http.js'
+import { parseBody, sendData } from '../../shared/lib/http.js'
 import { assertPlan } from '../../settings/services/plan.service.js'
 import {
   applyPushBatch,
   bootstrap,
   finishSyncCycle,
-  pullChanges
+  listSyncDevices,
+  pullChanges,
+  reportDevice,
+  revokeSyncDevice
 } from '../sync.service.js'
+import { disconnectSyncDevice } from '../ws.handler.js'
+
+const revokeDeviceSchema = z
+  .object({
+    deviceId: z.uuid(),
+    currentDeviceId: z.uuid()
+  })
+  .strict()
 
 function requireAuthUser(req: Request): { userId: string } {
   if (!req.auth?.userId) {
@@ -51,6 +63,11 @@ export async function pushHandler(
       )
     }
 
+    await reportDevice({
+      userId,
+      deviceId: envelope.deviceId,
+      userAgent: req.get('user-agent')
+    })
     const ack = await applyPushBatch({
       userId,
       deviceId: envelope.deviceId,
@@ -145,6 +162,36 @@ export async function bootstrapHandler(
       kind: 'pullDelta',
       pullDelta: delta
     })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function listDevicesHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { userId } = requireAuthUser(req)
+    const devices = await listSyncDevices(userId)
+    sendData(res, { devices })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function revokeDeviceHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { userId } = requireAuthUser(req)
+    const body = parseBody(revokeDeviceSchema, req.body)
+    const result = await revokeSyncDevice({ userId, ...body })
+    if (result.revoked) disconnectSyncDevice(userId, body.deviceId)
+    sendData(res, result)
   } catch (err) {
     next(err)
   }

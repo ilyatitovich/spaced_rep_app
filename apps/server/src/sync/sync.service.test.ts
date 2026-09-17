@@ -12,7 +12,11 @@ const tx = {
 
 vi.mock('../shared/lib/prisma.js', () => ({
   prisma: {
-    $transaction: vi.fn(async callback => callback(tx))
+    $transaction: vi.fn(async callback => callback(tx)),
+    syncDevice: {
+      findMany: vi.fn(),
+      updateMany: vi.fn()
+    }
   }
 }))
 
@@ -29,7 +33,9 @@ vi.mock('./idempotency.service.js', () => ({
   wasOpApplied: vi.fn()
 }))
 
-const { reportDevice } = await import('./sync.service.js')
+const { listSyncDevices, reportDevice, revokeSyncDevice } =
+  await import('./sync.service.js')
+const { prisma } = await import('../shared/lib/prisma.js')
 
 describe('reportDevice', () => {
   beforeEach(() => {
@@ -52,5 +58,98 @@ describe('reportDevice', () => {
 
     expect(tx.$queryRaw).toHaveBeenCalledOnce()
     expect(tx.syncDevice.upsert).not.toHaveBeenCalled()
+  })
+
+  it('refreshes an existing device without consuming another slot', async () => {
+    tx.syncDevice.findUnique.mockResolvedValue({
+      userId: 'user-1',
+      revokedAt: null
+    })
+    tx.syncDevice.count.mockResolvedValue(3)
+
+    await reportDevice({
+      userId: 'user-1',
+      deviceId: 'device-1',
+      lastPulledAt: new Date(0).toISOString()
+    })
+
+    expect(tx.syncDevice.count).not.toHaveBeenCalled()
+    expect(tx.syncDevice.upsert).toHaveBeenCalledOnce()
+  })
+
+  it('removes aged-out devices before counting a new registration', async () => {
+    tx.syncDevice.count.mockResolvedValue(2)
+
+    await reportDevice({
+      userId: 'user-1',
+      deviceId: 'device-4',
+      lastPulledAt: new Date(0).toISOString()
+    })
+
+    expect(tx.syncDevice.deleteMany).toHaveBeenCalledWith({
+      where: {
+        userId: 'user-1',
+        revokedAt: null,
+        lastSeenAt: { lte: expect.any(Date) }
+      }
+    })
+    expect(tx.syncDevice.upsert).toHaveBeenCalledOnce()
+  })
+
+  it('does not allow a revoked device to register itself again', async () => {
+    tx.syncDevice.findUnique.mockResolvedValue({
+      userId: 'user-1',
+      revokedAt: new Date()
+    })
+
+    await expect(
+      reportDevice({
+        userId: 'user-1',
+        deviceId: 'device-1',
+        lastPulledAt: new Date(0).toISOString()
+      })
+    ).rejects.toMatchObject({ code: 'DEVICE_REVOKED' })
+  })
+
+  it('lists active devices and revokes another device', async () => {
+    vi.mocked(prisma.syncDevice.findMany).mockResolvedValue([] as never)
+    vi.mocked(prisma.syncDevice.updateMany).mockResolvedValue({
+      count: 1
+    } as never)
+
+    await expect(listSyncDevices('user-1')).resolves.toEqual([])
+    await expect(
+      revokeSyncDevice({
+        userId: 'user-1',
+        deviceId: 'device-2',
+        currentDeviceId: 'device-1'
+      })
+    ).resolves.toEqual({ revoked: true })
+
+    expect(prisma.syncDevice.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { userId: 'user-1', revokedAt: null }
+      })
+    )
+    expect(prisma.syncDevice.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: 'device-2',
+        userId: 'user-1',
+        revokedAt: null
+      },
+      data: { revokedAt: expect.any(Date) }
+    })
+  })
+
+  it('protects the current device from accidental revocation', async () => {
+    await expect(
+      revokeSyncDevice({
+        userId: 'user-1',
+        deviceId: 'device-1',
+        currentDeviceId: 'device-1'
+      })
+    ).rejects.toMatchObject({ code: 'CURRENT_DEVICE' })
+
+    expect(prisma.syncDevice.updateMany).not.toHaveBeenCalled()
   })
 })

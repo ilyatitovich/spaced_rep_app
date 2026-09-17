@@ -52,6 +52,22 @@ function denyPlan(conn: Pick<Conn, 'ws' | 'deviceId'>): void {
   conn.ws.close(4003, 'plan required')
 }
 
+function denyDevice(
+  conn: Pick<Conn, 'ws' | 'deviceId'>,
+  code: string,
+  message: string
+): void {
+  send(conn.ws, {
+    version: PROTOCOL_VERSION,
+    messageId: createEnvelopeId(),
+    deviceId: conn.deviceId,
+    sentAt: Date.now(),
+    kind: 'error',
+    error: { code, message, retryable: false }
+  })
+  conn.ws.close(4004, code.toLowerCase())
+}
+
 async function hasSyncEntitlement(conn: Conn): Promise<boolean> {
   try {
     await assertPlan(conn.userId, 'PRO')
@@ -151,18 +167,32 @@ async function handleMessage(conn: Conn, data: string): Promise<void> {
       }
 
       conn.deviceId = envelope.deviceId
+      try {
+        await reportDevice({
+          userId: conn.userId,
+          deviceId: conn.deviceId,
+          lastPulledAt: envelope.hello.lastPulledAt
+        })
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : 'Device registration failed'
+        const code =
+          err instanceof Error && 'code' in err && typeof err.code === 'string'
+            ? err.code
+            : null
+        if (code === 'DEVICE_LIMIT' || code === 'DEVICE_REVOKED') {
+          denyDevice(conn, code, message)
+          return
+        }
+        throw err
+      }
+
       const key = connKey(conn.userId, conn.deviceId)
       const existing = connections.get(key)
       if (existing && existing.ws !== conn.ws) {
         existing.ws.close(1000, 'replaced')
       }
       connections.set(key, conn)
-
-      await reportDevice({
-        userId: conn.userId,
-        deviceId: conn.deviceId,
-        lastPulledAt: envelope.hello.lastPulledAt
-      })
 
       send(conn.ws, {
         version: PROTOCOL_VERSION,
@@ -402,4 +432,12 @@ export function broadcastGracefulShutdown(reason: string): void {
     conn.ws.close(1001, reason)
   }
   connections.clear()
+}
+
+export function disconnectSyncDevice(userId: string, deviceId: string): void {
+  const key = connKey(userId, deviceId)
+  const conn = connections.get(key)
+  if (!conn) return
+  denyDevice(conn, 'DEVICE_REVOKED', 'Device has been revoked')
+  connections.delete(key)
 }

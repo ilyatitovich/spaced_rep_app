@@ -1,7 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import toast from 'react-hot-toast'
 
 import { BackButton, Header, Screen } from '@/components'
 import { useAuth } from '@/contexts'
+import {
+  ensureFreshSession,
+  fetchSyncDevices,
+  revokeSyncDevice,
+  type SyncDeviceSummary
+} from '@/lib/api'
 import {
   BILLING_INTERVAL_OPTIONS,
   DEFAULT_BILLING_INTERVAL,
@@ -10,6 +17,7 @@ import {
   type BillingInterval
 } from '@/lib/billing-product'
 import { isPlanEntitled } from '@/lib/settings'
+import { getDeviceId } from '@/services'
 import { useSettingsStore } from '@/store'
 import type { PlanTier, SubscriptionStatus } from '@/types/settings.types'
 import {
@@ -58,10 +66,45 @@ export default function SectionSubscription({
   const [billingInterval, setBillingInterval] = useState<BillingInterval>(
     DEFAULT_BILLING_INTERVAL
   )
+  const [devices, setDevices] = useState<SyncDeviceSummary[]>([])
+  const [currentDeviceId, setCurrentDeviceId] = useState<string | null>(null)
+
+  const loadDevices = useCallback(async () => {
+    const session = await ensureFreshSession()
+    if (!session) return
+    const [result, deviceId] = await Promise.all([
+      fetchSyncDevices(session.accessToken),
+      getDeviceId()
+    ])
+    setDevices(result.devices)
+    setCurrentDeviceId(deviceId)
+  }, [])
 
   useEffect(() => {
-    if (isOpen && user) void refreshSubscription()
-  }, [isOpen, user, refreshSubscription])
+    if (isOpen && user) {
+      void refreshSubscription()
+      void loadDevices().catch(() => toast.error('Could not load devices'))
+    }
+    if (!isOpen) setDevices([])
+  }, [isOpen, user, refreshSubscription, loadDevices])
+
+  const handleRevokeDevice = async (deviceId: string) => {
+    if (!currentDeviceId) return
+    const session = await ensureFreshSession()
+    if (!session) return
+    try {
+      const result = await revokeSyncDevice(session.accessToken, {
+        deviceId,
+        currentDeviceId
+      })
+      if (result.revoked) {
+        setDevices(prev => prev.filter(device => device.id !== deviceId))
+        toast.success('Device revoked')
+      }
+    } catch {
+      toast.error('Could not revoke device')
+    }
+  }
 
   const sub = settings?.subscription
   const plan = sub?.plan ?? 'free'
@@ -154,6 +197,28 @@ export default function SectionSubscription({
                   onClick={() => {}}
                   disabled
                 />
+              </SettingsGroup>
+            )}
+
+            {devices.length > 0 && (
+              <SettingsGroup
+                label="Sync devices"
+                footer={`Pro supports up to ${PRO_DEVICE_LIMIT} active devices. Inactive devices age out after 30 days.`}
+              >
+                {devices.map(device => (
+                  <SettingsActionRow
+                    key={device.id}
+                    label={
+                      device.id === currentDeviceId
+                        ? 'This device'
+                        : device.name ||
+                          device.userAgent ||
+                          `Device ${device.id.slice(0, 8)}`
+                    }
+                    onClick={() => void handleRevokeDevice(device.id)}
+                    disabled={device.id === currentDeviceId}
+                  />
+                ))}
               </SettingsGroup>
             )}
           </>

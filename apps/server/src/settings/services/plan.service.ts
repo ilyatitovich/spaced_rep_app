@@ -12,7 +12,10 @@ export {
 
 export async function getSubscription(userId: string) {
   await ensureUserSettings(userId)
-  return prisma.subscription.findUniqueOrThrow({ where: { userId } })
+  return prisma.subscription.findUniqueOrThrow({
+    where: { userId },
+    include: { user: { select: { disabledAt: true } } }
+  })
 }
 
 export async function assertPlan(
@@ -20,7 +23,10 @@ export async function assertPlan(
   minimum: PlanTier
 ): Promise<void> {
   const sub = await getSubscription(userId)
-  if (!isPlanEntitled(sub.plan, sub.status, minimum, sub.endsAt)) {
+  if (
+    sub.user.disabledAt ||
+    !isPlanEntitled(sub.plan, sub.status, minimum, sub.endsAt)
+  ) {
     throw new ForbiddenError(
       `Requires ${minimum} plan (current: ${sub.plan}/${sub.status})`,
       'PLAN_REQUIRED'

@@ -120,7 +120,9 @@ function pauseSync(message = 'Upgrade to Pro to sync'): void {
 function isPaidAccessError(error: unknown): boolean {
   return (
     error instanceof ApiError &&
-    (error.code === 'PLAN_REQUIRED' || error.code === 'DEVICE_LIMIT')
+    (error.code === 'PLAN_REQUIRED' ||
+      error.code === 'DEVICE_LIMIT' ||
+      error.code === 'DEVICE_REVOKED')
   )
 }
 

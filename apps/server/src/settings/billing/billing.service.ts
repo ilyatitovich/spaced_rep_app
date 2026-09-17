@@ -25,6 +25,11 @@ import {
 } from './lemon-squeezy.js'
 
 const CHECKOUT_TTL_MS = 60 * 60 * 1_000
+export const SUBSCRIPTION_STALE_MS = 24 * 60 * 60 * 1_000
+const RECONCILIATION_INTERVAL_MS = SUBSCRIPTION_STALE_MS
+
+let reconciliationTimer: ReturnType<typeof setInterval> | null = null
+let reconciliationRunning = false
 
 const webhookSchema = z.object({
   meta: z.object({
@@ -231,7 +236,8 @@ async function resolveDuplicate(
 async function applySubscription(
   userId: string,
   subscriptionId: string,
-  attributes: LemonSubscriptionAttributes
+  attributes: LemonSubscriptionAttributes,
+  touchVerification = false
 ) {
   if (String(attributes.store_id) !== env.LEMONSQUEEZY_STORE_ID) {
     throw new ForbiddenError('Webhook store mismatch')
@@ -281,6 +287,12 @@ async function applySubscription(
     current.providerUpdatedAt &&
     incomingUpdatedAt <= current.providerUpdatedAt
   ) {
+    if (touchVerification) {
+      await prisma.subscription.update({
+        where: { userId },
+        data: { lastVerifiedAt: new Date() }
+      })
+    }
     return
   }
 
@@ -302,6 +314,92 @@ async function applySubscription(
       canceledAt: status === 'CANCELED' ? new Date() : null
     }
   })
+}
+
+export function isSubscriptionVerificationStale(
+  lastVerifiedAt: Date | null,
+  now = new Date()
+): boolean {
+  return (
+    !lastVerifiedAt ||
+    lastVerifiedAt.getTime() <= now.getTime() - SUBSCRIPTION_STALE_MS
+  )
+}
+
+export async function reconcileSubscription(
+  userId: string,
+  subscriptionId: string
+): Promise<void> {
+  const remote = await retrieveLemonSubscription(subscriptionId)
+  await applySubscription(userId, remote.id, remote.attributes, true)
+}
+
+export async function reconcileStaleSubscriptions(
+  now = new Date()
+): Promise<void> {
+  const subscriptions = await prisma.subscription.findMany({
+    where: {
+      provider: 'LEMON_SQUEEZY',
+      providerSubscriptionId: { not: null },
+      status: { not: 'EXPIRED' },
+      OR: [
+        { lastVerifiedAt: null },
+        {
+          lastVerifiedAt: {
+            lte: new Date(now.getTime() - SUBSCRIPTION_STALE_MS)
+          }
+        }
+      ]
+    },
+    select: { userId: true, providerSubscriptionId: true }
+  })
+
+  for (const subscription of subscriptions) {
+    if (!subscription.providerSubscriptionId) continue
+    try {
+      await reconcileSubscription(
+        subscription.userId,
+        subscription.providerSubscriptionId
+      )
+    } catch (err) {
+      logger.error(
+        {
+          err,
+          userId: subscription.userId,
+          subscriptionId: subscription.providerSubscriptionId
+        },
+        'Billing reconciliation failed'
+      )
+    }
+  }
+}
+
+async function runBillingReconciliation(): Promise<void> {
+  if (reconciliationRunning) return
+  reconciliationRunning = true
+  try {
+    await reconcileStaleSubscriptions()
+  } catch (err) {
+    logger.error({ err }, 'Billing reconciliation scan failed')
+  } finally {
+    reconciliationRunning = false
+  }
+}
+
+export function startBillingReconciler(): void {
+  if (reconciliationTimer) return
+  void runBillingReconciliation()
+  reconciliationTimer = setInterval(() => {
+    void runBillingReconciliation()
+  }, RECONCILIATION_INTERVAL_MS)
+  reconciliationTimer.unref()
+  logger.info('Billing reconciler started')
+}
+
+export function stopBillingReconciler(): void {
+  if (!reconciliationTimer) return
+  clearInterval(reconciliationTimer)
+  reconciliationTimer = null
 }
 
 export async function processLemonWebhook(body: Buffer, signature: string) {

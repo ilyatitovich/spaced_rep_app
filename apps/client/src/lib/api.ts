@@ -368,6 +368,26 @@ export async function fetchSubscription(
   return getJson('/settings/subscription', accessToken)
 }
 
+export type SyncDeviceSummary = {
+  id: string
+  name: string | null
+  lastSeenAt: string
+  userAgent: string | null
+}
+
+export async function fetchSyncDevices(
+  accessToken: string
+): Promise<{ devices: SyncDeviceSummary[] }> {
+  return getJson('/sync/devices', accessToken)
+}
+
+export async function revokeSyncDevice(
+  accessToken: string,
+  body: { deviceId: string; currentDeviceId: string }
+): Promise<{ revoked: boolean }> {
+  return deleteJson('/sync/devices', body, accessToken)
+}
+
 export async function fetchVapidPublicKey(
   accessToken: string
 ): Promise<{ publicKey: string }> {

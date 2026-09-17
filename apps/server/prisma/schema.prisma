@@ -141,12 +141,14 @@ model Card {
 model SyncDevice {
   id           String   @id @db.Uuid
   userId       String   @map("user_id") @db.Uuid
+  name         String?
   lastPulledAt DateTime @default(dbgenerated("'epoch'::timestamptz")) @map("last_pulled_at") @db.Timestamptz
   lastSeenAt   DateTime @default(now()) @map("last_seen_at") @db.Timestamptz
   userAgent    String?  @map("user_agent")
+  revokedAt    DateTime? @map("revoked_at") @db.Timestamptz
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId, lastSeenAt])
+  @@index([userId, revokedAt, lastSeenAt])
   @@map("sync_devices")
 }
 

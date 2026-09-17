@@ -32,10 +32,45 @@ import {
 const EPOCH_ISO = new Date(0).toISOString()
 const PULL_PAGE_SIZE = 500
 
+export async function listSyncDevices(userId: string) {
+  return prisma.syncDevice.findMany({
+    where: { userId, revokedAt: null },
+    select: {
+      id: true,
+      name: true,
+      lastSeenAt: true,
+      userAgent: true
+    },
+    orderBy: { lastSeenAt: 'desc' }
+  })
+}
+
+export async function revokeSyncDevice(input: {
+  userId: string
+  deviceId: string
+  currentDeviceId: string
+}): Promise<{ revoked: boolean }> {
+  if (input.deviceId === input.currentDeviceId) {
+    throw new BadRequestError(
+      'The current device cannot revoke itself',
+      'CURRENT_DEVICE'
+    )
+  }
+  const result = await prisma.syncDevice.updateMany({
+    where: {
+      id: input.deviceId,
+      userId: input.userId,
+      revokedAt: null
+    },
+    data: { revokedAt: new Date() }
+  })
+  return { revoked: result.count > 0 }
+}
+
 export async function reportDevice(input: {
   userId: string
   deviceId: string
-  lastPulledAt: string
+  lastPulledAt?: string
   userAgent?: string | null
 }): Promise<void> {
   await prisma.$transaction(async tx => {
@@ -43,19 +78,30 @@ export async function reportDevice(input: {
 
     const existing = await tx.syncDevice.findUnique({
       where: { id: input.deviceId },
-      select: { userId: true }
+      select: { userId: true, revokedAt: true }
     })
     if (existing && existing.userId !== input.userId) {
       throw new ForbiddenError('Device belongs to another user', 'FORBIDDEN')
+    }
+    if (existing?.revokedAt) {
+      throw new ForbiddenError('Device has been revoked', 'DEVICE_REVOKED')
     }
 
     if (!existing) {
       const cutoff = new Date(Date.now() - ACTIVE_WINDOW_MS)
       await tx.syncDevice.deleteMany({
-        where: { userId: input.userId, lastSeenAt: { lte: cutoff } }
+        where: {
+          userId: input.userId,
+          revokedAt: null,
+          lastSeenAt: { lte: cutoff }
+        }
       })
       const activeDevices = await tx.syncDevice.count({
-        where: { userId: input.userId, lastSeenAt: { gt: cutoff } }
+        where: {
+          userId: input.userId,
+          revokedAt: null,
+          lastSeenAt: { gt: cutoff }
+        }
       })
       if (activeDevices >= PRO_DEVICE_LIMIT) {
         throw new ForbiddenError(
@@ -70,12 +116,14 @@ export async function reportDevice(input: {
       create: {
         id: input.deviceId,
         userId: input.userId,
-        lastPulledAt: new Date(input.lastPulledAt || EPOCH_ISO),
+        lastPulledAt: new Date(input.lastPulledAt ?? EPOCH_ISO),
         lastSeenAt: new Date(),
         userAgent: input.userAgent ?? null
       },
       update: {
-        lastPulledAt: new Date(input.lastPulledAt || EPOCH_ISO),
+        ...(input.lastPulledAt
+          ? { lastPulledAt: new Date(input.lastPulledAt) }
+          : {}),
         lastSeenAt: new Date(),
         userAgent: input.userAgent ?? null
       }

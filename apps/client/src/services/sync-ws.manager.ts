@@ -136,6 +136,9 @@ export class SyncWsManager {
       } else if (event.code === 4003) {
         this.intentionalClose = true
         this.listeners.onPlanRequired?.()
+      } else if (event.code === 4004) {
+        this.intentionalClose = true
+        this.listeners.onPlanRequired?.()
       }
 
       if (!this.intentionalClose) {
@@ -267,10 +270,17 @@ export class SyncWsManager {
         if (envelope.error.code === 'TOKEN_EXPIRED') {
           this.listeners.onTokenExpired?.()
           this.ws?.close(4001, 'token expired')
-        } else if (envelope.error.code === 'PLAN_REQUIRED') {
+        } else if (
+          envelope.error.code === 'PLAN_REQUIRED' ||
+          envelope.error.code === 'DEVICE_LIMIT' ||
+          envelope.error.code === 'DEVICE_REVOKED'
+        ) {
           this.intentionalClose = true
           this.listeners.onPlanRequired?.()
-          this.ws?.close(4003, 'plan required')
+          this.ws?.close(
+            envelope.error.code === 'PLAN_REQUIRED' ? 4003 : 4004,
+            envelope.error.code.toLowerCase()
+          )
         }
         break
       case 'gracefulClose':
