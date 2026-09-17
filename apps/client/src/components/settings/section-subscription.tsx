@@ -1,13 +1,21 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 import { BackButton, Header, Screen } from '@/components'
 import { useAuth } from '@/contexts'
+import {
+  BILLING_INTERVAL_OPTIONS,
+  DEFAULT_BILLING_INTERVAL,
+  formatProPrice,
+  PRO_DEVICE_LIMIT,
+  type BillingInterval
+} from '@/lib/billing-product'
 import { useSettingsStore } from '@/store'
 import type { PlanTier, SubscriptionStatus } from '@/types/settings.types'
 import {
   SettingsActionRow,
   SettingsGroup,
-  SettingsInfoRow
+  SettingsInfoRow,
+  SettingsSegmentedRow
 } from './settings-ui'
 
 const PLAN_LABELS: Record<PlanTier, string> = {
@@ -44,12 +52,17 @@ export default function SectionSubscription({
   const { user } = useAuth()
   const settings = useSettingsStore(s => s.settings)
   const refreshSubscription = useSettingsStore(s => s.refreshSubscription)
+  const [billingInterval, setBillingInterval] = useState<BillingInterval>(
+    DEFAULT_BILLING_INTERVAL
+  )
 
   useEffect(() => {
     if (isOpen && user) void refreshSubscription()
   }, [isOpen, user, refreshSubscription])
 
   const sub = settings?.subscription
+  const plan = sub?.plan ?? 'free'
+  const isPaid = plan === 'pro' || plan === 'pro_plus'
 
   return (
     <Screen isOpen={isOpen}>
@@ -61,12 +74,19 @@ export default function SectionSubscription({
 
       <div className="flex flex-col gap-6 overflow-y-auto h-[92dvh] p-4 pb-30">
         {!user ? (
-          <SettingsGroup footer="Sign in to view and manage your plan.">
+          <SettingsGroup footer="Sign in to subscribe when you want cloud sync or study reminders. The local app stays free.">
             <SettingsInfoRow label="Plan" value="Free" />
           </SettingsGroup>
         ) : (
           <>
-            <SettingsGroup label="Current plan">
+            <SettingsGroup
+              label="Current plan"
+              footer={
+                isPaid
+                  ? undefined
+                  : 'Free includes the full local study app. Sync and notifications unlock with Pro — no paywall at sign-in.'
+              }
+            >
               <SettingsInfoRow
                 label="Plan"
                 value={sub ? PLAN_LABELS[sub.plan] : 'Free'}
@@ -92,14 +112,40 @@ export default function SectionSubscription({
               )}
             </SettingsGroup>
 
-            <SettingsGroup footer="Billing management is coming soon.">
-              <SettingsActionRow label="Upgrade" onClick={() => {}} disabled />
-              <SettingsActionRow
-                label="Manage billing"
-                onClick={() => {}}
-                disabled
-              />
-            </SettingsGroup>
+            {!isPaid && (
+              <SettingsGroup
+                label="Pro"
+                footer={`Cloud sync, study notifications, and up to ${PRO_DEVICE_LIMIT} devices. Prices shown before tax.`}
+              >
+                <SettingsSegmentedRow
+                  label="Billing"
+                  value={billingInterval}
+                  options={BILLING_INTERVAL_OPTIONS}
+                  onChange={value =>
+                    setBillingInterval(value as BillingInterval)
+                  }
+                />
+                <SettingsInfoRow
+                  label="Selected"
+                  value={formatProPrice(billingInterval)}
+                />
+                <SettingsActionRow
+                  label={`Upgrade — ${formatProPrice(billingInterval)}`}
+                  onClick={() => {}}
+                  disabled
+                />
+              </SettingsGroup>
+            )}
+
+            {isPaid && (
+              <SettingsGroup footer="Billing management is coming soon.">
+                <SettingsActionRow
+                  label="Manage billing"
+                  onClick={() => {}}
+                  disabled
+                />
+              </SettingsGroup>
+            )}
           </>
         )}
       </div>
