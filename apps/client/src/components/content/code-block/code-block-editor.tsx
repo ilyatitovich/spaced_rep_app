@@ -12,8 +12,9 @@ import {
 } from 'react'
 import { Trash2 } from 'lucide-react'
 
-import { useFontSize } from '@/hooks'
-import { canFocusForKeyboard, getLanguageExtension, type CodeLang } from '@/lib'
+import { useFontSize } from '@/hooks/use-font-size'
+import { getLanguageExtension, type CodeLang } from '@/lib/code-lang'
+import { canFocusForKeyboard } from '@/lib/pwa'
 import type { CodeBlock } from '@/types'
 
 export type CodeBlockEditorHandle = {

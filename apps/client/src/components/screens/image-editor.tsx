@@ -5,8 +5,11 @@ import { ChevronLeft, RotateCw } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import type { Area } from 'react-easy-crop'
 
-import { Button, Header, Screen, Spinner } from '@/components'
-import { blobToRecord, getCroppedImage } from '@/lib'
+import Button from '@/components/ui/button'
+import Spinner from '@/components/ui/spinner'
+import Header from '@/components/wrappers/header'
+import Screen from '@/components/wrappers/screen'
+import { blobToRecord, getCroppedImage } from '@/lib/image'
 
 const Cropper = lazy(() => import('react-easy-crop'))
 
@@ -92,7 +95,12 @@ export default function ImageEditorScreen({
   if (!hasOpened) return null
 
   return createPortal(
-    <Screen isOpen={isVisible} isVertical onClose={handleClose} className="z-60">
+    <Screen
+      isOpen={isVisible}
+      isVertical
+      onClose={handleClose}
+      className="z-60"
+    >
       <div className="h-full bg-background flex flex-col overflow-hidden">
         <Header>
           <Button ariaLabel="Cancel" data-dismiss="" onClick={onClose}>

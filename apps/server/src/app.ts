@@ -12,6 +12,15 @@ import { env } from './shared/config/env.js'
 import { logger } from './shared/lib/logger.js'
 import { errorHandler } from './shared/middleware/error-handler.js'
 
+export function isAllowedOrigin(
+  origin: string | undefined,
+  allowed = env.CORS_ORIGIN
+): boolean {
+  return (
+    origin === undefined || allowed.includes('*') || allowed.includes(origin)
+  )
+}
+
 export function createApp() {
   const app = express()
 
@@ -19,7 +28,13 @@ export function createApp() {
   app.set('trust proxy', 1)
 
   app.use(helmet())
-  app.use(cors({ origin: env.CORS_ORIGIN }))
+  app.use(
+    cors({
+      origin(origin, callback) {
+        callback(null, isAllowedOrigin(origin))
+      }
+    })
+  )
   app.use(compression())
   app.use(pinoHttp({ logger }))
   app.post(

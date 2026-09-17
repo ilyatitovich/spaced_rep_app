@@ -6,14 +6,10 @@ import {
 } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import type { FocusEvent, FocusEventHandler, Ref } from 'react'
-import {
-  forwardRef,
-  useEffect,
-  useImperativeHandle,
-  useRef
-} from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 
-import { LONGTEXT_THRESHOLD, sanitizeCardHtml } from '@/lib'
+import { LONGTEXT_THRESHOLD } from '@/lib/constants'
+import { sanitizeCardHtml } from '@/lib/sanitize-html'
 
 export type TextBlockEditorHandle = {
   getHtml: () => string

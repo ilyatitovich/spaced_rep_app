@@ -20,6 +20,8 @@ export default defineConfig({
       'apps/server/vitest.config.ts',
       'apps/server/vitest.integration.config.ts',
       'packages/sync-protocol/vitest.config.ts',
+      'packages/sync-client/vitest.config.ts',
+      'apps/browser-extension/vitest.config.ts',
       'testing/vitest.config.ts'
     ]
   }

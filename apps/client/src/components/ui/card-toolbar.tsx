@@ -3,13 +3,10 @@ import { flushSync } from 'react-dom'
 import { toast } from 'react-hot-toast'
 
 import CardButton from './card-button'
-import {
-  AUDIO_FILE_ACCEPT,
-  blobToRecord,
-  processImage,
-  runInTapFocus,
-  type CodeLang
-} from '@/lib'
+import { AUDIO_FILE_ACCEPT } from '@/lib/constants'
+import { blobToRecord, processImage } from '@/lib/image'
+import { runInTapFocus } from '@/lib/pwa'
+import type { CodeLang } from '@/lib/code-lang'
 import type { MediaDBRecord, SideBlock } from '@/types'
 
 type CardToolbarProps = {

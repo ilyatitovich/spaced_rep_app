@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import { recordToBlob } from '@/lib'
+import { recordToBlob } from '@/lib/image'
 import type { MediaDBRecord } from '@/types'
 
 type ObjectUrlProps = {

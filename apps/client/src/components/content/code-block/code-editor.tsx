@@ -1,14 +1,11 @@
 import CodeMirror, { EditorView, type Extension } from '@uiw/react-codemirror'
 import { FocusEventHandler, useEffect, useState } from 'react'
 
-import { LangSelect } from '../../ui'
-import { useFontSize } from '@/hooks'
-import {
-  canFocusForKeyboard,
-  getLanguageExtension,
-  placeCursorAtEnd,
-  type CodeLang
-} from '@/lib'
+import LangSelect from '../../ui/lang-select'
+import { useFontSize } from '@/hooks/use-font-size'
+import { getLanguageExtension, type CodeLang } from '@/lib/code-lang'
+import { placeCursorAtEnd } from '@/lib/cursor'
+import { canFocusForKeyboard } from '@/lib/pwa'
 import type { CodeBlock } from '@/types'
 
 type CodeEditorProps = {

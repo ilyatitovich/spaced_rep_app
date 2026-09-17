@@ -19,6 +19,7 @@
     "@codemirror/lang-python": "^6.2.1",
     "@codemirror/lang-sql": "^6.10.0",
     "@simplewebauthn/browser": "^13.3.0",
+    "@spaced-rep/sync-client": "workspace:*",
     "@spaced-rep/sync-protocol": "workspace:*",
     "@tanstack/react-virtual": "^3.14.11",
     "@tiptap/pm": "^3.31.3",

@@ -8,14 +8,10 @@ import ObjectUrl from '../object-url'
 import ImageFrame from './image-frame'
 import ImageViewer from './image-viewer'
 import ImageEditorScreen from '../../screens/image-editor'
-import { Spinner } from '@/components/ui'
-import { useOnline } from '@/hooks'
-import {
-  blobToRecord,
-  cacheRemoteImage,
-  processImage,
-  toHttpsImageUrl
-} from '@/lib'
+import Spinner from '@/components/ui/spinner'
+import { useOnline } from '@/hooks/use-online'
+import { cacheRemoteImage, toHttpsImageUrl } from '@/lib/cache-remote-image'
+import { blobToRecord, processImage } from '@/lib/image'
 import type { ImageContent, MediaDBRecord } from '@/types'
 
 type ImageBlockProps = {
@@ -96,8 +92,7 @@ export default function ImageBlock({
   const showOfflinePlaceholder =
     !!remoteSrc && remoteCacheChecked && !cachedRemote && !isOnline
   // Online miss: paint from URL while cacheRemoteImage runs in the background.
-  const liveRemoteUrl =
-    remoteSrc && !bufferRecord && isOnline ? httpsUrl : null
+  const liveRemoteUrl = remoteSrc && !bufferRecord && isOnline ? httpsUrl : null
   const pendingOfflineCache =
     !!remoteSrc && !remoteCacheChecked && !isOnline && !bufferRecord
 

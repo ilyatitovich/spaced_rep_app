@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "paths": {
+      "@/*": ["../client/src/*"]
+    },
+    "types": ["chrome", "vite/client", "vitest/globals"]
+  },
+  "include": [
+    ".wxt/wxt.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    "../client/src/vite-env.d.ts"
+  ]
+}

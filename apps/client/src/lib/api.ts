@@ -118,6 +118,17 @@ export async function exchangeGoogleCode(input: {
   return session
 }
 
+export function createExtensionGrant(
+  accessToken: string,
+  input: {
+    redirectUri: string
+    state: string
+    codeChallenge: string
+  }
+): Promise<{ code: string; state: string }> {
+  return postJson('/auth/extension/grant', input, { accessToken })
+}
+
 export async function refreshAuthSession(
   refreshToken: string
 ): Promise<AuthSession> {

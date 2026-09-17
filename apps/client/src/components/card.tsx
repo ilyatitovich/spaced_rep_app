@@ -2,9 +2,11 @@ import type { FocusEventHandler, Ref } from 'react'
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 
 import Side, { type SideHandle } from './side'
-import { useTap } from '@/hooks'
-import { isIos, normalizeCardData } from '@/lib'
+import { useTap } from '@/hooks/use-tap'
+import { normalizeCardData } from '@/lib/normalize-card'
 import type { CardData, CardHandle, SideBlock, SideName } from '@/types'
+
+const isIos = () => /iPad|iPhone|iPod/.test(navigator.userAgent)
 
 type CardProps = {
   data: CardData | unknown

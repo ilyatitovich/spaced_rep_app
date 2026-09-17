@@ -1,0 +1,16 @@
+@import '../../client/src/styles/index.css';
+@source '../../client/src';
+@source '../entrypoints';
+
+html,
+body,
+#app {
+  min-width: 320px;
+  height: 100%;
+  margin: 0;
+}
+
+.card-stage {
+  width: min(88vw, 350px);
+  height: min(58dvh, 500px);
+}

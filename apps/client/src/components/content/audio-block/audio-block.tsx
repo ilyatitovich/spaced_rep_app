@@ -11,7 +11,7 @@ import { Play, Square } from 'lucide-react'
 import type { MediaDBRecord } from '@/types'
 import MediaToolbar from '../media-toolbar'
 import ObjectUrl from '../object-url'
-import { AUDIO_FILE_ACCEPT } from '@/lib'
+import { AUDIO_FILE_ACCEPT } from '@/lib/constants'
 
 type AudioBlockProps = {
   content: MediaDBRecord

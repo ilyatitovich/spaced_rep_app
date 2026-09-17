@@ -6,4 +6,6 @@ test-results/
 blob-report/
 pnpm-lock.yaml
 apps/server/src/generated/
+apps/browser-extension/.output/
+apps/browser-extension/.wxt/
 .cursor/

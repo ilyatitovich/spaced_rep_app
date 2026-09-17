@@ -1,7 +1,7 @@
 import type { ReactNode, TransitionEvent } from 'react'
 import { useState, useEffect, useId, useRef } from 'react'
 
-import { useScreenStackStore } from '@/store'
+import { useScreenStackStore } from '@/store/screen-stack-store'
 
 type ScreenLayerProps = {
   isOpen?: boolean

@@ -1,0 +1,37 @@
+{
+  "name": "spaced_rep_browser_extension",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "^24.18.0"
+  },
+  "scripts": {
+    "dev": "wxt",
+    "build": "wxt build",
+    "zip": "wxt zip",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "postinstall": "wxt prepare"
+  },
+  "dependencies": {
+    "@spaced-rep/sync-client": "workspace:*",
+    "@spaced-rep/sync-protocol": "workspace:*",
+    "dompurify": "^3.4.15",
+    "lucide-react": "^0.553.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-hot-toast": "^2.6.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/chrome": "^0.1.6",
+    "@types/dompurify": "^3.2.0",
+    "@types/react": "^18.2.43",
+    "@types/react-dom": "^18.2.17",
+    "@wxt-dev/module-react": "^1.1.3",
+    "tailwindcss": "^4.3.3",
+    "typescript": "7.0.2",
+    "vitest": "^5.0.0",
+    "wxt": "^0.20.6"
+  }
+}

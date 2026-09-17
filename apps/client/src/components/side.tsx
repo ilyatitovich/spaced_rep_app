@@ -21,8 +21,10 @@ import TextBlockEditor, {
 import TextFormatToolbar, {
   isToolbarTarget
 } from './content/text-block/text-format-toolbar'
-import { Spinner } from './ui'
-import { didAppendSideBlock, LONGTEXT_THRESHOLD, sanitizeCardHtml } from '@/lib'
+import Spinner from './ui/spinner'
+import { didAppendSideBlock } from '@/lib/check-content'
+import { LONGTEXT_THRESHOLD } from '@/lib/constants'
+import { sanitizeCardHtml } from '@/lib/sanitize-html'
 
 const CodeBlockEditor = lazy(
   () => import('./content/code-block/code-block-editor')

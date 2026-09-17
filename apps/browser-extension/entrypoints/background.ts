@@ -1,0 +1,121 @@
+import { flushOutbox } from '../src/lib/sync'
+import type { RawCapture } from '../src/lib/capture'
+import type { RuntimeMessage, SideName } from '../src/types'
+
+const pendingKey = 'capture.pending'
+
+async function activeTab(): Promise<chrome.tabs.Tab> {
+  const [tab] = await chrome.tabs.query({
+    active: true,
+    lastFocusedWindow: true
+  })
+  if (!tab?.id || !tab.windowId) throw new Error('No active web page')
+  if (!/^https?:/.test(tab.url ?? ''))
+    throw new Error('This page cannot be captured')
+  return tab
+}
+
+async function send(message: RuntimeMessage): Promise<void> {
+  await chrome.storage.local.set({ [pendingKey]: message })
+  await chrome.runtime.sendMessage(message).catch(() => undefined)
+}
+
+async function captureSelection(side: SideName): Promise<void> {
+  const tab = await activeTab()
+  const [{ result }] = await chrome.scripting.executeScript({
+    target: { tabId: tab.id! },
+    func: () => {
+      const selection = window.getSelection()
+      const range = selection?.rangeCount ? selection.getRangeAt(0) : null
+      const parent =
+        range?.commonAncestorContainer.nodeType === Node.ELEMENT_NODE
+          ? (range.commonAncestorContainer as Element)
+          : range?.commonAncestorContainer.parentElement
+      const code = parent?.closest('pre, code')
+      const fragment = range?.cloneContents()
+      const wrapper = document.createElement('div')
+      if (fragment) wrapper.append(fragment)
+      return {
+        html: wrapper.innerHTML,
+        text: selection?.toString() ?? '',
+        code: code ? selection?.toString() : undefined,
+        title: document.title,
+        url: location.href
+      }
+    }
+  })
+  await send({ type: 'RAW_CAPTURE', side, raw: result as RawCapture })
+}
+
+async function captureScreenshot(side: SideName): Promise<void> {
+  const tab = await activeTab()
+  const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, {
+    format: 'jpeg',
+    quality: 82
+  })
+  await send({
+    type: 'RAW_CAPTURE',
+    side,
+    raw: {
+      imageUrl: dataUrl,
+      title: tab.title ?? '',
+      url: tab.url ?? ''
+    }
+  })
+}
+
+export default defineBackground(() => {
+  chrome.runtime.onInstalled.addListener(() => {
+    chrome.contextMenus.removeAll(() => {
+      chrome.contextMenus.create({
+        id: 'spaced-rep-selection',
+        title: 'Add selection to flashcard',
+        contexts: ['selection']
+      })
+      chrome.contextMenus.create({
+        id: 'spaced-rep-image',
+        title: 'Add image to flashcard',
+        contexts: ['image']
+      })
+      chrome.contextMenus.create({
+        id: 'spaced-rep-audio',
+        title: 'Add audio to flashcard',
+        contexts: ['audio']
+      })
+    })
+    chrome.alarms.create('sync-outbox', { periodInMinutes: 5 })
+  })
+
+  chrome.action.onClicked.addListener(async tab => {
+    if (tab.windowId) await chrome.sidePanel.open({ windowId: tab.windowId })
+  })
+
+  chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+    if (info.srcUrl) {
+      const origin = `${new URL(info.srcUrl).origin}/*`
+      await chrome.permissions.request({ origins: [origin] }).catch(() => false)
+    }
+    if (tab?.windowId) await chrome.sidePanel.open({ windowId: tab.windowId })
+    const raw: RawCapture = {
+      html: info.selectionText,
+      text: info.selectionText,
+      imageUrl: info.mediaType === 'image' ? info.srcUrl : undefined,
+      audioUrl: info.mediaType === 'audio' ? info.srcUrl : undefined,
+      title: tab?.title ?? '',
+      url: tab?.url ?? info.pageUrl ?? ''
+    }
+    await send({ type: 'RAW_CAPTURE', side: 'front', raw })
+  })
+
+  chrome.runtime.onMessage.addListener((message: RuntimeMessage) => {
+    if (message.type === 'CAPTURE_SELECTION')
+      void captureSelection(message.side)
+    if (message.type === 'CAPTURE_SCREENSHOT')
+      void captureScreenshot(message.side)
+    if (message.type === 'SYNC_NOW') void flushOutbox()
+  })
+  chrome.alarms.onAlarm.addListener(alarm => {
+    if (alarm.name === 'sync-outbox') void flushOutbox()
+  })
+  void flushOutbox()
+})
