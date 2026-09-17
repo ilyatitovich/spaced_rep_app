@@ -51,7 +51,7 @@ type FailedOp = {
   at: number
 }
 
-export type SyncStatus = 'idle' | 'syncing' | 'error' | 'offline'
+export type SyncStatus = 'idle' | 'syncing' | 'error' | 'offline' | 'paused'
 
 export type SyncConnection = 'idle' | 'ws' | 'http' | 'offline'
 
@@ -77,6 +77,7 @@ const MAX_PUSH_BYTES = 700_000
 const MAX_ATTEMPTS = 10
 
 let currentUserId: string | null = null
+let syncEntitled = false
 let state: SyncState = {
   status: 'idle',
   lastSyncedAt: null,
@@ -104,6 +105,23 @@ function withSyncMutex(fn: () => Promise<void>): Promise<void> {
 function setState(next: Partial<SyncState>): void {
   state = { ...state, ...next }
   listeners.forEach(listener => listener(state))
+}
+
+function pauseSync(message = 'Upgrade to Pro to sync'): void {
+  syncEntitled = false
+  realtime?.disconnect()
+  setState({
+    status: 'paused',
+    connection: 'idle',
+    lastError: message
+  })
+}
+
+function isPaidAccessError(error: unknown): boolean {
+  return (
+    error instanceof ApiError &&
+    (error.code === 'PLAN_REQUIRED' || error.code === 'DEVICE_LIMIT')
+  )
 }
 
 export function subscribeSync(
@@ -429,10 +447,7 @@ async function buildMutations(items: QueueItem[]): Promise<{
 
   const tryAdd = (item: QueueItem, mutation: Mutation): boolean => {
     const addBytes = JSON.stringify(mutation).length + 1
-    if (
-      mutations.length > 0 &&
-      approxBytes + addBytes > MAX_PUSH_BYTES
-    ) {
+    if (mutations.length > 0 && approxBytes + addBytes > MAX_PUSH_BYTES) {
       return false
     }
     mutations.push(mutation)
@@ -717,13 +732,16 @@ function wireRealtimeListeners(): void {
     },
     onTokenExpired: () => {
       void ensureRealtimeReconnectWithFreshToken()
+    },
+    onPlanRequired: () => {
+      pauseSync()
     }
   })
 }
 
 async function ensureRealtimeReconnectWithFreshToken(): Promise<void> {
   realtime?.disconnect()
-  if (!currentUserId || !realtime) return
+  if (!currentUserId || !syncEntitled || !realtime) return
   const deviceId = await getDeviceId()
   const lastPulledAt = (await getMeta('lastPulledAt')) ?? EPOCH_ISO
   await realtime.connect({
@@ -734,7 +752,7 @@ async function ensureRealtimeReconnectWithFreshToken(): Promise<void> {
 }
 
 async function flushAfterConnect(): Promise<void> {
-  if (!currentUserId) return
+  if (!currentUserId || !syncEntitled) return
   try {
     const deviceId = await getDeviceId()
     await pushChanges(deviceId)
@@ -744,7 +762,7 @@ async function flushAfterConnect(): Promise<void> {
 }
 
 async function connectRealtime(): Promise<void> {
-  if (!realtime) return
+  if (!syncEntitled || !realtime) return
   const deviceId = await getDeviceId()
   const lastPulledAt = (await getMeta('lastPulledAt')) ?? EPOCH_ISO
   realtime.updateResume?.(lastPulledAt, (await getQueue()).length)
@@ -756,7 +774,7 @@ async function connectRealtime(): Promise<void> {
 }
 
 export async function syncAll(_userId: string): Promise<void> {
-  if (!isBackendConfigured() || !syncBackend) {
+  if (!syncEntitled || !isBackendConfigured() || !syncBackend) {
     return
   }
 
@@ -805,6 +823,10 @@ export async function syncAll(_userId: string): Promise<void> {
       }
     } catch (error) {
       console.error('Sync failed:', error)
+      if (isPaidAccessError(error)) {
+        pauseSync(error instanceof Error ? error.message : undefined)
+        return
+      }
       setState({
         status: 'error',
         lastError: error instanceof Error ? error.message : 'Sync failed'
@@ -828,6 +850,7 @@ async function migrateLocalToCloud(): Promise<void> {
 }
 
 export function setSyncUser(userId: string | null): void {
+  if (currentUserId !== userId) syncEntitled = false
   currentUserId = userId
   if (!userId) {
     realtime?.disconnect()
@@ -845,8 +868,20 @@ export function setSyncUser(userId: string | null): void {
   }
 }
 
+export function setSyncEntitlement(entitled: boolean): boolean {
+  const becameEntitled = entitled && !syncEntitled
+  syncEntitled = entitled
+  if (!entitled) {
+    if (currentUserId) pauseSync()
+    else realtime?.disconnect()
+  } else if (currentUserId && state.status === 'paused') {
+    setState({ status: 'idle', lastError: null })
+  }
+  return becameEntitled
+}
+
 export async function initialSync(userId: string): Promise<void> {
-  if (!isBackendConfigured() || !syncBackend) {
+  if (!syncEntitled || !isBackendConfigured() || !syncBackend) {
     return
   }
 
@@ -884,6 +919,10 @@ export async function initialSync(userId: string): Promise<void> {
       })
     } catch (error) {
       console.error('Initial sync failed:', error)
+      if (isPaidAccessError(error)) {
+        pauseSync(error instanceof Error ? error.message : undefined)
+        return
+      }
       setState({
         status: 'error',
         lastError:
@@ -896,12 +935,12 @@ export async function initialSync(userId: string): Promise<void> {
 }
 
 export function syncNow(): void {
-  if (!currentUserId) return
+  if (!currentUserId || !syncEntitled) return
   void syncAll(currentUserId)
 }
 
 export function triggerSync(): void {
-  if (!currentUserId || !isBackendConfigured()) return
+  if (!currentUserId || !syncEntitled || !isBackendConfigured()) return
   if (typeof navigator !== 'undefined' && !navigator.onLine) return
 
   if (triggerTimer) clearTimeout(triggerTimer)

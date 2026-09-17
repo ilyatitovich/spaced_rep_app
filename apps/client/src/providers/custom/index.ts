@@ -170,7 +170,8 @@ export function createCustomSyncAdapter(): SyncPort {
           else if (state === 'connecting' || state === 'authenticating')
             handlers.onStateChange?.('connecting')
         },
-        onTokenExpired: handlers.onTokenExpired
+        onTokenExpired: handlers.onTokenExpired,
+        onPlanRequired: handlers.onPlanRequired
       })
 
       return {

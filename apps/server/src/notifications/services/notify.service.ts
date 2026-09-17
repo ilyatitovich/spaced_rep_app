@@ -7,6 +7,7 @@ import {
 import { env } from '../../shared/config/env.js'
 import { prisma } from '../../shared/lib/prisma.js'
 import { logger } from '../../shared/lib/logger.js'
+import { assertPlan } from '../../settings/services/plan.service.js'
 import { sendPushToUser } from './push.service.js'
 
 const resend = new Resend(env.RESEND_API_KEY)
@@ -22,7 +23,13 @@ export type NotifyUserInput = {
   channels: NotifyChannel[]
 }
 
-export async function notifyUser(input: NotifyUserInput): Promise<void> {
+export async function notifyUser(
+  input: NotifyUserInput,
+  entitlementVerified = false
+): Promise<void> {
+  if (!entitlementVerified) {
+    await assertPlan(input.userId, 'PRO')
+  }
   const settings = await prisma.userNotificationSettings.findUnique({
     where: { userId: input.userId },
     select: { enabled: true }

@@ -16,6 +16,7 @@ import {
   type SubscriptionDto
 } from '../mappers.js'
 import { ensureUserSettings } from './ensure.service.js'
+import { assertPlan } from './plan.service.js'
 
 export async function getSettingsDocument(
   userId: string
@@ -137,6 +138,9 @@ export async function patchNotifications(
   const existing = await prisma.userNotificationSettings.findUniqueOrThrow({
     where: { userId }
   })
+  if ((input.enabled ?? existing.enabled) === true) {
+    await assertPlan(userId, 'PRO')
+  }
 
   const applyMaster = shouldApplySettingsLww(
     existing.updatedAt.getTime(),

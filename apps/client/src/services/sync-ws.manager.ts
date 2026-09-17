@@ -21,6 +21,7 @@ type WsListeners = {
   onConflict?: (conflict: TopicConflictResolved) => void
   onStateChange?: (state: WsConnectionState) => void
   onTokenExpired?: () => void
+  onPlanRequired?: () => void
 }
 
 const HIGH_WATER_BYTES = 512 * 1024
@@ -132,6 +133,9 @@ export class SyncWsManager {
 
       if (event.code === 4001) {
         this.listeners.onTokenExpired?.()
+      } else if (event.code === 4003) {
+        this.intentionalClose = true
+        this.listeners.onPlanRequired?.()
       }
 
       if (!this.intentionalClose) {
@@ -263,6 +267,10 @@ export class SyncWsManager {
         if (envelope.error.code === 'TOKEN_EXPIRED') {
           this.listeners.onTokenExpired?.()
           this.ws?.close(4001, 'token expired')
+        } else if (envelope.error.code === 'PLAN_REQUIRED') {
+          this.intentionalClose = true
+          this.listeners.onPlanRequired?.()
+          this.ws?.close(4003, 'plan required')
         }
         break
       case 'gracefulClose':

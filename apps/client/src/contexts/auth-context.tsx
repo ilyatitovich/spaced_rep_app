@@ -16,7 +16,7 @@ import {
 import { completeOnboarding } from '@/lib/onboarding'
 import { auth, isBackendConfigured } from '@/providers'
 import type { AuthCapabilities } from '@/providers'
-import { setSyncUser, initialSync } from '@/services'
+import { initialSync, setSyncEntitlement, setSyncUser } from '@/services'
 import { useSettingsStore } from '@/store/settings-store'
 
 type AuthContextValue = {
@@ -86,23 +86,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
+    let cancelled = false
     setSyncUser(userId)
     useSettingsStore.getState().setUser(userId)
     if (userId) {
-      void initialSync(userId)
-      void useSettingsStore
-        .getState()
-        .pullRemote(userId)
-        .then(async () => {
+      void (async () => {
+        await useSettingsStore.getState().pullRemote(userId)
+        if (cancelled) return
+
+        const entitled = useSettingsStore.getState().hasPlan('pro')
+        const shouldStartSync = setSyncEntitlement(entitled)
+        if (shouldStartSync) await initialSync(userId)
+
+        if (entitled) {
           const reminders =
             useSettingsStore.getState().settings?.notifications.reminders ?? []
-          const { ensurePushSubscription } = await import(
-            '@/services/push.service'
-          )
+          const { ensurePushSubscription } =
+            await import('@/services/push.service')
           await ensurePushSubscription(reminders)
-        })
+        }
+      })()
     } else {
+      setSyncEntitlement(false)
       void useSettingsStore.getState().loadLocal()
+    }
+    return () => {
+      cancelled = true
     }
   }, [userId])
 

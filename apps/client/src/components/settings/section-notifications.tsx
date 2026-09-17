@@ -82,9 +82,9 @@ export default function SectionNotifications({
   const [, setSearchParams] = useSearchParams()
   const settings = useSettingsStore(s => s.settings)
   const setNotifications = useSettingsStore(s => s.setNotifications)
+  const hasPro = useSettingsStore(s => s.hasPlan('pro'))
   const [draftTime, setDraftTime] = useState('09:00')
-  const [draftChannel, setDraftChannel] =
-    useState<NotificationChannel>('email')
+  const [draftChannel, setDraftChannel] = useState<NotificationChannel>('email')
   const [pushHint, setPushHint] = useState<string | null>(null)
 
   const enabled = settings?.notifications.enabled ?? false
@@ -112,6 +112,16 @@ export default function SectionNotifications({
     })
   }
 
+  const requirePro = (): boolean => {
+    if (hasPro) return true
+    setSearchParams(prev => {
+      prev.delete('notifications')
+      prev.set('subscription', 'true')
+      return new URLSearchParams(prev)
+    })
+    return false
+  }
+
   const updateReminders = async (next: NotificationReminder[]) => {
     await setNotifications({ reminders: next })
     if (!hasEnabledPushReminder(next)) {
@@ -126,6 +136,7 @@ export default function SectionNotifications({
     reminder.channel = draftChannel
 
     if (draftChannel === 'push') {
+      if (!requirePro()) return
       const result = await subscribeToPush()
       if (!result.ok) {
         setPushHint(result.message)
@@ -133,7 +144,10 @@ export default function SectionNotifications({
         if (result.reason === 'need-install' || result.reason === 'denied') {
           return
         }
-        if (result.reason === 'unsupported' || result.reason === 'unauthenticated') {
+        if (
+          result.reason === 'unsupported' ||
+          result.reason === 'unauthenticated'
+        ) {
           return
         }
         return
@@ -149,6 +163,7 @@ export default function SectionNotifications({
     channel: NotificationChannel
   ) => {
     if (channel === 'push') {
+      if (!requirePro()) return
       const result = await subscribeToPush()
       if (!result.ok) {
         setPushHint(result.message)
@@ -207,9 +222,10 @@ export default function SectionNotifications({
               <SettingsToggleRow
                 label="Enable notifications"
                 checked={enabled}
-                onChange={checked =>
+                onChange={checked => {
+                  if (checked && !requirePro()) return
                   void setNotifications({ enabled: checked })
-                }
+                }}
               />
             </SettingsGroup>
 
@@ -312,7 +328,10 @@ export default function SectionNotifications({
               <SettingsGroup>
                 <SettingsActionRow
                   label="Turn on notifications to use reminders"
-                  onClick={() => void setNotifications({ enabled: true })}
+                  onClick={() => {
+                    if (!requirePro()) return
+                    void setNotifications({ enabled: true })
+                  }}
                 />
               </SettingsGroup>
             )}

@@ -8,6 +8,7 @@ import {
 import { enforceRateLimit } from '../../shared/lib/redis.js'
 import { BadRequestError } from '../../shared/lib/errors.js'
 import { parseBody } from '../../shared/lib/http.js'
+import { assertPlan } from '../../settings/services/plan.service.js'
 import {
   applyPushBatch,
   bootstrap,
@@ -33,6 +34,7 @@ export async function pushHandler(
 ): Promise<void> {
   try {
     const { userId } = requireAuthUser(req)
+    await assertPlan(userId, 'PRO')
     await enforceRateLimit({
       key: `sync:push:${userId}`,
       // Burst drain after sign-in can need many batches (50 ops each).
@@ -76,6 +78,7 @@ export async function pullHandler(
 ): Promise<void> {
   try {
     const { userId } = requireAuthUser(req)
+    await assertPlan(userId, 'PRO')
     const envelope = parseBody(SyncEnvelopeSchema, req.body)
     if (envelope.kind !== 'pullRequest') {
       throw new BadRequestError(
@@ -117,6 +120,7 @@ export async function bootstrapHandler(
 ): Promise<void> {
   try {
     const { userId } = requireAuthUser(req)
+    await assertPlan(userId, 'PRO')
     const envelope = parseBody(SyncEnvelopeSchema, req.body)
 
     let lastPulledAt = new Date(0).toISOString()

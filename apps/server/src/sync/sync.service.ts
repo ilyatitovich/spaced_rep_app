@@ -11,8 +11,10 @@ import {
 } from '@spaced-rep/sync-protocol'
 import { prisma } from '../shared/lib/prisma.js'
 import { logger } from '../shared/lib/logger.js'
-import { BadRequestError } from '../shared/lib/errors.js'
+import { BadRequestError, ForbiddenError } from '../shared/lib/errors.js'
+import { PRO_DEVICE_LIMIT } from '../settings/billing/product.js'
 import {
+  ACTIVE_WINDOW_MS,
   countOtherActiveDevices,
   purgeSyncedTombstones,
   resolveTopicTitleConflict
@@ -36,20 +38,48 @@ export async function reportDevice(input: {
   lastPulledAt: string
   userAgent?: string | null
 }): Promise<void> {
-  await prisma.syncDevice.upsert({
-    where: { id: input.deviceId },
-    create: {
-      id: input.deviceId,
-      userId: input.userId,
-      lastPulledAt: new Date(input.lastPulledAt || EPOCH_ISO),
-      lastSeenAt: new Date(),
-      userAgent: input.userAgent ?? null
-    },
-    update: {
-      lastPulledAt: new Date(input.lastPulledAt || EPOCH_ISO),
-      lastSeenAt: new Date(),
-      userAgent: input.userAgent ?? null
+  await prisma.$transaction(async tx => {
+    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${input.userId}))`
+
+    const existing = await tx.syncDevice.findUnique({
+      where: { id: input.deviceId },
+      select: { userId: true }
+    })
+    if (existing && existing.userId !== input.userId) {
+      throw new ForbiddenError('Device belongs to another user', 'FORBIDDEN')
     }
+
+    if (!existing) {
+      const cutoff = new Date(Date.now() - ACTIVE_WINDOW_MS)
+      await tx.syncDevice.deleteMany({
+        where: { userId: input.userId, lastSeenAt: { lte: cutoff } }
+      })
+      const activeDevices = await tx.syncDevice.count({
+        where: { userId: input.userId, lastSeenAt: { gt: cutoff } }
+      })
+      if (activeDevices >= PRO_DEVICE_LIMIT) {
+        throw new ForbiddenError(
+          `Pro supports up to ${PRO_DEVICE_LIMIT} active devices`,
+          'DEVICE_LIMIT'
+        )
+      }
+    }
+
+    await tx.syncDevice.upsert({
+      where: { id: input.deviceId },
+      create: {
+        id: input.deviceId,
+        userId: input.userId,
+        lastPulledAt: new Date(input.lastPulledAt || EPOCH_ISO),
+        lastSeenAt: new Date(),
+        userAgent: input.userAgent ?? null
+      },
+      update: {
+        lastPulledAt: new Date(input.lastPulledAt || EPOCH_ISO),
+        lastSeenAt: new Date(),
+        userAgent: input.userAgent ?? null
+      }
+    })
   })
 }
 

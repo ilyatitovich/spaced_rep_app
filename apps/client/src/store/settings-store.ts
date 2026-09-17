@@ -11,9 +11,11 @@ import {
   updatePreferences
 } from '@/services/settings.service'
 import type { PlanTier, UserSettingsDocument } from '@/types/settings.types'
+import { initialSync, setSyncEntitlement } from '@/services/sync.service'
 import { create } from 'zustand'
 
 type SettingsStore = {
+  userId: string | null
   settings: UserSettingsDocument | null
   isLoading: boolean
   loadLocal: () => Promise<void>
@@ -37,6 +39,7 @@ type SettingsStore = {
 }
 
 export const useSettingsStore = create<SettingsStore>((set, get) => ({
+  userId: null,
   settings: getSettingsMemory(),
   isLoading: false,
   loadLocal: async () => {
@@ -51,6 +54,7 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
   },
   setUser: userId => {
     setSettingsUser(userId)
+    set({ userId })
   },
   pullRemote: async userId => {
     try {
@@ -77,8 +81,13 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
     set({ settings })
   },
   refreshSubscription: async () => {
-    await refreshSubscriptionCache()
+    const subscription = await refreshSubscriptionCache()
     set({ settings: getSettingsMemory() })
+    const userId = get().userId
+    const entitled = subscription != null && isPlanEntitled(subscription, 'pro')
+    if (setSyncEntitlement(entitled) && userId) {
+      await initialSync(userId)
+    }
   },
   hasPlan: minimum => {
     const sub = get().settings?.subscription

@@ -19,6 +19,10 @@ vi.mock('./push.service.js', () => ({
   sendPushToUser: vi.fn()
 }))
 
+vi.mock('../../settings/services/plan.service.js', () => ({
+  assertPlan: vi.fn()
+}))
+
 vi.mock('../../emails/index.js', () => ({
   brand: { appName: 'TestApp' },
   renderNotificationEmailHtml: () => '<html></html>',
@@ -46,6 +50,7 @@ vi.mock('resend', () => ({
 const { notifyUser } = await import('./notify.service.js')
 const { prisma } = await import('../../shared/lib/prisma.js')
 const { sendPushToUser } = await import('./push.service.js')
+const { assertPlan } = await import('../../settings/services/plan.service.js')
 
 describe('notifyUser', () => {
   beforeEach(() => {
@@ -87,5 +92,21 @@ describe('notifyUser', () => {
       url: undefined,
       type: 'study.reminder'
     })
+  })
+
+  it('does not deliver without Pro entitlement', async () => {
+    vi.mocked(assertPlan).mockRejectedValueOnce(new Error('PLAN_REQUIRED'))
+
+    await expect(
+      notifyUser({
+        userId: 'u1',
+        type: 'study.reminder',
+        title: 'Hi',
+        body: 'Body',
+        channels: ['PUSH']
+      })
+    ).rejects.toThrow('PLAN_REQUIRED')
+
+    expect(sendPushToUser).not.toHaveBeenCalled()
   })
 })

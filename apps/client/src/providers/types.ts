@@ -38,6 +38,7 @@ export type SyncRealtimeHandlers = {
   onConflict: (conflict: TopicConflictResolved) => void
   onStateChange?: (state: 'active' | 'disconnected' | 'connecting') => void
   onTokenExpired?: () => void
+  onPlanRequired?: () => void
 }
 
 export type SyncRealtimeHandle = {

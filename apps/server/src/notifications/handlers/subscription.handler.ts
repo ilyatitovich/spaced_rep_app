@@ -9,6 +9,7 @@ import {
   getVapidPublicKey,
   upsertPushSubscription
 } from '../services/push.service.js'
+import { assertPlan } from '../../settings/services/plan.service.js'
 
 export async function getVapidPublicKeyHandler(
   _req: Request,
@@ -28,6 +29,7 @@ export async function upsertSubscriptionHandler(
   next: NextFunction
 ) {
   try {
+    await assertPlan(req.auth!.userId, 'PRO')
     const body = parseBody(upsertSubscriptionSchema, req.body)
     const data = await upsertPushSubscription(
       req.auth!.userId,

@@ -2,11 +2,8 @@ import { prisma } from '../../shared/lib/prisma.js'
 import { getRedis } from '../../shared/lib/redis.js'
 import { logger } from '../../shared/lib/logger.js'
 import { notifyUser } from './notify.service.js'
-import {
-  getLocalClock,
-  isReminderDue,
-  localDateKey
-} from './reminder-due.js'
+import { getLocalClock, isReminderDue, localDateKey } from './reminder-due.js'
+import { isPlanEntitled } from '../../settings/services/plan.service.js'
 
 const TICK_MS = 60_000
 
@@ -44,11 +41,31 @@ export async function runReminderTick(now = new Date()): Promise<void> {
         timeLocal: true,
         daysOfWeek: true,
         channel: true,
-        settings: { select: { timezone: true } }
+        settings: { select: { timezone: true } },
+        user: {
+          select: {
+            subscription: {
+              select: { plan: true, status: true, endsAt: true }
+            }
+          }
+        }
       }
     })
 
     for (const rem of reminders) {
+      const subscription = rem.user.subscription
+      if (
+        !subscription ||
+        !isPlanEntitled(
+          subscription.plan,
+          subscription.status,
+          'PRO',
+          subscription.endsAt,
+          now
+        )
+      ) {
+        continue
+      }
       const timezone = rem.settings.timezone || 'UTC'
       if (
         !isReminderDue({
@@ -71,14 +88,17 @@ export async function runReminderTick(now = new Date()): Promise<void> {
       if (locked === null) continue
 
       try {
-        await notifyUser({
-          userId: rem.userId,
-          type: 'study.reminder',
-          title: 'Time to study',
-          body: 'Your study reminder is due. Open the app to review your cards.',
-          url: '/',
-          channels: [rem.channel === 'EMAIL' ? 'EMAIL' : 'PUSH']
-        })
+        await notifyUser(
+          {
+            userId: rem.userId,
+            type: 'study.reminder',
+            title: 'Time to study',
+            body: 'Your study reminder is due. Open the app to review your cards.',
+            url: '/',
+            channels: [rem.channel === 'EMAIL' ? 'EMAIL' : 'PUSH']
+          },
+          true
+        )
       } catch (err) {
         logger.error({ err, reminderId: rem.id }, 'Reminder notify failed')
         await redis.del(lockKey)

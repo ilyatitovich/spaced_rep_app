@@ -10,6 +10,10 @@ import {
 import { verifyAccessToken } from '../auth/services/index.js'
 import { prisma } from '../shared/lib/prisma.js'
 import { logger } from '../shared/lib/logger.js'
+import {
+  assertPlan,
+  isPlanEntitled
+} from '../settings/services/plan.service.js'
 import { applyPushBatch, pullChanges, reportDevice } from './sync.service.js'
 import { startFanoutSubscriber, subscribeFanout } from './fanout.service.js'
 
@@ -30,6 +34,32 @@ function connKey(userId: string, deviceId: string): string {
 function send(ws: WebSocket, envelope: SyncEnvelope): void {
   if (ws.readyState !== WebSocket.OPEN) return
   ws.send(encodeEnvelope(envelope))
+}
+
+function denyPlan(conn: Pick<Conn, 'ws' | 'deviceId'>): void {
+  send(conn.ws, {
+    version: PROTOCOL_VERSION,
+    messageId: createEnvelopeId(),
+    deviceId: conn.deviceId,
+    sentAt: Date.now(),
+    kind: 'error',
+    error: {
+      code: 'PLAN_REQUIRED',
+      message: 'Pro is required for cloud sync',
+      retryable: false
+    }
+  })
+  conn.ws.close(4003, 'plan required')
+}
+
+async function hasSyncEntitlement(conn: Conn): Promise<boolean> {
+  try {
+    await assertPlan(conn.userId, 'PRO')
+    return true
+  } catch {
+    denyPlan(conn)
+    return false
+  }
 }
 
 async function authenticateUpgrade(
@@ -88,6 +118,15 @@ async function handleMessage(conn: Conn, data: string): Promise<void> {
         retryable: false
       }
     })
+    return
+  }
+
+  if (
+    (envelope.kind === 'hello' ||
+      envelope.kind === 'pushBatch' ||
+      envelope.kind === 'pullRequest') &&
+    !(await hasSyncEntitlement(conn))
+  ) {
     return
   }
 
@@ -239,22 +278,42 @@ export function createSyncWss(server: HttpServer): WebSocketServer {
 
   // Server → client ping every 30s
   const heartbeat = setInterval(() => {
-    const now = Date.now()
-    for (const [key, conn] of connections) {
-      if (now - conn.lastPongAt > 70_000) {
-        conn.ws.close(1001, 'heartbeat timeout')
-        connections.delete(key)
-        continue
-      }
-      send(conn.ws, {
-        version: PROTOCOL_VERSION,
-        messageId: createEnvelopeId(),
-        deviceId: conn.deviceId,
-        sentAt: now,
-        kind: 'ping',
-        ping: { timestamp: now }
+    void (async () => {
+      const now = new Date()
+      const userIds = [...new Set([...connections.values()].map(c => c.userId))]
+      const subscriptions = await prisma.subscription.findMany({
+        where: { userId: { in: userIds } },
+        select: { userId: true, plan: true, status: true, endsAt: true }
       })
-    }
+      const entitledUsers = new Set(
+        subscriptions
+          .filter(sub =>
+            isPlanEntitled(sub.plan, sub.status, 'PRO', sub.endsAt, now)
+          )
+          .map(sub => sub.userId)
+      )
+
+      for (const [key, conn] of connections) {
+        if (!entitledUsers.has(conn.userId)) {
+          denyPlan(conn)
+          connections.delete(key)
+          continue
+        }
+        if (now.getTime() - conn.lastPongAt > 70_000) {
+          conn.ws.close(1001, 'heartbeat timeout')
+          connections.delete(key)
+          continue
+        }
+        send(conn.ws, {
+          version: PROTOCOL_VERSION,
+          messageId: createEnvelopeId(),
+          deviceId: conn.deviceId,
+          sentAt: now.getTime(),
+          kind: 'ping',
+          ping: { timestamp: now.getTime() }
+        })
+      }
+    })().catch(err => logger.error({ err }, 'ws.entitlement heartbeat failed'))
   }, 30_000)
   heartbeat.unref()
 
@@ -275,6 +334,13 @@ export function createSyncWss(server: HttpServer): WebSocketServer {
           }
         })
         ws.close(4001, 'unauthorized')
+        return
+      }
+
+      try {
+        await assertPlan(auth.userId, 'PRO')
+      } catch {
+        denyPlan({ ws, deviceId: '' })
         return
       }
 
