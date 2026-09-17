@@ -28,3 +28,13 @@ export default function BackButton({ icon = 'chevron' }: BackButtonProps) {
     </Button>
   )
 }
+
+export function CloseButton({ onClose }: { onClose: () => void }) {
+  return (
+    <Button ariaLabel="Close" onClick={onClose}>
+      <div className="w-8 h-8 flex items-center justify-center bg-foreground rounded-full">
+        <X className="w-4 h-4 text-foreground-inverse" strokeWidth={4} />
+      </div>
+    </Button>
+  )
+}

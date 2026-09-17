@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, type ChangeEvent } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type DragEvent
+} from 'react'
 
 import Modal from './modal'
 import Spinner from '../ui/spinner'
@@ -44,6 +50,7 @@ export default function FileModal(props: FileModalProps) {
   const [message, setMessage] = useState<string | null>(null)
   const [progress, setProgress] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -55,6 +62,7 @@ export default function FileModal(props: FileModalProps) {
     setDownloadUrl(null)
     setFileName('')
     setPastedText('')
+    setIsDragging(false)
 
     if (kind !== 'export-app' && kind !== 'export-topic') {
       setIsLoading(false)
@@ -149,6 +157,26 @@ export default function FileModal(props: FileModalProps) {
     void runImport(pastedText)
   }
 
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'copy'
+    if (!isDragging) setIsDragging(true)
+  }
+
+  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
+    const next = e.relatedTarget
+    if (next instanceof Node && e.currentTarget.contains(next)) return
+    setIsDragging(false)
+  }
+
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    setIsDragging(false)
+    const file = e.dataTransfer.files[0]
+    if (!file) return
+    void runImport(file)
+  }
+
   const isImport = kind === 'import-app' || kind === 'import-cards'
 
   return (
@@ -185,15 +213,25 @@ export default function FileModal(props: FileModalProps) {
       )}
 
       {isImport && !isLoading && !message && (
-        <>
+        // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
+        <div
+          role="region"
+          aria-label="Drop a file to import"
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={`flex flex-col gap-4 rounded-xl ${
+            isDragging ? 'ring-2 ring-primary' : ''
+          }`}
+        >
           <button
             type="button"
             className="bg-primary text-primary-foreground w-full text-center py-4 rounded-xl"
             onClick={() => fileInputRef.current?.click()}
           >
             {kind === 'import-app'
-              ? 'Choose JSON'
-              : 'Choose JSON or Anki (.apkg)'}
+              ? 'Drop or choose JSON'
+              : 'Drop or choose JSON or Anki (.apkg)'}
           </button>
           <input
             ref={fileInputRef}
@@ -217,7 +255,7 @@ export default function FileModal(props: FileModalProps) {
           >
             Import pasted JSON
           </button>
-        </>
+        </div>
       )}
 
       <button className="text-foreground-muted w-full" onClick={onClose}>
