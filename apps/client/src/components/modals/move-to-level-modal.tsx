@@ -15,9 +15,12 @@ export default function MoveToLevelModal({
   currentLevel
 }: MoveToLevelModalProps) {
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
-      <h2 className="text-xl font-semibold text-center mb-4">Move to level</h2>
-
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      variant="center"
+      title="Move to level"
+    >
       <ul className="flex flex-col gap-3">
         {LEVELS.map(level => {
           const isCurrent = level === currentLevel

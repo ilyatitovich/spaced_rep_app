@@ -180,9 +180,12 @@ export default function FileModal(props: FileModalProps) {
   const isImport = kind === 'import-app' || kind === 'import-cards'
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} variant="center">
-      <h2 className="text-xl font-bold text-center">{TITLES[kind]}</h2>
-
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      variant="center"
+      title={TITLES[kind]}
+    >
       {isLoading && (
         <div className="flex flex-col items-center gap-3">
           <Spinner />
@@ -257,10 +260,6 @@ export default function FileModal(props: FileModalProps) {
           </button>
         </div>
       )}
-
-      <button className="text-foreground-muted w-full" onClick={onClose}>
-        Close
-      </button>
     </Modal>
   )
 }

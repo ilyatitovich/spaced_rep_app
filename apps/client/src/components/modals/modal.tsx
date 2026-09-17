@@ -1,9 +1,12 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 
+import { CloseButton } from '../ui/back-button'
+
 interface ModalProps {
   isOpen: boolean
   onClose: () => void
   variant?: 'sheet' | 'center'
+  title?: string
   children: ReactNode
 }
 
@@ -11,6 +14,7 @@ export default function Modal({
   isOpen,
   onClose,
   variant = 'sheet',
+  title,
   children
 }: ModalProps) {
   const rootRef = useRef<HTMLDivElement>(null)
@@ -49,7 +53,25 @@ export default function Modal({
         onClick={onClose}
       />
 
-      <div className={panelClass}>{children}</div>
+      <div className={panelClass}>
+        {title && (
+          <div className={variant === 'center' ? 'relative mb-4' : 'mb-4'}>
+            <h2
+              className={`text-xl font-semibold text-center ${
+                variant === 'center' ? 'px-10' : ''
+              }`}
+            >
+              {title}
+            </h2>
+            {variant === 'center' && (
+              <div className="absolute right-0 top-1/2 -translate-y-1/2">
+                <CloseButton onClose={onClose} />
+              </div>
+            )}
+          </div>
+        )}
+        {children}
+      </div>
     </div>
   )
 }

@@ -296,10 +296,11 @@ export default function SectionPasskeys({ isOpen }: SectionPasskeysProps) {
         )}
       </div>
 
-      <Modal isOpen={isDeleteOpen} onClose={closeDeleteModal}>
-        <h2 className="text-xl font-semibold text-center mb-2">
-          Remove passkey?
-        </h2>
+      <Modal
+        isOpen={isDeleteOpen}
+        onClose={closeDeleteModal}
+        title="Remove passkey?"
+      >
         <p className="text-foreground-muted text-center mb-6">
           {isDeletingLast ? (
             <>

@@ -49,7 +49,11 @@ export default function ConfirmDeleteModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose}>
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title={isDeleting ? undefined : `Delete ${label}?`}
+    >
       {isDeleting ? (
         <div className="flex flex-col items-center gap-3 py-4">
           <Spinner />
@@ -59,9 +63,6 @@ export default function ConfirmDeleteModal({
         </div>
       ) : (
         <>
-          <h2 className="text-xl font-semibold text-center mb-2">
-            Delete {label}?
-          </h2>
           <p className="text-foreground-muted text-center mb-6">
             This action cannot be undone
           </p>

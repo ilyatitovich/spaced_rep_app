@@ -12,6 +12,12 @@ type Kind =
   | 'ios-open-safari'
   | 'soft-banner'
 
+const TITLES: Partial<Record<Kind, string>> = {
+  'chromium-install': 'Install the app',
+  'ios-safari-a2hs': 'Add to Home Screen',
+  'ios-open-safari': 'Add to Home Screen'
+}
+
 const btnSecondary =
   'flex-1 rounded-xl bg-secondary text-foreground py-3 active:scale-95'
 const btnPrimary =
@@ -40,7 +46,7 @@ export default function PwaModal() {
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose}>
+    <Modal isOpen={isOpen} onClose={handleClose} title={TITLES[shown]}>
       {shown === 'update' && (
         <>
           <p className="mb-4 text-sm text-foreground">
@@ -64,9 +70,6 @@ export default function PwaModal() {
 
       {shown === 'chromium-install' && (
         <>
-          <h2 className="mb-2 text-center text-xl font-semibold">
-            Install the app
-          </h2>
           <p className="mb-6 text-center text-foreground-muted">
             It&apos;s better to install for the best experience.
           </p>
@@ -91,9 +94,6 @@ export default function PwaModal() {
 
       {shown === 'ios-safari-a2hs' && (
         <>
-          <h2 className="mb-2 text-center text-xl font-semibold">
-            Add to Home Screen
-          </h2>
           <p className="mb-4 text-center text-foreground-muted">
             Install this app for the best experience — including push
             notifications on iPhone and iPad.
@@ -119,9 +119,6 @@ export default function PwaModal() {
 
       {shown === 'ios-open-safari' && (
         <>
-          <h2 className="mb-2 text-center text-xl font-semibold">
-            Add to Home Screen
-          </h2>
           <p className="mb-6 text-center text-foreground-muted">
             Use Share → Add to Home Screen in this browser, then open the app
             from the icon to enable install features and push.
