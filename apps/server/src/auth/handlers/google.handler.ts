@@ -6,7 +6,8 @@ import { prisma } from '../../shared/lib/prisma.js'
 import { googleCallbackSchema } from '../schemas/index.js'
 import {
   exchangeGoogleCode,
-  createSessionWithTokens
+  createSessionWithTokens,
+  sendWelcomeEmail
 } from '../services/index.js'
 
 const GOOGLE_PROVIDER = 'google'
@@ -92,6 +93,7 @@ async function resolveGoogleUser(input: {
       },
       select: { id: true, email: true }
     })
+    void sendWelcomeEmail(created.email)
     return created
   } catch (err) {
     if (!isUniqueViolation(err)) throw err

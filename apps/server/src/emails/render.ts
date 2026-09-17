@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import Handlebars from 'handlebars'
 import juice from 'juice'
-import { brand } from './brand.js'
+import { brand, founder } from './brand.js'
 
 const emailsDir = dirname(fileURLToPath(import.meta.url))
 const handlebars = Handlebars.create()
@@ -28,7 +28,7 @@ function compile(rel: string) {
 }
 
 function context(data: Record<string, unknown>): Record<string, unknown> {
-  return { brand, year: new Date().getFullYear(), ...data }
+  return { brand, founder, year: new Date().getFullYear(), ...data }
 }
 
 export function renderHtml(
@@ -94,4 +94,12 @@ export function renderNotificationEmailText(
   params: NotificationEmailParams
 ): string {
   return renderText('notification', params)
+}
+
+export function renderWelcomeEmailHtml(): string {
+  return renderHtml('welcome', { title: `Welcome to ${brand.appName}` })
+}
+
+export function renderWelcomeEmailText(): string {
+  return renderText('welcome', { title: `Welcome to ${brand.appName}` })
 }

@@ -3,7 +3,9 @@ import {
   renderNotificationEmailHtml,
   renderNotificationEmailText,
   renderOtpEmailHtml,
-  renderOtpEmailText
+  renderOtpEmailText,
+  renderWelcomeEmailHtml,
+  renderWelcomeEmailText
 } from './render.js'
 
 const otp = {
@@ -55,5 +57,23 @@ describe('render emails', () => {
     expect(text).toContain('Study')
     expect(text).toContain('Due cards')
     expect(text).toContain('https://example.com')
+  })
+
+  it('renders welcome with founder contact', () => {
+    const html = renderWelcomeEmailHtml()
+    expect(html).toContain('Ilya Titov')
+    expect(html).toContain('ilyatitovdev@gmail.com')
+    expect(html).toContain(
+      'https://github.com/ilyatitovich/spaced_rep_app/issues/new'
+    )
+    expect(html).toContain('mailto:ilyatitovdev@gmail.com')
+    expect(html).toContain('Open a GitHub issue')
+
+    const text = renderWelcomeEmailText()
+    expect(text).toContain('Ilya Titov')
+    expect(text).toContain('ilyatitovdev@gmail.com')
+    expect(text).toContain(
+      'https://github.com/ilyatitovich/spaced_rep_app/issues/new'
+    )
   })
 })

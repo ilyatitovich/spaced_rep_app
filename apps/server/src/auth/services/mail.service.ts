@@ -2,7 +2,9 @@ import { Resend } from 'resend'
 import {
   brand,
   renderOtpEmailHtml,
-  renderOtpEmailText
+  renderOtpEmailText,
+  renderWelcomeEmailHtml,
+  renderWelcomeEmailText
 } from '../../emails/index.js'
 import { env } from '../../shared/config/env.js'
 import { BadGatewayError } from '../../shared/lib/errors.js'
@@ -11,16 +13,20 @@ import { logger } from '../../shared/lib/logger.js'
 
 const resend = new Resend(env.RESEND_API_KEY)
 
+function isPlaceholderResend(): boolean {
+  return (
+    (env.NODE_ENV === 'development' || env.NODE_ENV === 'test') &&
+    env.RESEND_API_KEY === 're_placeholder'
+  )
+}
+
 export async function sendOtpEmail(input: {
   to: string
   code: string
   expiresInSeconds: number
 }): Promise<void> {
   // Local/test placeholder key: skip Resend and stash code in Redis for manual and automated testing.
-  if (
-    (env.NODE_ENV === 'development' || env.NODE_ENV === 'test') &&
-    env.RESEND_API_KEY === 're_placeholder'
-  ) {
+  if (isPlaceholderResend()) {
     const redis = getRedis()
     if (!redis.isOpen) await redis.connect()
     await redis.set(`otp:dev:${input.to}`, input.code, { EX: 300 })
@@ -48,5 +54,28 @@ export async function sendOtpEmail(input: {
 
   if (error) {
     throw new BadGatewayError('Failed to send email. Please try again.')
+  }
+}
+
+export async function sendWelcomeEmail(to: string): Promise<void> {
+  if (isPlaceholderResend()) {
+    logger.info({ to }, 'DEV: welcome email skipped (no Resend)')
+    return
+  }
+
+  try {
+    const { error } = await resend.emails.send({
+      from: env.EMAIL_FROM,
+      to: [to],
+      subject: `Welcome to ${brand.appName}`,
+      text: renderWelcomeEmailText(),
+      html: renderWelcomeEmailHtml()
+    })
+
+    if (error) {
+      logger.error({ error, to }, 'Failed to send welcome email')
+    }
+  } catch (error) {
+    logger.error({ error, to }, 'Failed to send welcome email')
   }
 }

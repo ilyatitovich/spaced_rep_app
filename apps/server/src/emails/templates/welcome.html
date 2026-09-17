@@ -1,0 +1,27 @@
+{{#> base}}
+<tr>
+  <td class="content">
+    <h1 class="h1 h1-left">Welcome to {{brand.appName}}</h1>
+    <p class="p">
+      Thanks for creating an account. I built {{brand.appName}} so spaced repetition is easy enough to use every day.
+    </p>
+    <p class="p">
+      If something feels off, or you have an idea, email me at
+      <a class="link" href="mailto:{{founder.email}}">{{founder.email}}</a>
+      or open an issue on
+      <a class="link" href="{{founder.githubUrl}}">GitHub</a>.
+    </p>
+    {{> button url=founder.githubUrl label="Open a GitHub issue"}}
+    <p class="sign">
+      {{founder.name}}
+    </p>
+  </td>
+</tr>
+<tr>
+  <td class="card-foot">
+    <p class="card-foot-text">
+      You received this because you just created a {{brand.appName}} account.
+    </p>
+  </td>
+</tr>
+{{/base}}

@@ -13,3 +13,9 @@ export const brand = {
     "Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
   appName: 'SpacedRepApp'
 } as const
+
+export const founder = {
+  name: 'Ilya Titov',
+  email: 'ilyatitovdev@gmail.com',
+  githubUrl: 'https://github.com/ilyatitovich/spaced_rep_app/issues/new'
+} as const

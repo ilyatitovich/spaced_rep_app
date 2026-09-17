@@ -12,7 +12,7 @@ import {
   enforceRateLimit,
   getRedis
 } from '../../shared/lib/redis.js'
-import { sendOtpEmail } from './mail.service.js'
+import { sendOtpEmail, sendWelcomeEmail } from './mail.service.js'
 import {
   createSessionWithTokens,
   type TokenPairResult
@@ -67,13 +67,15 @@ async function resolveEmailUser(email: string): Promise<{
   }
 
   try {
-    return await prisma.user.create({
+    const user = await prisma.user.create({
       data: {
         email,
         emailVerifiedAt: new Date()
       },
       select: { id: true, email: true }
     })
+    void sendWelcomeEmail(user.email)
+    return user
   } catch (err) {
     if (!isUniqueViolation(err)) throw err
     return resolveEmailUser(email)
