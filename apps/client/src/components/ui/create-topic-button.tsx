@@ -12,7 +12,7 @@ export default function CreateTopicButton({
       className={` transition-opacity duration-300 ease-in-out ${isHidden ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
     >
       <button
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-primary text-primary-foreground text-4xl shadow-lg flex items-center justify-center active:scale-90"
+        className="absolute bottom-6 right-6 w-14 h-14 rounded-full bg-primary text-primary-foreground text-4xl shadow-lg flex items-center justify-center active:scale-90"
         onClick={onClick}
       >
         <div className="relative w-6 h-6 flex items-center justify-center">
