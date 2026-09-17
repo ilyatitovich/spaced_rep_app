@@ -11,7 +11,8 @@ import {
   Screen,
   Header
 } from '@/components'
-import { appendSideBlocks, isSideEmpty } from '@/lib'
+import { useShortcuts } from '@/hooks'
+import { appendSideBlocks, flipRules, getTopScreen, isSideEmpty } from '@/lib'
 import { Card as CardModel } from '@/models'
 import { createCard } from '@/services'
 import type { CardData, CardHandle, SideBlock, SideName } from '@/types'
@@ -54,8 +55,16 @@ export default function AddCardScreen({
 
   const currentCardRef = useRef<CardHandle>(null)
   const secondCardRef = useRef<CardHandle>(null)
+  const hostRef = useRef<HTMLDivElement>(null)
 
   const side = isFlipped ? 'back' : 'front'
+
+  const handleFlipCard = () => {
+    if (!getTopScreen()?.contains(hostRef.current)) return
+    setIsFlipped(prev => !prev)
+  }
+
+  useShortcuts(flipRules, { flipCard: handleFlipCard }, { enabled: isOpen })
 
   let rightBtn
 
@@ -174,30 +183,32 @@ export default function AddCardScreen({
         <span>{isFlipped ? 'Back' : 'Front'}</span>
         {rightBtn}
       </Header>
-      <CardContainer>
-        <Card
-          ref={isFirstCardActive ? currentCardRef : secondCardRef}
-          className={`${isFirstCardActive ? 'scale-up' : 'move-right'}`}
-          data={isFirstCardActive ? cardData : blankCardTemplate}
-          isFlipped={isFirstCardActive ? isFlipped : false}
-          isEditable={true}
-          autoFocus={isFirstCardActive}
-          handleFocus={() => setIsEdited(true)}
-          handleBlur={handleBlur}
-          handleChange={handleChangeBlocks}
-        />
-        <Card
-          ref={isFirstCardActive ? secondCardRef : currentCardRef}
-          className={`${isInitialRender ? 'hidden' : ''} ${isFirstCardActive ? 'move-right' : 'scale-up'}`.trim()}
-          data={isFirstCardActive ? blankCardTemplate : cardData}
-          isFlipped={isFirstCardActive ? false : isFlipped}
-          isEditable={true}
-          autoFocus={!isFirstCardActive}
-          handleFocus={() => setIsEdited(true)}
-          handleBlur={handleBlur}
-          handleChange={handleChangeBlocks}
-        />
-      </CardContainer>
+      <div ref={hostRef} className="contents">
+        <CardContainer>
+          <Card
+            ref={isFirstCardActive ? currentCardRef : secondCardRef}
+            className={`${isFirstCardActive ? 'scale-up' : 'move-right'}`}
+            data={isFirstCardActive ? cardData : blankCardTemplate}
+            isFlipped={isFirstCardActive ? isFlipped : false}
+            isEditable={true}
+            autoFocus={isFirstCardActive}
+            handleFocus={() => setIsEdited(true)}
+            handleBlur={handleBlur}
+            handleChange={handleChangeBlocks}
+          />
+          <Card
+            ref={isFirstCardActive ? secondCardRef : currentCardRef}
+            className={`${isInitialRender ? 'hidden' : ''} ${isFirstCardActive ? 'move-right' : 'scale-up'}`.trim()}
+            data={isFirstCardActive ? blankCardTemplate : cardData}
+            isFlipped={isFirstCardActive ? false : isFlipped}
+            isEditable={true}
+            autoFocus={!isFirstCardActive}
+            handleFocus={() => setIsEdited(true)}
+            handleBlur={handleBlur}
+            handleChange={handleChangeBlocks}
+          />
+        </CardContainer>
+      </div>
       <CardToolbar
         isTextDisabled={cardData[side].blocks.at(-1)?.type === 'text'}
         onAddBlocks={appendBlocks}

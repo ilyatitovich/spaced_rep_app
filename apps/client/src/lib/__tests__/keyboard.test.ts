@@ -4,6 +4,7 @@ import {
   carouselRules,
   DISMISS_ATTR,
   dismissTop,
+  flipRules,
   getTabbables,
   globalRules,
   matchShortcut,
@@ -86,6 +87,46 @@ describe('matchShortcut', () => {
     expect(
       matchShortcut(keydown('ArrowLeft', { target: input }), carouselRules)
     ).toBeNull()
+  })
+
+  it('matches Space to flip when the card is not focused', () => {
+    expect(matchShortcut(keydown(' '), flipRules)?.id).toBe('flipCard')
+  })
+
+  it('ignores Space while typing in the card', () => {
+    const input = document.createElement('textarea')
+    expect(matchShortcut(keydown(' ', { target: input }), flipRules)).toBeNull()
+  })
+
+  it('ignores Space on a focused button', () => {
+    const screen = document.createElement('div')
+    screen.setAttribute(SCREEN_ATTR, '')
+    const button = document.createElement('button')
+    screen.append(button)
+    document.body.append(screen)
+
+    expect(
+      matchShortcut(keydown(' ', { target: button }), flipRules)
+    ).toBeNull()
+
+    screen.remove()
+  })
+
+  it('matches Space when a button on a buried screen is focused', () => {
+    const behind = document.createElement('div')
+    behind.setAttribute(SCREEN_ATTR, '')
+    const button = document.createElement('button')
+    behind.append(button)
+    const top = document.createElement('div')
+    top.setAttribute(SCREEN_ATTR, '')
+    document.body.append(behind, top)
+
+    expect(matchShortcut(keydown(' ', { target: button }), flipRules)?.id).toBe(
+      'flipCard'
+    )
+
+    behind.remove()
+    top.remove()
   })
 })
 

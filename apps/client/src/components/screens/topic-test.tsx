@@ -10,7 +10,8 @@ import {
   BackButton,
   Header
 } from '@/components'
-import { getToday, isAnotherDay } from '@/lib'
+import { useShortcuts } from '@/hooks'
+import { flipRules, getToday, getTopScreen, isAnotherDay } from '@/lib'
 import { Card as CardModel, Topic } from '@/models'
 import { getCardsByTopicAndLevel, updateCard, updateTopic } from '@/services'
 
@@ -28,8 +29,20 @@ export default function TestScreen({ isOpen, topic }: TestScreenProps) {
   const [prevCard, setPrevCard] = useState<CardModel | null>(null)
 
   const totalCardsRef = useRef(0)
+  const hostRef = useRef<HTMLDivElement>(null)
 
   const isDone = cards && cards.length === 0
+
+  const handleFlipCard = () => {
+    if (!getTopScreen()?.contains(hostRef.current)) return
+    setIsFlipped(prev => !prev)
+  }
+
+  useShortcuts(
+    flipRules,
+    { flipCard: handleFlipCard },
+    { enabled: isOpen && !isDone }
+  )
 
   useEffect(() => {
     async function setTopic(): Promise<void> {
@@ -118,37 +131,39 @@ export default function TestScreen({ isOpen, topic }: TestScreenProps) {
       </Header>
 
       {cards && (
-        <CardContainer>
-          {cards.length === 0 && isFirstCardActive ? (
-            <div className="absolute w-[80vw] max-w-87.5 h-[60dvh] max-h-125 scale-up">
-              <TestDoneMessage />
-            </div>
-          ) : (
-            (isFirstCardActive ? cards[0] : prevCard) && (
-              <Card
-                className={`${isFirstCardActive ? 'scale-up' : isCorrect ? 'move-right' : 'move-left'}`.trim()}
-                data={(isFirstCardActive ? cards[0]! : prevCard!).data}
-                isFlipped={isFirstCardActive ? isFlipped : false}
-                handleClick={() => setIsFlipped(prev => !prev)}
-              />
-            )
-          )}
+        <div ref={hostRef} className="contents">
+          <CardContainer>
+            {cards.length === 0 && isFirstCardActive ? (
+              <div className="absolute w-[80vw] max-w-87.5 h-[60dvh] max-h-125 scale-up">
+                <TestDoneMessage />
+              </div>
+            ) : (
+              (isFirstCardActive ? cards[0] : prevCard) && (
+                <Card
+                  className={`${isFirstCardActive ? 'scale-up' : isCorrect ? 'move-right' : 'move-left'}`.trim()}
+                  data={(isFirstCardActive ? cards[0]! : prevCard!).data}
+                  isFlipped={isFirstCardActive ? isFlipped : false}
+                  handleClick={() => setIsFlipped(prev => !prev)}
+                />
+              )
+            )}
 
-          {cards.length === 0 && !isFirstCardActive ? (
-            <div className="absolute w-[80vw] max-w-87.5 h-[60dvh] max-h-125 scale-up">
-              <TestDoneMessage />
-            </div>
-          ) : (
-            (isFirstCardActive ? prevCard : cards[0]) && (
-              <Card
-                className={`${isInitialRender ? 'hidden' : ''} ${isFirstCardActive ? (isCorrect ? 'move-right' : 'move-left') : 'scale-up'}`.trim()}
-                data={(isFirstCardActive ? prevCard! : cards[0]!).data}
-                isFlipped={isFirstCardActive ? false : isFlipped}
-                handleClick={() => setIsFlipped(prev => !prev)}
-              />
-            )
-          )}
-        </CardContainer>
+            {cards.length === 0 && !isFirstCardActive ? (
+              <div className="absolute w-[80vw] max-w-87.5 h-[60dvh] max-h-125 scale-up">
+                <TestDoneMessage />
+              </div>
+            ) : (
+              (isFirstCardActive ? prevCard : cards[0]) && (
+                <Card
+                  className={`${isInitialRender ? 'hidden' : ''} ${isFirstCardActive ? (isCorrect ? 'move-right' : 'move-left') : 'scale-up'}`.trim()}
+                  data={(isFirstCardActive ? prevCard! : cards[0]!).data}
+                  isFlipped={isFirstCardActive ? false : isFlipped}
+                  handleClick={() => setIsFlipped(prev => !prev)}
+                />
+              )
+            )}
+          </CardContainer>
+        </div>
       )}
 
       {!isDone && (

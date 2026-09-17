@@ -15,7 +15,7 @@ export interface ShortcutRule {
   id: string
   key: string
   mod?: boolean
-  when?: 'notTyping' | 'always'
+  when?: 'notTyping' | 'always' | 'notActivate'
 }
 
 export const globalRules: ShortcutRule[] = [
@@ -25,6 +25,10 @@ export const globalRules: ShortcutRule[] = [
 export const carouselRules: ShortcutRule[] = [
   { id: 'prevCard', key: 'ArrowLeft', when: 'notTyping' },
   { id: 'nextCard', key: 'ArrowRight', when: 'notTyping' }
+]
+
+export const flipRules: ShortcutRule[] = [
+  { id: 'flipCard', key: ' ', when: 'notActivate' }
 ]
 
 export function isMod(event: KeyboardEvent): boolean {
@@ -39,6 +43,14 @@ export function isTypingTarget(target: EventTarget | null): boolean {
   return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
 }
 
+export function isActivateTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false
+  const control = target.closest('button, [role="button"]')
+  if (!control) return false
+  const top = getTopScreen()
+  return !!top?.contains(control)
+}
+
 export function matchShortcut(
   event: KeyboardEvent,
   rules: readonly ShortcutRule[]
@@ -50,6 +62,12 @@ export function matchShortcut(
     if (Boolean(rule.mod) !== isMod(event)) continue
     const when = rule.when ?? 'notTyping'
     if (when === 'notTyping' && isTypingTarget(event.target)) continue
+    if (
+      when === 'notActivate' &&
+      (isTypingTarget(event.target) || isActivateTarget(event.target))
+    ) {
+      continue
+    }
     return rule
   }
 

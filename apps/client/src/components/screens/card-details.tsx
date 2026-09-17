@@ -18,6 +18,7 @@ import { useShortcuts } from '@/hooks'
 import {
   appendSideBlocks,
   carouselRules,
+  flipRules,
   getTopScreen,
   isCardDataEqual,
   normalizeCardData,
@@ -322,16 +323,21 @@ export default function CardDetailsScreen({
     [total, animateTrackTo, finishSwipe]
   )
 
+  const isOnTopScreen = () => !!getTopScreen()?.contains(containerRef.current)
+
   const handlePrevCard = () => {
-    const screen = getTopScreen()
-    if (!screen?.contains(containerRef.current)) return
+    if (!isOnTopScreen()) return
     commitSwipe(-1)
   }
 
   const handleNextCard = () => {
-    const screen = getTopScreen()
-    if (!screen?.contains(containerRef.current)) return
+    if (!isOnTopScreen()) return
     commitSwipe(1)
+  }
+
+  const handleFlipCard = () => {
+    if (!isOnTopScreen()) return
+    setIsFlipped(prev => !prev)
   }
 
   useShortcuts(
@@ -339,6 +345,8 @@ export default function CardDetailsScreen({
     { prevCard: handlePrevCard, nextCard: handleNextCard },
     { enabled: isOpen && !isEditable }
   )
+
+  useShortcuts(flipRules, { flipCard: handleFlipCard }, { enabled: isOpen })
 
   const clearTouchListeners = () => {
     detachTouch.current?.()
