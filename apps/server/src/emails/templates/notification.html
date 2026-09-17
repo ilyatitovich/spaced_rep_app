@@ -1,0 +1,18 @@
+{{#> base}}
+<tr>
+  <td class="content">
+    <h1 class="h1 h1-left">{{title}}</h1>
+    <p class="body-text">{{body}}</p>
+    {{#if url}}
+      {{> button url=url label="Open app"}}
+    {{/if}}
+  </td>
+</tr>
+<tr>
+  <td class="card-foot">
+    <p class="card-foot-text">
+      You received this because reminders are enabled in {{brand.appName}}.
+    </p>
+  </td>
+</tr>
+{{/base}}
