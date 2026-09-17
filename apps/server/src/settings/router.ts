@@ -1,7 +1,8 @@
 import { Router } from 'express'
 import { requireAuth } from '../shared/middleware/require-auth.js'
 import {
-  billingWebhookHandler,
+  createCheckoutHandler,
+  getPortalHandler,
   getSettingsHandler,
   getSubscriptionHandler,
   patchLearningHandler,
@@ -18,6 +19,5 @@ settingsRouter.patch('/learning', requireAuth, patchLearningHandler)
 settingsRouter.patch('/notifications', requireAuth, patchNotificationsHandler)
 settingsRouter.put('/notifications/reminders', requireAuth, putRemindersHandler)
 settingsRouter.get('/subscription', requireAuth, getSubscriptionHandler)
-
-// Billing webhooks (no user JWT; provider signature verification TBD)
-settingsRouter.post('/billing/webhook', billingWebhookHandler)
+settingsRouter.post('/billing/checkout', requireAuth, createCheckoutHandler)
+settingsRouter.post('/billing/portal', requireAuth, getPortalHandler)

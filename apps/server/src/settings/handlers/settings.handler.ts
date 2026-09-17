@@ -1,11 +1,18 @@
 import type { NextFunction, Request, Response } from 'express'
 import { parseBody, sendData } from '../../shared/lib/http.js'
+import { BadRequestError } from '../../shared/lib/errors.js'
 import {
+  createCheckoutSchema,
   patchLearningSchema,
   patchNotificationsSchema,
   patchPreferencesSchema,
   putRemindersSchema
 } from '../schemas/settings.schemas.js'
+import {
+  createCheckout,
+  getPortalUrl,
+  processLemonWebhook
+} from '../billing/billing.service.js'
 import {
   getSettingsDocument,
   getSubscriptionDto,
@@ -97,14 +104,42 @@ export async function getSubscriptionHandler(
   }
 }
 
-/** Stub: billing provider webhooks land here later. */
-export async function billingWebhookHandler(
-  _req: Request,
+export async function createCheckoutHandler(
+  req: Request,
   res: Response,
   next: NextFunction
 ) {
   try {
-    sendData(res, { ok: true as const, received: true as const })
+    const body = parseBody(createCheckoutSchema, req.body)
+    sendData(res, await createCheckout(req.auth!.userId, body.interval), 201)
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function getPortalHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    sendData(res, await getPortalUrl(req.auth!.userId))
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function billingWebhookHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    if (!Buffer.isBuffer(req.body)) {
+      throw new BadRequestError('Webhook requires application/json')
+    }
+    await processLemonWebhook(req.body, req.get('X-Signature') ?? '')
+    sendData(res, { received: true as const })
   } catch (err) {
     next(err)
   }

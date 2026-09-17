@@ -63,7 +63,11 @@ const envSchema = z.object({
         .filter(Boolean)
     )
     .pipe(z.array(z.string().url()).min(1)),
-  WEBAUTHN_CHALLENGE_TTL_SECONDS: z.coerce.number().int().positive().default(60),
+  WEBAUTHN_CHALLENGE_TTL_SECONDS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(60),
   VAPID_PUBLIC_KEY: z.string().min(1, 'VAPID_PUBLIC_KEY is required'),
   VAPID_PRIVATE_KEY: z.string().min(1, 'VAPID_PRIVATE_KEY is required'),
   VAPID_SUBJECT: z
@@ -72,7 +76,17 @@ const envSchema = z.object({
     .refine(
       value => value.startsWith('mailto:') || value.startsWith('https://'),
       'VAPID_SUBJECT must be a mailto: or https: URL'
-    )
+    ),
+  LEMONSQUEEZY_API_KEY: z.string().default(''),
+  LEMONSQUEEZY_WEBHOOK_SECRET: z.string().default(''),
+  LEMONSQUEEZY_STORE_ID: z.string().default(''),
+  LEMONSQUEEZY_PRO_MONTHLY_VARIANT_ID: z.string().default(''),
+  LEMONSQUEEZY_PRO_YEARLY_VARIANT_ID: z.string().default(''),
+  LEMONSQUEEZY_TEST_MODE: z
+    .string()
+    .default('false')
+    .transform(value => value === 'true'),
+  BILLING_RETURN_URL: z.string().default('')
 })
 
 const parsed = envSchema.safeParse(process.env)

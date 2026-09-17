@@ -6,6 +6,7 @@ import { pinoHttp } from 'pino-http'
 import { authRouter } from './auth/router.js'
 import { notificationsRouter } from './notifications/router.js'
 import { settingsRouter } from './settings/router.js'
+import { billingWebhookHandler } from './settings/handlers/settings.handler.js'
 import { syncRouter } from './sync/router.js'
 import { env } from './shared/config/env.js'
 import { logger } from './shared/lib/logger.js'
@@ -20,9 +21,14 @@ export function createApp() {
   app.use(helmet())
   app.use(cors({ origin: env.CORS_ORIGIN }))
   app.use(compression())
+  app.use(pinoHttp({ logger }))
+  app.post(
+    '/settings/billing/webhook',
+    express.raw({ type: 'application/json', limit: '256kb' }),
+    billingWebhookHandler
+  )
   app.use(express.json({ limit: '1mb' }))
   app.use(express.urlencoded({ extended: true }))
-  app.use(pinoHttp({ logger }))
 
   app.use('/health', (_req, res) => {
     res.status(200).json({ status: 'ok' })

@@ -1,5 +1,9 @@
 import { z } from 'zod'
 
+export const createCheckoutSchema = z.object({
+  interval: z.enum(['month', 'year'])
+})
+
 const deviceIdSchema = z.uuid()
 const updatedAtSchema = z.number().int().nonnegative()
 
