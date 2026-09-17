@@ -2,6 +2,7 @@ import type { ReactNode, TransitionEvent } from 'react'
 import { useState, useEffect, useId, useRef } from 'react'
 
 import { useScreenStackStore } from '@/store/screen-stack-store'
+import { useShouldAnimate } from '@/hooks'
 
 type ScreenLayerProps = {
   isOpen?: boolean
@@ -21,6 +22,11 @@ export function ScreenLayer({
     const index = state.stack.indexOf(id)
     return index !== -1 && index < state.stack.length - 1
   })
+  const shouldAnimate = useShouldAnimate()
+
+  const animationClass = shouldAnimate
+    ? 'transition-transform duration-300 ease-in-out'
+    : 'transition-none'
 
   useEffect(() => {
     if (!isOpen) return
@@ -28,9 +34,13 @@ export function ScreenLayer({
     return () => pop(id)
   }, [id, isOpen, pop, push])
 
+  if (!shouldAnimate) {
+    return <div className={`${className}`}>{children}</div>
+  }
+
   return (
     <div
-      className={`${className} transition-transform duration-300 ease-in-out ${
+      className={`${className} ${animationClass} ${
         isBehind ? '-translate-x-1/4' : 'translate-x-0'
       }`}
     >
@@ -58,10 +68,18 @@ export default function Screen({
 }: ScreenProps) {
   const [isInitialRender, setIsInitialRender] = useState(true)
   const rootRef = useRef<HTMLDivElement>(null)
+  const wasOpenRef = useRef(isOpen)
+  const shouldDisableAnimation = !useShouldAnimate()
 
   useEffect(() => {
     if (rootRef.current) rootRef.current.inert = !isOpen
   }, [isOpen])
+
+  useEffect(() => {
+    const justClosed = wasOpenRef.current && !isOpen
+    wasOpenRef.current = isOpen
+    if (justClosed && shouldDisableAnimation) onClose?.()
+  }, [isOpen, shouldDisableAnimation, onClose])
 
   useEffect(() => {
     if (!isOpen) return
@@ -74,10 +92,15 @@ export default function Screen({
   }, [isInitialRender, isOpen, onOpen])
 
   const handleTransitionEnd = (event: TransitionEvent<HTMLDivElement>) => {
+    if (shouldDisableAnimation) return
     if (event.target !== event.currentTarget) return
     if (isOpen) return
     onClose?.()
   }
+
+  const animationClass = shouldDisableAnimation
+    ? 'transition-none'
+    : 'transition-transform duration-300 ease-in-out'
 
   const onscreenClass = isVertical ? 'translate-y-0' : 'translate-x-0'
   const offscreenClass = isVertical
@@ -88,7 +111,7 @@ export default function Screen({
     <div
       ref={rootRef}
       data-screen=""
-      className={`${isOpen ? onscreenClass : offscreenClass} transition-transform duration-300 ease-in-out fixed inset-0 bg-background ${className}`.trim()}
+      className={`${isOpen ? onscreenClass : offscreenClass} ${animationClass} fixed inset-0 max-w-screen-sm mx-auto bg-background ${className}`.trim()}
       onTransitionEnd={handleTransitionEnd}
     >
       <ScreenLayer isOpen={isOpen && !isVertical}>

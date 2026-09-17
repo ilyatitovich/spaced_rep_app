@@ -357,9 +357,16 @@ body {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   font-size: clamp(1rem, 0.75rem + 4vw, 1.25rem);
   line-height: 1.2;
+}
+
+#root {
+  max-width: 640px;
+  margin: 0 auto;
+  height: inherit;
   overflow: hidden;
   background-color: var(--color-background);
   color: var(--color-foreground);
+  border-radius: 0.75rem;
 }
 
 button,
