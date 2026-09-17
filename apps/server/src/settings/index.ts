@@ -2,7 +2,9 @@ export { settingsRouter } from './router.js'
 export { ensureUserSettings } from './services/ensure.service.js'
 export {
   assertPlan,
+  effectivePlan,
   getSubscription,
-  isPlanEntitled
+  isPlanEntitled,
+  isSubscriptionEntitled
 } from './services/plan.service.js'
 export { shouldApplySettingsLww } from './mappers.js'

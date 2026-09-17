@@ -4,7 +4,11 @@ import { prisma } from '../../shared/lib/prisma.js'
 import { ensureUserSettings } from './ensure.service.js'
 import { isPlanEntitled } from './plan-entitlement.js'
 
-export { isPlanEntitled } from './plan-entitlement.js'
+export {
+  effectivePlan,
+  isPlanEntitled,
+  isSubscriptionEntitled
+} from './plan-entitlement.js'
 
 export async function getSubscription(userId: string) {
   await ensureUserSettings(userId)
@@ -16,7 +20,7 @@ export async function assertPlan(
   minimum: PlanTier
 ): Promise<void> {
   const sub = await getSubscription(userId)
-  if (!isPlanEntitled(sub.plan, sub.status, minimum)) {
+  if (!isPlanEntitled(sub.plan, sub.status, minimum, sub.endsAt)) {
     throw new ForbiddenError(
       `Requires ${minimum} plan (current: ${sub.plan}/${sub.status})`,
       'PLAN_REQUIRED'

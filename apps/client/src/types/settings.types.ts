@@ -1,9 +1,16 @@
 export type ThemePreference = 'light' | 'dark' | 'system'
 export type PlanTier = 'free' | 'pro' | 'pro_plus'
 export type SubscriptionStatus =
-  'active' | 'trialing' | 'past_due' | 'canceled' | 'expired' | 'incomplete'
+  | 'active'
+  | 'trialing'
+  | 'past_due'
+  | 'canceled'
+  | 'expired'
+  | 'incomplete'
+  | 'paused'
+  | 'unpaid'
 export type NotificationChannel = 'push' | 'email'
-export type BillingProvider = 'none' | 'stripe'
+export type BillingProvider = 'none' | 'stripe' | 'lemon_squeezy'
 
 export type UserPreferences = {
   theme: ThemePreference
@@ -43,6 +50,7 @@ export type SubscriptionSnapshot = {
   status: SubscriptionStatus
   provider: BillingProvider
   currentPeriodEnd: number | null
+  endsAt: number | null
   trialEndsAt: number | null
   cancelAtPeriodEnd: boolean
   serverUpdatedAt: number

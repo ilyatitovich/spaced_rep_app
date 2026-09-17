@@ -9,6 +9,7 @@ import {
   PRO_DEVICE_LIMIT,
   type BillingInterval
 } from '@/lib/billing-product'
+import { isPlanEntitled } from '@/lib/settings'
 import { useSettingsStore } from '@/store'
 import type { PlanTier, SubscriptionStatus } from '@/types/settings.types'
 import {
@@ -30,7 +31,9 @@ const STATUS_LABELS: Record<SubscriptionStatus, string> = {
   past_due: 'Past due',
   canceled: 'Canceled',
   expired: 'Expired',
-  incomplete: 'Incomplete'
+  incomplete: 'Incomplete',
+  paused: 'Paused',
+  unpaid: 'Unpaid'
 }
 
 function formatDate(ts: number | null): string {
@@ -62,7 +65,8 @@ export default function SectionSubscription({
 
   const sub = settings?.subscription
   const plan = sub?.plan ?? 'free'
-  const isPaid = plan === 'pro' || plan === 'pro_plus'
+  const isEntitled = sub ? isPlanEntitled(sub, 'pro') : false
+  const purchasedPaid = plan === 'pro' || plan === 'pro_plus'
 
   return (
     <Screen isOpen={isOpen}>
@@ -82,7 +86,7 @@ export default function SectionSubscription({
             <SettingsGroup
               label="Current plan"
               footer={
-                isPaid
+                isEntitled
                   ? undefined
                   : 'Free includes the full local study app. Sync and notifications unlock with Pro — no paywall at sign-in.'
               }
@@ -101,7 +105,13 @@ export default function SectionSubscription({
                   value={formatDate(sub.trialEndsAt)}
                 />
               )}
-              {sub?.currentPeriodEnd != null && (
+              {sub?.endsAt != null && (
+                <SettingsInfoRow
+                  label="Access until"
+                  value={formatDate(sub.endsAt)}
+                />
+              )}
+              {sub?.currentPeriodEnd != null && sub.endsAt == null && (
                 <SettingsInfoRow
                   label="Renews"
                   value={formatDate(sub.currentPeriodEnd)}
@@ -112,7 +122,7 @@ export default function SectionSubscription({
               )}
             </SettingsGroup>
 
-            {!isPaid && (
+            {!isEntitled && (
               <SettingsGroup
                 label="Pro"
                 footer={`Cloud sync, study notifications, and up to ${PRO_DEVICE_LIMIT} devices. Prices shown before tax.`}
@@ -137,7 +147,7 @@ export default function SectionSubscription({
               </SettingsGroup>
             )}
 
-            {isPaid && (
+            {purchasedPaid && isEntitled && (
               <SettingsGroup footer="Billing management is coming soon.">
                 <SettingsActionRow
                   label="Manage billing"

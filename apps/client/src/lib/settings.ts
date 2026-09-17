@@ -57,6 +57,7 @@ export function defaultSubscription(now = Date.now()): SubscriptionSnapshot {
     status: 'active',
     provider: 'none',
     currentPeriodEnd: null,
+    endsAt: null,
     trialEndsAt: null,
     cancelAtPeriodEnd: false,
     serverUpdatedAt: now
@@ -92,16 +93,38 @@ const PLAN_RANK: Record<PlanTier, number> = {
   pro_plus: 2
 }
 
-const ENTITLED: SubscriptionStatus[] = ['active', 'trialing']
+const ALWAYS_ENTITLED: ReadonlySet<SubscriptionStatus> = new Set([
+  'active',
+  'trialing',
+  'past_due'
+])
+
+function isSubscriptionEntitled(
+  status: SubscriptionStatus,
+  endsAt: number | null,
+  now: number
+): boolean {
+  if (ALWAYS_ENTITLED.has(status)) return true
+  if (status === 'canceled') return endsAt != null && endsAt > now
+  return false
+}
+
+/** Purchased tier while entitled; free when access ended. */
+export function effectivePlan(
+  subscription: Pick<SubscriptionSnapshot, 'plan' | 'status' | 'endsAt'>,
+  now = Date.now()
+): PlanTier {
+  return isSubscriptionEntitled(subscription.status, subscription.endsAt, now)
+    ? subscription.plan
+    : 'free'
+}
 
 export function isPlanEntitled(
-  subscription: SubscriptionSnapshot,
-  minimum: PlanTier
+  subscription: Pick<SubscriptionSnapshot, 'plan' | 'status' | 'endsAt'>,
+  minimum: PlanTier,
+  now = Date.now()
 ): boolean {
-  return (
-    ENTITLED.includes(subscription.status) &&
-    PLAN_RANK[subscription.plan] >= PLAN_RANK[minimum]
-  )
+  return PLAN_RANK[effectivePlan(subscription, now)] >= PLAN_RANK[minimum]
 }
 
 export function resolveTheme(theme: ThemePreference): 'light' | 'dark' {

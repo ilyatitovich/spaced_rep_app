@@ -57,11 +57,14 @@ enum SubscriptionStatus {
   CANCELED
   EXPIRED
   INCOMPLETE
+  PAUSED
+  UNPAID
 }
 
 enum BillingProvider {
   NONE
   STRIPE
+  LEMON_SQUEEZY
 }
 
 enum NotificationChannel {
@@ -93,6 +96,7 @@ model User {
   notificationReminders NotificationReminder[]
   pushSubscriptions     PushSubscription[]
   subscription          Subscription?
+  billingCheckoutIntents BillingCheckoutIntent[]
 
   @@map("users")
 }
@@ -373,13 +377,19 @@ model PushSubscription {
 
 model Subscription {
   userId                 String             @id @map("user_id") @db.Uuid
+  /// Purchased tier — keep PRO/PRO_PLUS after expiry; derive access via entitlement helpers.
   plan                   PlanTier           @default(FREE)
   status                 SubscriptionStatus @default(ACTIVE)
   provider               BillingProvider    @default(NONE)
   providerCustomerId     String?            @map("provider_customer_id")
   providerSubscriptionId String?            @map("provider_subscription_id")
+  providerVariantId      String?            @map("provider_variant_id")
+  providerUpdatedAt      DateTime?          @map("provider_updated_at") @db.Timestamptz
+  lastVerifiedAt         DateTime?          @map("last_verified_at") @db.Timestamptz
   currentPeriodStart     DateTime?          @map("current_period_start") @db.Timestamptz
   currentPeriodEnd       DateTime?          @map("current_period_end") @db.Timestamptz
+  /// Access end for canceled (paid-through). Entitlement for CANCELED requires endsAt > now.
+  endsAt                 DateTime?          @map("ends_at") @db.Timestamptz
   trialEndsAt            DateTime?          @map("trial_ends_at") @db.Timestamptz
   cancelAtPeriodEnd      Boolean            @default(false) @map("cancel_at_period_end")
   canceledAt             DateTime?          @map("canceled_at") @db.Timestamptz
@@ -388,7 +398,40 @@ model Subscription {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([status, currentPeriodEnd])
+  @@index([status, endsAt])
   // Partial unique (provider, provider_subscription_id) WHERE provider_subscription_id IS NOT NULL
   // is enforced in SQL migrations.
   @@map("subscriptions")
+}
+
+/// One open checkout URL per user/plan; reuse until expiresAt to avoid duplicate tabs.
+model BillingCheckoutIntent {
+  id                 String          @id @default(uuid()) @db.Uuid
+  userId             String          @map("user_id") @db.Uuid
+  plan               PlanTier
+  provider           BillingProvider @default(LEMON_SQUEEZY)
+  providerCheckoutId String?         @map("provider_checkout_id")
+  checkoutUrl        String          @map("checkout_url")
+  expiresAt          DateTime        @map("expires_at") @db.Timestamptz
+  createdAt          DateTime        @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, plan, expiresAt])
+  @@map("billing_checkout_intents")
+}
+
+/// Webhook delivery audit / idempotency (unique on idempotencyKey).
+model BillingEvent {
+  id              String          @id @default(uuid()) @db.Uuid
+  provider        BillingProvider
+  eventType       String          @map("event_type")
+  idempotencyKey  String          @unique @map("idempotency_key")
+  providerEventId String?         @map("provider_event_id")
+  payload         Json?
+  processedAt     DateTime?       @map("processed_at") @db.Timestamptz
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([provider, eventType])
+  @@map("billing_events")
 }

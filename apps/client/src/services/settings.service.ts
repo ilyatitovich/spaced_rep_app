@@ -145,6 +145,7 @@ async function readDoc(ownerKey: string): Promise<UserSettingsDocument> {
         status: sub.status,
         provider: sub.provider,
         currentPeriodEnd: sub.currentPeriodEnd,
+        endsAt: sub.endsAt ?? null,
         trialEndsAt: sub.trialEndsAt,
         cancelAtPeriodEnd: sub.cancelAtPeriodEnd,
         serverUpdatedAt: sub.serverUpdatedAt

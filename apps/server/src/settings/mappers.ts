@@ -35,12 +35,15 @@ const STATUS_TO_JSON: Record<SubscriptionStatus, string> = {
   PAST_DUE: 'past_due',
   CANCELED: 'canceled',
   EXPIRED: 'expired',
-  INCOMPLETE: 'incomplete'
+  INCOMPLETE: 'incomplete',
+  PAUSED: 'paused',
+  UNPAID: 'unpaid'
 }
 
 const PROVIDER_TO_JSON: Record<BillingProvider, string> = {
   NONE: 'none',
-  STRIPE: 'stripe'
+  STRIPE: 'stripe',
+  LEMON_SQUEEZY: 'lemon_squeezy'
 }
 
 const CHANNEL_TO_JSON: Record<NotificationChannel, string> = {
@@ -125,6 +128,7 @@ export type SubscriptionDto = {
   status: string
   provider: string
   currentPeriodEnd: number | null
+  endsAt: number | null
   trialEndsAt: number | null
   cancelAtPeriodEnd: boolean
   serverUpdatedAt: number
@@ -200,6 +204,7 @@ export function subscriptionToDto(row: Subscription): SubscriptionDto {
     status: STATUS_TO_JSON[row.status],
     provider: PROVIDER_TO_JSON[row.provider],
     currentPeriodEnd: row.currentPeriodEnd?.getTime() ?? null,
+    endsAt: row.endsAt?.getTime() ?? null,
     trialEndsAt: row.trialEndsAt?.getTime() ?? null,
     cancelAtPeriodEnd: row.cancelAtPeriodEnd,
     serverUpdatedAt: row.serverUpdatedAt.getTime()
