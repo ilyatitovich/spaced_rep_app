@@ -163,6 +163,9 @@ importers:
 
   apps/browser-extension:
     dependencies:
+      '@simplewebauthn/browser':
+        specifier: ^13.3.0
+        version: 13.3.0
       '@spaced-rep/sync-client':
         specifier: workspace:*
         version: link:../../packages/sync-client
@@ -172,6 +175,9 @@ importers:
       dompurify:
         specifier: ^3.4.15
         version: 3.4.15
+      input-otp:
+        specifier: ^1.4.2
+        version: 1.4.2
       lucide-react:
         specifier: ^0.553.0
         version: 0.553.0(react@18.3.1)

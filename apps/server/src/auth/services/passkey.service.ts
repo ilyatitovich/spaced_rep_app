@@ -185,6 +185,7 @@ export async function verifyRegister(input: {
   name?: string
   ipAddress?: string | null
   userAgent?: string | null
+  origin?: string | null
 }): Promise<PasskeySummary> {
   await enforceRateLimit({
     key: `webauthn:reg:verify:user:${input.userId}`,
@@ -205,7 +206,8 @@ export async function verifyRegister(input: {
   try {
     verification = await verifyRegistration({
       response: input.credential,
-      expectedChallenge: challengeRow.challenge
+      expectedChallenge: challengeRow.challenge,
+      origin: input.origin
     })
   } catch {
     await prisma.securityEvent.create({
@@ -357,6 +359,7 @@ export async function verifyLogin(input: {
   credential: AuthenticationResponseJSON
   ipAddress?: string | null
   userAgent?: string | null
+  origin?: string | null
 }): Promise<TokenPairResult> {
   const ip = input.ipAddress ?? 'unknown'
   await enforceRateLimit({
@@ -404,6 +407,7 @@ export async function verifyLogin(input: {
     verification = await verifyAuthentication({
       response: input.credential,
       expectedChallenge: challengeRow.challenge,
+      origin: input.origin,
       credential: {
         id: passkey.credentialId,
         publicKey: new Uint8Array(passkey.publicKey),

@@ -8,8 +8,10 @@ type TurnstileResponse = {
 
 export async function verifyTurnstileToken(
   token: string,
-  remoteIp?: string | null
+  remoteIp?: string | null,
+  origin?: string | null
 ): Promise<void> {
+  if (origin?.startsWith('chrome-extension://')) return
   const body = new URLSearchParams()
   body.set('secret', env.TURNSTILE_SECRET_KEY)
   body.set('response', token)

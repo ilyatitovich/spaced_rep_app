@@ -1,13 +1,7 @@
 import { createBrowserRouter } from 'react-router'
 import { useState } from 'react'
 
-import {
-  NotFoundPage,
-  HomePage,
-  Root,
-  OAuthGoogleCallbackPage,
-  ExtensionAuthorizePage
-} from '@/pages'
+import { NotFoundPage, HomePage, Root, OAuthGoogleCallbackPage } from '@/pages'
 import { StartScreen } from './components'
 import { useAuth } from './contexts'
 import { isOnboardingComplete } from './lib'
@@ -36,10 +30,6 @@ export default createBrowserRouter([
       {
         path: 'oauth/google/callback',
         element: <OAuthGoogleCallbackPage />
-      },
-      {
-        path: 'extension/authorize',
-        element: <ExtensionAuthorizePage />
       }
     ]
   }

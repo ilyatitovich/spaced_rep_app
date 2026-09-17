@@ -2,7 +2,7 @@ import { ArrowLeft } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import TurnstileWidget from './turnstile-widget'
-import { getAuthErrorMessage } from '@/lib'
+import { getAuthErrorMessage } from '@/lib/auth-errors'
 import { OTPInput, REGEXP_ONLY_DIGITS, type SlotProps } from 'input-otp'
 
 const OTP_LENGTH = 6

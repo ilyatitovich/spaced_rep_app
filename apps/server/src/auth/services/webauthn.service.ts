@@ -23,6 +23,43 @@ export function getWebAuthnConfig() {
   }
 }
 
+export function originsForAssertion(
+  configured: string[],
+  origin: string | null
+): string[] {
+  if (
+    !origin?.startsWith('chrome-extension://') ||
+    configured.includes(origin)
+  ) {
+    return configured
+  }
+  return [...configured, origin]
+}
+
+function originFromClientData(clientDataJSON: string): string | null {
+  for (const encoding of ['base64url', 'base64'] as const) {
+    try {
+      const json = Buffer.from(clientDataJSON, encoding).toString('utf8')
+      const origin = (JSON.parse(json) as { origin?: unknown }).origin
+      if (typeof origin === 'string') return origin
+    } catch {
+      continue
+    }
+  }
+  return null
+}
+
+function expectedOrigins(
+  clientDataJSON: string,
+  requestOrigin?: string | null
+): string[] {
+  const configured = getWebAuthnConfig().origins
+  return originsForAssertion(
+    originsForAssertion(configured, originFromClientData(clientDataJSON)),
+    requestOrigin ?? null
+  )
+}
+
 /** Encode user UUID string as UTF-8 bytes for WebAuthn user.id (≤36 bytes). */
 export function userIdToWebAuthnBytes(userId: string): Uint8Array<ArrayBuffer> {
   return new TextEncoder().encode(userId)
@@ -74,13 +111,17 @@ export async function createAuthenticationOptions(input: {
 export async function verifyRegistration(input: {
   response: RegistrationResponseJSON
   expectedChallenge: string
+  origin?: string | null
 }): Promise<VerifiedRegistrationResponse> {
-  const { origins, rpID } = getWebAuthnConfig()
+  const { rpID } = getWebAuthnConfig()
 
   return verifyRegistrationResponse({
     response: input.response,
     expectedChallenge: input.expectedChallenge,
-    expectedOrigin: origins,
+    expectedOrigin: expectedOrigins(
+      input.response.response.clientDataJSON,
+      input.origin
+    ),
     expectedRPID: rpID,
     requireUserVerification: true
   })
@@ -90,13 +131,17 @@ export async function verifyAuthentication(input: {
   response: AuthenticationResponseJSON
   expectedChallenge: string
   credential: WebAuthnCredential
+  origin?: string | null
 }): Promise<VerifiedAuthenticationResponse> {
-  const { origins, rpID } = getWebAuthnConfig()
+  const { rpID } = getWebAuthnConfig()
 
   return verifyAuthenticationResponse({
     response: input.response,
     expectedChallenge: input.expectedChallenge,
-    expectedOrigin: origins,
+    expectedOrigin: expectedOrigins(
+      input.response.response.clientDataJSON,
+      input.origin
+    ),
     expectedRPID: rpID,
     credential: input.credential,
     requireUserVerification: true

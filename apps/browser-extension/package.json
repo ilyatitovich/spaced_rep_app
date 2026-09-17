@@ -14,9 +14,11 @@
     "postinstall": "wxt prepare"
   },
   "dependencies": {
+    "@simplewebauthn/browser": "^13.3.0",
     "@spaced-rep/sync-client": "workspace:*",
     "@spaced-rep/sync-protocol": "workspace:*",
     "dompurify": "^3.4.15",
+    "input-otp": "^1.4.2",
     "lucide-react": "^0.553.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

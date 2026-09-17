@@ -3,7 +3,9 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "paths": {
-      "@/*": ["../client/src/*"]
+      "@/*": ["../client/src/*"],
+      "lucide-react": ["./node_modules/lucide-react/dist/lucide-react.d.ts"],
+      "react-hot-toast": ["./node_modules/react-hot-toast/dist/index.d.ts"]
     },
     "types": ["chrome", "vite/client", "vitest/globals"]
   },
@@ -12,5 +14,6 @@
     "**/*.ts",
     "**/*.tsx",
     "../client/src/vite-env.d.ts"
-  ]
+  ],
+  "exclude": ["wxt.config.ts", "vitest.config.ts"]
 }

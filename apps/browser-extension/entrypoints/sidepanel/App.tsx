@@ -13,7 +13,7 @@ import Card from '@/components/card'
 import CardToolbar from '@/components/ui/card-toolbar'
 import { appendSideBlocks, isSideEmpty } from '@/lib/check-content'
 import type { CardData, CardHandle, SideBlock, SideName } from '@/types'
-import { signIn, signOut, getSession } from '../../src/lib/auth'
+import { signOut, getSession } from '../../src/lib/auth'
 import { normalizeCapture } from '../../src/lib/capture'
 import {
   createBackup,
@@ -29,6 +29,8 @@ import {
 } from '../../src/lib/storage'
 import { bootstrapTopics, flushOutbox, hasPro } from '../../src/lib/sync'
 import type { ExtensionSession, RuntimeMessage, Topic } from '../../src/types'
+import AuthPanel from './auth-panel'
+import ProUpgradeModal from './pro-upgrade-modal'
 
 export default function App() {
   const cardRef = useRef<CardHandle>(null)
@@ -42,6 +44,8 @@ export default function App() {
   const [savedCount, setSavedCount] = useState(0)
   const [localTopicId, setLocalTopicId] = useState('')
   const [busy, setBusy] = useState(false)
+  const [showAuth, setShowAuth] = useState(false)
+  const [showProUpgrade, setShowProUpgrade] = useState(false)
   const side: SideName = isFlipped ? 'back' : 'front'
   const isDraft = isSideEmpty(card.front) || isSideEmpty(card.back)
   cardStateRef.current = card
@@ -135,26 +139,25 @@ export default function App() {
     }
   }
 
-  const authenticate = async () => {
-    setBusy(true)
-    try {
-      const nextSession = await signIn()
-      setSession(nextSession)
-      const pro = await hasPro()
-      setIsPro(pro)
-      const loaded = pro ? await bootstrapTopics() : await getTopics()
-      const local = await ensureLocalTopic()
-      setLocalTopicId(local.id)
-      if (!pro || loaded.length === 0) loaded.push(local)
-      setTopics(loaded)
-      setTopicId(loaded[0]!.id)
-      toast.success(pro ? 'Sync enabled' : 'Pro is required for sync')
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Sign-in failed')
-    } finally {
-      setBusy(false)
-    }
-  }
+  const applySession = useCallback(async (nextSession: ExtensionSession) => {
+    setSession(nextSession)
+    const pro = await hasPro()
+    setIsPro(pro)
+    const loaded = pro ? await bootstrapTopics() : await getTopics()
+    const local = await ensureLocalTopic()
+    setLocalTopicId(local.id)
+    if (!pro || loaded.length === 0) loaded.push(local)
+    setTopics(loaded)
+    setTopicId(loaded[0]!.id)
+    if (pro) toast.success('Sync enabled')
+    else setShowProUpgrade(true)
+  }, [])
+
+  const closeAuth = useCallback(async () => {
+    setShowAuth(false)
+    const next = await getSession()
+    if (next) await applySession(next)
+  }, [applySession])
 
   const logout = async () => {
     await signOut()
@@ -169,6 +172,15 @@ export default function App() {
     anchor.download = `spaced-rep-browser-cards-${new Date().toISOString()}.json`
     anchor.click()
     URL.revokeObjectURL(url)
+  }
+
+  if (showAuth) {
+    return (
+      <main className="h-full">
+        <Toaster position="top-center" />
+        <AuthPanel onClose={() => void closeAuth()} />
+      </main>
+    )
   }
 
   return (
@@ -264,7 +276,7 @@ export default function App() {
           <button
             className="flex-1 bg-primary text-primary-foreground rounded-lg py-2 text-sm flex justify-center gap-2"
             disabled={busy}
-            onClick={authenticate}
+            onClick={() => setShowAuth(true)}
           >
             <LogIn size={17} /> Sign in to sync
           </button>
@@ -286,6 +298,10 @@ export default function App() {
           </button>
         )}
       </footer>
+      <ProUpgradeModal
+        isOpen={showProUpgrade}
+        onClose={() => setShowProUpgrade(false)}
+      />
     </main>
   )
 }

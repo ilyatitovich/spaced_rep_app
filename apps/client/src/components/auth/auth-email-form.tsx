@@ -2,7 +2,8 @@ import type { ChangeEvent, FormEvent } from 'react'
 import { useState } from 'react'
 
 import TurnstileWidget from './turnstile-widget'
-import { getAuthErrorMessage, validateEmail } from '@/lib'
+import { getAuthErrorMessage } from '@/lib/auth-errors'
+import { validateEmail } from '@/lib/validate-email'
 
 type AuthEmailFormProps = {
   onSubmit: (email: string, turnstileToken: string) => Promise<void>

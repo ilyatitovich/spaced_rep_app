@@ -45,7 +45,8 @@ export async function passkeyRegisterVerifyHandler(
       credential: body.credential,
       name: body.name,
       ipAddress: req.ip,
-      userAgent: req.get('user-agent')
+      userAgent: req.get('user-agent'),
+      origin: req.get('origin')
     })
     sendData(res, passkey)
   } catch (err) {
@@ -80,7 +81,8 @@ export async function passkeyLoginVerifyHandler(
     const tokens = await verifyLogin({
       credential: body.credential,
       ipAddress: req.ip,
-      userAgent: req.get('user-agent')
+      userAgent: req.get('user-agent'),
+      origin: req.get('origin')
     })
     sendData(res, tokens)
   } catch (err) {

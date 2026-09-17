@@ -14,7 +14,7 @@ export async function emailRequestHandler(
 ) {
   try {
     const body = parseBody(emailRequestSchema, req.body)
-    await verifyTurnstileToken(body.turnstileToken, req.ip)
+    await verifyTurnstileToken(body.turnstileToken, req.ip, req.get('origin'))
     await requestEmailOtp({
       email: body.email,
       ipAddress: req.ip,
