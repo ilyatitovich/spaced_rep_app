@@ -31,6 +31,13 @@ export const flipRules: ShortcutRule[] = [
   { id: 'flipCard', key: ' ', when: 'notActivate' }
 ]
 
+export const gradeRules: ShortcutRule[] = [
+  { id: 'wrong', key: ',', when: 'notTyping' },
+  { id: 'wrong', key: '<', when: 'notTyping' },
+  { id: 'correct', key: '.', when: 'notTyping' },
+  { id: 'correct', key: '>', when: 'notTyping' }
+]
+
 export function isMod(event: KeyboardEvent): boolean {
   return event.metaKey || event.ctrlKey
 }

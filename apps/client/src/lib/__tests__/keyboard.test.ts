@@ -5,6 +5,7 @@ import {
   DISMISS_ATTR,
   dismissTop,
   flipRules,
+  gradeRules,
   getTabbables,
   globalRules,
   matchShortcut,
@@ -110,6 +111,20 @@ describe('matchShortcut', () => {
     ).toBeNull()
 
     screen.remove()
+  })
+
+  it('matches comma and < to wrong, period and > to correct', () => {
+    expect(matchShortcut(keydown(','), gradeRules)?.id).toBe('wrong')
+    expect(matchShortcut(keydown('<'), gradeRules)?.id).toBe('wrong')
+    expect(matchShortcut(keydown('.'), gradeRules)?.id).toBe('correct')
+    expect(matchShortcut(keydown('>'), gradeRules)?.id).toBe('correct')
+  })
+
+  it('ignores grade keys while typing', () => {
+    const input = document.createElement('input')
+    expect(
+      matchShortcut(keydown(',', { target: input }), gradeRules)
+    ).toBeNull()
   })
 
   it('matches Space when a button on a buried screen is focused', () => {

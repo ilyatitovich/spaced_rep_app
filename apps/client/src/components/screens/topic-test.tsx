@@ -11,7 +11,13 @@ import {
   Header
 } from '@/components'
 import { useShortcuts } from '@/hooks'
-import { flipRules, getToday, getTopScreen, isAnotherDay } from '@/lib'
+import {
+  flipRules,
+  getToday,
+  getTopScreen,
+  gradeRules,
+  isAnotherDay
+} from '@/lib'
 import { Card as CardModel, Topic } from '@/models'
 import { getCardsByTopicAndLevel, updateCard, updateTopic } from '@/services'
 
@@ -38,10 +44,24 @@ export default function TestScreen({ isOpen, topic }: TestScreenProps) {
     setIsFlipped(prev => !prev)
   }
 
+  const handleGrade = (isCorrect: boolean) => {
+    if (!getTopScreen()?.contains(hostRef.current)) return
+    void handleAnswer(isCorrect)
+  }
+
   useShortcuts(
     flipRules,
     { flipCard: handleFlipCard },
     { enabled: isOpen && !isDone }
+  )
+
+  useShortcuts(
+    gradeRules,
+    {
+      wrong: () => handleGrade(false),
+      correct: () => handleGrade(true)
+    },
+    { enabled: isOpen && !isDone && isFlipped }
   )
 
   useEffect(() => {

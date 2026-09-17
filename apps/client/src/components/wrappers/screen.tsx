@@ -111,7 +111,7 @@ export default function Screen({
     <div
       ref={rootRef}
       data-screen=""
-      className={`${isOpen ? onscreenClass : offscreenClass} ${animationClass} fixed inset-0 max-w-screen-sm mx-auto bg-background ${className}`.trim()}
+      className={`${isOpen ? onscreenClass : offscreenClass} ${animationClass} fixed inset-0 max-w-screen-sm mx-auto bg-background overflow-x-hidden ${className}`.trim()}
       onTransitionEnd={handleTransitionEnd}
     >
       <ScreenLayer isOpen={isOpen && !isVertical}>
