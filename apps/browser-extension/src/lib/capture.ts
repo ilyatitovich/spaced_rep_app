@@ -70,12 +70,5 @@ export async function normalizeCapture(
   if (raw.audioUrl) {
     blocks.push({ type: 'audio', content: await fetchMedia(raw.audioUrl) })
   }
-  if (blocks.length) {
-    const source = DOMPurify.sanitize(
-      `<p>Source: ${raw.title || raw.url} — ${raw.url}</p>`,
-      { ALLOWED_TAGS: ['p'], ALLOWED_ATTR: [] }
-    )
-    blocks.push({ type: 'text', html: source })
-  }
   return { blocks, source: { title: raw.title, url: raw.url } }
 }

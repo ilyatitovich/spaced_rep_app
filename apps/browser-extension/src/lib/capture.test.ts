@@ -1,6 +1,6 @@
 import { normalizeCapture } from './capture'
 
-it('sanitizes selected markup and appends source attribution', async () => {
+it('sanitizes selected markup without source attribution', async () => {
   const result = await normalizeCapture({
     html: '<p>Hello <strong>world</strong><script>alert(1)</script></p>',
     text: 'Hello world',
@@ -9,12 +9,12 @@ it('sanitizes selected markup and appends source attribution', async () => {
   })
 
   expect(result.blocks).toEqual([
-    { type: 'text', html: '<p>Hello <strong>world</strong></p>' },
-    {
-      type: 'text',
-      html: '<p>Source: Reference — https://example.com/article</p>'
-    }
+    { type: 'text', html: '<p>Hello <strong>world</strong></p>' }
   ])
+  expect(result.source).toEqual({
+    title: 'Reference',
+    url: 'https://example.com/article'
+  })
 })
 
 it('detects code selections using the shared client language logic', async () => {
