@@ -172,7 +172,8 @@ export function createCustomSyncAdapter(): SyncPort {
         },
         onTokenExpired: handlers.onTokenExpired,
         onPlanRequired: handlers.onPlanRequired,
-        onDeviceRevoked: handlers.onDeviceRevoked
+        onDeviceRevoked: handlers.onDeviceRevoked,
+        onProtocolMismatch: handlers.onProtocolMismatch
       })
 
       return {

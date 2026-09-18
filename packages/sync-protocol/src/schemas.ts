@@ -1,6 +1,15 @@
 import { z } from 'zod'
 
-export const PROTOCOL_VERSION = 2
+export const PROTOCOL_VERSION = 3
+
+/** Owned media on the sync wire and in Postgres (not local card storage). */
+export const WireMediaRefSchema = z.object({
+  hash: z
+    .string()
+    .regex(/^[0-9a-f]{64}$/, 'hash must be lowercase SHA-256 hex'),
+  type: z.string().min(1),
+  byteLength: z.number().int().positive()
+})
 
 export const SyncTableSchema = z.enum(['topics', 'cards'])
 export const SyncOperationSchema = z.enum(['upsert', 'delete'])
@@ -173,6 +182,7 @@ export const SyncEnvelopeSchema = z.discriminatedUnion('kind', [
   })
 ])
 
+export type WireMediaRef = z.infer<typeof WireMediaRefSchema>
 export type SyncTable = z.infer<typeof SyncTableSchema>
 export type SyncOperation = z.infer<typeof SyncOperationSchema>
 export type OpAckStatus = z.infer<typeof OpAckStatusSchema>

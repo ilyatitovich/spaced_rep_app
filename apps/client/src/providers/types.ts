@@ -40,6 +40,7 @@ export type SyncRealtimeHandlers = {
   onTokenExpired?: () => void
   onPlanRequired?: () => void
   onDeviceRevoked?: () => void
+  onProtocolMismatch?: () => void
 }
 
 export type SyncRealtimeHandle = {

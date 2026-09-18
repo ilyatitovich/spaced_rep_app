@@ -137,6 +137,50 @@ describe('sync websocket entitlement', () => {
     wss.close()
   })
 
+  it('rejects hello with PROTOCOL_MISMATCH and closes', async () => {
+    const server = createServer()
+    servers.push(server)
+    const wss = createSyncWss(server)
+    server.listen(0)
+    await once(server, 'listening')
+    const address = server.address()
+    if (!address || typeof address === 'string') throw new Error('No address')
+
+    const ws = new WebSocket(`ws://127.0.0.1:${address.port}/sync/ws`, {
+      headers: { Authorization: 'Bearer token' }
+    })
+    await once(ws, 'open')
+    await vi.waitFor(() => expect(assertPlan).toHaveBeenCalledOnce())
+
+    ws.send(
+      encodeEnvelope({
+        version: PROTOCOL_VERSION,
+        messageId: createEnvelopeId(),
+        deviceId: '11111111-1111-4111-8111-111111111111',
+        sentAt: Date.now(),
+        kind: 'hello',
+        hello: {
+          lastPulledAt: new Date(0).toISOString(),
+          pendingOpCount: 0,
+          protocolVersion: 2
+        }
+      })
+    )
+
+    const [errorData] = await once(ws, 'message')
+    const response = decodeEnvelope(errorData.toString())
+    expect(response.kind).toBe('error')
+    if (response.kind === 'error') {
+      expect(response.error.code).toBe('PROTOCOL_MISMATCH')
+      expect(response.error.retryable).toBe(false)
+    }
+    const [code] = await once(ws, 'close')
+    expect(code).toBe(4002)
+    expect(reportDevice).not.toHaveBeenCalled()
+
+    wss.close()
+  })
+
   it('closes a live connection when its device is revoked', async () => {
     const server = createServer()
     servers.push(server)

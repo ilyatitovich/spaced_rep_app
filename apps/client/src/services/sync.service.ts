@@ -73,6 +73,7 @@ export type SyncStatus =
   | 'offline'
   | 'paused'
   | 'revoked'
+  | 'update_required'
 
 export type SyncConnection = 'idle' | 'ws' | 'http' | 'offline'
 
@@ -148,8 +149,23 @@ function markDeviceRevoked(): void {
   })
 }
 
+/** Hard protocol cutover — keep local data/outbox; stop sync until the app is updated. */
+function markUpdateRequired(): void {
+  syncEntitled = false
+  realtime?.disconnect()
+  setState({
+    status: 'update_required',
+    connection: 'idle',
+    lastError: 'Update the app to continue syncing'
+  })
+}
+
 function isDeviceRevokedError(error: unknown): boolean {
   return error instanceof ApiError && error.code === 'DEVICE_REVOKED'
+}
+
+function isProtocolMismatchError(error: unknown): boolean {
+  return error instanceof ApiError && error.code === 'PROTOCOL_MISMATCH'
 }
 
 function isPaidAccessError(error: unknown): boolean {
@@ -162,6 +178,10 @@ function isPaidAccessError(error: unknown): boolean {
 function handleSyncAccessError(error: unknown): boolean {
   if (isDeviceRevokedError(error)) {
     markDeviceRevoked()
+    return true
+  }
+  if (isProtocolMismatchError(error)) {
+    markUpdateRequired()
     return true
   }
   if (isPaidAccessError(error)) {
@@ -799,6 +819,9 @@ function wireRealtimeListeners(): void {
     },
     onDeviceRevoked: () => {
       markDeviceRevoked()
+    },
+    onProtocolMismatch: () => {
+      markUpdateRequired()
     }
   })
 }
@@ -1035,7 +1058,13 @@ export async function reconnectRevokedDevice(): Promise<void> {
 }
 
 export function syncNow(): void {
-  if (!currentUserId || !syncEntitled || state.status === 'revoked') return
+  if (
+    !currentUserId ||
+    !syncEntitled ||
+    state.status === 'revoked' ||
+    state.status === 'update_required'
+  )
+    return
   void syncAll(currentUserId)
 }
 
@@ -1044,6 +1073,7 @@ export function triggerSync(): void {
     !currentUserId ||
     !syncEntitled ||
     state.status === 'revoked' ||
+    state.status === 'update_required' ||
     !isBackendConfigured()
   )
     return

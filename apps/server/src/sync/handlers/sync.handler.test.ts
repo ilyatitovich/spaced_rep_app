@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { PROTOCOL_VERSION } from '@spaced-rep/sync-protocol'
 
 const assertPlan = vi.fn()
 vi.mock('../../settings/services/plan.service.js', () => ({ assertPlan }))
@@ -8,10 +9,11 @@ vi.mock('../../shared/lib/redis.js', () => ({
 
 const applyPushBatch = vi.fn()
 const pullChanges = vi.fn()
+const bootstrap = vi.fn()
 const reportDevice = vi.fn()
 vi.mock('../sync.service.js', () => ({
   applyPushBatch,
-  bootstrap: vi.fn(),
+  bootstrap,
   finishSyncCycle: vi.fn(),
   listSyncDevices: vi.fn(),
   pullChanges,
@@ -22,7 +24,9 @@ vi.mock('../ws.handler.js', () => ({
   disconnectSyncDevice: vi.fn()
 }))
 
-const { pullHandler, pushHandler } = await import('./sync.handler.js')
+const { bootstrapHandler, pullHandler, pushHandler } = await import(
+  './sync.handler.js'
+)
 
 describe('sync HTTP entitlement', () => {
   it.each([
@@ -59,7 +63,7 @@ describe('sync HTTP entitlement', () => {
       {
         auth: { userId: 'user-1' },
         body: {
-          version: 1,
+          version: PROTOCOL_VERSION,
           messageId: 'message-1',
           deviceId: '11111111-1111-4111-8111-111111111111',
           sentAt: Date.now(),
@@ -80,5 +84,70 @@ describe('sync HTTP entitlement', () => {
     expect(reportDevice.mock.invocationCallOrder[0]).toBeLessThan(
       applyPushBatch.mock.invocationCallOrder[0]
     )
+  })
+})
+
+describe('sync HTTP protocol version', () => {
+  it.each([
+    [
+      'push',
+      pushHandler,
+      {
+        version: 2,
+        messageId: 'message-1',
+        deviceId: '11111111-1111-4111-8111-111111111111',
+        sentAt: Date.now(),
+        kind: 'pushBatch' as const,
+        pushBatch: { mutations: [] }
+      }
+    ],
+    [
+      'pull',
+      pullHandler,
+      {
+        version: 2,
+        messageId: 'message-1',
+        deviceId: '11111111-1111-4111-8111-111111111111',
+        sentAt: Date.now(),
+        kind: 'pullRequest' as const,
+        pullRequest: { since: new Date(0).toISOString() }
+      }
+    ],
+    [
+      'bootstrap',
+      bootstrapHandler,
+      {
+        version: PROTOCOL_VERSION,
+        messageId: 'message-1',
+        deviceId: '11111111-1111-4111-8111-111111111111',
+        sentAt: Date.now(),
+        kind: 'hello' as const,
+        hello: {
+          lastPulledAt: new Date(0).toISOString(),
+          pendingOpCount: 0,
+          protocolVersion: 2
+        }
+      }
+    ]
+  ])('rejects %s with PROTOCOL_MISMATCH', async (_name, handler, body) => {
+    assertPlan.mockResolvedValueOnce(undefined)
+    const next = vi.fn()
+
+    await handler(
+      {
+        auth: { userId: 'user-1' },
+        body,
+        get: vi.fn()
+      } as never,
+      {} as never,
+      next
+    )
+
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({ code: 'PROTOCOL_MISMATCH' })
+    )
+    expect(applyPushBatch).not.toHaveBeenCalled()
+    expect(pullChanges).not.toHaveBeenCalled()
+    expect(bootstrap).not.toHaveBeenCalled()
   })
 })

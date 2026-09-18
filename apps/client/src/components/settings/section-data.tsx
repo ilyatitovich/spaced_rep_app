@@ -177,13 +177,15 @@ export default function SectionData({ isOpen }: SectionDataProps) {
     ? 'Offline'
     : status === 'revoked'
       ? 'Disconnected from sync'
-      : status === 'syncing'
-        ? 'Syncing…'
-        : status === 'error'
-          ? 'Sync error'
-          : status === 'paused'
-            ? 'Sync paused'
-            : 'Up to date'
+      : status === 'update_required'
+        ? 'Update required'
+        : status === 'syncing'
+          ? 'Syncing…'
+          : status === 'error'
+            ? 'Sync error'
+            : status === 'paused'
+              ? 'Sync paused'
+              : 'Up to date'
 
   const sortedDevices = [...devices].sort((a, b) => {
     if (a.id === deviceId) return -1
@@ -249,7 +251,9 @@ export default function SectionData({ isOpen }: SectionDataProps) {
             footer={
               status === 'revoked'
                 ? 'This browser was disconnected. Reconnect joins again as a new device and uses a sync slot.'
-                : undefined
+                : status === 'update_required'
+                  ? 'This app version can no longer sync. Update to continue; local cards stay on this device.'
+                  : undefined
             }
           >
             <div className="flex items-center justify-between px-4 py-3.5 gap-3">
@@ -272,7 +276,12 @@ export default function SectionData({ isOpen }: SectionDataProps) {
                   variant="link"
                   className="gap-1"
                   onClick={syncNow}
-                  disabled={!isOnline || status === 'syncing' || status === 'paused'}
+                  disabled={
+                    !isOnline ||
+                    status === 'syncing' ||
+                    status === 'paused' ||
+                    status === 'update_required'
+                  }
                 >
                   <RefreshCw
                     size={16}
@@ -314,7 +323,9 @@ export default function SectionData({ isOpen }: SectionDataProps) {
                     Watermark: {diagnostics.lastPulledAt}
                   </span>
                 )}
-                {lastError && status !== 'revoked' && (
+                {lastError &&
+                  status !== 'revoked' &&
+                  status !== 'update_required' && (
                   <span className="text-danger">
                     Something went wrong. Try again, or contact us if it keeps
                     happening.

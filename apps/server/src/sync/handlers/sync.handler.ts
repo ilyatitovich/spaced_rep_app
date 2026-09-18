@@ -39,6 +39,24 @@ function sendEnvelope(res: Response, envelope: SyncEnvelope): void {
   res.status(200).json(envelope)
 }
 
+function assertProtocolVersion(envelope: SyncEnvelope): void {
+  if (envelope.version !== PROTOCOL_VERSION) {
+    throw new BadRequestError(
+      `Unsupported protocol version ${envelope.version}`,
+      'PROTOCOL_MISMATCH'
+    )
+  }
+  if (
+    envelope.kind === 'hello' &&
+    envelope.hello.protocolVersion !== PROTOCOL_VERSION
+  ) {
+    throw new BadRequestError(
+      `Unsupported protocol version ${envelope.hello.protocolVersion}`,
+      'PROTOCOL_MISMATCH'
+    )
+  }
+}
+
 export async function pushHandler(
   req: Request,
   res: Response,
@@ -62,6 +80,7 @@ export async function pushHandler(
         'VALIDATION_ERROR'
       )
     }
+    assertProtocolVersion(envelope)
 
     await reportDevice({
       userId,
@@ -103,6 +122,7 @@ export async function pullHandler(
         'VALIDATION_ERROR'
       )
     }
+    assertProtocolVersion(envelope)
 
     const delta = await pullChanges({
       userId,
@@ -139,6 +159,7 @@ export async function bootstrapHandler(
     const { userId } = requireAuthUser(req)
     await assertPlan(userId, 'PRO')
     const envelope = parseBody(SyncEnvelopeSchema, req.body)
+    assertProtocolVersion(envelope)
 
     let lastPulledAt = new Date(0).toISOString()
     if (envelope.kind === 'hello') {

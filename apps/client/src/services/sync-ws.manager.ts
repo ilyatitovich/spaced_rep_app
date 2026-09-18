@@ -23,6 +23,7 @@ type WsListeners = {
   onTokenExpired?: () => void
   onPlanRequired?: () => void
   onDeviceRevoked?: () => void
+  onProtocolMismatch?: () => void
 }
 
 const HIGH_WATER_BYTES = 512 * 1024
@@ -279,6 +280,10 @@ export class SyncWsManager {
           this.intentionalClose = true
           this.listeners.onDeviceRevoked?.()
           this.ws?.close(4004, 'device_revoked')
+        } else if (envelope.error.code === 'PROTOCOL_MISMATCH') {
+          this.intentionalClose = true
+          this.listeners.onProtocolMismatch?.()
+          this.ws?.close(4002, 'protocol mismatch')
         } else if (
           envelope.error.code === 'PLAN_REQUIRED' ||
           envelope.error.code === 'DEVICE_LIMIT'
