@@ -10,6 +10,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import toast, { Toaster } from 'react-hot-toast'
 
 import Card from '@/components/card'
+import ProUpgradeModal from '@/components/modals/pro-upgrade-modal'
 import CardToolbar from '@/components/ui/card-toolbar'
 import { appendSideBlocks, isSideEmpty } from '@/lib/check-content'
 import type { CardData, CardHandle, SideBlock, SideName } from '@/types'
@@ -30,7 +31,10 @@ import {
 import { bootstrapTopics, flushOutbox, hasPro } from '../../src/lib/sync'
 import type { ExtensionSession, RuntimeMessage, Topic } from '../../src/types'
 import AuthPanel from './auth-panel'
-import ProUpgradeModal from './pro-upgrade-modal'
+
+const APP_URL = (
+  import.meta.env.WXT_PUBLIC_APP_URL ?? 'http://localhost:5173'
+).replace(/\/$/, '')
 
 export default function App() {
   const cardRef = useRef<CardHandle>(null)
@@ -301,6 +305,11 @@ export default function App() {
       <ProUpgradeModal
         isOpen={showProUpgrade}
         onClose={() => setShowProUpgrade(false)}
+        onUpgrade={() => {
+          void chrome.tabs.create({
+            url: `${APP_URL}/?settings=true&subscription=true`
+          })
+        }}
       />
     </main>
   )

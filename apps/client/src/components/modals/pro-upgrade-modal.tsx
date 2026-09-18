@@ -1,33 +1,26 @@
-import Modal from '@/components/modals/modal'
-
-const APP_URL = (
-  import.meta.env.WXT_PUBLIC_APP_URL ?? 'http://localhost:5173'
-).replace(/\/$/, '')
+import Modal from './modal'
 
 interface ProUpgradeModalProps {
   isOpen: boolean
   onClose: () => void
+  onUpgrade: () => void
 }
 
 export default function ProUpgradeModal({
   isOpen,
-  onClose
+  onClose,
+  onUpgrade
 }: ProUpgradeModalProps) {
   const handleUpgrade = () => {
-    void chrome.tabs.create({
-      url: `${APP_URL}/?settings=true&subscription=true`
-    })
+    onUpgrade()
     onClose()
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
-      <h2 className="text-xl font-semibold text-center mb-2">
-        Upgrade to Pro
-      </h2>
+    <Modal isOpen={isOpen} onClose={onClose} title="Upgrade to Pro">
       <p className="text-foreground-muted text-center mb-6">
-        Cloud sync requires Pro. Upgrade in the app, or skip to keep saving
-        cards locally.
+        Cloud sync requires Pro. Upgrade in the app, or skip to keep using the
+        app locally.
       </p>
       <div className="flex gap-3">
         <button

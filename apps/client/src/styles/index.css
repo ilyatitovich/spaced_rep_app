@@ -301,6 +301,11 @@ html[data-theme='light'] {
   }
 }
 
+* {
+  scrollbar-width: thin;
+  /* scrollbar-gutter: stable; */
+}
+
 /* Settings toggle — native checkbox styled as a switch */
 .settings-switch {
   appearance: none;

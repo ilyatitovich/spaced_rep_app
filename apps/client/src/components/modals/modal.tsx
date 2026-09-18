@@ -40,7 +40,7 @@ export default function Modal({
     <div
       ref={rootRef}
       data-screen=""
-      className={`fixed inset-0 z-50 ${isOpen ? '' : 'pointer-events-none'}`}
+      className={`max-w-screen-sm mx-auto fixed inset-0 z-50 ${isOpen ? '' : 'pointer-events-none'}`}
     >
       <button
         type="button"
