@@ -264,8 +264,71 @@ describe('backfillOneCard / runMediaBackfill', () => {
     ])
     expect(update).not.toHaveBeenCalled()
   })
-})
 
+  it('paginates by id cursor so a restarted run resumes without rewriting done cards', async () => {
+    const storage = mockStorage()
+    const update = vi.fn().mockResolvedValue({})
+    const pages = [
+      [
+        {
+          id: 'card-a',
+          userId: 'user-1',
+          data: {
+            front: { content: { buffer: b64([1]), type: 'image/png' } },
+            back: {}
+          }
+        }
+      ],
+      [
+        {
+          id: 'card-b',
+          userId: 'user-1',
+          data: {
+            front: {
+              blocks: [
+                {
+                  type: 'image',
+                  content: {
+                    hash: hashOf([9]),
+                    type: 'image/png',
+                    byteLength: 1
+                  }
+                }
+              ]
+            },
+            back: { blocks: [] }
+          }
+        }
+      ],
+      []
+    ]
+    let page = 0
+    const findMany = vi.fn(async (args: { where?: { id?: { gt: string } } }) => {
+      if (page === 0) expect(args.where?.id).toBeUndefined()
+      if (page === 1) expect(args.where?.id).toEqual({ gt: 'card-a' })
+      return pages[page++] ?? []
+    })
+    const prisma: BackfillPrisma = {
+      card: { findMany, update }
+    }
+
+    const stats = await runMediaBackfill({
+      prisma,
+      storage,
+      batchSize: 1
+    })
+
+    expect(findMany).toHaveBeenCalledTimes(3)
+    expect(stats).toMatchObject({
+      scanned: 2,
+      rewritten: 1,
+      skipped: 1,
+      uploaded: 1
+    })
+    expect(update).toHaveBeenCalledTimes(1)
+    expect(update.mock.calls[0]![0].where).toEqual({ id: 'card-a' })
+  })
+})
 describe('isBase64Media', () => {
   it('detects base64 buffer records only', () => {
     expect(isBase64Media({ buffer: 'YQ==', type: 'image/png' })).toBe(true)

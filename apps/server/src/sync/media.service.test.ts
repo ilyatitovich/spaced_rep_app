@@ -212,6 +212,32 @@ describe('planMediaDownloads', () => {
     expect(storage.objectKey('user-1', HASH_A)).toBe(`user-1/${HASH_A}`)
     expect(storage.presignGet).toHaveBeenCalledWith(`user-1/${HASH_A}`)
   })
+
+  it('never resolves another user object key', async () => {
+    const storage = mockStorage({
+      headObject: vi.fn(async (key: string) => {
+        if (key === `other-user/${HASH_A}`) {
+          return {
+            contentLength: 4,
+            contentType: 'image/png',
+            checksumSHA256: sha256HexToBase64(HASH_A)
+          }
+        }
+        return null
+      })
+    })
+    setMediaStorageForTests(storage)
+
+    const items = await planMediaDownloads({
+      userId: 'user-1',
+      hashes: [HASH_A]
+    })
+
+    expect(items).toEqual([])
+    expect(storage.headObject).toHaveBeenCalledWith(`user-1/${HASH_A}`)
+    expect(storage.headObject).not.toHaveBeenCalledWith(`other-user/${HASH_A}`)
+    expect(storage.presignGet).not.toHaveBeenCalled()
+  })
 })
 
 describe('checkReferencedMedia', () => {

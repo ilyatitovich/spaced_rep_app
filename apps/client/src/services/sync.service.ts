@@ -661,7 +661,8 @@ async function applyTopicConflict(
   }
 }
 
-async function applyPullDelta(delta: PullDelta): Promise<void> {
+/** Shared incoming pipeline for HTTP pull, bootstrap/reconcile, and WS onDelta. */
+export async function applyPullDelta(delta: PullDelta): Promise<void> {
   // Hydrate + verify all owned media before any local write or watermark bump.
   const hydratedCardData = await hydrateIncomingCardData(delta, httpSyncMediaApi)
 
@@ -742,7 +743,7 @@ async function advanceWatermarkFromPush(maxUpdatedAt: number): Promise<void> {
 }
 
 /** Returns max updatedAt among accepted mutations (for watermark when skipping pull). */
-async function pushChanges(deviceId: string): Promise<number> {
+export async function pushChanges(deviceId: string): Promise<number> {
   if (!syncBackend) return 0
 
   let rateLimitDelayMs = 2_000

@@ -100,4 +100,60 @@ describe('applyPushBatch media validation', () => {
     ])
     expect(prisma.card.upsert).not.toHaveBeenCalled()
   })
+
+  it('rejects card upserts with MEDIA_INTEGRITY when HeadObject metadata mismatches', async () => {
+    const storage = mockStorage()
+    storage.headObject = vi.fn().mockResolvedValue({
+      contentLength: 1,
+      contentType: 'image/png',
+      checksumSHA256: 'wrong'
+    })
+    setMediaStorageForTests(storage)
+
+    const ack = await applyPushBatch({
+      userId: 'user-1',
+      deviceId: 'device-1',
+      mutations: [
+        {
+          opId: 'op-2',
+          deviceId: 'device-1',
+          table: 'cards',
+          recordId: 'card-2',
+          operation: 'upsert',
+          updatedAt: Date.now(),
+          card: {
+            id: 'card-2',
+            topicId: 'topic-1',
+            level: 0,
+            dataJson: JSON.stringify({
+              front: {
+                blocks: [
+                  {
+                    type: 'image',
+                    content: {
+                      hash: HASH,
+                      type: 'image/png',
+                      byteLength: 8
+                    }
+                  }
+                ]
+              },
+              back: { blocks: [] }
+            }),
+            updatedAt: Date.now()
+          }
+        }
+      ]
+    })
+
+    expect(ack.acceptedOpIds).toEqual([])
+    expect(ack.rejected).toEqual([
+      expect.objectContaining({
+        opId: 'op-2',
+        code: 'MEDIA_INTEGRITY',
+        retryable: true
+      })
+    ])
+    expect(prisma.card.upsert).not.toHaveBeenCalled()
+  })
 })

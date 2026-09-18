@@ -306,4 +306,59 @@ describe('hydrateIncomingCardData', () => {
       )
     ).rejects.toThrow(/not found/i)
   })
+
+  it('rejects downloads whose byteLength does not match the plan', async () => {
+    const buffer = bytes([1, 2, 3, 4])
+    const hash = await sha256Hex(buffer)
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(new Response(buffer, { status: 200 }))
+    )
+
+    const api: SyncMediaApi = {
+      planUploads: vi.fn(),
+      planDownloads: vi.fn().mockResolvedValue([
+        {
+          hash,
+          url: 'https://r2.example/get',
+          type: 'image/png',
+          byteLength: 99
+        }
+      ])
+    }
+
+    await expect(
+      hydrateIncomingCardData(
+        {
+          watermark: '2020-01-01T00:00:00.000Z',
+          more: false,
+          records: [
+            {
+              card: {
+                id: 'card-1',
+                topicId: 'topic-1',
+                level: 0,
+                dataJson: JSON.stringify({
+                  front: {
+                    side: 'front',
+                    blocks: [
+                      {
+                        type: 'image',
+                        content: { hash, type: 'image/png', byteLength: 99 }
+                      }
+                    ]
+                  },
+                  back: { side: 'back', blocks: [] }
+                }),
+                reviewDate: null,
+                updatedAt: 1,
+                deletedAt: null
+              }
+            }
+          ]
+        },
+        api
+      )
+    ).rejects.toThrow(/size mismatch/i)
+  })
 })
