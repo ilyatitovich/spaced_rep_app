@@ -125,7 +125,10 @@ export async function reportDevice(input: {
           ? { lastPulledAt: new Date(input.lastPulledAt) }
           : {}),
         lastSeenAt: new Date(),
-        userAgent: input.userAgent ?? null
+        // Don't clobber a known UA when a caller omits it (e.g. bootstrap before the fix).
+        ...(input.userAgent
+          ? { userAgent: input.userAgent }
+          : {})
       }
     })
   })
@@ -519,13 +522,15 @@ export async function bootstrap(input: {
   userId: string
   deviceId: string
   lastPulledAt?: string
+  userAgent?: string | null
 }): Promise<PullDelta> {
   const since = input.lastPulledAt || EPOCH_ISO
   const delta = await pullChanges({ userId: input.userId, since })
   await reportDevice({
     userId: input.userId,
     deviceId: input.deviceId,
-    lastPulledAt: delta.watermark
+    lastPulledAt: delta.watermark,
+    userAgent: input.userAgent
   })
   await purgeSyncedTombstones(input.userId)
   return delta

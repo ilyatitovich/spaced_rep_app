@@ -75,6 +75,26 @@ describe('reportDevice', () => {
 
     expect(tx.syncDevice.count).not.toHaveBeenCalled()
     expect(tx.syncDevice.upsert).toHaveBeenCalledOnce()
+    expect(tx.syncDevice.upsert.mock.calls[0]?.[0].update).not.toHaveProperty(
+      'userAgent'
+    )
+  })
+
+  it('updates userAgent when provided on an existing device', async () => {
+    tx.syncDevice.findUnique.mockResolvedValue({
+      userId: 'user-1',
+      revokedAt: null
+    })
+
+    await reportDevice({
+      userId: 'user-1',
+      deviceId: 'device-1',
+      userAgent: 'Mozilla/5.0 Firefox/121.0'
+    })
+
+    expect(tx.syncDevice.upsert.mock.calls[0]?.[0].update).toMatchObject({
+      userAgent: 'Mozilla/5.0 Firefox/121.0'
+    })
   })
 
   it('removes aged-out devices before counting a new registration', async () => {

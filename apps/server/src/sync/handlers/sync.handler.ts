@@ -150,7 +150,8 @@ export async function bootstrapHandler(
     const delta = await bootstrap({
       userId,
       deviceId: envelope.deviceId,
-      lastPulledAt
+      lastPulledAt,
+      userAgent: req.get('user-agent')
     })
 
     sendEnvelope(res, {
