@@ -7,6 +7,7 @@ import {
   RefreshCw
 } from 'lucide-react'
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import toast from 'react-hot-toast'
 
 import { BackButton, FileModal, Header, Screen } from '@/components'
 import { useAuth, useSync } from '@/contexts'
@@ -17,7 +18,15 @@ import {
   getStorageUsage,
   type StorageUsage
 } from '@/lib'
+import {
+  ensureFreshSession,
+  fetchSyncDevices,
+  revokeSyncDevice,
+  type SyncDeviceSummary
+} from '@/lib/api'
+import { PRO_DEVICE_LIMIT } from '@/lib/billing-product'
 import { getSyncDiagnostics } from '@/services'
+import { SyncedDevice } from './synced-device'
 import {
   SettingsActionRow,
   SettingsGroup,
@@ -80,9 +89,18 @@ export default function SectionData({ isOpen }: SectionDataProps) {
   } | null>(null)
   const [storage, setStorage] = useState<StorageUsage | null>(null)
   const [isClearingCache, setIsClearingCache] = useState(false)
+  const [devices, setDevices] = useState<SyncDeviceSummary[]>([])
+  const [revokingId, setRevokingId] = useState<string | null>(null)
 
   const refreshStorage = useCallback(() => {
     void getStorageUsage().then(setStorage)
+  }, [])
+
+  const loadDevices = useCallback(async () => {
+    const session = await ensureFreshSession()
+    if (!session) return
+    const result = await fetchSyncDevices(session.accessToken)
+    setDevices(result.devices)
   }, [])
 
   useEffect(() => {
@@ -96,6 +114,39 @@ export default function SectionData({ isOpen }: SectionDataProps) {
       setDiagnostics({ lastPulledAt: d.lastPulledAt, wsState: d.wsState })
     )
   }, [isOpen, user, status, lastSyncedAt])
+
+  useEffect(() => {
+    if (isOpen && user) {
+      void loadDevices().catch(() => toast.error('Could not load devices'))
+    }
+    if (!isOpen) setDevices([])
+  }, [isOpen, user, loadDevices])
+
+  const handleDisconnect = async (targetId: string) => {
+    if (!deviceId) return
+    const ok = window.confirm(
+      'Disconnect this device from sync? It will lose its sync slot and cannot reconnect until site data is cleared in that browser.'
+    )
+    if (!ok) return
+
+    const session = await ensureFreshSession()
+    if (!session) return
+    setRevokingId(targetId)
+    try {
+      const result = await revokeSyncDevice(session.accessToken, {
+        deviceId: targetId,
+        currentDeviceId: deviceId
+      })
+      if (result.revoked) {
+        setDevices(prev => prev.filter(d => d.id !== targetId))
+        toast.success('Device disconnected')
+      }
+    } catch {
+      toast.error('Could not disconnect device')
+    } finally {
+      setRevokingId(null)
+    }
+  }
 
   const handleClearCache = async () => {
     if (!storage || storage.cacheCount === 0) return
@@ -119,6 +170,12 @@ export default function SectionData({ isOpen }: SectionDataProps) {
       : status === 'error'
         ? 'Sync error'
         : 'Up to date'
+
+  const sortedDevices = [...devices].sort((a, b) => {
+    if (a.id === deviceId) return -1
+    if (b.id === deviceId) return 1
+    return 0
+  })
 
   return (
     <Screen isOpen={isOpen}>
@@ -232,6 +289,33 @@ export default function SectionData({ isOpen }: SectionDataProps) {
                   </span>
                 )}
               </div>
+            )}
+          </SettingsGroup>
+        )}
+
+        {user && (
+          <SettingsGroup
+            label={
+              devices.length > 0
+                ? `Devices · ${devices.length} of ${PRO_DEVICE_LIMIT}`
+                : 'Devices'
+            }
+            footer={`Pro supports up to ${PRO_DEVICE_LIMIT} active devices. Inactive devices age out after 30 days.`}
+          >
+            {sortedDevices.length === 0 ? (
+              <p className="px-4 py-3.5 text-sm text-foreground-muted">
+                Devices appear after the first sync.
+              </p>
+            ) : (
+              sortedDevices.map(device => (
+                <SyncedDevice
+                  key={device.id}
+                  device={device}
+                  isCurrent={device.id === deviceId}
+                  onDisconnect={() => void handleDisconnect(device.id)}
+                  disabled={revokingId === device.id}
+                />
+              ))
             )}
           </SettingsGroup>
         )}
