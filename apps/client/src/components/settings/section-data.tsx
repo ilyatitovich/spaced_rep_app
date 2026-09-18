@@ -8,12 +8,7 @@ import {
 } from 'lucide-react'
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 
-import {
-  BackButton,
-  FileModal,
-  Header,
-  Screen
-} from '@/components'
+import { BackButton, FileModal, Header, Screen } from '@/components'
 import { useAuth, useSync } from '@/contexts'
 import {
   clearMediaCache,
@@ -210,7 +205,7 @@ export default function SectionData({ isOpen }: SectionDataProps) {
             </button>
 
             {advancedOpen && (
-              <div className="px-4 pb-3.5 text-xs text-foreground-subtle flex flex-col gap-1">
+              <div className="px-4 py-3 text-xs text-foreground-subtle flex flex-col gap-1">
                 <span>
                   Connection: {connection}
                   {diagnostics ? ` · WS ${diagnostics.wsState}` : ''}
