@@ -51,7 +51,7 @@ export function SyncedDevice({
           onClick={onDisconnect}
           disabled={disabled}
           title="Disconnect"
-          className="bg-red-100 p-2 rounded-full text-sm font-medium shrink-0 disabled:opacity-50"
+          className="bg-red-100 p-3 rounded-full text-sm font-medium shrink-0 disabled:opacity-50"
         >
           <Trash2 size={18} strokeWidth={2} className="shrink-0 text-danger" />
         </button>
