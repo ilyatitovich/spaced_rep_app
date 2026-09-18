@@ -86,6 +86,15 @@ const STATUS_MAP: Record<string, SubscriptionStatus> = {
   unpaid: 'UNPAID'
 }
 
+const MS_DAY = 24 * 60 * 60 * 1_000
+
+function isLocalBilling(): boolean {
+  return (
+    (env.NODE_ENV === 'development' || env.NODE_ENV === 'test') &&
+    !env.LEMONSQUEEZY_API_KEY
+  )
+}
+
 function billingVariant(interval: BillingInterval): string {
   const variant =
     interval === 'month'
@@ -117,6 +126,35 @@ export function verifyLemonSignature(body: Buffer, signature: string): boolean {
   )
 }
 
+async function grantLocalPro(userId: string, interval: BillingInterval) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true }
+  })
+  if (!user) throw new NotFoundError('User not found')
+
+  await ensureUserSettings(userId)
+  const now = new Date()
+  const periodMs = interval === 'month' ? 30 * MS_DAY : 365 * MS_DAY
+  await prisma.subscription.update({
+    where: { userId },
+    data: {
+      plan: 'PRO',
+      status: 'ACTIVE',
+      provider: 'NONE',
+      currentPeriodStart: now,
+      currentPeriodEnd: new Date(now.getTime() + periodMs),
+      lastVerifiedAt: now,
+      endsAt: null,
+      trialEndsAt: null,
+      cancelAtPeriodEnd: false,
+      canceledAt: null
+    }
+  })
+  logger.info({ userId, interval }, 'DEV: granted Pro without Lemon Squeezy')
+  return { url: env.BILLING_RETURN_URL }
+}
+
 export async function createCheckout(
   userId: string,
   interval: BillingInterval
@@ -126,6 +164,8 @@ export async function createCheckout(
     limit: 5,
     windowSeconds: 60
   })
+  if (isLocalBilling()) return grantLocalPro(userId, interval)
+
   const variantId = billingVariant(interval)
   const user = await prisma.user.findUnique({
     where: { id: userId },

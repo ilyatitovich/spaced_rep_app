@@ -379,6 +379,13 @@ export async function fetchSubscription(
   return getJson('/settings/subscription', accessToken)
 }
 
+export async function createBillingCheckout(
+  accessToken: string,
+  body: { interval: 'month' | 'year' }
+): Promise<{ url: string }> {
+  return postJson('/settings/billing/checkout', body, { accessToken })
+}
+
 export type SyncDeviceSummary = {
   id: string
   name: string | null

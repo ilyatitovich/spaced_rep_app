@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('../../shared/config/env.js', () => ({
   env: {
+    NODE_ENV: 'test',
     LEMONSQUEEZY_API_KEY: 'api-key',
     LEMONSQUEEZY_WEBHOOK_SECRET: 'webhook-secret',
     LEMONSQUEEZY_STORE_ID: '42',
@@ -54,6 +55,7 @@ const lemon = {
 }
 vi.mock('./lemon-squeezy.js', () => lemon)
 
+const { env } = await import('../../shared/config/env.js')
 const {
   createCheckout,
   getPortalUrl,
@@ -100,6 +102,8 @@ function signedPayload(payload: unknown) {
 
 describe('billing service', () => {
   beforeEach(() => {
+    env.NODE_ENV = 'test'
+    env.LEMONSQUEEZY_API_KEY = 'api-key'
     vi.clearAllMocks()
     lemon.createLemonCheckout.mockReset()
     lemon.retrieveLemonSubscription.mockReset()
@@ -139,6 +143,25 @@ describe('billing service', () => {
       createCheckout('11111111-1111-4111-8111-111111111111', 'year')
     ).resolves.toEqual({ url: 'https://checkout.test/existing' })
     expect(lemon.createLemonCheckout).not.toHaveBeenCalled()
+  })
+
+  it('grants Pro locally when Lemon is not configured', async () => {
+    env.LEMONSQUEEZY_API_KEY = ''
+    prisma.subscription.update.mockResolvedValue({})
+
+    await expect(
+      createCheckout('11111111-1111-4111-8111-111111111111', 'year')
+    ).resolves.toEqual({ url: 'https://app.test/settings/subscription' })
+    expect(lemon.createLemonCheckout).not.toHaveBeenCalled()
+    expect(prisma.subscription.update).toHaveBeenCalledWith({
+      where: { userId: '11111111-1111-4111-8111-111111111111' },
+      data: expect.objectContaining({
+        plan: 'PRO',
+        status: 'ACTIVE',
+        provider: 'NONE'
+      })
+    })
+
   })
 
   it('creates checkout server-side with authenticated identity', async () => {

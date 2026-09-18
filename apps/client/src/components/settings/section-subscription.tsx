@@ -4,6 +4,7 @@ import toast from 'react-hot-toast'
 import { BackButton, Header, Screen } from '@/components'
 import { useAuth } from '@/contexts'
 import {
+  createBillingCheckout,
   ensureFreshSession,
   fetchSyncDevices,
   revokeSyncDevice,
@@ -68,6 +69,7 @@ export default function SectionSubscription({
   )
   const [devices, setDevices] = useState<SyncDeviceSummary[]>([])
   const [currentDeviceId, setCurrentDeviceId] = useState<string | null>(null)
+  const [isUpgrading, setIsUpgrading] = useState(false)
 
   const loadDevices = useCallback(async () => {
     const session = await ensureFreshSession()
@@ -87,6 +89,29 @@ export default function SectionSubscription({
     }
     if (!isOpen) setDevices([])
   }, [isOpen, user, refreshSubscription, loadDevices])
+
+  const handleUpgrade = async () => {
+    const session = await ensureFreshSession()
+    if (!session) return
+    setIsUpgrading(true)
+    try {
+      const { url } = await createBillingCheckout(session.accessToken, {
+        interval: billingInterval
+      })
+      if (
+        url.startsWith('http') &&
+        !url.startsWith(window.location.origin)
+      ) {
+        window.location.assign(url)
+        return
+      }
+      await refreshSubscription()
+    } catch {
+      toast.error('Could not start checkout')
+    } finally {
+      setIsUpgrading(false)
+    }
+  }
 
   const handleRevokeDevice = async (deviceId: string) => {
     if (!currentDeviceId) return
@@ -184,8 +209,8 @@ export default function SectionSubscription({
                 />
                 <SettingsActionRow
                   label={`Upgrade — ${formatProPrice(billingInterval)}`}
-                  onClick={() => {}}
-                  disabled
+                  onClick={() => void handleUpgrade()}
+                  disabled={isUpgrading}
                 />
               </SettingsGroup>
             )}
