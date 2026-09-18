@@ -45,3 +45,22 @@ export class BadGatewayError extends AppError {
     super(502, message, code)
   }
 }
+
+export type MediaErrorCode =
+  | 'MEDIA_NOT_FOUND'
+  | 'MEDIA_INTEGRITY'
+  | 'MEDIA_TOO_LARGE'
+  | 'MEDIA_INVALID'
+
+export class MediaRefError extends Error {
+  readonly code: MediaErrorCode
+  readonly retryable: boolean
+
+  constructor(code: MediaErrorCode, message: string, retryable: boolean) {
+    super(message)
+    this.name = 'MediaRefError'
+    this.code = code
+    this.retryable = retryable
+    Object.setPrototypeOf(this, MediaRefError.prototype)
+  }
+}

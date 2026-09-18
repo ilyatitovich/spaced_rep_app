@@ -5,6 +5,7 @@ import {
   sha256Hex,
   toWireCardData
 } from './wire-media.js'
+import { SHA256_HEX } from './schemas.js'
 
 function bytes(values: number[]): ArrayBuffer {
   const buffer = new ArrayBuffer(values.length)
@@ -22,7 +23,7 @@ function bufferEquals(a: ArrayBuffer, b: ArrayBuffer): boolean {
 describe('wire media transform', () => {
   it('hashes buffers to stable lowercase hex', async () => {
     const hash = await sha256Hex(bytes([1, 2, 3]))
-    expect(hash).toMatch(/^[0-9a-f]{64}$/)
+    expect(hash).toMatch(SHA256_HEX)
     expect(await sha256Hex(bytes([1, 2, 3]))).toBe(hash)
   })
 

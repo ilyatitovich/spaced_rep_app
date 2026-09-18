@@ -2,11 +2,14 @@ import { z } from 'zod'
 
 export const PROTOCOL_VERSION = 3
 
+/** Lowercase hex SHA-256 digest. */
+export const SHA256_HEX = /^[0-9a-f]{64}$/
+
 /** Owned media on the sync wire and in Postgres (not local card storage). */
 export const WireMediaRefSchema = z.object({
   hash: z
     .string()
-    .regex(/^[0-9a-f]{64}$/, 'hash must be lowercase SHA-256 hex'),
+    .regex(SHA256_HEX, 'hash must be lowercase SHA-256 hex'),
   type: z.string().min(1),
   byteLength: z.number().int().positive()
 })

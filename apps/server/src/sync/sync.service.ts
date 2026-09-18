@@ -11,7 +11,11 @@ import {
 } from '@spaced-rep/sync-protocol'
 import { prisma } from '../shared/lib/prisma.js'
 import { logger } from '../shared/lib/logger.js'
-import { BadRequestError, ForbiddenError } from '../shared/lib/errors.js'
+import {
+  BadRequestError,
+  ForbiddenError,
+  MediaRefError
+} from '../shared/lib/errors.js'
 import { PRO_DEVICE_LIMIT } from '../settings/billing/product.js'
 import {
   ACTIVE_WINDOW_MS,
@@ -28,6 +32,11 @@ import {
   shouldApplyIncoming,
   topicRecordToDb
 } from './mappers.js'
+import {
+  checkReferencedMedia,
+  collectBatchMediaRefs,
+  mediaErrorForCardData
+} from './media.service.js'
 
 const EPOCH_ISO = new Date(0).toISOString()
 const PULL_PAGE_SIZE = 500
@@ -332,6 +341,16 @@ export async function applyPushBatch(input: {
   const deletes = input.mutations.filter(m => m.operation === 'delete')
   const ordered = [...upserts, ...deletes]
 
+  const { refs: mediaRefs, error: batchMediaError } =
+    await collectBatchMediaRefs(input.mutations)
+  const mediaErrorsByHash =
+    batchMediaError == null
+      ? await checkReferencedMedia({
+          userId: input.userId,
+          refs: mediaRefs
+        })
+      : new Map<string, MediaRefError>()
+
   for (const mutation of ordered) {
     try {
       if (await wasOpApplied(input.userId, mutation.opId)) {
@@ -348,6 +367,14 @@ export async function applyPushBatch(input: {
           })
           if (result.conflict) conflicts.push(result.conflict)
         } else {
+          if (batchMediaError) throw batchMediaError
+          if (mutation.card) {
+            const mediaError = await mediaErrorForCardData(
+              mutation.card.dataJson,
+              mediaErrorsByHash
+            )
+            if (mediaError) throw mediaError
+          }
           await applyCardUpsert({
             userId: input.userId,
             deviceId: input.deviceId,
@@ -375,12 +402,21 @@ export async function applyPushBatch(input: {
         { err, opId: mutation.opId, userId: input.userId },
         'sync.push mutation failed'
       )
-      rejected.push({
-        opId: mutation.opId,
-        code: 'APPLY_FAILED',
-        message,
-        retryable: true
-      })
+      if (err instanceof MediaRefError) {
+        rejected.push({
+          opId: mutation.opId,
+          code: err.code,
+          message,
+          retryable: err.retryable
+        })
+      } else {
+        rejected.push({
+          opId: mutation.opId,
+          code: 'APPLY_FAILED',
+          message,
+          retryable: true
+        })
+      }
     }
   }
 

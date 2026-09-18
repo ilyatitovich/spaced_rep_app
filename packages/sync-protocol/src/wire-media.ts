@@ -1,9 +1,7 @@
-import type { WireMediaRef } from './schemas.js'
+import { SHA256_HEX, type WireMediaRef } from './schemas.js'
 
 /** Same shape as client `MediaDBRecord`. */
 export type MediaDBRecord = { buffer: ArrayBuffer; type: string }
-
-const SHA256_HEX = /^[0-9a-f]{64}$/
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)

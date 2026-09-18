@@ -1,5 +1,4 @@
 import type { Request, Response, NextFunction } from 'express'
-import { z } from 'zod'
 import {
   PROTOCOL_VERSION,
   SyncEnvelopeSchema,
@@ -10,6 +9,7 @@ import { enforceRateLimit } from '../../shared/lib/redis.js'
 import { BadRequestError } from '../../shared/lib/errors.js'
 import { parseBody, sendData } from '../../shared/lib/http.js'
 import { assertPlan } from '../../settings/services/plan.service.js'
+import { revokeDeviceSchema } from '../schemas/sync.schemas.js'
 import {
   applyPushBatch,
   bootstrap,
@@ -20,13 +20,6 @@ import {
   revokeSyncDevice
 } from '../sync.service.js'
 import { disconnectSyncDevice } from '../ws.handler.js'
-
-const revokeDeviceSchema = z
-  .object({
-    deviceId: z.uuid(),
-    currentDeviceId: z.uuid()
-  })
-  .strict()
 
 function requireAuthUser(req: Request): { userId: string } {
   if (!req.auth?.userId) {
