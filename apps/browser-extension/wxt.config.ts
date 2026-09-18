@@ -11,6 +11,10 @@ const apiOrigin = new URL(
 const appOrigin = new URL(
   process.env.WXT_PUBLIC_APP_URL ?? 'http://localhost:5173'
 ).origin
+/** Presigned object host (MinIO local / R2). Required for PUT/GET without optional grants. */
+const mediaOrigin = new URL(
+  process.env.WXT_PUBLIC_MEDIA_URL ?? 'http://localhost:9000'
+).origin
 const appHost = new URL(appOrigin).hostname
 const webauthnHostPermission =
   appHost === 'localhost' || appHost === '127.0.0.1'
@@ -59,7 +63,12 @@ export default defineConfig({
       'storage',
       'unlimitedStorage'
     ],
-    host_permissions: [`${apiOrigin}/*`, webauthnHostPermission, `${appOrigin}/*`],
+    host_permissions: [
+      `${apiOrigin}/*`,
+      webauthnHostPermission,
+      `${appOrigin}/*`,
+      `${mediaOrigin}/*`
+    ],
     optional_host_permissions: ['http://*/*', 'https://*/*'],
     action: {
       default_title: 'Create a flashcard'

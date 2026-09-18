@@ -1,15 +1,25 @@
 import { createHttpSyncClient } from '@spaced-rep/sync-client'
-import type { Mutation } from '@spaced-rep/sync-protocol'
+import type { MediaDBRecord, Mutation } from '@spaced-rep/sync-protocol'
+import {
+  mergePreparedMedia,
+  prepareWireCardData,
+  uploadOwnedMedia,
+  type MediaDownloadPlanItem,
+  type MediaUploadPlanItem,
+  type SyncMediaApi
+} from '../../../client/src/lib/sync-media'
 import { API_URL, freshSession } from './auth'
 import {
+  decodeCardData,
   getCard,
   getOutbox,
   getTopics,
   removeOutbox,
   setTopics,
-  updateOutbox
+  updateOutbox,
+  type OutboxItem
 } from './storage'
-import type { Topic } from '../types'
+import type { Card, Topic } from '../types'
 
 const DEVICE_KEY = 'sync.deviceId'
 const WATERMARK_KEY = 'sync.watermark'
@@ -24,6 +34,45 @@ async function deviceId(): Promise<string> {
   const id = crypto.randomUUID()
   await chrome.storage.local.set({ [DEVICE_KEY]: id })
   return id
+}
+
+async function postMediaJson<T>(path: string, body: unknown): Promise<T> {
+  const session = await freshSession()
+  if (!session) throw new Error('Not authenticated')
+  const response = await fetch(`${API_URL}${path}`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${session.accessToken}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    },
+    body: JSON.stringify(body)
+  })
+  const json = (await response.json().catch(() => null)) as {
+    data?: T
+    error?: { message?: string }
+  } | null
+  if (!response.ok || json?.data === undefined) {
+    throw new Error(json?.error?.message ?? 'Media request failed')
+  }
+  return json.data
+}
+
+const mediaApi: SyncMediaApi = {
+  async planUploads(items) {
+    const data = await postMediaJson<{ items: MediaUploadPlanItem[] }>(
+      '/sync/media/uploads',
+      { items }
+    )
+    return data.items
+  },
+  async planDownloads(hashes) {
+    const data = await postMediaJson<{ items: MediaDownloadPlanItem[] }>(
+      '/sync/media/downloads',
+      { hashes }
+    )
+    return data.items
+  }
 }
 
 export async function hasPro(): Promise<boolean> {
@@ -82,36 +131,62 @@ export async function bootstrapTopics(): Promise<Topic[]> {
   return topics
 }
 
+/** Decode chrome.storage base64 media → wire refs; collect unique buffers for upload. */
+export async function buildOutboxMutations(
+  deviceIdValue: string,
+  pairs: { item: OutboxItem; card: Card }[]
+): Promise<{ mutations: Mutation[]; mediaByHash: Map<string, MediaDBRecord> }> {
+  const mediaByHash = new Map<string, MediaDBRecord>()
+  const mutations: Mutation[] = []
+
+  for (const { item, card } of pairs) {
+    // Decode only for the wire transform — chrome.storage keeps base64 bytes.
+    const { wireData, mediaByHash: cardMedia } = await prepareWireCardData(
+      decodeCardData(card.data)
+    )
+    mergePreparedMedia(mediaByHash, cardMedia)
+    mutations.push({
+      opId: item.id,
+      deviceId: deviceIdValue,
+      table: 'cards',
+      recordId: card.id,
+      operation: 'upsert',
+      updatedAt: card.updatedAt,
+      card: {
+        id: card.id,
+        topicId: card.topicId,
+        level: card.level,
+        dataJson: JSON.stringify(wireData),
+        reviewDate: card.reviewDate ?? null,
+        updatedAt: card.updatedAt,
+        deletedAt: null
+      }
+    })
+  }
+
+  return { mutations, mediaByHash }
+}
+
 export async function flushOutbox(): Promise<void> {
   if (!(await hasPro())) return
   const now = Date.now()
   const queue = (await getOutbox()).filter(item => item.nextAttemptAt <= now)
   if (!queue.length) return
   const id = await deviceId()
-  const pairs = await Promise.all(
-    queue.map(async item => ({ item, card: await getCard(item.cardId) }))
+  const pairs = (
+    await Promise.all(
+      queue.map(async item => ({ item, card: await getCard(item.cardId) }))
+    )
+  ).filter(
+    (pair): pair is { item: (typeof queue)[number]; card: NonNullable<typeof pair.card> } =>
+      Boolean(pair.card)
   )
-  const mutations: Mutation[] = pairs
-    .filter(pair => pair.card)
-    .map(({ item, card }) => ({
-      opId: item.id,
-      deviceId: id,
-      table: 'cards',
-      recordId: card!.id,
-      operation: 'upsert',
-      updatedAt: card!.updatedAt,
-      card: {
-        id: card!.id,
-        topicId: card!.topicId,
-        level: card!.level,
-        dataJson: JSON.stringify(card!.data),
-        reviewDate: card!.reviewDate ?? null,
-        updatedAt: card!.updatedAt,
-        deletedAt: null
-      }
-    }))
-  if (!mutations.length) return
+  if (!pairs.length) return
+
   try {
+    const { mutations, mediaByHash } = await buildOutboxMutations(id, pairs)
+    // Upload before push so the server can HeadObject refs; failure keeps outbox.
+    await uploadOwnedMedia(mediaByHash, mediaApi)
     const response = await syncClient.push(id, mutations)
     for (const opId of response.acceptedOpIds) {
       await removeOutbox(opId)
