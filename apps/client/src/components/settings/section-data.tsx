@@ -220,7 +220,10 @@ export default function SectionData({ isOpen }: SectionDataProps) {
                   </span>
                 )}
                 {lastError && (
-                  <span className="text-danger">Error: {lastError}</span>
+                  <span className="text-danger">
+                    Something went wrong. Try again, or contact us if it keeps
+                    happening.
+                  </span>
                 )}
                 {failedOps.length > 0 && (
                   <span className="text-warning">

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const tx = {
-  $queryRaw: vi.fn(),
+  $executeRaw: vi.fn(),
   syncDevice: {
     findUnique: vi.fn(),
     deleteMany: vi.fn(),
@@ -56,7 +56,7 @@ describe('reportDevice', () => {
       })
     ).rejects.toMatchObject({ code: 'DEVICE_LIMIT' })
 
-    expect(tx.$queryRaw).toHaveBeenCalledOnce()
+    expect(tx.$executeRaw).toHaveBeenCalledOnce()
     expect(tx.syncDevice.upsert).not.toHaveBeenCalled()
   })
 

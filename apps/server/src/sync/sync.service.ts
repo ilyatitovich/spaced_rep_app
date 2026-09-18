@@ -74,7 +74,7 @@ export async function reportDevice(input: {
   userAgent?: string | null
 }): Promise<void> {
   await prisma.$transaction(async tx => {
-    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${input.userId}))`
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${input.userId}))`
 
     const existing = await tx.syncDevice.findUnique({
       where: { id: input.deviceId },
