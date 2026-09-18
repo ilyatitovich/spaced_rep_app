@@ -169,7 +169,10 @@ export default function TopicScreen({
         </Header>
 
         {topic && (
-          <div ref={contentRef} className="h-[92dvh] p-4 pb-30 overflow-y-auto">
+          <div
+            ref={contentRef}
+            className="h-[92dvh] p-4 pb-30 overflow-y-auto scrollbar-thin"
+          >
             <Week week={topic.week} />
 
             <div className="flex items-center justify-between mt-10 py-2">
