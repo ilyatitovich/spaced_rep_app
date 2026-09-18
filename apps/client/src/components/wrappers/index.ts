@@ -1,3 +1,5 @@
 export { default as Screen, ScreenLayer } from './screen'
 export { default as CardContainer } from './card-container'
 export { default as Header } from './header'
+export { ErrorBoundary, ErrorFallback } from './error-boundary'
+export type { ErrorFallbackProps } from './error-boundary'
