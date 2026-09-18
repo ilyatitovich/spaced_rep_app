@@ -1,5 +1,6 @@
 import Modal from './modal'
 import { LEVELS, levelLabel } from '@/lib'
+import Button from '../ui/button'
 
 type MoveToLevelModalProps = {
   isOpen: boolean
@@ -26,19 +27,19 @@ export default function MoveToLevelModal({
           const isCurrent = level === currentLevel
           return (
             <li key={level}>
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="lg"
                 disabled={isCurrent}
                 onClick={() => {
                   onSelect(level)
                   onClose()
                 }}
-                className="w-full flex items-center justify-center py-4 px-4 rounded-xl text-left text-primary
-                bg-muted disabled:text-foreground-subtle disabled:opacity-50 active:bg-secondary"
+                className="w-full rounded-xl bg-muted disabled:opacity-50 active:bg-secondary"
               >
                 {levelLabel(level)}
                 {isCurrent ? ' (current)' : ''}
-              </button>
+              </Button>
             </li>
           )
         })}

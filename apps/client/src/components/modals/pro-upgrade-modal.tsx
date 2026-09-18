@@ -1,4 +1,5 @@
 import Modal from './modal'
+import Button from '../ui/button'
 
 interface ProUpgradeModalProps {
   isOpen: boolean
@@ -23,20 +24,12 @@ export default function ProUpgradeModal({
         app locally.
       </p>
       <div className="flex gap-3">
-        <button
-          type="button"
-          onClick={onClose}
-          className="flex-1 py-3 rounded-xl bg-secondary text-foreground active:scale-95"
-        >
+        <Button variant="secondary" className="flex-1" onClick={onClose}>
           Skip
-        </button>
-        <button
-          type="button"
-          onClick={handleUpgrade}
-          className="flex-1 py-3 rounded-xl bg-primary font-medium text-primary-foreground active:scale-95"
-        >
+        </Button>
+        <Button variant="primary" className="flex-1" onClick={handleUpgrade}>
           Upgrade
-        </button>
+        </Button>
       </div>
     </Modal>
   )

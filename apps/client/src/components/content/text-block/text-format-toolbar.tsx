@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useEditorState, type Editor } from '@tiptap/react'
 import { Bold, Italic, List, ListOrdered, Underline } from 'lucide-react'
+import Button from '../../ui/button'
 
 const KEYBOARD_GAP_PX = 8
 
@@ -88,8 +89,8 @@ function ListTypeButton({
 
   return (
     <div ref={rootRef} className="relative">
-      <button
-        type="button"
+      <Button
+        variant="unstyled"
         className={toolbarBtnClass(active)}
         aria-label="List"
         aria-haspopup="menu"
@@ -99,7 +100,7 @@ function ListTypeButton({
         onClick={() => setOpen(v => !v)}
       >
         <Icon className="w-4 h-4" strokeWidth={3} />
-      </button>
+      </Button>
       {open && (
         <div
           role="menu"
@@ -107,9 +108,10 @@ function ListTypeButton({
             openUp ? 'bottom-full mb-1' : 'top-full mt-1'
           }`}
         >
-          <button
-            type="button"
+          <Button
+            variant="unstyled"
             role="menuitemradio"
+            tabIndex={0}
             aria-checked={bulletActive}
             className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm ${
               bulletActive ? 'bg-primary text-background' : 'hover:bg-muted'
@@ -121,10 +123,11 @@ function ListTypeButton({
           >
             <List className="w-4 h-4 shrink-0" strokeWidth={3} />
             Bulleted
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="unstyled"
             role="menuitemradio"
+            tabIndex={0}
             aria-checked={orderedActive}
             className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm ${
               orderedActive ? 'bg-primary text-background' : 'hover:bg-muted'
@@ -136,7 +139,7 @@ function ListTypeButton({
           >
             <ListOrdered className="w-4 h-4 shrink-0" strokeWidth={3} />
             Numbered
-          </button>
+          </Button>
         </div>
       )}
     </div>
@@ -215,36 +218,36 @@ export default function TextFormatToolbar({
       onClick={e => e.stopPropagation()}
     >
       <div className="flex gap-0.5 rounded-full border border-border bg-card px-1 shadow-sm">
-        <button
-          type="button"
+        <Button
           tabIndex={-1}
+          variant="unstyled"
           className={toolbarBtnClass(marks.bold)}
           aria-label="Bold"
           aria-pressed={marks.bold}
           onClick={() => apply(onBold)}
         >
           <Bold className="w-4 h-4" strokeWidth={3} />
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
           tabIndex={-1}
+          variant="unstyled"
           className={toolbarBtnClass(marks.italic)}
           aria-label="Italic"
           aria-pressed={marks.italic}
           onClick={() => apply(onItalic)}
         >
           <Italic className="w-4 h-4" strokeWidth={3} />
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
           tabIndex={-1}
+          variant="unstyled"
           className={toolbarBtnClass(marks.underline)}
           aria-label="Underline"
           aria-pressed={marks.underline}
           onClick={() => apply(onUnderline)}
         >
           <Underline className="w-4 h-4" strokeWidth={3} />
-        </button>
+        </Button>
         <ListTypeButton
           bulletActive={marks.bulletList}
           orderedActive={marks.orderedList}

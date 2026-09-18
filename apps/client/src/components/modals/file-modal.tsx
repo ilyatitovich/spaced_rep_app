@@ -8,6 +8,7 @@ import {
 
 import Modal from './modal'
 import Spinner from '../ui/spinner'
+import Button from '../ui/button'
 import { isAnkiApkg } from '@/lib'
 import {
   exportAppData,
@@ -232,15 +233,16 @@ export default function FileModal(props: FileModalProps) {
             isDragging ? 'ring-2 ring-primary' : ''
           }`}
         >
-          <button
-            type="button"
-            className="bg-primary text-primary-foreground w-full text-center py-4 rounded-xl"
+          <Button
+            variant="primary"
+            size="lg"
+            className="w-full"
             onClick={() => fileInputRef.current?.click()}
           >
             {kind === 'import-app'
               ? 'Drop or choose JSON'
               : 'Drop or choose JSON or Anki (.apkg)'}
-          </button>
+          </Button>
           <input
             ref={fileInputRef}
             type="file"
@@ -255,14 +257,15 @@ export default function FileModal(props: FileModalProps) {
             onChange={e => setPastedText(e.target.value)}
             className="w-full min-h-32 p-4 rounded-xl border border-border focus:border-input-focus focus:outline-none transition resize-y text-sm font-mono"
           />
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="lg"
+            className="w-full"
             disabled={!pastedText.trim()}
             onClick={handlePasteImport}
-            className="bg-secondary text-foreground w-full py-4 rounded-xl disabled:opacity-50"
           >
             Import pasted JSON
-          </button>
+          </Button>
         </div>
       )}
     </Modal>

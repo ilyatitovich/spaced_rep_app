@@ -6,6 +6,7 @@ import { browserSupportsWebAuthn } from '@simplewebauthn/browser'
 import AuthEmailForm from './auth-email-form'
 import AuthOtpForm from './auth-otp-form'
 import { GoogleIcon } from '../ui/icons/google'
+import Button from '../ui/button'
 import { useAuth } from '@/contexts'
 import { getAuthErrorMessage } from '@/lib/auth-errors'
 import { AuthStep } from '@/types'
@@ -49,19 +50,16 @@ function AuthMethodButton({
           Last Used
         </span>
       )}
-      <button
-        type="button"
+      <Button
+        variant={isLastUsed ? 'foreground' : 'outline'}
+        size="lg"
+        className="w-full gap-3"
         onClick={onClick}
         disabled={disabled || isLoading}
-        className={
-          isLastUsed
-            ? 'w-full bg-foreground active:bg-primary font-medium py-4 rounded-xl flex items-center justify-center gap-3 transition-all text-base text-background disabled:opacity-50'
-            : 'w-full border border-border active:bg-secondary font-medium py-4 rounded-xl flex items-center justify-center gap-3 transition-all text-base text-foreground disabled:opacity-50'
-        }
       >
         {icon}
         {isLoading ? 'Waiting…' : label}
-      </button>
+      </Button>
     </div>
   )
 }

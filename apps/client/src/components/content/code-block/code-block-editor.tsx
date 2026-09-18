@@ -16,6 +16,7 @@ import { useFontSize } from '@/hooks/use-font-size'
 import { getLanguageExtension, type CodeLang } from '@/lib/code-lang'
 import { canFocusForKeyboard } from '@/lib/pwa'
 import type { CodeBlock } from '@/types'
+import Button from '../../ui/button'
 
 export type CodeBlockEditorHandle = {
   focus: () => void
@@ -93,15 +94,15 @@ const CodeBlockEditor = forwardRef<CodeBlockEditorHandle, CodeBlockEditorProps>(
     return (
       <div className="relative w-full rounded-xl bg-muted px-2 pb-1 pt-6">
         {isEditable && onRemove && (
-          <button
-            type="button"
-            className="absolute top-1.5 left-2 z-10 p-0.5 text-foreground-muted"
+          <Button
+            variant="icon"
+            className="absolute top-1.5 left-2 z-10 p-0.5"
             aria-label="Remove code block"
             onPointerDown={e => e.stopPropagation()}
             onClick={onRemove}
           >
             <Trash2 className="w-3.5 h-3.5" strokeWidth={2.5} />
-          </button>
+          </Button>
         )}
 
         <span className="absolute top-1.5 right-2 text-[10px] font-semibold uppercase tracking-wide text-foreground-muted">

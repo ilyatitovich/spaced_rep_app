@@ -4,6 +4,7 @@ import { useState } from 'react'
 import TurnstileWidget from './turnstile-widget'
 import { getAuthErrorMessage } from '@/lib/auth-errors'
 import { validateEmail } from '@/lib/validate-email'
+import Button from '../ui/button'
 
 type AuthEmailFormProps = {
   onSubmit: (email: string, turnstileToken: string) => Promise<void>
@@ -92,26 +93,27 @@ export default function AuthEmailForm({
 
         <TurnstileWidget key={turnstileKey} onToken={setTurnstileToken} />
 
-        <button
+        <Button
           type="submit"
+          variant="foreground"
+          className="w-full gap-3"
           disabled={isLoading || !turnstileToken}
-          className="w-full bg-foreground active:bg-primary font-medium py-4 rounded-xl flex items-center justify-center gap-3 transition-all text-base text-background disabled:opacity-50"
         >
           {isLoading ? (
             <span className="w-5 h-5 border-2 border-background border-t-transparent rounded-full animate-spin" />
           ) : (
             'Send code'
           )}
-        </button>
+        </Button>
       </form>
 
-      <button
-        type="button"
+      <Button
+        variant="muted"
+        className="w-full mt-4 py-2 gap-2 text-sm"
         onClick={onBack}
-        className="w-full mt-4 py-2 flex items-center justify-center gap-2 text-sm font-medium text-foreground-muted active:text-foreground transition-colors"
       >
         Choose another method
-      </button>
+      </Button>
     </div>
   )
 }

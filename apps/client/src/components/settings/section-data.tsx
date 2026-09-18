@@ -9,7 +9,7 @@ import {
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import toast from 'react-hot-toast'
 
-import { BackButton, FileModal, Header, Screen } from '@/components'
+import { BackButton, FileModal, Header, Screen, Button } from '@/components'
 import { useAuth, useSync } from '@/contexts'
 import {
   clearMediaCache,
@@ -258,28 +258,28 @@ export default function SectionData({ isOpen }: SectionDataProps) {
                 {statusLabel}
               </span>
               {status === 'revoked' ? (
-                <button
-                  type="button"
+                <Button
+                  variant="link"
+                  className="gap-1"
                   onClick={() => void handleReconnect()}
                   disabled={!isOnline}
-                  className="flex items-center gap-1 text-primary disabled:opacity-50"
                 >
                   <RefreshCw size={16} />
                   Reconnect
-                </button>
+                </Button>
               ) : (
-                <button
-                  type="button"
+                <Button
+                  variant="link"
+                  className="gap-1"
                   onClick={syncNow}
                   disabled={!isOnline || status === 'syncing' || status === 'paused'}
-                  className="flex items-center gap-1 text-primary disabled:opacity-50"
                 >
                   <RefreshCw
                     size={16}
                     className={status === 'syncing' ? 'animate-spin' : ''}
                   />
                   Sync now
-                </button>
+                </Button>
               )}
             </div>
             <SettingsInfoRow
@@ -287,8 +287,8 @@ export default function SectionData({ isOpen }: SectionDataProps) {
               value={formatSyncTime(lastSyncedAt)}
             />
 
-            <button
-              type="button"
+            <Button
+              variant="unstyled"
               onClick={() => setAdvancedOpen(o => !o)}
               className="w-full flex items-center justify-between px-4 py-3.5 text-sm text-foreground-muted"
             >
@@ -297,7 +297,7 @@ export default function SectionData({ isOpen }: SectionDataProps) {
                 size={16}
                 className={`transition-transform ${advancedOpen ? 'rotate-180' : ''}`}
               />
-            </button>
+            </Button>
 
             {advancedOpen && (
               <div className="px-4 py-3 text-xs text-foreground-subtle flex flex-col gap-1">
@@ -377,22 +377,22 @@ export default function SectionData({ isOpen }: SectionDataProps) {
           cleared in that browser.
         </p>
         <div className="flex gap-3">
-          <button
-            type="button"
+          <Button
+            variant="outline"
+            className="flex-1"
             onClick={closeDisconnectModal}
             disabled={isDisconnecting}
-            className="flex-1 py-3 rounded-xl border border-border active:scale-95 disabled:opacity-50"
           >
             Cancel
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="danger"
+            className="flex-1"
             onClick={() => void handleConfirmDisconnect()}
             disabled={isDisconnecting}
-            className="flex-1 py-3 rounded-xl bg-danger text-danger-foreground active:scale-95 disabled:opacity-50"
           >
             {isDisconnecting ? 'Disconnecting…' : 'Disconnect'}
-          </button>
+          </Button>
         </div>
       </Modal>
 

@@ -10,6 +10,7 @@ import {
 import type { ElementType } from 'react'
 
 import type { CodeLang } from '@/lib'
+import Button from './button'
 import TsLogo from '@/assets/lang-logos/ts-14px.svg?react'
 import PythonLogo from '@/assets/lang-logos/python-14px.svg?react'
 import SqlLogo from '@/assets/lang-logos/sql-14px.svg?react'
@@ -61,8 +62,8 @@ function Trigger({
   const hasMenu = type === 'code' || type === 'media'
 
   return (
-    <button
-      type="button"
+    <Button
+      variant="unstyled"
       className="flex flex-col justify-center items-center gap-1 disabled:opacity-50"
       disabled={isDisabled}
       aria-label={label}
@@ -74,7 +75,7 @@ function Trigger({
         <Icon className="w-4 h-4 text-foreground" strokeWidth={3} />
       </span>
       <span className="text-foreground text-sm font-semibold">{label}</span>
-    </button>
+    </Button>
   )
 }
 
@@ -119,10 +120,11 @@ function MenuButton({
           className="absolute left-1/2 bottom-full z-50 mb-1 min-w-36 -translate-x-1/2 rounded-xl border border-border bg-card p-1 shadow-md"
         >
           {items.map(item => (
-            <button
+            <Button
               key={item.key}
-              type="button"
+              variant="unstyled"
               role="menuitem"
+              tabIndex={0}
               className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-muted"
               onClick={() => {
                 item.onClick()
@@ -131,7 +133,7 @@ function MenuButton({
             >
               {item.icon && <item.icon className="size-3.5 shrink-0" />}
               {item.label}
-            </button>
+            </Button>
           ))}
         </div>
       )}

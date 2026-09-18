@@ -1,6 +1,7 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 
 import { CloseButton } from '../ui/back-button'
+import Button from '../ui/button'
 
 interface ModalProps {
   isOpen: boolean
@@ -42,11 +43,11 @@ export default function Modal({
       data-screen=""
       className={`max-w-screen-sm mx-auto fixed inset-0 z-50 ${isOpen ? '' : 'pointer-events-none'}`}
     >
-      <button
-        type="button"
+      <Button
         tabIndex={-1}
         aria-label="Close"
         data-dismiss=""
+        variant="unstyled"
         className={`absolute inset-0 bg-background-overlay transition-opacity duration-300 ${
           isOpen ? 'opacity-100 starting:opacity-0' : 'opacity-0'
         }`}

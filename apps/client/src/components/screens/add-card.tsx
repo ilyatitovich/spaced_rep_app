@@ -216,14 +216,15 @@ export default function AddCardScreen({
         onFlip={() => setIsFlipped(prev => !prev)}
       />
       <div className="absolute bottom-0 left-0 right-0 px-safe-margins mt-2">
-        <button
-          type="button"
-          className="border border-border p-4 rounded-xl flex gap-2 justify-center items-center w-full"
+        <Button
+          variant="outline"
+          size="lg"
+          className="w-full gap-2"
           onClick={() => setIsImportModalOpen(true)}
         >
           <Download size={18} />
           <span>Import cards</span>
-        </button>
+        </Button>
       </div>
       <FileModal
         kind="import-cards"

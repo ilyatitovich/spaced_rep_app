@@ -136,49 +136,38 @@ export default function ImageEditorScreen({
         <div className="flex flex-col gap-4 p-4 pb-8">
           <div className="flex items-center justify-between gap-2">
             <div className="flex gap-2">
-              <button
-                type="button"
+              <Button
+                variant={aspect === null ? 'primary' : 'secondary'}
+                size="sm"
                 onClick={() => setAspect(null)}
-                className={`px-3 py-1.5 rounded-lg text-sm ${
-                  aspect === null
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-secondary text-foreground'
-                }`}
               >
                 Original
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant={aspect === 1 ? 'primary' : 'secondary'}
+                size="sm"
                 onClick={() => setAspect(1)}
-                className={`px-3 py-1.5 rounded-lg text-sm ${
-                  aspect === 1
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-secondary text-foreground'
-                }`}
               >
                 1:1
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant={aspect === 4 / 3 ? 'primary' : 'secondary'}
+                size="sm"
                 onClick={() => setAspect(4 / 3)}
-                className={`px-3 py-1.5 rounded-lg text-sm ${
-                  aspect === 4 / 3
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-secondary text-foreground'
-                }`}
               >
                 4:3
-              </button>
+              </Button>
             </div>
 
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="none"
               aria-label="Rotate 90 degrees"
               onClick={() => setRotation(prev => (prev + 90) % 360)}
-              className="p-2 rounded-lg bg-secondary text-foreground"
+              className="p-2 rounded-lg"
             >
               <RotateCw className="w-5 h-5" />
-            </button>
+            </Button>
           </div>
         </div>
       </div>

@@ -1,6 +1,8 @@
 import { X, ListCheck } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 
+import Button from './button'
+
 type SelectionModeHeaderProps = {
   selectedItemsCount: number
   isAllSelected: boolean
@@ -31,19 +33,22 @@ export default function SelectionModeHeader({
           : 'translate-y-0 opacity-100 starting:-translate-y-full starting:opacity-0'
       }`}
     >
-      <button onClick={handleCancel}>
+      <Button aria-label="Cancel selection" onClick={handleCancel}>
         <X />
-      </button>
+      </Button>
       <span>
         {selectedItemsCount === 0
           ? 'Select items'
           : `${selectedItemsCount} selected ${selectedItemsCount === 1 ? 'item' : 'items'}`}
       </span>
-      <button onClick={() => handleSelectAll(!isAllSelected)}>
+      <Button
+        aria-label={isAllSelected ? 'Deselect all' : 'Select all'}
+        onClick={() => handleSelectAll(!isAllSelected)}
+      >
         <ListCheck
           className={`${isAllSelected ? 'text-primary' : 'text-foreground'}`}
         />
-      </button>
+      </Button>
     </div>
   )
 }

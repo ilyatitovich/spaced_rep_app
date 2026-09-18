@@ -24,6 +24,7 @@ import type { PlanTier } from '@/types/settings.types'
 import {
   SettingsGroup,
   SettingsNavRow,
+  SettingsActionRow,
   SectionPreferences,
   SectionNotifications,
   SectionSubscription,
@@ -212,23 +213,18 @@ export default function SettingsScreen({ isOpen }: SettingsScreenProps) {
 
               <SettingsGroup>
                 {user ? (
-                  <button
-                    type="button"
+                  <SettingsActionRow
+                    icon={<LogOut size={18} />}
+                    label="Sign out"
                     onClick={() => void signOut()}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3.5 font-medium text-danger"
-                  >
-                    <LogOut size={18} />
-                    Sign out
-                  </button>
+                    destructive
+                  />
                 ) : (
-                  <button
-                    type="button"
+                  <SettingsActionRow
+                    icon={<Lock size={18} />}
+                    label="Sign in"
                     onClick={handleSignInOpen}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3.5 font-medium text-primary"
-                  >
-                    <Lock size={18} />
-                    Sign in
-                  </button>
+                  />
                 )}
               </SettingsGroup>
             </>

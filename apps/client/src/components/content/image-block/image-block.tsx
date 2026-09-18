@@ -9,6 +9,7 @@ import ImageFrame from './image-frame'
 import ImageViewer from './image-viewer'
 import ImageEditorScreen from '../../screens/image-editor'
 import Spinner from '@/components/ui/spinner'
+import Button from '@/components/ui/button'
 import { useOnline } from '@/hooks/use-online'
 import { cacheRemoteImage, toHttpsImageUrl } from '@/lib/cache-remote-image'
 import { blobToRecord, processImage } from '@/lib/image'
@@ -134,8 +135,8 @@ export default function ImageBlock({
           <div className="relative mx-auto w-fit max-w-full">
             {renderFrame(url)}
             {!hasLoadFailed && (
-              <button
-                type="button"
+              <Button
+                variant="unstyled"
                 className="absolute top-1.5 right-1.5 p-1.5 rounded-full bg-black/50 text-white"
                 aria-label="View image full screen"
                 onClick={e => {
@@ -146,7 +147,7 @@ export default function ImageBlock({
                 onTouchEnd={stopCardTap}
               >
                 <Maximize2 className="w-4 h-4" strokeWidth={2.5} />
-              </button>
+              </Button>
             )}
           </div>
           <ImageViewer

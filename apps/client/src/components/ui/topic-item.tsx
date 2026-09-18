@@ -1,6 +1,7 @@
 import { Check } from 'lucide-react'
 
 import { formatTimestamp, getToday, joinNumbers } from '@/lib'
+import Button from './button'
 import { Topic, Day } from '@/models'
 
 type TopicItemProps = {
@@ -30,7 +31,8 @@ export default function TopicItem({
   }
 
   return (
-    <button
+    <Button
+      variant="unstyled"
       className={`w-full flex justify-between items-center gap-2 p-4 my-4 mx-auto rounded-xl bg-card shadow-sm active:scale-95 transition-transform duration-150 select-none ${
         isSelectionMode && isSelected ? 'ring-2 ring-primary' : ''
       }`}
@@ -68,6 +70,6 @@ export default function TopicItem({
           />
         )}
       </div>
-    </button>
+    </Button>
   )
 }

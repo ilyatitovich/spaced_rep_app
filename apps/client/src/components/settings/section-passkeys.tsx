@@ -7,7 +7,7 @@ import {
   startRegistration
 } from '@simplewebauthn/browser'
 
-import { BackButton, Header, Screen, Spinner } from '@/components'
+import { BackButton, Header, Screen, Spinner, Button } from '@/components'
 import { useAuth, useSync } from '@/contexts'
 import {
   deletePasskey,
@@ -230,15 +230,15 @@ export default function SectionPasskeys({ isOpen }: SectionPasskeysProps) {
                 PIN — no password needed.
               </p>
             </div>
-            <button
-              type="button"
+            <Button
+              variant="link"
+              className="gap-2"
               onClick={() => void handleAddPasskey()}
               disabled={isAdding || !isOnline}
-              className="flex items-center gap-2 text-primary font-medium disabled:opacity-50"
             >
               <Plus size={18} />
               {isAdding ? 'Adding…' : 'Add passkey'}
-            </button>
+            </Button>
           </div>
         ) : (
           <>
@@ -268,18 +268,18 @@ export default function SectionPasskeys({ isOpen }: SectionPasskeysProps) {
                       Last used {formatDate(passkey.lastUsedAt)}
                     </p>
                   </div>
-                  <button
-                    type="button"
+                  <Button
+                    variant="dangerLink"
+                    className="p-2 shrink-0"
                     onClick={() => {
                       setPendingDelete(passkey)
                       setIsDeletingLast(passkeys.length === 1)
                       setIsDeleteOpen(true)
                     }}
-                    className="text-danger p-2 shrink-0"
                     aria-label={`Remove ${passkey.name || 'passkey'}`}
                   >
                     <Trash2 size={18} />
-                  </button>
+                  </Button>
                 </div>
               ))}
             </SettingsGroup>
@@ -318,22 +318,22 @@ export default function SectionPasskeys({ isOpen }: SectionPasskeysProps) {
           )}
         </p>
         <div className="flex gap-3">
-          <button
-            type="button"
+          <Button
+            variant="outline"
+            className="flex-1"
             onClick={closeDeleteModal}
             disabled={isDeleting}
-            className="flex-1 py-3 rounded-xl border border-border active:scale-95 disabled:opacity-50"
           >
             Cancel
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="danger"
+            className="flex-1"
             onClick={() => void handleConfirmDelete()}
             disabled={isDeleting}
-            className="flex-1 py-3 rounded-xl bg-danger text-danger-foreground active:scale-95 disabled:opacity-50"
           >
             {isDeleting ? 'Removing…' : 'Remove'}
-          </button>
+          </Button>
         </div>
       </Modal>
     </Screen>

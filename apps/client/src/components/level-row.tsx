@@ -1,6 +1,7 @@
 import { ChevronRight } from 'lucide-react'
 
 import { levelLabel } from '@/lib'
+import Button from './ui/button'
 
 type LevelRowProps = {
   levelId: number
@@ -37,7 +38,8 @@ export default function LevelRow({
 
   return (
     <li className="py-3.5 border-b border-border last:border-b-0">
-      <button
+      <Button
+        variant="unstyled"
         onClick={onLevelOpen}
         className="w-full flex justify-between items-center"
       >
@@ -46,7 +48,7 @@ export default function LevelRow({
           <span className="text-lg">{`${cardsNumber} card${cardsNumber === 1 ? '' : 's'}`}</span>
           <ChevronRight className="text-sm" />
         </span>
-      </button>
+      </Button>
     </li>
   )
 }

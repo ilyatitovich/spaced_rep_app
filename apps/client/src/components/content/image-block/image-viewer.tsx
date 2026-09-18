@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 
 import ImageFrame from './image-frame'
+import Button from '../../ui/button'
 
 type ImageViewerProps = {
   isOpen: boolean
@@ -34,24 +35,24 @@ export default function ImageViewer({
       aria-modal="true"
       aria-label="Full screen image"
     >
-      <button
-        type="button"
+      <Button
         aria-label="Close"
         data-dismiss=""
+        variant="unstyled"
         className="absolute inset-0 bg-black/95"
         onClick={onClose}
         onPointerDown={e => e.stopPropagation()}
         onTouchStart={e => e.stopPropagation()}
         onTouchEnd={e => e.stopPropagation()}
       />
-      <button
-        type="button"
+      <Button
         aria-label="Close"
+        variant="unstyled"
         className="absolute top-4 right-4 z-10 p-2 rounded-full bg-white/15 text-white"
         onClick={onClose}
       >
         <X className="w-5 h-5" />
-      </button>
+      </Button>
       <div className="relative z-10 max-w-full max-h-full p-4">
         <ImageFrame
           src={imageUrl}

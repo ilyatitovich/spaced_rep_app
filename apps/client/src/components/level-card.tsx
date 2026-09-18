@@ -10,6 +10,7 @@ import {
 } from '@/lib'
 import { Card } from '@/models'
 import type { SideBlock } from '@/types'
+import Button from './ui/button'
 
 type LevelCardProps = {
   card: Card
@@ -175,7 +176,8 @@ export default function LevelCard({
   }
 
   return (
-    <button
+    <Button
+      variant="unstyled"
       className="relative p-3 w-full h-30 text-xs border-2 border-foreground
                  rounded-2xl text-foreground bg-card active:scale-95 transition-transform ease-in-out duration-150 select-none"
       onTouchStart={handleTouchStart}
@@ -200,6 +202,6 @@ export default function LevelCard({
           />
         )}
       </div>
-    </button>
+    </Button>
   )
 }

@@ -4,6 +4,7 @@ import { Share } from 'lucide-react'
 import Modal from './modal'
 import { usePwaInstall, usePwaUpdate } from '@/hooks'
 import { isOnboardingComplete } from '@/lib'
+import Button from '../ui/button'
 
 type Kind =
   | 'update'
@@ -17,11 +18,6 @@ const TITLES: Partial<Record<Kind, string>> = {
   'ios-safari-a2hs': 'Add to Home Screen',
   'ios-open-safari': 'Add to Home Screen'
 }
-
-const btnSecondary =
-  'flex-1 rounded-xl bg-secondary text-foreground py-3 active:scale-95'
-const btnPrimary =
-  'flex-1 rounded-xl bg-primary py-3 font-medium text-primary-foreground active:scale-95'
 
 export default function PwaModal() {
   const { variant, promptInstall, dismiss, dismissBanner } = usePwaInstall()
@@ -54,16 +50,12 @@ export default function PwaModal() {
             improvements.
           </p>
           <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={handleClose}
-              className={btnSecondary}
-            >
+            <Button variant="secondary" className="flex-1" onClick={handleClose}>
               Later
-            </button>
-            <button type="button" onClick={updateNow} className={btnPrimary}>
+            </Button>
+            <Button variant="primary" className="flex-1" onClick={updateNow}>
               Update
-            </button>
+            </Button>
           </div>
         </>
       )}
@@ -74,20 +66,16 @@ export default function PwaModal() {
             It&apos;s better to install for the best experience.
           </p>
           <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={handleClose}
-              className={btnSecondary}
-            >
+            <Button variant="secondary" className="flex-1" onClick={handleClose}>
               Maybe later
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="primary"
+              className="flex-1"
               onClick={promptInstall}
-              className={btnPrimary}
             >
               Install
-            </button>
+            </Button>
           </div>
         </>
       )}
@@ -111,9 +99,13 @@ export default function PwaModal() {
               app from your Home Screen.
             </li>
           </ol>
-          <button type="button" onClick={handleClose} className={btnSecondary}>
+          <Button
+            variant="secondary"
+            className="w-full"
+            onClick={handleClose}
+          >
             Got it
-          </button>
+          </Button>
         </>
       )}
 
@@ -123,9 +115,13 @@ export default function PwaModal() {
             Use Share → Add to Home Screen in this browser, then open the app
             from the icon to enable install features and push.
           </p>
-          <button type="button" onClick={handleClose} className={btnSecondary}>
+          <Button
+            variant="secondary"
+            className="w-full"
+            onClick={handleClose}
+          >
             Got it
-          </button>
+          </Button>
         </>
       )}
 
@@ -135,9 +131,13 @@ export default function PwaModal() {
             You might already have this installed — open it from your home
             screen for the best experience.
           </p>
-          <button type="button" onClick={handleClose} className={btnSecondary}>
+          <Button
+            variant="secondary"
+            className="w-full"
+            onClick={handleClose}
+          >
             Got it
-          </button>
+          </Button>
         </>
       )}
     </Modal>

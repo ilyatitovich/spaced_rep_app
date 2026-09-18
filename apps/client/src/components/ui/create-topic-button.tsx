@@ -1,3 +1,5 @@
+import Button from './button'
+
 type CreateTopicButtonProps = {
   isHidden: boolean
   onClick: () => void
@@ -11,15 +13,18 @@ export default function CreateTopicButton({
     <div
       className={` transition-opacity duration-300 ease-in-out ${isHidden ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
     >
-      <button
-        className="absolute bottom-6 right-6 w-14 h-14 rounded-full bg-primary text-primary-foreground text-4xl shadow-lg flex items-center justify-center active:scale-90"
+      <Button
+        variant="primary"
+        size="fab"
+        className="absolute bottom-6 right-6"
+        aria-label="Create topic"
         onClick={onClick}
       >
         <div className="relative w-6 h-6 flex items-center justify-center">
           <div className="absolute w-5 h-1 bg-primary-foreground rounded-full"></div>
           <div className="absolute h-5 w-1 bg-primary-foreground rounded-full"></div>
         </div>
-      </button>
+      </Button>
     </div>
   )
 }

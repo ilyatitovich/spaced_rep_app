@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useSearchParams } from 'react-router'
 
-import { BackButton, Header, Screen } from '@/components'
+import { BackButton, Header, Screen, Button } from '@/components'
 import { useAuth } from '@/contexts'
 import {
   canUseWebPush,
@@ -268,14 +268,14 @@ export default function SectionNotifications({
                         }
                         className="settings-switch shrink-0"
                       />
-                      <button
-                        type="button"
+                      <Button
+                        variant="dangerLink"
+                        className="p-1"
                         onClick={() => handleDelete(reminder.id)}
-                        className="text-danger p-1"
                         aria-label="Remove reminder"
                       >
                         <Trash2 size={18} />
-                      </button>
+                      </Button>
                     </div>
                     <SettingsSegmentedRow
                       label="Delivery"
@@ -300,14 +300,14 @@ export default function SectionNotifications({
                     onChange={e => setDraftTime(e.target.value)}
                     className="flex-1 text-sm bg-transparent border border-border rounded-lg px-3 py-2 outline-none focus:border-input-focus focus:ring-1 focus:ring-focus-ring"
                   />
-                  <button
-                    type="button"
+                  <Button
+                    variant="link"
+                    className="gap-1 shrink-0"
                     onClick={() => void handleAdd()}
-                    className="flex items-center gap-1 text-primary font-medium shrink-0"
                   >
                     <Plus size={16} />
                     Add
-                  </button>
+                  </Button>
                 </div>
                 <SettingsSegmentedRow
                   label="Delivery"

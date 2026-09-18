@@ -8,7 +8,8 @@ import {
   ConfirmDeleteModal,
   FileModal,
   Header,
-  Screen
+  Screen,
+  Button
 } from '@/components'
 import { TITLE_MAX_LENGTH } from '@/lib'
 import type { Topic } from '@/models'
@@ -117,37 +118,43 @@ export default function TopicSettings({
                   className="w-full p-4 rounded-xl border border-border focus:border-input-focus focus:outline-none transition"
                 />
 
-                <button
+                <Button
                   type="submit"
+                  variant="primary"
                   disabled={isDisabled()}
-                  className="p-4 rounded-xl flex justify-center items-center bg-primary disabled:opacity-50"
+                  className="p-4 rounded-xl"
+                  size="none"
+                  aria-label="Save title"
                 >
                   <Pencil className="text-primary-foreground" strokeWidth={3} />
-                </button>
+                </Button>
               </div>
               {error && <span className="text-danger text-sm">{error}</span>}
             </div>
           </form>
 
-          <button
-            className="border border-border p-4 rounded-xl flex gap-2 justify-center items-center"
+          <Button
+            variant="outline"
+            size="lg"
+            className="gap-2"
             onClick={() => setIsExportModalOpen(true)}
           >
             <ArrowUpFromLine size={18} />
             <span>Export topic</span>
-          </button>
+          </Button>
         </div>
 
         <div className="absolute bottom-0 w-full p-4 flex justify-center items-center">
-          <button
+          <Button
+            variant="dangerLink"
+            className="flex-col gap-2"
             onClick={() => setIsConfirmDeleteModalOpen(true)}
-            className="flex flex-col justify-center items-center gap-2 text-danger"
           >
             <span>
               <Trash />
             </span>
             <span className="text-xs">Delete</span>
-          </button>
+          </Button>
         </div>
       </div>
       <ConfirmDeleteModal

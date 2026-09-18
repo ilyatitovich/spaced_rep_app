@@ -2,6 +2,7 @@ import { FolderInput, Trash } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 import { ConfirmDeleteModal, MoveToLevelModal } from '@/components'
+import Button from './button'
 
 type SelectionModeFooterProps = {
   countItemsForDelete: number
@@ -45,27 +46,28 @@ export default function SelectionModeFooter({
         }`}
       >
         {handleMove && (
-          <button
+          <Button
             onClick={() => setIsMoveModalOpen(true)}
             disabled={countItemsForDelete === 0}
-            className="flex flex-col justify-center items-center gap-2 disabled:text-foreground-subtle text-primary"
+            className="flex-col gap-2 text-xs"
           >
             <span>
               <FolderInput />
             </span>
-            <span className="text-xs">Move</span>
-          </button>
+            <span>Move</span>
+          </Button>
         )}
-        <button
+        <Button
+          variant="dangerLink"
           onClick={() => setIsConfirmDeleteModalOpen(true)}
           disabled={countItemsForDelete === 0}
-          className="flex flex-col justify-center items-center gap-2 disabled:text-foreground-subtle text-danger"
+          className="flex-col gap-2 text-xs"
         >
           <span>
             <Trash />
           </span>
-          <span className="text-xs">Delete</span>
-        </button>
+          <span>Delete</span>
+        </Button>
       </div>
       {!isHidden && (
         <ConfirmDeleteModal

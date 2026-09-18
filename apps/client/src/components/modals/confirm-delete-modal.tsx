@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 
 import Modal from './modal'
 import Spinner from '../ui/spinner'
+import Button from '../ui/button'
 
 interface ConfirmDeleteModalProps {
   isOpen: boolean
@@ -68,20 +69,16 @@ export default function ConfirmDeleteModal({
           </p>
 
           <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={handleClose}
-              className="flex-1 py-3 rounded-xl bg-secondary text-foreground active:scale-95"
-            >
+            <Button variant="secondary" className="flex-1" onClick={handleClose}>
               Cancel
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="dangerSoft"
+              className="flex-1"
               onClick={() => void handleConfirm()}
-              className="flex-1 py-3 rounded-xl text-danger bg-secondary active:scale-95"
             >
               Delete
-            </button>
+            </Button>
           </div>
         </>
       )}

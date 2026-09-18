@@ -12,6 +12,7 @@ import type { MediaDBRecord } from '@/types'
 import MediaToolbar from '../media-toolbar'
 import ObjectUrl from '../object-url'
 import { AUDIO_FILE_ACCEPT } from '@/lib/constants'
+import Button from '../../ui/button'
 
 type AudioBlockProps = {
   content: MediaDBRecord
@@ -162,8 +163,8 @@ export default function AudioBlock({
               onPlay={() => setIsPlaying(true)}
               onPause={() => setIsPlaying(false)}
             />
-            <button
-              type="button"
+            <Button
+              variant="unstyled"
               className="flex shrink-0 items-center justify-center w-8 h-8 rounded-full bg-white text-primary"
               aria-label={isPlaying ? 'Stop' : 'Play'}
               onClick={e => {
@@ -179,7 +180,7 @@ export default function AudioBlock({
               ) : (
                 <Play strokeWidth={2.5} className="w-4 h-4 fill-current" />
               )}
-            </button>
+            </Button>
             <div
               ref={trackRef}
               role="slider"

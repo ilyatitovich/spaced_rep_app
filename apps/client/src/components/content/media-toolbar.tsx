@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
 import { Crop, SquarePen, Trash2 } from 'lucide-react'
 
+import Button from '../ui/button'
+
 type MediaToolbarProps = {
   removeLabel: string
   changeLabel: string
@@ -20,24 +22,18 @@ export default function MediaToolbar({
 }: MediaToolbarProps) {
   return (
     <div className="flex w-full items-center justify-between p-2">
-      <button
-        type="button"
-        className="p-1 text-foreground-muted"
+      <Button
+        variant="icon"
         aria-label={removeLabel}
         onClick={onRemove}
       >
         <Trash2 strokeWidth={2.5} className="w-3.5 h-3.5" />
-      </button>
+      </Button>
       <div className="flex items-center gap-1">
         {onEdit && (
-          <button
-            type="button"
-            className="p-1 text-foreground-muted"
-            aria-label={editLabel}
-            onClick={onEdit}
-          >
+          <Button variant="icon" aria-label={editLabel} onClick={onEdit}>
             <Crop strokeWidth={2.5} className="w-3.5 h-3.5" />
-          </button>
+          </Button>
         )}
         <label className="p-1 text-foreground-muted cursor-pointer">
           <span className="sr-only">{changeLabel}</span>

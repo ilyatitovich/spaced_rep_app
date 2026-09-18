@@ -1,6 +1,8 @@
 import { X, Search as SearchIcon } from 'lucide-react'
 import { useState, type ChangeEvent } from 'react'
 
+import Button from './button'
+
 type SearchProps = {
   value?: string
   onSearch: (value: string) => void
@@ -39,16 +41,14 @@ export default function Search({
       />
 
       {internalValue.length > 0 && (
-        <button
-          type="button"
+        <Button
+          variant="icon"
           onClick={handleClear}
           aria-label="Clear search"
-          className="
-              absolute right-7 top-1/2 -translate-y-1/2
-            "
+          className="absolute right-7 top-1/2 -translate-y-1/2"
         >
-          <X size={18} className="text-foreground-muted" />
-        </button>
+          <X size={18} />
+        </Button>
       )}
     </div>
   )

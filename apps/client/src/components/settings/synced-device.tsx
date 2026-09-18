@@ -2,6 +2,7 @@ import { Monitor, Smartphone, Tablet, Trash2 } from 'lucide-react'
 
 import type { SyncDeviceSummary } from '@/lib/api'
 import { describeSyncDevice, formatLastSeen } from '@/lib'
+import Button from '../ui/button'
 
 interface SyncedDeviceProps {
   device: SyncDeviceSummary
@@ -46,15 +47,16 @@ export function SyncedDevice({
         </p>
       </div>
       {!isCurrent && (
-        <button
-          type="button"
+        <Button
+          variant="unstyled"
           onClick={onDisconnect}
           disabled={disabled}
           title="Disconnect"
+          aria-label="Disconnect"
           className="bg-red-100 p-3 rounded-full text-sm font-medium shrink-0 disabled:opacity-50"
         >
           <Trash2 size={18} strokeWidth={2} className="shrink-0 text-danger" />
-        </button>
+        </Button>
       )}
     </div>
   )

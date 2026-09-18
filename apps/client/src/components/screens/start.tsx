@@ -5,6 +5,7 @@ import { completeOnboarding } from '@/lib'
 import { useState } from 'react'
 import { AuthStep } from '@/types'
 import AuthMethods from '../auth/auth-methods'
+import Button from '../ui/button'
 
 type StartScreenProps = {
   onStart: () => void
@@ -33,13 +34,15 @@ export default function StartScreen({ onStart }: StartScreenProps) {
           <div className="flex-1 h-px bg-border" />
         </div>
 
-        <button
+        <Button
+          variant="outline"
+          size="lg"
+          className="w-full gap-2 border-2 bg-card font-semibold hover:border-border-strong"
           onClick={handleStartLocalApp}
-          className="w-full bg-card border-2 border-border hover:border-border-strong font-semibold py-4 rounded-xl text-foreground flex items-center justify-center gap-2 transition-all text-base"
         >
           <Rocket size={18} />
           Start Local App
-        </button>
+        </Button>
       </div>
     </div>
   )

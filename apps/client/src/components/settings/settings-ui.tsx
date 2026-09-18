@@ -1,6 +1,8 @@
 import { ChevronRight } from 'lucide-react'
 import type { ReactNode } from 'react'
 
+import Button from '../ui/button'
+
 export function SettingsGroup({
   label,
   children,
@@ -41,8 +43,8 @@ export function SettingsNavRow({
   destructive?: boolean
 }) {
   return (
-    <button
-      type="button"
+    <Button
+      variant="unstyled"
       onClick={onClick}
       disabled={disabled}
       className={`w-full flex items-center gap-3 px-4 py-3.5 text-left disabled:opacity-50 ${
@@ -50,7 +52,7 @@ export function SettingsNavRow({
       }`}
     >
       {icon && (
-        <span className="shrink-0 text-foreground-muted [&_svg]:w-[18px] [&_svg]:h-[18px]">
+        <span className="shrink-0 text-foreground-muted [&_svg]:w-4.5 [&_svg]:h-4.5">
           {icon}
         </span>
       )}
@@ -63,7 +65,7 @@ export function SettingsNavRow({
       {onClick && !disabled && (
         <ChevronRight size={18} className="shrink-0 text-foreground-subtle" />
       )}
-    </button>
+    </Button>
   )
 }
 
@@ -169,16 +171,16 @@ export function SettingsSegmentedRow({
         {options.map(opt => {
           const selected = opt.value === value
           return (
-            <button
+            <Button
               key={opt.value}
-              type="button"
+              variant="unstyled"
               onClick={() => onChange(opt.value)}
               className={`relative z-10 flex-1 py-2 text-sm font-medium transition-colors duration-300 ${
                 selected ? 'text-primary-foreground' : 'text-foreground-muted'
               }`}
             >
               {opt.label}
-            </button>
+            </Button>
           )
         })}
       </div>
@@ -200,17 +202,15 @@ export function SettingsActionRow({
   destructive?: boolean
 }) {
   return (
-    <button
-      type="button"
+    <Button
+      variant={destructive ? 'dangerLink' : 'link'}
       onClick={onClick}
       disabled={disabled}
-      className={`w-full flex items-center justify-center gap-2 px-4 py-3.5 font-medium disabled:opacity-50 ${
-        destructive ? 'text-danger' : 'text-primary'
-      }`}
+      className="w-full gap-2 px-4 py-3.5"
     >
       {icon}
       <span>{label}</span>
-    </button>
+    </Button>
   )
 }
 

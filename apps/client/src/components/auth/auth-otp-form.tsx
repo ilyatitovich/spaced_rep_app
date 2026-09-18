@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import TurnstileWidget from './turnstile-widget'
 import { getAuthErrorMessage } from '@/lib/auth-errors'
 import { OTPInput, REGEXP_ONLY_DIGITS, type SlotProps } from 'input-otp'
+import Button from '../ui/button'
 
 const OTP_LENGTH = 6
 const RESEND_COOLDOWN_SECONDS = 60
@@ -167,32 +168,32 @@ export default function AuthOtpForm({
         {resendCooldown <= 0 && (
           <TurnstileWidget key={turnstileKey} onToken={setTurnstileToken} />
         )}
-        <button
-          type="button"
+        <Button
+          variant="link"
+          className="text-sm"
           onClick={handleResend}
           disabled={
             resendCooldown > 0 ||
             isResending ||
             (resendCooldown <= 0 && !turnstileToken)
           }
-          className="text-sm font-medium text-primary active:text-primary-hover transition-colors disabled:text-foreground-subtle"
         >
           {resendCooldown > 0
             ? `Resend code in ${resendCooldown}s`
             : isResending
               ? 'Sending...'
               : 'Resend code'}
-        </button>
+        </Button>
       </div>
 
-      <button
-        type="button"
+      <Button
+        variant="muted"
+        className="w-full mt-4 py-2 gap-2 text-sm"
         onClick={onBack}
-        className="w-full mt-4 py-2 flex items-center justify-center gap-2 text-sm font-medium text-foreground-muted active:text-foreground transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
         Change email
-      </button>
+      </Button>
     </div>
   )
 }

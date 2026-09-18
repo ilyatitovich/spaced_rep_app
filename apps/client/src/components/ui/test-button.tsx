@@ -1,5 +1,7 @@
 import { joinNumbers } from '@/lib'
 
+import Button from './button'
+
 type TestButtonProps = {
   todayLevels: number[]
   onClick: () => void
@@ -7,8 +9,9 @@ type TestButtonProps = {
 
 export default function TestButton({ todayLevels, onClick }: TestButtonProps) {
   return (
-    <button
+    <Button
       onClick={onClick}
+      variant="unstyled"
       className={`
         absolute left-1/2 bottom-4 -translate-x-1/2
         w-2/3
@@ -17,7 +20,7 @@ export default function TestButton({ todayLevels, onClick }: TestButtonProps) {
         text-primary-foreground
         font-semibold
         rounded-full
-        bg-gradient-to-br from-primary to-primary-active
+        bg-linear-to-br from-primary to-primary-active
         shadow-primary
         active:scale-95
         active:shadow-primary-active
@@ -27,6 +30,6 @@ export default function TestButton({ todayLevels, onClick }: TestButtonProps) {
     >
       <span className="text-xl">Today’s Test</span>
       <span className="text-sm">{`Level${todayLevels.length > 1 ? `s` : ''}:  ${joinNumbers(todayLevels)}`}</span>
-    </button>
+    </Button>
   )
 }
