@@ -1,4 +1,4 @@
-import { Monitor, Smartphone, Tablet } from 'lucide-react'
+import { Monitor, Smartphone, Tablet, Trash2 } from 'lucide-react'
 
 import type { SyncDeviceSummary } from '@/lib/api'
 import { describeSyncDevice, formatLastSeen } from '@/lib'
@@ -50,9 +50,10 @@ export function SyncedDevice({
           type="button"
           onClick={onDisconnect}
           disabled={disabled}
-          className="text-danger text-sm font-medium shrink-0 disabled:opacity-50"
+          title="Disconnect"
+          className="bg-red-100 p-2 rounded-full text-sm font-medium shrink-0 disabled:opacity-50"
         >
-          Disconnect
+          <Trash2 size={18} strokeWidth={2} className="shrink-0 text-danger" />
         </button>
       )}
     </div>

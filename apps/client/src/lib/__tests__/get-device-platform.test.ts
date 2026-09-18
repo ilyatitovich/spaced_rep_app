@@ -23,8 +23,12 @@ const UAS = {
     'Mozilla/5.0 (Linux; Android 13; 2211133G) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
   windows:
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  windowsFirefox:
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
   mac:
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  macSafari:
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
   linux:
     'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 } as const
@@ -40,67 +44,75 @@ describe('describeSyncDevice', () => {
   it('ignores blank names', () => {
     expect(describeSyncDevice(UAS.linux, '   ')).toEqual({
       formFactor: 'desktop',
-      label: 'Linux'
+      label: 'Chrome on Linux'
     })
   })
 
-  it('labels Apple phones and tablets', () => {
+  it('labels Apple phones and tablets with browser', () => {
     expect(describeSyncDevice(UAS.iphone)).toEqual({
       formFactor: 'phone',
-      label: 'iPhone'
+      label: 'Safari on iPhone'
     })
     expect(describeSyncDevice(UAS.ipod)).toEqual({
       formFactor: 'phone',
-      label: 'iPhone'
+      label: 'Safari on iPhone'
     })
     expect(describeSyncDevice(UAS.ipad)).toEqual({
       formFactor: 'tablet',
-      label: 'iPad'
+      label: 'Safari on iPad'
     })
   })
 
   it('treats Android Mobile as phone and Android without Mobile as tablet', () => {
     expect(describeSyncDevice(UAS.androidPhone)).toEqual({
       formFactor: 'phone',
-      label: 'Android'
+      label: 'Chrome on Android'
     })
     expect(describeSyncDevice(UAS.androidTablet)).toEqual({
       formFactor: 'tablet',
-      label: 'Android'
+      label: 'Chrome on Android'
     })
   })
 
   it('keeps Samsung, Pixel, and Xiaomi only when those strings appear in the UA', () => {
     expect(describeSyncDevice(UAS.samsung)).toEqual({
       formFactor: 'phone',
-      label: 'Samsung'
+      label: 'Samsung Internet on Samsung'
     })
     expect(describeSyncDevice(UAS.pixel)).toEqual({
       formFactor: 'phone',
-      label: 'Pixel'
+      label: 'Chrome on Pixel'
     })
     expect(describeSyncDevice(UAS.xiaomi)).toEqual({
       formFactor: 'phone',
-      label: 'Xiaomi'
+      label: 'Chrome on Xiaomi'
     })
     expect(describeSyncDevice(UAS.xiaomiModelOnly)).toEqual({
       formFactor: 'phone',
-      label: 'Android'
+      label: 'Chrome on Android'
     })
   })
 
-  it('labels desktop OSes', () => {
+  it('labels desktop as browser on OS so browsers are distinguishable', () => {
     expect(describeSyncDevice(UAS.windows)).toEqual({
       formFactor: 'desktop',
-      label: 'Windows'
+      label: 'Chrome on Windows'
+    })
+    expect(describeSyncDevice(UAS.windowsFirefox)).toEqual({
+      formFactor: 'desktop',
+      label: 'Firefox on Windows'
     })
     expect(describeSyncDevice(UAS.mac)).toEqual({
       formFactor: 'desktop',
-      label: 'Mac'
+      label: 'Chrome on Mac'
+    })
+    expect(describeSyncDevice(UAS.macSafari)).toEqual({
+      formFactor: 'desktop',
+      label: 'Safari on Mac'
     })
     expect(describeSyncDevice(UAS.linux)).toEqual({
       formFactor: 'desktop',
-      label: 'Linux'
+      label: 'Chrome on Linux'
     })
   })
 
