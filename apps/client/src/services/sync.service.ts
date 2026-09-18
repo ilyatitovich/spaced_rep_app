@@ -31,6 +31,21 @@ import type { WsConnectionState } from './sync-ws.manager'
 type SyncTable = typeof STORES.TOPICS | typeof STORES.CARDS
 type SyncOperation = 'upsert' | 'delete'
 
+/** In-flight push opIds — collapsing those upserts would lose the follow-up delete. */
+const inFlightOpIds = new Set<string>()
+
+/** Net-zero: unsynced upsert + delete cancel. Keep the delete if that upsert may still land. */
+export function coalesceQueuedOperation(
+  existing: SyncOperation | undefined,
+  incoming: SyncOperation,
+  isExistingInFlight = false
+): SyncOperation | null {
+  if (existing === 'upsert' && incoming === 'delete' && !isExistingInFlight) {
+    return null
+  }
+  return incoming
+}
+
 type QueueItem = {
   id: string
   opId: string
@@ -291,9 +306,20 @@ async function coalesceAndPutQueueItem(
     queueStore.get(queueId)
   )
 
+  const next = coalesceQueuedOperation(
+    existing?.operation,
+    operation,
+    existing != null && inFlightOpIds.has(existing.opId)
+  )
+
+  if (next === null) {
+    if (existing) await promisify(queueStore.delete(queueId))
+    return
+  }
+
   let opId: string = crypto.randomUUID()
   let createdAt = Date.now()
-  if (existing?.operation === operation) {
+  if (existing?.operation === next) {
     opId = existing.opId
     createdAt = existing.createdAt
   }
@@ -304,7 +330,7 @@ async function coalesceAndPutQueueItem(
       opId,
       table,
       recordId,
-      operation,
+      operation: next,
       createdAt,
       attempts: 0,
       nextRetryAt: 0
@@ -652,6 +678,7 @@ async function pushChanges(deviceId: string): Promise<number> {
     const { mutations, items } = await buildMutations(queue)
     if (mutations.length === 0) return maxAcceptedUpdatedAt
 
+    for (const item of items) inFlightOpIds.add(item.opId)
     try {
       let ack: PushAck
       if (realtime?.isActive() && realtime.pushBatch) {
@@ -688,6 +715,8 @@ async function pushChanges(deviceId: string): Promise<number> {
 
       await new Promise<void>(resolve => setTimeout(resolve, rateLimitDelayMs))
       rateLimitDelayMs = Math.min(60_000, rateLimitDelayMs * 2)
+    } finally {
+      for (const item of items) inFlightOpIds.delete(item.opId)
     }
   }
 }
