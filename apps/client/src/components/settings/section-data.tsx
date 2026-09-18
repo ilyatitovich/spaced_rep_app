@@ -13,6 +13,7 @@ import { BackButton, FileModal, Header, Screen } from '@/components'
 import { useAuth, useSync } from '@/contexts'
 import {
   clearMediaCache,
+  describeSyncDevice,
   formatBytes,
   formatSyncTime,
   getStorageUsage,
@@ -26,6 +27,7 @@ import {
 } from '@/lib/api'
 import { PRO_DEVICE_LIMIT } from '@/lib/billing-product'
 import { getSyncDiagnostics } from '@/services'
+import Modal from '../modals/modal'
 import { SyncedDevice } from './synced-device'
 import {
   SettingsActionRow,
@@ -90,7 +92,9 @@ export default function SectionData({ isOpen }: SectionDataProps) {
   const [storage, setStorage] = useState<StorageUsage | null>(null)
   const [isClearingCache, setIsClearingCache] = useState(false)
   const [devices, setDevices] = useState<SyncDeviceSummary[]>([])
-  const [revokingId, setRevokingId] = useState<string | null>(null)
+  const [pendingDisconnect, setPendingDisconnect] =
+    useState<SyncDeviceSummary | null>(null)
+  const [isDisconnecting, setIsDisconnecting] = useState(false)
 
   const refreshStorage = useCallback(() => {
     void getStorageUsage().then(setStorage)
@@ -119,19 +123,23 @@ export default function SectionData({ isOpen }: SectionDataProps) {
     if (isOpen && user) {
       void loadDevices().catch(() => toast.error('Could not load devices'))
     }
-    if (!isOpen) setDevices([])
+    if (!isOpen) {
+      setDevices([])
+      setPendingDisconnect(null)
+    }
   }, [isOpen, user, loadDevices])
 
-  const handleDisconnect = async (targetId: string) => {
-    if (!deviceId) return
-    const ok = window.confirm(
-      'Disconnect this device from sync? It will lose its sync slot and cannot reconnect until site data is cleared in that browser.'
-    )
-    if (!ok) return
+  const closeDisconnectModal = () => {
+    if (isDisconnecting) return
+    setPendingDisconnect(null)
+  }
 
+  const handleConfirmDisconnect = async () => {
+    if (!deviceId || !pendingDisconnect) return
+    const targetId = pendingDisconnect.id
     const session = await ensureFreshSession()
     if (!session) return
-    setRevokingId(targetId)
+    setIsDisconnecting(true)
     try {
       const result = await revokeSyncDevice(session.accessToken, {
         deviceId: targetId,
@@ -140,11 +148,12 @@ export default function SectionData({ isOpen }: SectionDataProps) {
       if (result.revoked) {
         setDevices(prev => prev.filter(d => d.id !== targetId))
         toast.success('Device disconnected')
+        setPendingDisconnect(null)
       }
     } catch {
       toast.error('Could not disconnect device')
     } finally {
-      setRevokingId(null)
+      setIsDisconnecting(false)
     }
   }
 
@@ -312,14 +321,51 @@ export default function SectionData({ isOpen }: SectionDataProps) {
                   key={device.id}
                   device={device}
                   isCurrent={device.id === deviceId}
-                  onDisconnect={() => void handleDisconnect(device.id)}
-                  disabled={revokingId === device.id}
+                  onDisconnect={() => setPendingDisconnect(device)}
+                  disabled={isDisconnecting}
                 />
               ))
             )}
           </SettingsGroup>
         )}
       </div>
+
+      <Modal
+        isOpen={pendingDisconnect != null}
+        onClose={closeDisconnectModal}
+        title="Disconnect device?"
+      >
+        <p className="text-foreground-muted text-center mb-6">
+          <span className="font-medium text-foreground">
+            {pendingDisconnect
+              ? describeSyncDevice(
+                  pendingDisconnect.userAgent,
+                  pendingDisconnect.name
+                ).label
+              : 'This device'}
+          </span>{' '}
+          will lose its sync slot and cannot reconnect until site data is
+          cleared in that browser.
+        </p>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={closeDisconnectModal}
+            disabled={isDisconnecting}
+            className="flex-1 py-3 rounded-xl border border-border active:scale-95 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleConfirmDisconnect()}
+            disabled={isDisconnecting}
+            className="flex-1 py-3 rounded-xl bg-danger text-danger-foreground active:scale-95 disabled:opacity-50"
+          >
+            {isDisconnecting ? 'Disconnecting…' : 'Disconnect'}
+          </button>
+        </div>
+      </Modal>
 
       <FileModal
         kind="import-app"
