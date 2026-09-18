@@ -2,6 +2,7 @@ import {
   collectWireMediaRefs,
   fromWireCardData,
   isWireMediaRef,
+  prepareWireCardData,
   sha256Hex,
   toWireCardData
 } from './wire-media.js'
@@ -144,5 +145,25 @@ describe('wire media transform', () => {
     const refs = await collectWireMediaRefs(data)
     expect(refs).toHaveLength(1)
     expect(refs[0]?.hash).toBe(hash)
+  })
+
+  it('prepareWireCardData returns refs and unique buffers', async () => {
+    const image = bytes([1, 2, 3])
+    const data = {
+      front: {
+        side: 'front',
+        blocks: [
+          { type: 'image', content: { buffer: image, type: 'image/png' } },
+          { type: 'image', content: { buffer: image, type: 'image/png' } }
+        ]
+      },
+      back: { side: 'back', blocks: [] }
+    }
+
+    const { wireData, mediaByHash } = await prepareWireCardData(data)
+    expect(mediaByHash.size).toBe(1)
+    expect(mediaByHash.get(await sha256Hex(image))?.type).toBe('image/png')
+    const wire = wireData as typeof data
+    expect(isWireMediaRef(wire.front.blocks[0]?.content)).toBe(true)
   })
 })

@@ -17,16 +17,24 @@ import {
   type EmbeddedCardMedia
 } from '@/lib/card-media-stats'
 import {
-  cardToRow,
   rowToCard,
   rowToTopic,
-  shouldApplyRemote
+  shouldApplyRemote,
+  type CardRow
 } from '@/lib/sync-serialize'
+import {
+  hydrateIncomingCardData,
+  mergePreparedMedia,
+  prepareWireCardData,
+  uploadOwnedMedia
+} from '@/lib/sync-media'
 import { Card, Topic } from '@/models'
 import { isBackendConfigured, sync as syncBackend } from '@/providers'
 import type { SyncRealtimeHandle } from '@/providers/types'
 import { ApiError } from '@/lib/api'
+import type { MediaDBRecord } from '@spaced-rep/sync-protocol'
 import type { WsConnectionState } from './sync-ws.manager'
+import { httpSyncMediaApi } from './sync-http.client'
 
 type SyncTable = typeof STORES.TOPICS | typeof STORES.CARDS
 type SyncOperation = 'upsert' | 'delete'
@@ -472,16 +480,22 @@ function topicToRecord(topic: Topic): TopicRecord {
   }
 }
 
-function cardToRecord(card: Card): CardRecord {
-  const row = cardToRow(card, '')
+async function cardToWireRecord(card: Card): Promise<{
+  record: CardRecord
+  mediaByHash: Map<string, MediaDBRecord>
+}> {
+  const { wireData, mediaByHash } = await prepareWireCardData(card.data)
   return {
-    id: card.id,
-    topicId: card.topicId,
-    level: card.level,
-    dataJson: JSON.stringify(row.data),
-    reviewDate: card.reviewDate ?? null,
-    updatedAt: card.updatedAt ?? Date.now(),
-    deletedAt: null
+    record: {
+      id: card.id,
+      topicId: card.topicId,
+      level: card.level,
+      dataJson: JSON.stringify(wireData),
+      reviewDate: card.reviewDate ?? null,
+      updatedAt: card.updatedAt ?? Date.now(),
+      deletedAt: null
+    },
+    mediaByHash
   }
 }
 
@@ -499,13 +513,13 @@ function recordToTopic(record: TopicRecord): Topic {
   })
 }
 
-function recordToCard(record: CardRecord): Card {
+function recordToCard(record: CardRecord, data: CardRow['data']): Card {
   return rowToCard({
     id: record.id,
     user_id: '',
     topic_id: record.topicId,
     level: record.level,
-    data: JSON.parse(record.dataJson),
+    data,
     review_date: record.reviewDate ?? null,
     updated_at: new Date(record.updatedAt).toISOString(),
     deleted_at:
@@ -516,10 +530,12 @@ function recordToCard(record: CardRecord): Card {
 async function buildMutations(items: QueueItem[]): Promise<{
   mutations: Mutation[]
   items: QueueItem[]
+  mediaByHash: Map<string, MediaDBRecord>
 }> {
   const deviceId = await getDeviceId()
   const mutations: Mutation[] = []
   const included: QueueItem[] = []
+  const mediaByHash = new Map<string, MediaDBRecord>()
   // ponytail: count+byte caps; blob store later if single cards exceed 1mb
   let approxBytes = 256
 
@@ -573,19 +589,21 @@ async function buildMutations(items: QueueItem[]): Promise<{
         await removeQueueItem(item.id)
         continue
       }
+      const { record, mediaByHash: cardMedia } = await cardToWireRecord(card)
       if (
         !tryAdd(item, {
           ...base,
           updatedAt: card.updatedAt ?? Date.now(),
-          card: cardToRecord(card)
+          card: record
         })
       ) {
         break
       }
+      mergePreparedMedia(mediaByHash, cardMedia)
     }
   }
 
-  return { mutations, items: included }
+  return { mutations, items: included, mediaByHash }
 }
 
 async function applyPushAck(ack: PushAck, items: QueueItem[]): Promise<void> {
@@ -644,6 +662,9 @@ async function applyTopicConflict(
 }
 
 async function applyPullDelta(delta: PullDelta): Promise<void> {
+  // Hydrate + verify all owned media before any local write or watermark bump.
+  const hydratedCardData = await hydrateIncomingCardData(delta, httpSyncMediaApi)
+
   let didMutateLocal = false
   let maxUpdatedAt = 0
 
@@ -688,7 +709,14 @@ async function applyPullDelta(delta: PullDelta): Promise<void> {
 
       const local = await getLocalRecord<Card>(STORES.CARDS, remote.id)
       if (shouldApplyRemote(local?.updatedAt, remote.updatedAt)) {
-        await putLocal(STORES.CARDS, recordToCard(remote))
+        const data = hydratedCardData.get(remote.id)
+        if (data === undefined) {
+          throw new Error(`Missing hydrated card data for ${remote.id}`)
+        }
+        await putLocal(
+          STORES.CARDS,
+          recordToCard(remote, data as CardRow['data'])
+        )
         didMutateLocal = true
       }
     }
@@ -725,11 +753,14 @@ async function pushChanges(deviceId: string): Promise<number> {
     const queue = await getQueue()
     if (queue.length === 0) return maxAcceptedUpdatedAt
 
-    const { mutations, items } = await buildMutations(queue)
+    const { mutations, items, mediaByHash } = await buildMutations(queue)
     if (mutations.length === 0) return maxAcceptedUpdatedAt
 
     for (const item of items) inFlightOpIds.add(item.opId)
     try {
+      // Upload owned buffers before pushBatch so the server can HeadObject refs.
+      await uploadOwnedMedia(mediaByHash, httpSyncMediaApi)
+
       let ack: PushAck
       if (realtime?.isActive() && realtime.pushBatch) {
         try {
@@ -794,9 +825,17 @@ function wireRealtimeListeners(): void {
 
   realtime = syncBackend.connectRealtime({
     onDelta: delta => {
-      void applyPullDelta(delta).catch(err =>
+      void applyPullDelta(delta).catch(err => {
         console.error('WS delta apply failed:', err)
-      )
+        // Hydrate/verify failed before watermark advance — HTTP pull retries the range.
+        void (async () => {
+          try {
+            await pullChanges(await getDeviceId())
+          } catch (retryErr) {
+            console.error('WS delta retry pull failed:', retryErr)
+          }
+        })()
+      })
     },
     onConflict: conflict => {
       void applyTopicConflict(conflict).catch(err =>

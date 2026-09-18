@@ -83,11 +83,15 @@ async function mapCardMedia(
   }
 }
 
-/** Replace local `{ buffer, type }` with wire refs. `{ src }` and existing refs pass through. */
-export async function toWireCardData(data: unknown): Promise<unknown> {
+/** Replace local `{ buffer, type }` with wire refs and collect unique buffers by hash. */
+export async function prepareWireCardData(data: unknown): Promise<{
+  wireData: unknown
+  mediaByHash: Map<string, MediaDBRecord>
+}> {
   const cache = new WeakMap<ArrayBuffer, WireMediaRef>()
+  const mediaByHash = new Map<string, MediaDBRecord>()
 
-  return mapCardMedia(data, async content => {
+  const wireData = await mapCardMedia(data, async content => {
     if (isRemoteSrc(content) || isWireMediaRef(content)) return content
     if (!isLocalMediaBuffer(content)) return content
 
@@ -103,8 +107,16 @@ export async function toWireCardData(data: unknown): Promise<unknown> {
       byteLength: content.buffer.byteLength
     }
     cache.set(content.buffer, ref)
+    mediaByHash.set(hash, content)
     return ref
   })
+
+  return { wireData, mediaByHash }
+}
+
+/** Replace local `{ buffer, type }` with wire refs. `{ src }` and existing refs pass through. */
+export async function toWireCardData(data: unknown): Promise<unknown> {
+  return (await prepareWireCardData(data)).wireData
 }
 
 /** Replace wire refs with local `{ buffer, type }` using downloaded bytes. `{ src }` passes through. */

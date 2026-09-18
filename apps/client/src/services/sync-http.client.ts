@@ -2,6 +2,11 @@ import { createHttpSyncClient, SyncHttpError } from '@spaced-rep/sync-client'
 import type { Mutation, PullDelta, PushAck } from '@spaced-rep/sync-protocol'
 import { ensureFreshSession, ApiError } from '@/lib/api'
 import { getAuthSession } from '@/lib/auth-storage'
+import type {
+  MediaDownloadPlanItem,
+  MediaUploadPlanItem,
+  SyncMediaApi
+} from '@/lib/sync-media'
 
 const apiUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, '') ?? ''
 const client = createHttpSyncClient({
@@ -21,6 +26,48 @@ async function mapError<T>(operation: () => Promise<T>): Promise<T> {
     }
     throw error
   }
+}
+
+async function getAccessToken(): Promise<string> {
+  const accessToken =
+    (await ensureFreshSession())?.accessToken ??
+    getAuthSession()?.accessToken ??
+    null
+  if (!accessToken) {
+    throw new ApiError(401, 'Not authenticated', 'UNAUTHORIZED')
+  }
+  return accessToken
+}
+
+async function postMediaJson<T>(path: string, body: unknown): Promise<T> {
+  if (!apiUrl) {
+    throw new ApiError(0, 'VITE_API_URL is not configured')
+  }
+  const accessToken = await getAccessToken()
+  const response = await fetch(`${apiUrl}${path}`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    },
+    body: JSON.stringify(body)
+  })
+  const json = (await response.json().catch(() => null)) as {
+    data?: T
+    error?: { message?: string; code?: string }
+  } | null
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      json?.error?.message ?? response.statusText,
+      json?.error?.code
+    )
+  }
+  if (json?.data === undefined) {
+    throw new ApiError(500, 'Invalid media response')
+  }
+  return json.data
 }
 
 export function isServerSyncConfigured(): boolean {
@@ -49,6 +96,23 @@ export function httpBootstrap(input: {
   return mapError(() =>
     client.bootstrap(input.deviceId, input.lastPulledAt, input.pendingOpCount)
   )
+}
+
+export const httpSyncMediaApi: SyncMediaApi = {
+  async planUploads(items) {
+    const data = await postMediaJson<{ items: MediaUploadPlanItem[] }>(
+      '/sync/media/uploads',
+      { items }
+    )
+    return data.items
+  },
+  async planDownloads(hashes) {
+    const data = await postMediaJson<{ items: MediaDownloadPlanItem[] }>(
+      '/sync/media/downloads',
+      { hashes }
+    )
+    return data.items
+  }
 }
 
 export function getWsUrl(): string | null {
