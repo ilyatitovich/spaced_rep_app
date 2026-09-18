@@ -80,7 +80,10 @@ describe('sync websocket entitlement', () => {
     if (!address || typeof address === 'string') throw new Error('No address')
 
     const ws = new WebSocket(`ws://127.0.0.1:${address.port}/sync/ws`, {
-      headers: { Authorization: 'Bearer token' }
+      headers: {
+        Authorization: 'Bearer token',
+        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) TestBrowser/1.0'
+      }
     })
     await once(ws, 'open')
     await vi.waitFor(() => expect(assertPlan).toHaveBeenCalledOnce())
@@ -101,6 +104,13 @@ describe('sync websocket entitlement', () => {
     )
     const [helloData] = await once(ws, 'message')
     expect(decodeEnvelope(helloData.toString()).kind).toBe('helloAck')
+    expect(reportDevice).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'user-1',
+        deviceId: '11111111-1111-4111-8111-111111111111',
+        userAgent: 'Mozilla/5.0 (X11; Linux x86_64) TestBrowser/1.0'
+      })
+    )
 
     assertPlan.mockRejectedValueOnce(new Error('PLAN_REQUIRED'))
     ws.send(

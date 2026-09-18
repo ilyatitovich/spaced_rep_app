@@ -30,10 +30,13 @@ export function SyncedDevice({
 
   return (
     <div className="flex items-center gap-3 px-4 py-3.5">
-      <Icon
-        size={18}
-        className="shrink-0 text-foreground-muted mt-0.5 self-start"
-      />
+      <div className="p-3 rounded-full bg-secondary flex items-center justify-center">
+        <Icon
+          size={18}
+          strokeWidth={2}
+          className="shrink-0 text-black mt-0.5 self-start"
+        />
+      </div>
       <div className="flex-1 min-w-0">
         <p className="font-medium truncate">{label}</p>
         <p className="text-xs text-foreground-muted mt-0.5">

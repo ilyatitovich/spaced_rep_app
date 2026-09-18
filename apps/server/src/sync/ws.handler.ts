@@ -22,6 +22,7 @@ type Conn = {
   userId: string
   deviceId: string
   sessionId: string
+  userAgent: string | null
   lastPongAt: number
 }
 
@@ -171,7 +172,8 @@ async function handleMessage(conn: Conn, data: string): Promise<void> {
         await reportDevice({
           userId: conn.userId,
           deviceId: conn.deviceId,
-          lastPulledAt: envelope.hello.lastPulledAt
+          lastPulledAt: envelope.hello.lastPulledAt,
+          userAgent: conn.userAgent
         })
       } catch (err) {
         const message =
@@ -379,6 +381,7 @@ export function createSyncWss(server: HttpServer): WebSocketServer {
         userId: auth.userId,
         deviceId: '',
         sessionId: auth.sessionId,
+        userAgent: req.headers['user-agent'] ?? null,
         lastPongAt: Date.now()
       }
 
