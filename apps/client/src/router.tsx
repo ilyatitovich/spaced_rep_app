@@ -1,7 +1,13 @@
 import { createBrowserRouter } from 'react-router'
 import { useState } from 'react'
 
-import { NotFoundPage, HomePage, Root, OAuthGoogleCallbackPage } from '@/pages'
+import {
+  NotFoundPage,
+  HomePage,
+  Root,
+  OAuthGoogleCallbackPage,
+  RouteErrorPage
+} from '@/pages'
 import { StartScreen } from './components'
 import { useAuth } from './contexts'
 import { isOnboardingComplete } from './lib'
@@ -21,7 +27,7 @@ export default createBrowserRouter([
   {
     path: '/',
     element: <Root />,
-    errorElement: <NotFoundPage />,
+    errorElement: <RouteErrorPage />,
     children: [
       {
         index: true,
@@ -30,6 +36,10 @@ export default createBrowserRouter([
       {
         path: 'oauth/google/callback',
         element: <OAuthGoogleCallbackPage />
+      },
+      {
+        path: '*',
+        element: <NotFoundPage />
       }
     ]
   }
