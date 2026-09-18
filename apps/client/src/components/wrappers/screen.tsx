@@ -1,8 +1,9 @@
 import type { ReactNode, TransitionEvent } from 'react'
 import { useState, useEffect, useId, useRef } from 'react'
 
-import { BackButton, Button } from '@/components/ui'
-import { useShouldAnimate } from '@/hooks'
+import BackButton from '@/components/ui/back-button'
+import Button from '@/components/ui/button'
+import { useShouldAnimate } from '@/hooks/use-should-animate'
 import { useScreenStackStore } from '@/store/screen-stack-store'
 
 import { ErrorBoundary, type ErrorFallbackProps } from './error-boundary'
