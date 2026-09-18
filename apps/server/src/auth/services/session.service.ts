@@ -4,6 +4,7 @@ import type { Prisma } from '../../generated/prisma/client.js'
 import { env } from '../../shared/config/env.js'
 import { ForbiddenError, UnauthorizedError } from '../../shared/lib/errors.js'
 import { prisma } from '../../shared/lib/prisma.js'
+import { toAuthUser, type AuthUser } from '../lib/auth-user.js'
 import {
   accessTokenExpiresIn,
   createRefreshToken,
@@ -16,7 +17,7 @@ export type TokenPairResult = {
   refreshToken: string
   expiresIn: number
   tokenType: 'Bearer'
-  user: { id: string; email: string }
+  user: AuthUser
 }
 
 type CreateSessionInput = {
@@ -36,7 +37,7 @@ export async function createSessionWithTokens(
 ): Promise<TokenPairResult> {
   const user = await prisma.user.findUnique({
     where: { id: input.userId },
-    select: { id: true, email: true, disabledAt: true }
+    select: { id: true, email: true, avatarUrl: true, disabledAt: true }
   })
 
   if (!user) {
@@ -92,7 +93,7 @@ export async function createSessionWithTokens(
     refreshToken: rawRefresh,
     expiresIn: accessTokenExpiresIn(),
     tokenType: 'Bearer',
-    user: { id: user.id, email: user.email }
+    user: toAuthUser(user)
   }
 }
 
@@ -106,7 +107,9 @@ export async function rotateRefreshToken(
     include: {
       session: {
         include: {
-          user: { select: { id: true, email: true, disabledAt: true } }
+          user: {
+            select: { id: true, email: true, avatarUrl: true, disabledAt: true }
+          }
         }
       }
     }
@@ -202,10 +205,7 @@ export async function rotateRefreshToken(
     refreshToken: newRawRefresh,
     expiresIn: accessTokenExpiresIn(),
     tokenType: 'Bearer',
-    user: {
-      id: existing.session.user.id,
-      email: existing.session.user.email
-    }
+    user: toAuthUser(existing.session.user)
   }
 }
 

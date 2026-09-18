@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from 'express'
 import { UnauthorizedError } from '../../shared/lib/errors.js'
 import { sendData } from '../../shared/lib/http.js'
 import { prisma } from '../../shared/lib/prisma.js'
+import { toAuthUser } from '../lib/auth-user.js'
 
 export async function meHandler(
   req: Request,
@@ -15,14 +16,14 @@ export async function meHandler(
         id: auth.userId,
         disabledAt: null
       },
-      select: { id: true, email: true }
+      select: { id: true, email: true, avatarUrl: true }
     })
 
     if (!user) {
       throw new UnauthorizedError('User not found or disabled')
     }
 
-    sendData(res, { user })
+    sendData(res, { user: toAuthUser(user) })
   } catch (err) {
     next(err)
   }

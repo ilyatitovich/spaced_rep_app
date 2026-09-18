@@ -29,6 +29,7 @@ export default function Avatar({
         src={url}
         alt=""
         loading="lazy"
+        referrerPolicy="no-referrer"
         onError={() => setFailed(true)}
         className={`${sizeClass} rounded-full object-cover shrink-0`}
       />

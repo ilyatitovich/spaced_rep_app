@@ -24,7 +24,10 @@ function isUniqueViolation(err: unknown): boolean {
 async function resolveGoogleUser(input: {
   sub: string
   email: string
+  picture?: string
 }): Promise<{ id: string; email: string }> {
+  const avatarData = input.picture ? { avatarUrl: input.picture } : {}
+
   const existingIdentity = await prisma.oAuthIdentity.findUnique({
     where: {
       provider_providerUserId: {
@@ -45,6 +48,12 @@ async function resolveGoogleUser(input: {
       await prisma.oAuthIdentity.update({
         where: { id: existingIdentity.id },
         data: { email: input.email }
+      })
+    }
+    if (input.picture) {
+      await prisma.user.update({
+        where: { id: existingIdentity.user.id },
+        data: avatarData
       })
     }
     return {
@@ -71,6 +80,12 @@ async function resolveGoogleUser(input: {
           email: input.email
         }
       })
+      if (input.picture) {
+        await prisma.user.update({
+          where: { id: userByEmail.id },
+          data: avatarData
+        })
+      }
     } catch (err) {
       if (!isUniqueViolation(err)) throw err
       return resolveGoogleUser(input)
@@ -83,6 +98,7 @@ async function resolveGoogleUser(input: {
       data: {
         email: input.email,
         emailVerifiedAt: new Date(),
+        ...avatarData,
         oauthIdentities: {
           create: {
             provider: GOOGLE_PROVIDER,
@@ -111,7 +127,8 @@ export async function googleCallbackHandler(
     const claims = await exchangeGoogleCode(body)
     const user = await resolveGoogleUser({
       sub: claims.sub,
-      email: claims.email
+      email: claims.email,
+      picture: claims.picture
     })
 
     const tokens = await createSessionWithTokens({

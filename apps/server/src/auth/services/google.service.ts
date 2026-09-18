@@ -15,6 +15,7 @@ export type GoogleIdClaims = {
   sub: string
   email: string
   emailVerified: boolean
+  picture?: string
 }
 
 type GoogleTokenResponse = {
@@ -87,7 +88,10 @@ async function verifyGoogleIdToken(idToken: string): Promise<GoogleIdClaims> {
     return {
       sub: payload.sub,
       email: payload.email.toLowerCase(),
-      emailVerified: true
+      emailVerified: true,
+      ...(typeof payload.picture === 'string' && payload.picture
+        ? { picture: payload.picture }
+        : {})
     }
   } catch (err) {
     if (err instanceof BadRequestError || err instanceof UnauthorizedError) {
