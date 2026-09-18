@@ -99,7 +99,21 @@ const envSchema = z.object({
     .string()
     .default('false')
     .transform(value => value === 'true'),
-  BILLING_RETURN_URL: z.string().default('')
+  BILLING_RETURN_URL: z.string().default(''),
+  // Private R2 (prod) or MinIO (local). Tests may omit credentials and inject a mock.
+  R2_ACCOUNT_ID: z.string().default(''),
+  R2_BUCKET: z.string().default('spaced-rep-media'),
+  R2_ACCESS_KEY_ID: z.string().default(''),
+  R2_SECRET_ACCESS_KEY: z.string().default(''),
+  /** API endpoint override (MinIO `http://minio:9000`). Empty → derive from R2_ACCOUNT_ID. */
+  R2_ENDPOINT: z.string().default(''),
+  /** Browser-reachable endpoint for presigned URLs (MinIO `http://localhost:9000`). */
+  R2_PRESIGN_ENDPOINT: z.string().default(''),
+  R2_REGION: z.string().default('auto'),
+  R2_FORCE_PATH_STYLE: z
+    .string()
+    .default('false')
+    .transform(value => value === 'true')
 })
 
 const parsed = envSchema.safeParse(process.env)

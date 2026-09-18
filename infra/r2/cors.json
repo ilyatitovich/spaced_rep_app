@@ -1,0 +1,12 @@
+[
+  {
+    "AllowedOrigins": [
+      "https://YOUR_PWA_ORIGIN",
+      "chrome-extension://YOUR_EXTENSION_ID"
+    ],
+    "AllowedMethods": ["GET", "PUT", "HEAD"],
+    "AllowedHeaders": ["content-type", "x-amz-checksum-sha256"],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3600
+  }
+]
