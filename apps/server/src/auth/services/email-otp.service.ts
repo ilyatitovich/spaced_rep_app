@@ -46,6 +46,19 @@ function isUniqueViolation(err: unknown): boolean {
   )
 }
 
+async function cleanupOldOtpCodes(): Promise<void> {
+  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000)
+  try {
+    await prisma.otpCode.deleteMany({
+      where: {
+        OR: [{ expiresAt: { lt: cutoff } }, { consumedAt: { lt: cutoff } }]
+      }
+    })
+  } catch {
+    // Opportunistic cleanup — never block auth
+  }
+}
+
 async function resolveEmailUser(email: string): Promise<{
   id: string
   email: string
@@ -105,6 +118,8 @@ export async function requestEmailOtp(input: {
     key: `otp:cooldown:${input.email}`,
     seconds: env.OTP_RESEND_COOLDOWN_SECONDS
   })
+
+  await cleanupOldOtpCodes()
 
   const code = generateOtp()
   const codeHash = hashOtp(code)

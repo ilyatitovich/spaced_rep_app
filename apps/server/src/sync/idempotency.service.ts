@@ -3,6 +3,9 @@ import { getRedis } from '../shared/lib/redis.js'
 import { logger } from '../shared/lib/logger.js'
 
 const IDEMPOTENCY_TTL_SECONDS = 7 * 24 * 60 * 60
+// Postgres keeps op ids longer than Redis so a device that was offline for
+// weeks still gets its retries deduped.
+const OPERATION_RETENTION_MS = 30 * 24 * 60 * 60 * 1000
 
 export async function wasOpApplied(
   userId: string,
@@ -49,5 +52,16 @@ export async function markOpApplied(input: {
     }
   } catch (err) {
     logger.warn({ err }, 'sync.idempotency redis write failed')
+  }
+}
+
+export async function pruneAppliedOps(userId: string): Promise<void> {
+  const cutoff = new Date(Date.now() - OPERATION_RETENTION_MS)
+  try {
+    await prisma.syncOperation.deleteMany({
+      where: { userId, appliedAt: { lt: cutoff } }
+    })
+  } catch (err) {
+    logger.warn({ err }, 'sync.idempotency prune failed')
   }
 }

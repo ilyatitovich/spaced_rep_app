@@ -28,6 +28,7 @@ vi.mock('./conflict.service.js', async importOriginal => ({
 vi.mock('./fanout.service.js', () => ({ publishFanout: vi.fn() }))
 vi.mock('./idempotency.service.js', () => ({
   markOpApplied: vi.fn(),
+  pruneAppliedOps: vi.fn(),
   wasOpApplied: vi.fn().mockResolvedValue(false)
 }))
 

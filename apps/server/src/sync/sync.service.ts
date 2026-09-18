@@ -23,7 +23,11 @@ import {
   purgeSyncedTombstones,
   resolveTopicTitleConflict
 } from './conflict.service.js'
-import { markOpApplied, wasOpApplied } from './idempotency.service.js'
+import {
+  markOpApplied,
+  pruneAppliedOps,
+  wasOpApplied
+} from './idempotency.service.js'
 import { publishFanout } from './fanout.service.js'
 import {
   cardRecordToDb,
@@ -135,9 +139,7 @@ export async function reportDevice(input: {
           : {}),
         lastSeenAt: new Date(),
         // Don't clobber a known UA when a caller omits it (e.g. bootstrap before the fix).
-        ...(input.userAgent
-          ? { userAgent: input.userAgent }
-          : {})
+        ...(input.userAgent ? { userAgent: input.userAgent } : {})
       }
     })
   })
@@ -419,6 +421,8 @@ export async function applyPushBatch(input: {
       }
     }
   }
+
+  await pruneAppliedOps(input.userId)
 
   const delta = await pullChanges({
     userId: input.userId,
