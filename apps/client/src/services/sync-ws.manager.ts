@@ -293,7 +293,7 @@ export class SyncWsManager {
         break
       case 'gracefulClose':
         this.intentionalClose = false
-        this.ws?.close(1001, envelope.gracefulClose.reason)
+        this.ws?.close(1000, envelope.gracefulClose.reason)
         break
       default:
         break
@@ -325,7 +325,7 @@ export class SyncWsManager {
     this.lastServerPingAt = Date.now()
     this.pingTimer = setInterval(() => {
       if (Date.now() - this.lastServerPingAt > 70_000) {
-        this.ws?.close(1001, 'missed pings')
+        this.ws?.close(1000, 'missed pings')
       }
     }, 10_000)
   }
