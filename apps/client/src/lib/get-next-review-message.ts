@@ -3,57 +3,51 @@ import { LEITNER_64_DAY_SCHEDULE } from './leitner-schedule'
 const DAY_MS = 86_400_000
 const CYCLE_LENGTH = LEITNER_64_DAY_SCHEDULE.length
 
-function startOfDay(d: Date): Date {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate())
+function startOfDayTs(ts: number): number {
+  const d = new Date(ts)
+  d.setHours(0, 0, 0, 0)
+  return d.getTime()
 }
 
-function resetToStartOfDay(ts: number): number {
-  const date = new Date(ts)
-  date.setHours(0, 0, 0, 0)
-  return date.getTime()
+function addDays(ts: number, days: number): number {
+  const d = new Date(ts)
+  d.setDate(d.getDate() + days)
+  return d.getTime()
 }
 
-export function getNextReviewDate(
+function getNextReviewDate(
   fromTs: number,
   level: number,
-  pivot: number
+  pivot: number,
+  includeToday: boolean
 ): number {
-  const currentDay = Math.floor(
-    (resetToStartOfDay(fromTs) - resetToStartOfDay(pivot)) / DAY_MS
-  )
+  const from = startOfDayTs(fromTs)
+  const currentDay = Math.round((from - startOfDayTs(pivot)) / DAY_MS)
   const cycleDay = ((currentDay % CYCLE_LENGTH) + CYCLE_LENGTH) % CYCLE_LENGTH
+  const minOffset = includeToday ? 0 : 1
 
-  for (let offset = 1; offset <= CYCLE_LENGTH; offset++) {
+  for (let offset = minOffset; offset < minOffset + CYCLE_LENGTH; offset++) {
     const index = (cycleDay + offset) % CYCLE_LENGTH
-
     if (LEITNER_64_DAY_SCHEDULE[index].includes(level)) {
-      const nextReviewDate = fromTs + offset * DAY_MS
-      if (nextReviewDate < resetToStartOfDay(Date.now())) {
-        continue
-      }
-
-      return nextReviewDate
+      return addDays(from, offset)
     }
   }
 
   throw new Error(`Level ${level} not found in schedule`)
 }
 
-function formatReviewDate(date: number): string {
-  const next = startOfDay(new Date(date))
+function formatReviewDate(ts: number): string {
+  const next = startOfDayTs(ts)
+  const today = startOfDayTs(Date.now())
+  const diffDays = Math.round((next - today) / DAY_MS)
 
-  const today = startOfDay(new Date())
-  if (next.getTime() === today.getTime()) return 'today'
+  if (diffDays === 0) return 'today'
+  if (diffDays === 1) return 'tomorrow'
 
-  const tomorrow = new Date()
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  const tomorrowStart = startOfDay(tomorrow)
-  if (next.getTime() === tomorrowStart.getTime()) return 'tomorrow'
-
-  // dd.mm.yy
-  const dd = String(next.getDate()).padStart(2, '0')
-  const mm = String(next.getMonth() + 1).padStart(2, '0')
-  const yy = next.getFullYear().toString().slice(-2)
+  const d = new Date(next)
+  const dd = String(d.getDate()).padStart(2, '0')
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const yy = String(d.getFullYear()).slice(-2)
   return `${dd}.${mm}.${yy}`
 }
 
@@ -63,13 +57,8 @@ export function getReviewMessage(
   isDone: boolean
 ): string {
   if (level === 0) return ''
-  if (isDone) {
-    if (level === 1) return 'tomorrow'
 
-    return formatReviewDate(getNextReviewDate(Date.now(), level, startDateTs))
-  }
-
-  if (level === 1) return 'today'
-
-  return formatReviewDate(getNextReviewDate(startDateTs, level, startDateTs))
+  return formatReviewDate(
+    getNextReviewDate(Date.now(), level, startDateTs, !isDone)
+  )
 }
