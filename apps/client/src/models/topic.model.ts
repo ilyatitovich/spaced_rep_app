@@ -1,3 +1,5 @@
+import { addDays } from '@/lib'
+
 import { Day } from './day.model'
 
 export interface Topic {
@@ -32,7 +34,7 @@ export function setStartWeek(timestamp: number): Array<Day | null> {
     if (dayOfTheWeek > d) {
       week.push(null)
     } else {
-      const day = new Day(timestamp + 86400000 * (d - dayOfTheWeek))
+      const day = new Day(addDays(timestamp, d - dayOfTheWeek))
       day.setLevelList(timestamp)
       week.push(day)
     }
@@ -65,7 +67,7 @@ export function updateWeek(topic: Topic): void {
   topic.week = []
 
   for (let d = 0; d < 7; d++) {
-    const day = new Day(Date.now() + 86400000 * (d - dayOfTheWeek))
+    const day = new Day(addDays(Date.now(), d - dayOfTheWeek))
     day.setLevelList(topic.pivot)
     topic.week.push(day)
   }

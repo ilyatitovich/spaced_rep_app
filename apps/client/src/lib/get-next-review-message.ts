@@ -1,19 +1,8 @@
-import { LEITNER_64_DAY_SCHEDULE } from './leitner-schedule'
+import { addDays, startOfDayTs } from './get-today'
+import { getCycleDay, LEITNER_64_DAY_SCHEDULE } from './leitner-schedule'
 
 const DAY_MS = 86_400_000
 const CYCLE_LENGTH = LEITNER_64_DAY_SCHEDULE.length
-
-function startOfDayTs(ts: number): number {
-  const d = new Date(ts)
-  d.setHours(0, 0, 0, 0)
-  return d.getTime()
-}
-
-function addDays(ts: number, days: number): number {
-  const d = new Date(ts)
-  d.setDate(d.getDate() + days)
-  return d.getTime()
-}
 
 function getNextReviewDate(
   fromTs: number,
@@ -22,8 +11,7 @@ function getNextReviewDate(
   includeToday: boolean
 ): number {
   const from = startOfDayTs(fromTs)
-  const currentDay = Math.round((from - startOfDayTs(pivot)) / DAY_MS)
-  const cycleDay = ((currentDay % CYCLE_LENGTH) + CYCLE_LENGTH) % CYCLE_LENGTH
+  const cycleDay = getCycleDay(pivot, from)
   const minOffset = includeToday ? 0 : 1
 
   for (let offset = minOffset; offset < minOffset + CYCLE_LENGTH; offset++) {

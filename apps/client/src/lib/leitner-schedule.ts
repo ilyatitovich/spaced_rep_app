@@ -1,3 +1,5 @@
+import { startOfDayTs } from './get-today'
+
 export const LEITNER_64_DAY_SCHEDULE: number[][] = [
   [1],
   [2, 1],
@@ -64,3 +66,11 @@ export const LEITNER_64_DAY_SCHEDULE: number[][] = [
   [3, 1],
   [2, 1]
 ]
+
+/** Index in the schedule for `date`, counting whole calendar days from `pivot`. */
+export function getCycleDay(pivot: number, date: number): number {
+  const length = LEITNER_64_DAY_SCHEDULE.length
+  const days = Math.round((startOfDayTs(date) - startOfDayTs(pivot)) / 86400000)
+
+  return ((days % length) + length) % length
+}

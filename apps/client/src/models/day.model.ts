@@ -1,4 +1,4 @@
-import { LEITNER_64_DAY_SCHEDULE } from '@/lib'
+import { getCycleDay, LEITNER_64_DAY_SCHEDULE } from '@/lib'
 
 export class Day {
   date: number
@@ -12,7 +12,6 @@ export class Day {
   }
 
   public setLevelList(pivot: number): void {
-    const day = Math.floor((this.date - pivot) / 86400000)
-    this.todayLevels = LEITNER_64_DAY_SCHEDULE[day % 64]
+    this.todayLevels = LEITNER_64_DAY_SCHEDULE[getCycleDay(pivot, this.date)]
   }
 }
