@@ -17,6 +17,7 @@ import {
   importCards
 } from '@/services'
 import { useTopicsStore } from '@/store'
+import toast from 'react-hot-toast'
 
 type FileModalProps = {
   isOpen: boolean
@@ -52,6 +53,8 @@ export default function FileModal(props: FileModalProps) {
   const [error, setError] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const isOpenRef = useRef(isOpen)
+  isOpenRef.current = isOpen
 
   useEffect(() => {
     if (!isOpen) return
@@ -104,7 +107,13 @@ export default function FileModal(props: FileModalProps) {
     }
   }, [isOpen, kind, topicId])
 
-  const runImport = async (source: File | string) => {
+  const finish = (text: string, type: 'success' | 'error'): void => {
+    if (isOpenRef.current && type === 'success') setMessage(text)
+    else if (isOpenRef.current && type === 'error') setError(text)
+    else toast[type](text)
+  }
+
+  const runImport = async (source: File | string): Promise<void> => {
     setIsLoading(true)
     setError(null)
     setMessage(null)
@@ -114,7 +123,7 @@ export default function FileModal(props: FileModalProps) {
       if (kind === 'import-app') {
         const { topics, cards } = await importAppData(source)
         await loadTopics()
-        setMessage(`Imported ${topics} topics and ${cards} cards`)
+        finish(`Imported ${topics} topics and ${cards} cards`, 'success')
         return
       }
 
@@ -131,14 +140,10 @@ export default function FileModal(props: FileModalProps) {
           })
         : await importCards(source, props.topicId)
       await props.onCardsImport()
-      setMessage(
-        anki
-          ? `${count} cards imported to Draft`
-          : `${count} cards imported successfully`
-      )
+      finish(`${count} cards imported successfully`, 'success')
     } catch (err) {
       if (err instanceof Error) {
-        setError(err.message ?? 'Import failed')
+        finish(err.message ?? 'Import failed', 'error')
       }
     } finally {
       setIsLoading(false)
