@@ -5,6 +5,7 @@ import { useAuth } from './auth-context'
 import { useOnline } from '@/hooks'
 import {
   getSyncState,
+  reconnectRevokedDevice,
   subscribeSync,
   syncNow,
   type SyncState,
@@ -15,6 +16,7 @@ import { useSettingsStore } from '@/store/settings-store'
 type SyncContextValue = SyncState & {
   isOnline: boolean
   syncNow: () => void
+  reconnectRevokedDevice: () => Promise<void>
 }
 
 const SyncContext = createContext<SyncContextValue | undefined>(undefined)
@@ -44,7 +46,12 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     return () => document.removeEventListener('visibilitychange', onVisibility)
   }, [user, isOnline])
 
-  const value: SyncContextValue = { ...syncState, isOnline, syncNow }
+  const value: SyncContextValue = {
+    ...syncState,
+    isOnline,
+    syncNow,
+    reconnectRevokedDevice
+  }
 
   return <SyncContext.Provider value={value}>{children}</SyncContext.Provider>
 }

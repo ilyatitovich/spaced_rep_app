@@ -66,7 +66,13 @@ type FailedOp = {
   at: number
 }
 
-export type SyncStatus = 'idle' | 'syncing' | 'error' | 'offline' | 'paused'
+export type SyncStatus =
+  | 'idle'
+  | 'syncing'
+  | 'error'
+  | 'offline'
+  | 'paused'
+  | 'revoked'
 
 export type SyncConnection = 'idle' | 'ws' | 'http' | 'offline'
 
@@ -132,13 +138,37 @@ function pauseSync(message = 'Upgrade to Pro to sync'): void {
   })
 }
 
+/** Keep Pro entitlement — user can mint a new deviceId via reconnectRevokedDevice. */
+function markDeviceRevoked(): void {
+  realtime?.disconnect()
+  setState({
+    status: 'revoked',
+    connection: 'idle',
+    lastError: 'This device was disconnected from sync'
+  })
+}
+
+function isDeviceRevokedError(error: unknown): boolean {
+  return error instanceof ApiError && error.code === 'DEVICE_REVOKED'
+}
+
 function isPaidAccessError(error: unknown): boolean {
   return (
     error instanceof ApiError &&
-    (error.code === 'PLAN_REQUIRED' ||
-      error.code === 'DEVICE_LIMIT' ||
-      error.code === 'DEVICE_REVOKED')
+    (error.code === 'PLAN_REQUIRED' || error.code === 'DEVICE_LIMIT')
   )
+}
+
+function handleSyncAccessError(error: unknown): boolean {
+  if (isDeviceRevokedError(error)) {
+    markDeviceRevoked()
+    return true
+  }
+  if (isPaidAccessError(error)) {
+    pauseSync(error instanceof Error ? error.message : undefined)
+    return true
+  }
+  return false
 }
 
 export function subscribeSync(
@@ -766,6 +796,9 @@ function wireRealtimeListeners(): void {
     },
     onPlanRequired: () => {
       pauseSync()
+    },
+    onDeviceRevoked: () => {
+      markDeviceRevoked()
     }
   })
 }
@@ -854,10 +887,7 @@ export async function syncAll(_userId: string): Promise<void> {
       }
     } catch (error) {
       console.error('Sync failed:', error)
-      if (isPaidAccessError(error)) {
-        pauseSync(error instanceof Error ? error.message : undefined)
-        return
-      }
+      if (handleSyncAccessError(error)) return
       setState({
         status: 'error',
         lastError: error instanceof Error ? error.message : 'Sync failed'
@@ -950,10 +980,7 @@ export async function initialSync(userId: string): Promise<void> {
       })
     } catch (error) {
       console.error('Initial sync failed:', error)
-      if (isPaidAccessError(error)) {
-        pauseSync(error instanceof Error ? error.message : undefined)
-        return
-      }
+      if (handleSyncAccessError(error)) return
       setState({
         status: 'error',
         lastError:
@@ -965,13 +992,61 @@ export async function initialSync(userId: string): Promise<void> {
   })
 }
 
+/** Mint a new sync deviceId and rejoin after DEVICE_REVOKED. Uses a Pro slot. */
+export async function reconnectRevokedDevice(): Promise<void> {
+  if (!currentUserId || !syncEntitled || !isBackendConfigured() || !syncBackend) {
+    return
+  }
+  if (state.status === 'syncing') return
+
+  realtime?.disconnect()
+
+  const deviceId = crypto.randomUUID()
+  await setMeta(DEVICE_ID_KEY, deviceId)
+  setState({ deviceId, status: 'syncing', lastError: null })
+
+  return withSyncMutex(async () => {
+    wireRealtimeListeners()
+    try {
+      const lastPulledAt = (await getMeta('lastPulledAt')) ?? EPOCH_ISO
+      const delta = await syncBackend!.bootstrap({
+        deviceId,
+        lastPulledAt,
+        pendingOpCount: (await getQueue()).length
+      })
+      await applyPullDelta(delta)
+      await pushChanges(deviceId)
+      await setMeta(LAST_SYNC_AT_KEY, String(Date.now()))
+      setState({
+        status: 'idle',
+        lastSyncedAt: Date.now(),
+        queueDepth: (await getQueue()).length
+      })
+      await connectRealtime()
+    } catch (error) {
+      console.error('Reconnect sync failed:', error)
+      if (handleSyncAccessError(error)) return
+      setState({
+        status: 'error',
+        lastError: error instanceof Error ? error.message : 'Reconnect failed'
+      })
+    }
+  })
+}
+
 export function syncNow(): void {
-  if (!currentUserId || !syncEntitled) return
+  if (!currentUserId || !syncEntitled || state.status === 'revoked') return
   void syncAll(currentUserId)
 }
 
 export function triggerSync(): void {
-  if (!currentUserId || !syncEntitled || !isBackendConfigured()) return
+  if (
+    !currentUserId ||
+    !syncEntitled ||
+    state.status === 'revoked' ||
+    !isBackendConfigured()
+  )
+    return
   if (typeof navigator !== 'undefined' && !navigator.onLine) return
 
   if (triggerTimer) clearTimeout(triggerTimer)

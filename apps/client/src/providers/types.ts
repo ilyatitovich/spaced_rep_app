@@ -39,6 +39,7 @@ export type SyncRealtimeHandlers = {
   onStateChange?: (state: 'active' | 'disconnected' | 'connecting') => void
   onTokenExpired?: () => void
   onPlanRequired?: () => void
+  onDeviceRevoked?: () => void
 }
 
 export type SyncRealtimeHandle = {

@@ -76,6 +76,7 @@ export default function SectionData({ isOpen }: SectionDataProps) {
     lastSyncedAt,
     isOnline,
     syncNow,
+    reconnectRevokedDevice,
     connection,
     queueDepth,
     deviceId,
@@ -174,17 +175,26 @@ export default function SectionData({ isOpen }: SectionDataProps) {
 
   const statusLabel = !isOnline
     ? 'Offline'
-    : status === 'syncing'
-      ? 'Syncing…'
-      : status === 'error'
-        ? 'Sync error'
-        : 'Up to date'
+    : status === 'revoked'
+      ? 'Disconnected from sync'
+      : status === 'syncing'
+        ? 'Syncing…'
+        : status === 'error'
+          ? 'Sync error'
+          : status === 'paused'
+            ? 'Sync paused'
+            : 'Up to date'
 
   const sortedDevices = [...devices].sort((a, b) => {
     if (a.id === deviceId) return -1
     if (b.id === deviceId) return 1
     return 0
   })
+
+  const handleReconnect = async () => {
+    await reconnectRevokedDevice()
+    void loadDevices().catch(() => {})
+  }
 
   return (
     <Screen isOpen={isOpen}>
@@ -234,24 +244,43 @@ export default function SectionData({ isOpen }: SectionDataProps) {
         </SettingsGroup>
 
         {user && (
-          <SettingsGroup label="Sync">
+          <SettingsGroup
+            label="Sync"
+            footer={
+              status === 'revoked'
+                ? 'This browser was disconnected. Reconnect joins again as a new device and uses a sync slot.'
+                : undefined
+            }
+          >
             <div className="flex items-center justify-between px-4 py-3.5 gap-3">
               <span className="flex items-center gap-2 text-foreground">
                 {isOnline ? <Cloud size={18} /> : <CloudOff size={18} />}
                 {statusLabel}
               </span>
-              <button
-                type="button"
-                onClick={syncNow}
-                disabled={!isOnline || status === 'syncing'}
-                className="flex items-center gap-1 text-primary disabled:opacity-50"
-              >
-                <RefreshCw
-                  size={16}
-                  className={status === 'syncing' ? 'animate-spin' : ''}
-                />
-                Sync now
-              </button>
+              {status === 'revoked' ? (
+                <button
+                  type="button"
+                  onClick={() => void handleReconnect()}
+                  disabled={!isOnline}
+                  className="flex items-center gap-1 text-primary disabled:opacity-50"
+                >
+                  <RefreshCw size={16} />
+                  Reconnect
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={syncNow}
+                  disabled={!isOnline || status === 'syncing' || status === 'paused'}
+                  className="flex items-center gap-1 text-primary disabled:opacity-50"
+                >
+                  <RefreshCw
+                    size={16}
+                    className={status === 'syncing' ? 'animate-spin' : ''}
+                  />
+                  Sync now
+                </button>
+              )}
             </div>
             <SettingsInfoRow
               label="Last synced"
@@ -285,7 +314,7 @@ export default function SectionData({ isOpen }: SectionDataProps) {
                     Watermark: {diagnostics.lastPulledAt}
                   </span>
                 )}
-                {lastError && (
+                {lastError && status !== 'revoked' && (
                   <span className="text-danger">
                     Something went wrong. Try again, or contact us if it keeps
                     happening.

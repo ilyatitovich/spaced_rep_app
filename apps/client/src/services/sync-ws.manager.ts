@@ -22,6 +22,7 @@ type WsListeners = {
   onStateChange?: (state: WsConnectionState) => void
   onTokenExpired?: () => void
   onPlanRequired?: () => void
+  onDeviceRevoked?: () => void
 }
 
 const HIGH_WATER_BYTES = 512 * 1024
@@ -138,7 +139,11 @@ export class SyncWsManager {
         this.listeners.onPlanRequired?.()
       } else if (event.code === 4004) {
         this.intentionalClose = true
-        this.listeners.onPlanRequired?.()
+        if (event.reason === 'device_revoked') {
+          this.listeners.onDeviceRevoked?.()
+        } else {
+          this.listeners.onPlanRequired?.()
+        }
       }
 
       if (!this.intentionalClose) {
@@ -270,10 +275,13 @@ export class SyncWsManager {
         if (envelope.error.code === 'TOKEN_EXPIRED') {
           this.listeners.onTokenExpired?.()
           this.ws?.close(4001, 'token expired')
+        } else if (envelope.error.code === 'DEVICE_REVOKED') {
+          this.intentionalClose = true
+          this.listeners.onDeviceRevoked?.()
+          this.ws?.close(4004, 'device_revoked')
         } else if (
           envelope.error.code === 'PLAN_REQUIRED' ||
-          envelope.error.code === 'DEVICE_LIMIT' ||
-          envelope.error.code === 'DEVICE_REVOKED'
+          envelope.error.code === 'DEVICE_LIMIT'
         ) {
           this.intentionalClose = true
           this.listeners.onPlanRequired?.()
