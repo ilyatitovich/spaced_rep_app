@@ -213,7 +213,7 @@ _Confidence: High_
 - **Sync** (`syncAll`) catches failures, logs, and sets `SyncState.status = 'error'` (or `'offline'` when `navigator.onLine` is false) instead of throwing to the UI. Sync operations are no-ops when unconfigured/offline/logged-out.
 - **Store actions** catch errors, log, and reset `isLoading`; they generally do not surface errors to components beyond state.
 - **UI** surfaces user-facing errors via `react-hot-toast` (e.g. `toast.success`/`toast.error` in create/import flows) and inline form error state.
-- **Routing** uses `errorElement: <NotFoundPage />` on the root route as the error boundary/404.
+- **Routing** uses a splat `*` child for real 404s (`NotFoundPage`) and `errorElement: <RouteErrorPage />` for render/loader crashes. An app-level `ErrorBoundary` wraps providers outside the router; `Screen` wraps overlay children so an overlay crash does not replace Home.
 
 _Confidence: High_
 
