@@ -1,8 +1,11 @@
 import type { ReactNode, TransitionEvent } from 'react'
 import { useState, useEffect, useId, useRef } from 'react'
 
-import { useScreenStackStore } from '@/store/screen-stack-store'
+import { BackButton, Button } from '@/components/ui'
 import { useShouldAnimate } from '@/hooks'
+import { useScreenStackStore } from '@/store/screen-stack-store'
+
+import { ErrorBoundary, type ErrorFallbackProps } from './error-boundary'
 
 type ScreenLayerProps = {
   isOpen?: boolean
@@ -58,6 +61,18 @@ type ScreenProps = {
   children: ReactNode
 }
 
+function ScreenErrorFallback({ onRetry }: ErrorFallbackProps) {
+  return (
+    <div className="h-full flex flex-col items-center justify-center gap-4 px-4">
+      <h1 className="font-bold text-2xl">Something went wrong</h1>
+      <div className="flex flex-wrap items-center justify-center gap-4">
+        {onRetry ? <Button onClick={onRetry}>Try again</Button> : null}
+        <BackButton icon="x" />
+      </div>
+    </div>
+  )
+}
+
 export default function Screen({
   isOpen,
   isVertical = false,
@@ -67,6 +82,7 @@ export default function Screen({
   children
 }: ScreenProps) {
   const [isInitialRender, setIsInitialRender] = useState(true)
+  const [errorResetKey, setErrorResetKey] = useState(0)
   const rootRef = useRef<HTMLDivElement>(null)
   const wasOpenRef = useRef(isOpen)
   const shouldDisableAnimation = !useShouldAnimate()
@@ -80,6 +96,11 @@ export default function Screen({
     wasOpenRef.current = isOpen
     if (justClosed && shouldDisableAnimation) onClose?.()
   }, [isOpen, shouldDisableAnimation, onClose])
+
+  useEffect(() => {
+    if (!isOpen) return
+    setErrorResetKey(key => key + 1)
+  }, [isOpen])
 
   useEffect(() => {
     if (!isOpen) return
@@ -115,7 +136,12 @@ export default function Screen({
       onTransitionEnd={handleTransitionEnd}
     >
       <ScreenLayer isOpen={isOpen && !isVertical}>
-        {!isInitialRender && children}
+        <ErrorBoundary
+          resetKey={errorResetKey}
+          fallback={<ScreenErrorFallback />}
+        >
+          {!isInitialRender && children}
+        </ErrorBoundary>
       </ScreenLayer>
     </div>
   )
