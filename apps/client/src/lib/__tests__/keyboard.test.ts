@@ -120,6 +120,15 @@ describe('matchShortcut', () => {
     expect(matchShortcut(keydown('>'), gradeRules)?.id).toBe('correct')
   })
 
+  it('matches physical comma and period keys on a Russian layout', () => {
+    expect(matchShortcut(keydown('б', { code: 'Comma' }), gradeRules)?.id).toBe(
+      'wrong'
+    )
+    expect(
+      matchShortcut(keydown('ю', { code: 'Period' }), gradeRules)?.id
+    ).toBe('correct')
+  })
+
   it('ignores grade keys while typing', () => {
     const input = document.createElement('input')
     expect(

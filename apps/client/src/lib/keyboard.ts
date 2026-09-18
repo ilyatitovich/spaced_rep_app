@@ -14,6 +14,8 @@ const TABBABLE_SELECTOR = [
 export interface ShortcutRule {
   id: string
   key: string
+  /** Physical key; matches when `event.key` is layout-specific (e.g. Russian б/ю). */
+  code?: string
   mod?: boolean
   when?: 'notTyping' | 'always' | 'notActivate'
 }
@@ -32,10 +34,10 @@ export const flipRules: ShortcutRule[] = [
 ]
 
 export const gradeRules: ShortcutRule[] = [
-  { id: 'wrong', key: ',', when: 'notTyping' },
-  { id: 'wrong', key: '<', when: 'notTyping' },
-  { id: 'correct', key: '.', when: 'notTyping' },
-  { id: 'correct', key: '>', when: 'notTyping' }
+  { id: 'wrong', key: ',', code: 'Comma', when: 'notTyping' },
+  { id: 'wrong', key: '<', code: 'Comma', when: 'notTyping' },
+  { id: 'correct', key: '.', code: 'Period', when: 'notTyping' },
+  { id: 'correct', key: '>', code: 'Period', when: 'notTyping' }
 ]
 
 export function isMod(event: KeyboardEvent): boolean {
@@ -65,7 +67,9 @@ export function matchShortcut(
   if (event.repeat) return null
 
   for (const rule of rules) {
-    if (event.key !== rule.key) continue
+    const isKey = event.key === rule.key
+    const isCode = rule.code !== undefined && event.code === rule.code
+    if (!isKey && !isCode) continue
     if (Boolean(rule.mod) !== isMod(event)) continue
     const when = rule.when ?? 'notTyping'
     if (when === 'notTyping' && isTypingTarget(event.target)) continue
