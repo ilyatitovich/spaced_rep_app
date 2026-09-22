@@ -26,12 +26,10 @@ function isCaptureMessage(value: unknown): value is RuntimeMessage {
 export function useDraftCard({
   topicId,
   isPro,
-  localTopicId,
   onSaved
 }: {
   topicId: string
   isPro: boolean
-  localTopicId: string
   onSaved?: () => Promise<unknown> | unknown
 }) {
   const cardRef = useRef<CardHandle>(null)
@@ -120,7 +118,7 @@ export function useDraftCard({
         setCard(stored ? decodeCardData(stored) : emptyCardData())
       } else {
         const destination = topicId || (await ensureLocalTopic()).id
-        await saveCard(data, destination, isPro && destination !== localTopicId)
+        await saveCard(data, destination, isPro)
         setCard(emptyCardData())
         await removeKeys([DRAFT_KEY])
       }

@@ -20,7 +20,6 @@ export default function App() {
   const draft = useDraftCard({
     topicId: topics.selectedId,
     isPro: session.isPro,
-    localTopicId: topics.localTopicId,
     onSaved: cards.refresh
   })
   const page = useActivePage(draft.source)
