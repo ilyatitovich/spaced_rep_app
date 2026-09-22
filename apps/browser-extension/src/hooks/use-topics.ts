@@ -1,8 +1,12 @@
 import { useCallback, useState } from 'react'
 
-import type { Topic } from '@/models/topic.model'
+import { createTopic, type Topic } from '@/models/topic.model'
 import { bootstrapTopics } from '../services/sync.service'
-import { ensureLocalTopic, getTopics } from '../services/topics.service'
+import {
+  ensureLocalTopic,
+  getTopics,
+  setTopics as persistTopics
+} from '../services/topics.service'
 
 export function useTopics() {
   const [topics, setTopics] = useState<Topic[]>([])
@@ -19,11 +23,21 @@ export function useTopics() {
     return loaded
   }, [])
 
+  const create = useCallback(async (title: string) => {
+    const topic = createTopic(title)
+    const next = [...(await getTopics()), topic]
+    await persistTopics(next)
+    setTopics(next)
+    setSelectedId(topic.id)
+    return topic
+  }, [])
+
   return {
     topics,
     selectedId,
     localTopicId,
     select: setSelectedId,
+    create,
     refresh
   }
 }

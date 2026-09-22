@@ -23,7 +23,7 @@ export default function App() {
     localTopicId: topics.localTopicId,
     onSaved: cards.refresh
   })
-  useActivePage(draft.source)
+  const page = useActivePage(draft.source)
   const [view, setView] = useState<'editor' | 'cards'>('editor')
 
   const refresh = useCallback(async () => {
@@ -76,7 +76,9 @@ export default function App() {
               draft={draft}
               topics={topics.topics}
               selectedId={topics.selectedId}
+              pageTitle={page.title}
               onSelectTopic={topics.select}
+              onCreateTopic={topics.create}
               onShowCards={() => setView('cards')}
             />
           )}

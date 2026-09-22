@@ -4,12 +4,15 @@ import Card from '@/components/card'
 import CardToolbar from '@/components/ui/card-toolbar'
 import type { Topic } from '@/models/topic.model'
 import type { useDraftCard } from '@ext/hooks/use-draft-card'
+import TopicPicker from './topic-picker'
 
 type EditorScreenProps = {
   draft: ReturnType<typeof useDraftCard>
   topics: Topic[]
   selectedId: string
+  pageTitle: string
   onSelectTopic: (id: string) => void
+  onCreateTopic: (title: string) => void
   onShowCards: () => void
 }
 
@@ -17,7 +20,9 @@ export default function EditorScreen({
   draft,
   topics,
   selectedId,
+  pageTitle,
   onSelectTopic,
+  onCreateTopic,
   onShowCards
 }: EditorScreenProps) {
   return (
@@ -29,17 +34,13 @@ export default function EditorScreen({
         >
           {draft.isFlipped ? 'Back' : 'Front'}
         </button>
-        <select
-          className="min-w-0 max-w-44 bg-background-secondary rounded-lg px-2 py-1 text-sm"
-          value={selectedId}
-          onChange={event => onSelectTopic(event.target.value)}
-        >
-          {topics.map(topic => (
-            <option key={topic.id} value={topic.id}>
-              {topic.title}
-            </option>
-          ))}
-        </select>
+        <TopicPicker
+          topics={topics}
+          selectedId={selectedId}
+          pageTitle={pageTitle}
+          onSelect={onSelectTopic}
+          onCreate={onCreateTopic}
+        />
         <button
           className="text-primary font-semibold text-sm disabled:opacity-40"
           disabled={draft.busy || draft.isEmpty}
