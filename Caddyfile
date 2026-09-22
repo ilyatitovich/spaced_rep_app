@@ -1,0 +1,6 @@
+# Replace api.example.com with the real API hostname before deploy.
+# Caddy provisions Let's Encrypt certs automatically; certs persist in the caddy_data volume.
+api.example.com {
+	encode zstd gzip
+	reverse_proxy server:3000
+}
