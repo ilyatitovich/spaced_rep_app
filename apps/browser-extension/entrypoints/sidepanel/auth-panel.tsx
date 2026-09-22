@@ -4,7 +4,7 @@ import { useState } from 'react'
 import AuthMethods from '@/components/auth/auth-methods'
 import type { AuthStep } from '@/types'
 
-import { AuthProvider } from '../../src/contexts'
+import { AuthProvider } from '@ext/contexts'
 
 export default function AuthPanel({ onClose }: { onClose: () => void }) {
   const [step, setStep] = useState<AuthStep>('methods')

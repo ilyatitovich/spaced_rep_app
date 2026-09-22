@@ -39,6 +39,7 @@ export default defineConfig({
     ]
   }),
   alias: {
+    '@ext': path.join(extensionRoot, 'src'),
     '@/assets': path.join(clientSource, 'assets'),
     '@/components': path.join(clientSource, 'components'),
     '@/contexts': path.join(extensionRoot, 'src/contexts'),

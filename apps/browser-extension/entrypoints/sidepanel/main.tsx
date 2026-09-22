@@ -1,5 +1,11 @@
 import { createRoot } from 'react-dom/client'
 import App from './App'
-import '../../src/styles.css'
+import '@ext/styles.css'
 
-createRoot(document.getElementById('app')!).render(<App />)
+const container = document.getElementById('app')
+
+if (!container) {
+  throw new Error('Container not found')
+}
+
+createRoot(container).render(<App />)

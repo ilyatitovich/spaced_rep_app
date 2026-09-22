@@ -14,8 +14,8 @@ import ProUpgradeModal from '@/components/modals/pro-upgrade-modal'
 import CardToolbar from '@/components/ui/card-toolbar'
 import { appendSideBlocks, isSideEmpty } from '@/lib/check-content'
 import type { CardData, CardHandle, SideBlock, SideName } from '@/types'
-import { signOut, getSession } from '../../src/lib/auth'
-import { normalizeCapture } from '../../src/lib/capture'
+import { signOut, getSession } from '@ext/lib/auth'
+import { normalizeCapture } from '@ext/lib/capture'
 import {
   createBackup,
   decodeCardData,
@@ -27,9 +27,9 @@ import {
   getTopics,
   PENDING_KEY,
   saveCard
-} from '../../src/lib/storage'
-import { bootstrapTopics, flushOutbox, hasPro } from '../../src/lib/sync'
-import type { ExtensionSession, RuntimeMessage, Topic } from '../../src/types'
+} from '@ext/lib/storage'
+import { bootstrapTopics, flushOutbox, hasPro } from '@ext/lib/sync'
+import type { ExtensionSession, RuntimeMessage, Topic } from '@ext/types'
 import AuthPanel from './auth-panel'
 
 const APP_URL = (

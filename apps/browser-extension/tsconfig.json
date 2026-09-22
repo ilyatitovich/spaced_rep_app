@@ -3,6 +3,7 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "paths": {
+      "@ext/*": ["./src/*"],
       "@/*": ["../client/src/*"],
       "lucide-react": ["./node_modules/lucide-react/dist/lucide-react.d.ts"],
       "react-hot-toast": ["./node_modules/react-hot-toast/dist/index.d.ts"]
