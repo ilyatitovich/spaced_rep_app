@@ -6,7 +6,8 @@ import {
   insertSideBlock,
   isCardDataEqual,
   isSideEmpty,
-  isTextHtmlEmpty
+  isTextHtmlEmpty,
+  replaceTextSelectionWithCode
 } from '@/lib/check-content'
 import { sanitizeCardHtml } from '@/lib/sanitize-html'
 import type { CardData } from '@/types'
@@ -114,6 +115,52 @@ describe('appendSideBlocks', () => {
       { type: 'text', html: '<p>Q</p>' },
       { type: 'code', lang: 'js', code: '' }
     ])
+  })
+})
+
+describe('replaceTextSelectionWithCode', () => {
+  it('splits a middle selection into before | code | after with detected lang', () => {
+    expect(
+      replaceTextSelectionWithCode(
+        [{ type: 'text', html: '<p>hello print(1) world</p>' }],
+        0,
+        {
+          beforeHtml: '<p>hello </p>',
+          code: 'print(1)',
+          afterHtml: '<p> world</p>'
+        }
+      )
+    ).toEqual([
+      { type: 'text', html: '<p>hello </p>' },
+      { type: 'code', lang: 'py', code: 'print(1)' },
+      { type: 'text', html: '<p> world</p>' }
+    ])
+  })
+
+  it('replaces the whole text block when before and after are empty', () => {
+    expect(
+      replaceTextSelectionWithCode(
+        [
+          { type: 'text', html: '<p>print(1)</p>' },
+          { type: 'image', content: { buffer: new ArrayBuffer(0), type: 'image/webp' } }
+        ],
+        0,
+        { beforeHtml: '', code: 'print(1)', afterHtml: '<p></p>' }
+      )
+    ).toEqual([
+      { type: 'code', lang: 'py', code: 'print(1)' },
+      { type: 'image', content: { buffer: new ArrayBuffer(0), type: 'image/webp' } }
+    ])
+  })
+
+  it('drops empty before or after and falls back to lang code for plain text', () => {
+    expect(
+      replaceTextSelectionWithCode(
+        [{ type: 'text', html: '<p>hello world</p>' }],
+        0,
+        { beforeHtml: '<p></p>', code: 'hello world', afterHtml: '' }
+      )
+    ).toEqual([{ type: 'code', lang: 'code', code: 'hello world' }])
   })
 })
 

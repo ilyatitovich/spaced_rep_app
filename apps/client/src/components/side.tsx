@@ -1,6 +1,7 @@
 import type { FocusEvent, FocusEventHandler, Ref } from 'react'
 import type { CardSideData, SideBlock, SideName } from '@/types'
 import type { Editor } from '@tiptap/react'
+import { DOMSerializer } from '@tiptap/pm/model'
 import {
   forwardRef,
   lazy,
@@ -12,6 +13,7 @@ import {
   useRef,
   useState
 } from 'react'
+import { flushSync } from 'react-dom'
 import { toast } from 'react-hot-toast'
 
 import AudioBlock from './content/audio-block/audio-block'
@@ -26,10 +28,12 @@ import Spinner from './ui/spinner'
 import {
   didAppendSideBlock,
   insertSideBlock,
-  isTextHtmlEmpty
+  isTextHtmlEmpty,
+  replaceTextSelectionWithCode
 } from '@/lib/check-content'
 import { LONGTEXT_THRESHOLD } from '@/lib/constants'
 import { blobToRecord, processImage } from '@/lib/image'
+import { runInTapFocus } from '@/lib/pwa'
 import { sanitizeCardHtml } from '@/lib/sanitize-html'
 
 const CodeBlockEditor = lazy(
@@ -38,6 +42,17 @@ const CodeBlockEditor = lazy(
 
 // Match `duration-600` on the card rotator in card.tsx.
 const FLIP_MS = 600
+
+function htmlBetween(editor: Editor, from: number, to: number): string {
+  if (from >= to) return ''
+  const slice = editor.state.doc.slice(from, to)
+  const fragment = DOMSerializer.fromSchema(editor.schema).serializeFragment(
+    slice.content
+  )
+  const wrap = document.createElement('div')
+  wrap.appendChild(fragment)
+  return sanitizeCardHtml(wrap.innerHTML)
+}
 
 function bindOverflowScroll(el: HTMLElement) {
   const onWheel = (e: WheelEvent) => {
@@ -201,6 +216,45 @@ export default forwardRef(function Side(
     })()
   }
 
+  const convertSelectionToCode = () => {
+    const index = focusedTextIndexRef.current
+    if (index == null) return
+    const editor = textEditors.current.get(index)?.getEditor()
+    if (!editor) return
+
+    const { from, to, empty } = editor.state.selection
+    if (empty) return
+    const code = editor.state.doc.textBetween(from, to, '\n')
+    if (!code) return
+
+    const beforeHtml = htmlBetween(editor, 0, from)
+    const afterHtml = htmlBetween(editor, to, editor.state.doc.content.size)
+    const codeIndex = index + (isTextHtmlEmpty(beforeHtml) ? 0 : 1)
+
+    runInTapFocus(() => {
+      flushSync(() => {
+        skipBlurRef.current = true
+        // Drop selection from the live editor so a focused TipTap can't keep
+        // the old full html and re-emit a duplicate of the code block.
+        editor.commands.setContent(
+          isTextHtmlEmpty(beforeHtml) ? '<p></p>' : beforeHtml,
+          { emitUpdate: false }
+        )
+        editor.commands.blur()
+        setIsTextFocused(false)
+        setFocusedTextIndex(null)
+        emit(
+          replaceTextSelectionWithCode(readBlocks(), index, {
+            beforeHtml,
+            code,
+            afterHtml
+          })
+        )
+      })
+      codeEditors.current.get(codeIndex)?.focus()
+    })
+  }
+
   const removeBlock = (index: number) => {
     emit(readBlocks().filter((_, i) => i !== index))
   }
@@ -298,6 +352,7 @@ export default forwardRef(function Side(
         onUnderline={() => activeEditor()?.chain().toggleUnderline().run()}
         onBulletList={() => activeEditor()?.chain().toggleBulletList().run()}
         onNumberedList={() => activeEditor()?.chain().toggleOrderedList().run()}
+        onCode={convertSelectionToCode}
       />
       <div className="h-full w-full overflow-hidden border-foreground border-6 rounded-4xl bg-card">
         <div

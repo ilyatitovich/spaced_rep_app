@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useEditorState, type Editor } from '@tiptap/react'
-import { Bold, Italic, List, ListOrdered, Underline } from 'lucide-react'
+import { Bold, CodeXml, Italic, List, ListOrdered, Underline } from 'lucide-react'
 import Button from '../../ui/button'
 
 const KEYBOARD_GAP_PX = 8
@@ -43,6 +43,7 @@ type TextFormatToolbarProps = {
   onUnderline: () => void
   onBulletList: () => void
   onNumberedList: () => void
+  onCode: () => void
 }
 
 export function isToolbarTarget(target: EventTarget | null): boolean {
@@ -153,7 +154,8 @@ export default function TextFormatToolbar({
   onItalic,
   onUnderline,
   onBulletList,
-  onNumberedList
+  onNumberedList,
+  onCode
 }: TextFormatToolbarProps) {
   const rangeRef = useRef<{ from: number; to: number } | null>(null)
   const isTouch = isTouchDevice()
@@ -255,6 +257,19 @@ export default function TextFormatToolbar({
           onBulletList={() => apply(onBulletList)}
           onNumberedList={() => apply(onNumberedList)}
         />
+        <Button
+          tabIndex={-1}
+          variant="unstyled"
+          className={toolbarBtnClass(false)}
+          aria-label="Code"
+          onClick={() => {
+            const range = rangeRef.current
+            if (editor && range) editor.commands.setTextSelection(range)
+            onCode()
+          }}
+        >
+          <CodeXml className="w-4 h-4" strokeWidth={3} />
+        </Button>
       </div>
     </div>
   )

@@ -8,6 +8,7 @@ import type {
   SideBlock,
   SideContent
 } from '@/types'
+import { detectCodeLang } from '@/lib/code-lang'
 
 function stripHtml(html: string): string {
   return html
@@ -42,6 +43,27 @@ export function insertSideBlock(
     return [...blocks.slice(0, index), incoming, ...blocks.slice(index + 1)]
   }
   return [...blocks.slice(0, index + 1), incoming, ...blocks.slice(index + 1)]
+}
+
+/** Replace a text block's selection with a code block; keep non-empty before/after text. */
+export function replaceTextSelectionWithCode(
+  blocks: SideBlock[],
+  index: number,
+  parts: { beforeHtml: string; code: string; afterHtml: string }
+): SideBlock[] {
+  const replacement: SideBlock[] = []
+  if (!isTextHtmlEmpty(parts.beforeHtml)) {
+    replacement.push({ type: 'text', html: parts.beforeHtml })
+  }
+  replacement.push({
+    type: 'code',
+    lang: detectCodeLang(parts.code),
+    code: parts.code
+  })
+  if (!isTextHtmlEmpty(parts.afterHtml)) {
+    replacement.push({ type: 'text', html: parts.afterHtml })
+  }
+  return [...blocks.slice(0, index), ...replacement, ...blocks.slice(index + 1)]
 }
 
 /** Drop a trailing empty text so adding code/media doesn't leave a blank editor. */
