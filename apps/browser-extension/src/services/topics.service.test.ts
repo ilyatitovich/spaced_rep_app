@@ -1,11 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { createTopic } from '@/models/topic.model'
+import { createTopic as buildTopic } from '@/models/topic.model'
 import {
-  ensureLocalTopic,
+  createTopic,
+  ensureTopicForPage,
   getSelectedTopicId,
   getTopics,
   mergeTopics,
+  renameTopic,
   resolveSelectedTopicId,
   setSelectedTopicId,
   setTopics
@@ -33,12 +35,35 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
-describe('ensureLocalTopic', () => {
+describe('ensureTopicForPage', () => {
+  it('creates a page-title topic once per origin and pathname', async () => {
+    const first = await ensureTopicForPage({
+      title: 'Article one',
+      url: 'https://example.com/posts/1?ref=nav'
+    })
+    const second = await ensureTopicForPage({
+      title: 'Article one again',
+      url: 'https://example.com/posts/1?ref=share#comments'
+    })
+    const other = await ensureTopicForPage({
+      title: 'Other',
+      url: 'https://example.com/posts/2'
+    })
+
+    expect(second.id).toBe(first.id)
+    expect(first.title).toBe('Article one')
+    expect(other.id).not.toBe(first.id)
+    expect(await getTopics()).toHaveLength(2)
+  })
+
   it('schedules review days from today through the rest of the week', async () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date(2026, 8, 22, 12, 0, 0))
 
-    const topic = await ensureLocalTopic()
+    const topic = await ensureTopicForPage({
+      title: 'Page',
+      url: 'https://example.com/today'
+    })
 
     expect(topic.week).toHaveLength(7)
     expect(topic.week.slice(0, 2)).toEqual([null, null])
@@ -50,21 +75,35 @@ describe('ensureLocalTopic', () => {
     expect(stored[0]?.week.slice(0, 2)).toEqual([null, null])
   })
 
-  it('reuses an existing topic by id instead of matching the default title', async () => {
-    const existing = createTopic('My deck')
-    await setTopics([existing])
+  it('falls back to Web clips and trims to 30 characters', async () => {
+    const untitled = await ensureTopicForPage({
+      title: '  ',
+      url: 'https://example.com/'
+    })
+    const long = await ensureTopicForPage({
+      title: 'abcdefghijklmnopqrstuvwxyz0123456789',
+      url: 'https://example.com/long'
+    })
 
-    const topic = await ensureLocalTopic()
+    expect(untitled.title).toBe('Web clips')
+    expect(long.title).toBe('abcdefghijklmnopqrstuvwxyz0123')
+    expect(long.title).toHaveLength(30)
+  })
+})
 
-    expect(topic.id).toBe(existing.id)
-    expect(await getTopics()).toHaveLength(1)
+describe('renameTopic', () => {
+  it('persists the new title', async () => {
+    const topic = await createTopic('Old')
+    await renameTopic(topic.id, 'New name')
+
+    expect((await getTopics())[0]?.title).toBe('New name')
   })
 })
 
 describe('topic selection', () => {
   it('survives a reload', async () => {
-    const first = createTopic('First')
-    const second = createTopic('Second')
+    const first = buildTopic('First')
+    const second = buildTopic('Second')
     await setTopics([first, second])
     await setSelectedTopicId(second.id)
 
@@ -79,8 +118,8 @@ describe('topic selection', () => {
   })
 
   it('falls back to the page topic when nothing is stored', async () => {
-    const other = createTopic('Other')
-    const page = createTopic('Page')
+    const other = buildTopic('Other')
+    const page = buildTopic('Page')
 
     const selected = await resolveSelectedTopicId([other, page], page.id)
 
@@ -91,7 +130,7 @@ describe('topic selection', () => {
 
 describe('mergeTopics', () => {
   it('dedupes sync and local topics by id', async () => {
-    const local = createTopic('Local')
+    const local = buildTopic('Local')
     const fromSync = {
       ...local,
       title: 'From sync',

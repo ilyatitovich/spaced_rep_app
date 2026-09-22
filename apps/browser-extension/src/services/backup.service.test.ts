@@ -1,7 +1,7 @@
 import { emptyCardData } from '../lib/card-codec'
 import { createBackup } from './backup.service'
 import { saveCard } from './cards.service'
-import { ensureLocalTopic } from './topics.service'
+import { createTopic } from './topics.service'
 
 const values: Record<string, unknown> = {}
 
@@ -22,7 +22,7 @@ beforeEach(() => {
 })
 
 it('exports locally saved cards in the app backup format', async () => {
-  const topic = await ensureLocalTopic()
+  const topic = await createTopic('Web clips')
   const data = emptyCardData()
   data.front.blocks = [{ type: 'text', html: '<b>Question</b>' }]
   data.back.blocks = [

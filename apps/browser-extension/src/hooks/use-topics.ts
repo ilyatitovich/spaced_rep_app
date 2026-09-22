@@ -1,26 +1,32 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 
-import { createTopic, type Topic } from '@/models/topic.model'
+import { TITLE_MAX_LENGTH } from '@/lib/constants'
+import type { Topic } from '@/models/topic.model'
 import { bootstrapTopics } from '../services/sync.service'
 import {
-  ensureLocalTopic,
+  createTopic,
+  getTopicIdForPage,
   getTopics,
-  mergeTopics,
+  renameTopic,
   resolveSelectedTopicId,
-  setSelectedTopicId,
-  setTopics as persistTopics
+  setSelectedTopicId
 } from '../services/topics.service'
 
 export function useTopics() {
   const [topics, setTopics] = useState<Topic[]>([])
   const [selectedId, setSelectedId] = useState('')
+  const [pendingTitle, setPendingTitle] = useState('')
+  const isProRef = useRef(false)
+  const pageUrlRef = useRef('')
 
   const refresh = useCallback(async (isPro: boolean) => {
-    const loaded = isPro ? await bootstrapTopics() : await getTopics()
-    const local = await ensureLocalTopic()
-    const next = mergeTopics(loaded, [local])
+    isProRef.current = isPro
+    const next = isPro ? await bootstrapTopics() : await getTopics()
+    const mapped = pageUrlRef.current
+      ? await getTopicIdForPage(pageUrlRef.current)
+      : undefined
     setTopics(next)
-    setSelectedId(await resolveSelectedTopicId(next, local.id))
+    setSelectedId(await resolveSelectedTopicId(next, mapped))
     return next
   }, [])
 
@@ -29,23 +35,60 @@ export function useTopics() {
     void setSelectedTopicId(id)
   }, [])
 
+  const syncPage = useCallback(
+    async (page: { title: string; url: string }) => {
+      if (!page.url) return
+      const previous = pageUrlRef.current
+      pageUrlRef.current = page.url
+      const mapped = await getTopicIdForPage(page.url)
+      if (!previous) {
+        setSelectedId(
+          await resolveSelectedTopicId(await getTopics(), mapped)
+        )
+        return
+      }
+      if (previous === page.url) return
+      if (mapped) select(mapped)
+      else {
+        setSelectedId('')
+        setPendingTitle('')
+      }
+    },
+    [select]
+  )
+
   const create = useCallback(
     async (title: string) => {
-      const topic = createTopic(title)
-      const next = mergeTopics(await getTopics(), [topic])
-      await persistTopics(next)
-      setTopics(next)
+      const topic = await createTopic(title, isProRef.current)
+      setTopics(await getTopics())
       select(topic.id)
       return topic
     },
     [select]
   )
 
+  const rename = useCallback(
+    async (title: string) => {
+      const next = title.trim().slice(0, TITLE_MAX_LENGTH)
+      if (!next) return
+      if (!selectedId) {
+        setPendingTitle(next)
+        return
+      }
+      const topic = await renameTopic(selectedId, next, isProRef.current)
+      if (topic) setTopics(await getTopics())
+    },
+    [selectedId]
+  )
+
   return {
     topics,
     selectedId,
+    pendingTitle,
     select,
     create,
-    refresh
+    rename,
+    refresh,
+    syncPage
   }
 }

@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react'
 import { TITLE_MAX_LENGTH } from '@/lib/constants'
 import type { Topic } from '@/models/topic.model'
 import Dropdown from './dropdown'
+import TopicTitle from './topic-title'
 
 const ITEM_CLASS =
   'flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-muted'
@@ -13,13 +14,15 @@ export default function TopicPicker({
   selectedId,
   pageTitle,
   onSelect,
-  onCreate
+  onCreate,
+  onRename
 }: {
   topics: Topic[]
   selectedId: string
   pageTitle: string
   onSelect: (id: string) => void
   onCreate: (title: string) => void
+  onRename: (title: string) => void
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
@@ -28,12 +31,10 @@ export default function TopicPicker({
   const items = [...new Map(topics.map(t => [t.id, t])).values()].sort(
     (a, b) => b.updatedAt - a.updatedAt
   )
-
   const handleClose = useCallback(() => {
     setIsOpen(false)
     setIsCreating(false)
   }, [])
-
   const handleCreate = () => {
     const next = title.trim()
     if (!next) return
@@ -46,14 +47,22 @@ export default function TopicPicker({
       isOpen={isOpen}
       onClose={handleClose}
       trigger={
-        <button
-          type="button"
-          className="min-w-0 max-w-44 bg-background-secondary rounded-lg px-2 py-1 text-sm flex items-center gap-1"
-          onClick={() => (isOpen ? handleClose() : setIsOpen(true))}
-        >
-          <span className="truncate">{selected?.title ?? 'Topic'}</span>
-          <ChevronDown size={14} className="shrink-0" />
-        </button>
+        <div className="min-w-0 max-w-44 bg-background-secondary rounded-lg px-2 py-1 text-sm flex items-center gap-1">
+          <TopicTitle
+            title={
+              selected?.title ??
+              (pageTitle.trim().slice(0, TITLE_MAX_LENGTH) || 'Web clips')
+            }
+            onCommit={onRename}
+          />
+          <button
+            type="button"
+            className="shrink-0"
+            onClick={() => (isOpen ? handleClose() : setIsOpen(true))}
+          >
+            <ChevronDown size={14} />
+          </button>
+        </div>
       }
     >
       {items.map(topic => (

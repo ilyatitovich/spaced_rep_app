@@ -13,6 +13,7 @@ type EditorScreenProps = {
   pageTitle: string
   onSelectTopic: (id: string) => void
   onCreateTopic: (title: string) => void
+  onRenameTopic: (title: string) => void
   onShowCards: () => void
 }
 
@@ -23,6 +24,7 @@ export default function EditorScreen({
   pageTitle,
   onSelectTopic,
   onCreateTopic,
+  onRenameTopic,
   onShowCards
 }: EditorScreenProps) {
   return (
@@ -40,6 +42,7 @@ export default function EditorScreen({
           pageTitle={pageTitle}
           onSelect={onSelectTopic}
           onCreate={onCreateTopic}
+          onRename={onRenameTopic}
         />
         <button
           className="text-primary font-semibold text-sm disabled:opacity-40"

@@ -3,6 +3,7 @@ import toast from 'react-hot-toast'
 
 import { appendSideBlocks, isSideEmpty } from '@/lib/check-content'
 import type { CardData, CardHandle, SideBlock, SideName } from '@/types'
+import { getActivePage } from '../lib/active-page'
 import {
   decodeCardData,
   emptyCardData,
@@ -13,7 +14,7 @@ import { readValue, removeKeys, writeValue } from '../lib/chrome-store'
 import { DRAFT_KEY, PENDING_KEY } from '../lib/keys'
 import { saveCard, updateCard } from '../services/cards.service'
 import { flushOutbox } from '../services/sync.service'
-import { ensureLocalTopic } from '../services/topics.service'
+import { ensureTopicForPage } from '../services/topics.service'
 import type { Card, CapturedContent, RuntimeMessage } from '../types'
 
 function isCaptureMessage(value: unknown): value is RuntimeMessage {
@@ -26,10 +27,12 @@ function isCaptureMessage(value: unknown): value is RuntimeMessage {
 export function useDraftCard({
   topicId,
   isPro,
+  pendingTitle,
   onSaved
 }: {
   topicId: string
   isPro: boolean
+  pendingTitle: string
   onSaved?: () => Promise<unknown> | unknown
 }) {
   const cardRef = useRef<CardHandle>(null)
@@ -117,7 +120,18 @@ export function useDraftCard({
         const stored = await readValue(DRAFT_KEY)
         setCard(stored ? decodeCardData(stored) : emptyCardData())
       } else {
-        const destination = topicId || (await ensureLocalTopic()).id
+        const tab = await getActivePage()
+        const destination =
+          topicId ||
+          (
+            await ensureTopicForPage(
+              {
+                title: pendingTitle || tab.title || source?.title || '',
+                url: tab.url || source?.url || ''
+              },
+              isPro
+            )
+          ).id
         await saveCard(data, destination, isPro)
         setCard(emptyCardData())
         await removeKeys([DRAFT_KEY])

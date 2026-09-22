@@ -20,7 +20,10 @@ export default function App() {
   const draft = useDraftCard({
     topicId: topics.selectedId,
     isPro: session.isPro,
-    onSaved: cards.refresh
+    pendingTitle: topics.pendingTitle,
+    onSaved: async () => {
+      await Promise.all([topics.refresh(session.isPro), cards.refresh()])
+    }
   })
   const page = useActivePage(draft.source)
   const [view, setView] = useState<'editor' | 'cards'>('editor')
@@ -34,6 +37,10 @@ export default function App() {
   useEffect(() => {
     void refresh().catch(error => toast.error(String(error)))
   }, [refresh])
+
+  useEffect(() => {
+    void topics.syncPage(page)
+  }, [page.url, topics.syncPage])
 
   const handleCloseAuth = useCallback(async () => {
     session.closeAuth()
@@ -75,9 +82,10 @@ export default function App() {
               draft={draft}
               topics={topics.topics}
               selectedId={topics.selectedId}
-              pageTitle={page.title}
+              pageTitle={topics.pendingTitle || page.title}
               onSelectTopic={topics.select}
               onCreateTopic={topics.create}
+              onRenameTopic={title => void topics.rename(title)}
               onShowCards={() => setView('cards')}
             />
           )}
