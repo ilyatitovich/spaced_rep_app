@@ -1,10 +1,11 @@
 import { isWireMediaRef, PROTOCOL_VERSION, sha256Hex } from '@spaced-rep/sync-protocol'
+import type { Topic } from '@/models/topic.model'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { arrayBufferToBase64 } from '../../../client/src/lib/image'
 import { encodeCardData, emptyCardData } from '../lib/card-codec'
 import type { Card } from '../types'
 import { getCard, saveCard } from './cards.service'
-import { getOutbox, type OutboxItem } from './outbox.service'
+import { enqueue, getOutbox, type OutboxItem } from './outbox.service'
 import { buildOutboxMutations, flushOutbox } from './sync.service'
 
 const values: Record<string, unknown> = {}
@@ -90,6 +91,90 @@ describe('buildOutboxMutations', () => {
       },
       back: data.back
     })
+  })
+
+  it('emits the topic upsert before the card upsert in the same batch', async () => {
+    const topic: Topic = {
+      id: 'topic-1',
+      title: 'Web clips',
+      pivot: 1_000,
+      week: [null, null, null, null, null, null, null],
+      nextUpdateDate: 2_000,
+      updatedAt: 1_000,
+      deletedAt: null
+    }
+    const card: Card = {
+      id: 'card-1',
+      topicId: 'topic-1',
+      level: 1,
+      data: encodeCardData(emptyCardData()),
+      updatedAt: 2_000
+    }
+    const topicItem: OutboxItem = {
+      id: 'op-topic',
+      table: 'topics',
+      recordId: 'topic-1',
+      operation: 'upsert',
+      updatedAt: 1_000,
+      attempts: 0,
+      nextAttemptAt: 0
+    }
+    const cardItem: OutboxItem = {
+      id: 'op-card',
+      table: 'cards',
+      recordId: 'card-1',
+      operation: 'upsert',
+      updatedAt: 2_000,
+      attempts: 0,
+      nextAttemptAt: 0
+    }
+
+    const { mutations } = await buildOutboxMutations('device-1', [
+      { item: cardItem, card },
+      { item: topicItem, topic }
+    ])
+
+    expect(mutations.map(mutation => mutation.table)).toEqual([
+      'topics',
+      'cards'
+    ])
+    expect(mutations[0]!.topic).toEqual({
+      id: 'topic-1',
+      title: 'Web clips',
+      pivot: 1_000,
+      weekJson: '[null,null,null,null,null,null,null]',
+      nextUpdateDate: 2_000,
+      updatedAt: 1_000,
+      deletedAt: null
+    })
+  })
+
+  it('emits a card delete without a card payload', async () => {
+    const item: OutboxItem = {
+      id: 'op-del',
+      table: 'cards',
+      recordId: 'card-1',
+      operation: 'delete',
+      updatedAt: 1_000,
+      attempts: 0,
+      nextAttemptAt: 0
+    }
+
+    const { mutations, mediaByHash } = await buildOutboxMutations('device-1', [
+      { item }
+    ])
+
+    expect(mutations).toEqual([
+      {
+        opId: 'op-del',
+        deviceId: 'device-1',
+        table: 'cards',
+        recordId: 'card-1',
+        operation: 'delete',
+        updatedAt: 1_000
+      }
+    ])
+    expect(mediaByHash.size).toBe(0)
   })
 })
 
@@ -243,5 +328,77 @@ describe('flushOutbox', () => {
         ]
       }
     })
+  })
+
+  it('pushes a card delete when the local card is already gone', async () => {
+    values['auth.session'] = {
+      accessToken: 'token',
+      refreshToken: 'refresh',
+      expiresAt: Date.now() + 3_600_000,
+      user: { id: 'u1', email: 'a@b.c' }
+    }
+    await enqueue({
+      id: 'op-del',
+      table: 'cards',
+      recordId: 'missing-card',
+      operation: 'delete',
+      updatedAt: 1_000,
+      attempts: 0,
+      nextAttemptAt: 0
+    })
+
+    const fetchMock = vi.fn(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input)
+        if (url.includes('/settings/subscription')) {
+          return Response.json({
+            data: { plan: 'pro', status: 'active', endsAt: null }
+          })
+        }
+        if (url.includes('/sync/push')) {
+          const body = JSON.parse(String(init?.body ?? '{}')) as {
+            pushBatch?: { mutations?: { opId: string }[] }
+          }
+          return Response.json({
+            version: PROTOCOL_VERSION,
+            messageId: 'ack-1',
+            deviceId: 'device-1',
+            sentAt: Date.now(),
+            kind: 'pushAck',
+            pushAck: {
+              acceptedOpIds: (body.pushBatch?.mutations ?? []).map(m => m.opId),
+              rejected: [],
+              conflicts: []
+            }
+          })
+        }
+        throw new Error(`Unexpected fetch: ${url}`)
+      }
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    await flushOutbox()
+
+    const pushCall = fetchMock.mock.calls.find(([url]) =>
+      String(url).includes('/sync/push')
+    )
+    expect(pushCall).toBeDefined()
+    const body = JSON.parse(String(pushCall?.[1]?.body ?? '{}')) as {
+      pushBatch?: {
+        mutations?: Array<{
+          table: string
+          recordId: string
+          operation: string
+        }>
+      }
+    }
+    expect(body.pushBatch?.mutations).toEqual([
+      expect.objectContaining({
+        table: 'cards',
+        recordId: 'missing-card',
+        operation: 'delete'
+      })
+    ])
+    expect(await getOutbox()).toHaveLength(0)
   })
 })

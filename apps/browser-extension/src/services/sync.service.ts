@@ -127,15 +127,55 @@ export async function bootstrapTopics(): Promise<Topic[]> {
   return topics
 }
 
+type OutboxPair = { item: OutboxItem; card?: Card; topic?: Topic }
+
 /** Decode chrome.storage base64 media → wire refs; collect unique buffers for upload. */
 export async function buildOutboxMutations(
   deviceIdValue: string,
-  pairs: { item: OutboxItem; card: Card }[]
+  pairs: OutboxPair[]
 ): Promise<{ mutations: Mutation[]; mediaByHash: Map<string, MediaDBRecord> }> {
   const mediaByHash = new Map<string, MediaDBRecord>()
   const mutations: Mutation[] = []
+  const ordered = [...pairs].sort((a, b) =>
+    a.item.table === b.item.table ? 0 : a.item.table === 'topics' ? -1 : 1
+  )
 
-  for (const { item, card } of pairs) {
+  for (const { item, card, topic } of ordered) {
+    if (item.operation === 'delete') {
+      mutations.push({
+        opId: item.id,
+        deviceId: deviceIdValue,
+        table: item.table,
+        recordId: item.recordId,
+        operation: 'delete',
+        updatedAt: item.updatedAt
+      })
+      continue
+    }
+
+    if (item.table === 'topics' && topic) {
+      mutations.push({
+        opId: item.id,
+        deviceId: deviceIdValue,
+        table: 'topics',
+        recordId: item.recordId,
+        operation: item.operation,
+        updatedAt: topic.updatedAt,
+        topic: {
+          id: topic.id,
+          title: topic.title,
+          pivot: topic.pivot,
+          weekJson: JSON.stringify(topic.week),
+          nextUpdateDate: topic.nextUpdateDate,
+          updatedAt: topic.updatedAt,
+          deletedAt: null
+        }
+      })
+      continue
+    }
+
+    if (!card) continue
+
     // Decode only for the wire transform — chrome.storage keeps base64 bytes.
     const { wireData, mediaByHash: cardMedia } = await prepareWireCardData(
       decodeCardData(card.data)
@@ -146,7 +186,7 @@ export async function buildOutboxMutations(
       deviceId: deviceIdValue,
       table: 'cards',
       recordId: card.id,
-      operation: 'upsert',
+      operation: item.operation,
       updatedAt: card.updatedAt,
       card: {
         id: card.id,
@@ -169,14 +209,23 @@ export async function flushOutbox(): Promise<void> {
   const queue = (await getOutbox()).filter(item => item.nextAttemptAt <= now)
   if (!queue.length) return
   const id = await deviceId()
-  const pairs = (
-    await Promise.all(
-      queue.map(async item => ({ item, card: await getCard(item.recordId) }))
-    )
-  ).filter(
-    (pair): pair is { item: (typeof queue)[number]; card: NonNullable<typeof pair.card> } =>
-      Boolean(pair.card)
-  )
+  const topics = await getTopics()
+  const pairs: OutboxPair[] = []
+  for (const item of queue) {
+    if (item.operation === 'delete') {
+      pairs.push({ item })
+      continue
+    }
+    if (item.table === 'topics') {
+      const topic = topics.find(candidate => candidate.id === item.recordId)
+      if (!topic) await removeOutbox(item.id)
+      else pairs.push({ item, topic })
+      continue
+    }
+    const card = await getCard(item.recordId)
+    if (!card) await removeOutbox(item.id)
+    else pairs.push({ item, card })
+  }
   if (!pairs.length) return
 
   try {
@@ -188,7 +237,7 @@ export async function flushOutbox(): Promise<void> {
       await removeOutbox(opId)
     }
     for (const rejected of response.rejected) {
-      const item = queue.find(candidate => candidate.id === rejected.opId)
+      const item = pairs.find(pair => pair.item.id === rejected.opId)?.item
       if (!item) continue
       if (!rejected.retryable) await removeOutbox(item.id)
       else
@@ -199,7 +248,7 @@ export async function flushOutbox(): Promise<void> {
         })
     }
   } catch {
-    for (const item of queue) {
+    for (const { item } of pairs) {
       await updateOutbox({
         ...item,
         attempts: item.attempts + 1,
