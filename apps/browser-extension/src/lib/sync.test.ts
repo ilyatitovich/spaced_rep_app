@@ -1,15 +1,10 @@
 import { isWireMediaRef, PROTOCOL_VERSION, sha256Hex } from '@spaced-rep/sync-protocol'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { arrayBufferToBase64 } from '../../../client/src/lib/image'
+import { encodeCardData, emptyCardData } from './card-codec'
+import { getCard, saveCard } from '../services/cards.service'
+import { getOutbox, type OutboxItem } from '../services/outbox.service'
 import { buildOutboxMutations, flushOutbox } from './sync'
-import {
-  encodeCardData,
-  emptyCardData,
-  getCard,
-  getOutbox,
-  saveCard,
-  type OutboxItem
-} from './storage'
 import type { Card } from '../types'
 
 const values: Record<string, unknown> = {}
@@ -235,9 +230,15 @@ describe('flushOutbox', () => {
     expect(await getOutbox()).toHaveLength(0)
     // chrome.storage still holds base64 bytes after a successful flush.
     const stored = await getCard(card.id)
-    expect(stored?.data.front.blocks[0]).toMatchObject({
-      type: 'image',
-      content: expect.objectContaining({ buffer: expect.any(String) })
+    expect(stored?.data).toMatchObject({
+      front: {
+        blocks: [
+          {
+            type: 'image',
+            content: expect.objectContaining({ buffer: expect.any(String) })
+          }
+        ]
+      }
     })
   })
 })

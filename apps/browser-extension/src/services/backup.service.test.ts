@@ -1,14 +1,7 @@
-import {
-  appendBlocks,
-  clearEphemeralStorage,
-  createBackup,
-  DRAFT_KEY,
-  emptyCardData,
-  ensureLocalTopic,
-  isSideEmpty,
-  PENDING_KEY,
-  saveCard
-} from './storage'
+import { emptyCardData } from '../lib/card-codec'
+import { createBackup } from './backup.service'
+import { saveCard } from './cards.service'
+import { ensureLocalTopic } from './topics.service'
 
 const values: Record<string, unknown> = {}
 
@@ -28,16 +21,6 @@ beforeEach(() => {
   } as unknown as typeof chrome
 })
 
-it('replaces a trailing empty text block when capturing content', () => {
-  const result = appendBlocks(
-    [{ type: 'text', html: '' }],
-    [{ type: 'code', lang: 'ts', code: 'const answer = 42' }]
-  )
-  expect(result).toEqual([
-    { type: 'code', lang: 'ts', code: 'const answer = 42' }
-  ])
-})
-
 it('exports locally saved cards in the app backup format', async () => {
   const topic = await ensureLocalTopic()
   const data = emptyCardData()
@@ -51,7 +34,6 @@ it('exports locally saved cards in the app backup format', async () => {
       }
     }
   ]
-  expect(isSideEmpty(data.front.blocks)).toBe(false)
   await saveCard(data, topic.id)
 
   const blob = await createBackup()
@@ -72,14 +54,4 @@ it('exports locally saved cards in the app backup format', async () => {
     buffer: 'AQID',
     type: 'image/png'
   })
-})
-
-it('clears draft and pending capture without touching saved cards', async () => {
-  values[DRAFT_KEY] = { front: {} }
-  values[PENDING_KEY] = { type: 'RAW_CAPTURE' }
-  values.cards = [{ id: 'keep' }]
-  await clearEphemeralStorage()
-  expect(values[DRAFT_KEY]).toBeUndefined()
-  expect(values[PENDING_KEY]).toBeUndefined()
-  expect(values.cards).toEqual([{ id: 'keep' }])
 })

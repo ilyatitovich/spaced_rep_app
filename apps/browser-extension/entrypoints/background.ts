@@ -1,6 +1,6 @@
 import { isAppUrl } from '../src/lib/app-url'
 import type { RawCapture } from '../src/lib/capture'
-import { PENDING_KEY } from '../src/lib/storage'
+import { PENDING_KEY } from '../src/lib/keys'
 import { flushOutbox } from '../src/lib/sync'
 import type { RuntimeMessage, SideName } from '../src/types'
 

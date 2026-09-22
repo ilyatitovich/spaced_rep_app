@@ -15,20 +15,17 @@ import CardToolbar from '@/components/ui/card-toolbar'
 import { appendSideBlocks, isSideEmpty } from '@/lib/check-content'
 import type { CardData, CardHandle, SideBlock, SideName } from '@/types'
 import { signOut, getSession } from '@ext/lib/auth'
-import { normalizeCapture } from '@ext/lib/capture'
 import {
-  createBackup,
   decodeCardData,
-  DRAFT_KEY,
   emptyCardData,
-  encodeCardData,
-  ensureLocalTopic,
-  getCards,
-  getTopics,
-  PENDING_KEY,
-  saveCard
-} from '@ext/lib/storage'
+  encodeCardData
+} from '@ext/lib/card-codec'
+import { normalizeCapture } from '@ext/lib/capture'
+import { DRAFT_KEY, PENDING_KEY } from '@ext/lib/keys'
 import { bootstrapTopics, flushOutbox, hasPro } from '@ext/lib/sync'
+import { createBackup } from '@ext/services/backup.service'
+import { getCards, saveCard } from '@ext/services/cards.service'
+import { ensureLocalTopic, getTopics } from '@ext/services/topics.service'
 import type { ExtensionSession, RuntimeMessage, Topic } from '@ext/types'
 import AuthPanel from './auth-panel'
 

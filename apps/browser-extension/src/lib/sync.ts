@@ -9,30 +9,29 @@ import {
   type SyncMediaApi
 } from '../../../client/src/lib/sync-media'
 import { API_URL, freshSession } from './auth'
+import { decodeCardData } from './card-codec'
+import { readValue, writeValue } from './chrome-store'
+import { DEVICE_KEY, WATERMARK_KEY } from './keys'
+import { getCard } from '../services/cards.service'
 import {
-  decodeCardData,
-  getCard,
   getOutbox,
-  getTopics,
   removeOutbox,
-  setTopics,
   updateOutbox,
   type OutboxItem
-} from './storage'
+} from '../services/outbox.service'
+import { getTopics, setTopics } from '../services/topics.service'
 import type { Card, Topic } from '../types'
 
-const DEVICE_KEY = 'sync.deviceId'
-const WATERMARK_KEY = 'sync.watermark'
 const syncClient = createHttpSyncClient({
   apiUrl: API_URL,
   getAccessToken: async () => (await freshSession())?.accessToken ?? null
 })
 
 async function deviceId(): Promise<string> {
-  const stored = await chrome.storage.local.get(DEVICE_KEY)
-  if (typeof stored[DEVICE_KEY] === 'string') return stored[DEVICE_KEY]
+  const stored = await readValue(DEVICE_KEY)
+  if (typeof stored === 'string') return stored
   const id = crypto.randomUUID()
-  await chrome.storage.local.set({ [DEVICE_KEY]: id })
+  await writeValue(DEVICE_KEY, id)
   return id
 }
 
@@ -98,11 +97,9 @@ export async function hasPro(): Promise<boolean> {
 export async function bootstrapTopics(): Promise<Topic[]> {
   if (!(await hasPro())) return []
   const id = await deviceId()
-  const stored = await chrome.storage.local.get(WATERMARK_KEY)
+  const stored = await readValue(WATERMARK_KEY)
   const watermark =
-    typeof stored[WATERMARK_KEY] === 'string'
-      ? stored[WATERMARK_KEY]
-      : new Date(0).toISOString()
+    typeof stored === 'string' ? stored : new Date(0).toISOString()
   const response = await syncClient.bootstrap(
     id,
     watermark,
@@ -125,9 +122,7 @@ export async function bootstrapTopics(): Promise<Topic[]> {
     else topics[index] = topic
   }
   await setTopics(topics)
-  await chrome.storage.local.set({
-    [WATERMARK_KEY]: response.watermark
-  })
+  await writeValue(WATERMARK_KEY, response.watermark)
   return topics
 }
 

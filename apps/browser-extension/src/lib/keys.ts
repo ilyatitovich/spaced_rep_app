@@ -1,0 +1,7 @@
+export const CARDS_KEY = 'cards'
+export const TOPICS_KEY = 'topics'
+export const OUTBOX_KEY = 'sync.outbox'
+export const DRAFT_KEY = 'card.draft'
+export const PENDING_KEY = 'capture.pending'
+export const DEVICE_KEY = 'sync.deviceId'
+export const WATERMARK_KEY = 'sync.watermark'
