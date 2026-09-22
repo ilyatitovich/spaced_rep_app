@@ -37,6 +37,16 @@ export async function getOutbox(): Promise<OutboxItem[]> {
   return stored.map(normalizeOutboxItem)
 }
 
+export async function dropFor(recordId: string): Promise<boolean> {
+  const items = await getOutbox()
+  const remaining = items.filter(
+    item => item.recordId !== recordId || item.operation !== 'upsert'
+  )
+  if (remaining.length === items.length) return false
+  await writeList(OUTBOX_KEY, remaining)
+  return true
+}
+
 export async function enqueue(item: OutboxItem): Promise<void> {
   await writeList(OUTBOX_KEY, [...(await getOutbox()), item])
 }
