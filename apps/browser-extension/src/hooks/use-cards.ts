@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 
-import { getCards } from '../services/cards.service'
+import { deleteCards, getCards } from '../services/cards.service'
+import { flushOutbox } from '../services/sync.service'
 import type { Card } from '../types'
 
 export function useCards() {
@@ -12,5 +13,14 @@ export function useCards() {
     return next
   }, [])
 
-  return { cards, savedCount: cards.length, refresh }
+  const remove = useCallback(
+    async (ids: string[]) => {
+      await deleteCards(ids)
+      await flushOutbox()
+      await refresh()
+    },
+    [refresh]
+  )
+
+  return { cards, savedCount: cards.length, refresh, remove }
 }

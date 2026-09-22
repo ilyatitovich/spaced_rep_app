@@ -9,12 +9,12 @@ import {
   encodeCardData
 } from '../lib/card-codec'
 import { normalizeCapture } from '../lib/capture'
-import { removeKeys, writeValue } from '../lib/chrome-store'
+import { readValue, removeKeys, writeValue } from '../lib/chrome-store'
 import { DRAFT_KEY, PENDING_KEY } from '../lib/keys'
-import { saveCard } from '../services/cards.service'
+import { saveCard, updateCard } from '../services/cards.service'
 import { flushOutbox } from '../services/sync.service'
 import { ensureLocalTopic } from '../services/topics.service'
-import type { CapturedContent, RuntimeMessage } from '../types'
+import type { Card, CapturedContent, RuntimeMessage } from '../types'
 
 function isCaptureMessage(value: unknown): value is RuntimeMessage {
   if (typeof value !== 'object' || value === null || !('type' in value)) {
@@ -40,11 +40,14 @@ export function useDraftCard({
   const [isFlipped, setIsFlipped] = useState(false)
   const [busy, setBusy] = useState(false)
   const [source, setSource] = useState<CapturedContent['source'] | null>(null)
+  const [editingCardId, setEditingCardId] = useState<string | null>(null)
+  const editingIdRef = useRef<string | null>(null)
   const side: SideName = isFlipped ? 'back' : 'front'
   const isDraft = isSideEmpty(card.front) || isSideEmpty(card.back)
   cardStateRef.current = card
 
   const persist = useCallback(async (value: CardData) => {
+    if (editingIdRef.current) return
     await writeValue(DRAFT_KEY, encodeCardData(value))
   }, [])
 
@@ -108,12 +111,21 @@ export function useDraftCard({
     setBusy(true)
     try {
       const data = cardRef.current?.getContent() ?? card
-      const destination = topicId || (await ensureLocalTopic()).id
-      await saveCard(data, destination, isPro && destination !== localTopicId)
+      if (editingCardId) {
+        const updated = await updateCard(editingCardId, data, isPro)
+        if (!updated) throw new Error('Card no longer exists')
+        editingIdRef.current = null
+        setEditingCardId(null)
+        const stored = await readValue(DRAFT_KEY)
+        setCard(stored ? decodeCardData(stored) : emptyCardData())
+      } else {
+        const destination = topicId || (await ensureLocalTopic()).id
+        await saveCard(data, destination, isPro && destination !== localTopicId)
+        setCard(emptyCardData())
+        await removeKeys([DRAFT_KEY])
+      }
       await flushOutbox()
-      setCard(emptyCardData())
       setIsFlipped(false)
-      await removeKeys([DRAFT_KEY])
       await onSaved?.()
       toast.success(isPro ? 'Saved and synced' : 'Saved locally')
     } catch (error) {
@@ -121,6 +133,13 @@ export function useDraftCard({
     } finally {
       setBusy(false)
     }
+  }
+
+  const edit = (stored: Card) => {
+    editingIdRef.current = stored.id
+    setEditingCardId(stored.id)
+    setCard(decodeCardData(stored.data))
+    setIsFlipped(false)
   }
 
   const handleChange = (blocks: SideBlock[], changedSide: SideName) => {
@@ -148,6 +167,8 @@ export function useDraftCard({
     appendBlocks,
     handleChange,
     save,
+    edit,
+    editingCardId,
     flip: () => setIsFlipped(value => !value),
     captureSelection: () => requestCapture('CAPTURE_SELECTION'),
     captureScreenshot: () => requestCapture('CAPTURE_SCREENSHOT')

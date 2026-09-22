@@ -44,7 +44,7 @@ export default function PanelFooter({
         disabled={!savedCount}
         onClick={onExport}
       >
-        <Download size={17} /> Export ({savedCount})
+        <Download size={17} /> Export
       </button>
       {isPro && (
         <button

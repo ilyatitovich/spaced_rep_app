@@ -62,8 +62,14 @@ export default function App() {
         <>
           {view === 'cards' ? (
             <CardsScreen
-              count={cards.savedCount}
+              cards={cards.cards}
+              topics={topics.topics}
               onShowEditor={() => setView('editor')}
+              onEdit={card => {
+                draft.edit(card)
+                setView('editor')
+              }}
+              onDelete={cards.remove}
             />
           ) : (
             <EditorScreen
