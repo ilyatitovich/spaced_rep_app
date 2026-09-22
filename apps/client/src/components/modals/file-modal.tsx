@@ -255,7 +255,7 @@ export default function FileModal(props: FileModalProps) {
             placeholder="Or paste JSON"
             value={pastedText}
             onChange={e => setPastedText(e.target.value)}
-            className="w-full min-h-32 p-4 rounded-xl border border-border focus:border-input-focus focus:outline-none transition resize-y text-sm font-mono"
+            className="w-full min-h-32 p-4 rounded-xl border border-border focus:border-input-focus focus:outline-none transition resize-y text-base font-mono"
           />
           <Button
             variant="secondary"
