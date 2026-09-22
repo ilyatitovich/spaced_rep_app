@@ -48,7 +48,10 @@ describe('buildOutboxMutations', () => {
 
     const item: OutboxItem = {
       id: 'op-1',
-      cardId: 'card-1',
+      table: 'cards',
+      recordId: 'card-1',
+      operation: 'upsert',
+      updatedAt: 1_000,
       attempts: 0,
       nextAttemptAt: 0
     }

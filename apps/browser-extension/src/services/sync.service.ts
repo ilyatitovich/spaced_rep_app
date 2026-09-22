@@ -171,7 +171,7 @@ export async function flushOutbox(): Promise<void> {
   const id = await deviceId()
   const pairs = (
     await Promise.all(
-      queue.map(async item => ({ item, card: await getCard(item.cardId) }))
+      queue.map(async item => ({ item, card: await getCard(item.recordId) }))
     )
   ).filter(
     (pair): pair is { item: (typeof queue)[number]; card: NonNullable<typeof pair.card> } =>

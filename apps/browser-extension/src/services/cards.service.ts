@@ -27,7 +27,10 @@ export async function saveCard(
   if (enqueueSync) {
     await enqueue({
       id: crypto.randomUUID(),
-      cardId: card.id,
+      table: 'cards',
+      recordId: card.id,
+      operation: 'upsert',
+      updatedAt: card.updatedAt,
       attempts: 0,
       nextAttemptAt: 0
     })
