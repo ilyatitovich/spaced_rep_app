@@ -22,7 +22,7 @@ import {
 } from '@ext/lib/card-codec'
 import { normalizeCapture } from '@ext/lib/capture'
 import { DRAFT_KEY, PENDING_KEY } from '@ext/lib/keys'
-import { bootstrapTopics, flushOutbox, hasPro } from '@ext/lib/sync'
+import { bootstrapTopics, flushOutbox, hasPro } from '@ext/services/sync.service'
 import { createBackup } from '@ext/services/backup.service'
 import { getCards, saveCard } from '@ext/services/cards.service'
 import { ensureLocalTopic, getTopics } from '@ext/services/topics.service'

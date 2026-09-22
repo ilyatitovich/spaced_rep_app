@@ -1,7 +1,7 @@
 import { isAppUrl } from '../src/lib/app-url'
 import type { RawCapture } from '../src/lib/capture'
 import { PENDING_KEY } from '../src/lib/keys'
-import { flushOutbox } from '../src/lib/sync'
+import { flushOutbox } from '../src/services/sync.service'
 import type { RuntimeMessage, SideName } from '../src/types'
 
 async function activeTab(): Promise<chrome.tabs.Tab> {

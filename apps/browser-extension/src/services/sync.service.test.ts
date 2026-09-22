@@ -1,11 +1,11 @@
 import { isWireMediaRef, PROTOCOL_VERSION, sha256Hex } from '@spaced-rep/sync-protocol'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { arrayBufferToBase64 } from '../../../client/src/lib/image'
-import { encodeCardData, emptyCardData } from './card-codec'
-import { getCard, saveCard } from '../services/cards.service'
-import { getOutbox, type OutboxItem } from '../services/outbox.service'
-import { buildOutboxMutations, flushOutbox } from './sync'
+import { encodeCardData, emptyCardData } from '../lib/card-codec'
 import type { Card } from '../types'
+import { getCard, saveCard } from './cards.service'
+import { getOutbox, type OutboxItem } from './outbox.service'
+import { buildOutboxMutations, flushOutbox } from './sync.service'
 
 const values: Record<string, unknown> = {}
 

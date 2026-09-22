@@ -8,19 +8,19 @@ import {
   type MediaUploadPlanItem,
   type SyncMediaApi
 } from '../../../client/src/lib/sync-media'
-import { API_URL, freshSession } from './auth'
-import { decodeCardData } from './card-codec'
-import { readValue, writeValue } from './chrome-store'
-import { DEVICE_KEY, WATERMARK_KEY } from './keys'
-import { getCard } from '../services/cards.service'
+import { API_URL, freshSession } from '../lib/auth'
+import { decodeCardData } from '../lib/card-codec'
+import { readValue, writeValue } from '../lib/chrome-store'
+import { DEVICE_KEY, WATERMARK_KEY } from '../lib/keys'
+import type { Card, Topic } from '../types'
+import { getCard } from './cards.service'
 import {
   getOutbox,
   removeOutbox,
   updateOutbox,
   type OutboxItem
-} from '../services/outbox.service'
-import { getTopics, setTopics } from '../services/topics.service'
-import type { Card, Topic } from '../types'
+} from './outbox.service'
+import { getTopics, setTopics } from './topics.service'
 
 const syncClient = createHttpSyncClient({
   apiUrl: API_URL,
