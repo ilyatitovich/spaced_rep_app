@@ -10,6 +10,7 @@ export default defineConfig({
     alias: {
       '@ext': path.join(extensionRoot, 'src'),
       '@/lib': path.join(clientSource, 'lib'),
+      '@/models': path.join(clientSource, 'models'),
       '@/types': path.join(clientSource, 'types')
     }
   },

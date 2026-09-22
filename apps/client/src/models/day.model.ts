@@ -1,4 +1,4 @@
-import { getCycleDay, LEITNER_64_DAY_SCHEDULE } from '@/lib'
+import { getCycleDay, LEITNER_64_DAY_SCHEDULE } from '@/lib/leitner-schedule'
 
 export class Day {
   date: number

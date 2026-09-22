@@ -12,7 +12,8 @@ import { API_URL, freshSession } from '../lib/auth'
 import { decodeCardData } from '../lib/card-codec'
 import { readValue, writeValue } from '../lib/chrome-store'
 import { DEVICE_KEY, WATERMARK_KEY } from '../lib/keys'
-import type { Card, Topic } from '../types'
+import type { Topic } from '@/models/topic.model'
+import type { Card } from '../types'
 import { getCard } from './cards.service'
 import {
   getOutbox,
@@ -112,7 +113,7 @@ export async function bootstrapTopics(): Promise<Topic[]> {
       id: record.topic.id,
       title: record.topic.title,
       pivot: record.topic.pivot,
-      week: JSON.parse(record.topic.weekJson) as null[],
+      week: JSON.parse(record.topic.weekJson) as Topic['week'],
       nextUpdateDate: record.topic.nextUpdateDate,
       updatedAt: record.topic.updatedAt,
       deletedAt: null

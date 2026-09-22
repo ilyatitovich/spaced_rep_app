@@ -1,4 +1,4 @@
-import { addDays } from '@/lib'
+import { addDays } from '@/lib/get-today'
 
 import { Day } from './day.model'
 

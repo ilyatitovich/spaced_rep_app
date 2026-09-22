@@ -15,16 +15,6 @@ export type Card = {
   updatedAt: number
 }
 
-export type Topic = {
-  id: string
-  title: string
-  pivot: number
-  week: null[]
-  nextUpdateDate: number
-  updatedAt: number
-  deletedAt: null
-}
-
 export type CapturedContent = {
   blocks: SideBlock[]
   source: { title: string; url: string }

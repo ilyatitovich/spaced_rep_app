@@ -13,6 +13,7 @@ import Card from '@/components/card'
 import ProUpgradeModal from '@/components/modals/pro-upgrade-modal'
 import CardToolbar from '@/components/ui/card-toolbar'
 import { appendSideBlocks, isSideEmpty } from '@/lib/check-content'
+import type { Topic } from '@/models/topic.model'
 import type { CardData, CardHandle, SideBlock, SideName } from '@/types'
 import { signOut, getSession } from '@ext/lib/auth'
 import {
@@ -26,7 +27,7 @@ import { bootstrapTopics, flushOutbox, hasPro } from '@ext/services/sync.service
 import { createBackup } from '@ext/services/backup.service'
 import { getCards, saveCard } from '@ext/services/cards.service'
 import { ensureLocalTopic, getTopics } from '@ext/services/topics.service'
-import type { ExtensionSession, RuntimeMessage, Topic } from '@ext/types'
+import type { ExtensionSession, RuntimeMessage } from '@ext/types'
 import AuthPanel from './auth-panel'
 
 const APP_URL = (

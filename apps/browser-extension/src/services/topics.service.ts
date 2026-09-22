@@ -1,6 +1,6 @@
+import { createTopic, type Topic } from '@/models/topic.model'
 import { readList, writeList } from '../lib/chrome-store'
 import { TOPICS_KEY } from '../lib/keys'
-import type { Topic } from '../types'
 
 const TOPIC_TITLE = 'Anonymus Topic'
 
@@ -14,16 +14,7 @@ export async function ensureLocalTopic(): Promise<Topic> {
   const topics = await getTopics()
   const existing = topics.find(topic => topic.title === TOPIC_TITLE)
   if (existing) return existing
-  const now = Date.now()
-  const topic: Topic = {
-    id: crypto.randomUUID(),
-    title: TOPIC_TITLE,
-    pivot: now,
-    week: Array<null>(7).fill(null),
-    nextUpdateDate: now + 7 * 86_400_000,
-    updatedAt: now,
-    deletedAt: null
-  }
+  const topic = createTopic(TOPIC_TITLE)
   await setTopics([...topics, topic])
   return topic
 }
