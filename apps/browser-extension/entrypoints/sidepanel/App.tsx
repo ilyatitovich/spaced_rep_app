@@ -1,73 +1,48 @@
-import {
-  Camera,
-  Download,
-  LogIn,
-  LogOut,
-  MousePointer2,
-  RefreshCw
-} from 'lucide-react'
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import toast, { Toaster } from 'react-hot-toast'
 
-import Card from '@/components/card'
 import ProUpgradeModal from '@/components/modals/pro-upgrade-modal'
-import CardToolbar from '@/components/ui/card-toolbar'
 import { useActivePage } from '@ext/hooks/use-active-page'
 import { useCards } from '@ext/hooks/use-cards'
 import { useDraftCard } from '@ext/hooks/use-draft-card'
 import { useSession } from '@ext/hooks/use-session'
 import { useTopics } from '@ext/hooks/use-topics'
 import { createBackup } from '@ext/services/backup.service'
+import CardsScreen from '@ext/ui/cards-screen'
+import EditorScreen from '@ext/ui/editor-screen'
+import PanelFooter from '@ext/ui/panel-footer'
 import AuthPanel from './auth-panel'
 
 export default function App() {
-  const {
-    session,
-    isPro,
-    showAuth,
-    showProUpgrade,
-    refresh: refreshSession,
-    signIn,
-    signOut,
-    closeAuth,
-    closeProUpgrade,
-    openProUpgrade,
-    openUpgrade,
-    syncNow
-  } = useSession()
-  const {
-    topics,
-    selectedId,
-    localTopicId,
-    select,
-    refresh: refreshTopics
-  } = useTopics()
-  const { savedCount, refresh: refreshCards } = useCards()
+  const session = useSession()
+  const topics = useTopics()
+  const cards = useCards()
   const draft = useDraftCard({
-    topicId: selectedId,
-    isPro,
-    localTopicId,
-    onSaved: refreshCards
+    topicId: topics.selectedId,
+    isPro: session.isPro,
+    localTopicId: topics.localTopicId,
+    onSaved: cards.refresh
   })
   useActivePage(draft.source)
+  const [view, setView] = useState<'editor' | 'cards'>('editor')
 
   const refresh = useCallback(async () => {
-    const snapshot = await refreshSession()
-    await Promise.all([refreshTopics(snapshot.isPro), refreshCards()])
+    const snapshot = await session.refresh()
+    await Promise.all([topics.refresh(snapshot.isPro), cards.refresh()])
     return snapshot
-  }, [refreshSession, refreshTopics, refreshCards])
+  }, [session.refresh, topics.refresh, cards.refresh])
 
   useEffect(() => {
     void refresh().catch(error => toast.error(String(error)))
   }, [refresh])
 
   const handleCloseAuth = useCallback(async () => {
-    closeAuth()
+    session.closeAuth()
     const snapshot = await refresh()
     if (!snapshot.session) return
     if (snapshot.isPro) toast.success('Sync enabled')
-    else openProUpgrade()
-  }, [closeAuth, openProUpgrade, refresh])
+    else session.openProUpgrade()
+  }, [session.closeAuth, session.openProUpgrade, refresh])
 
   const exportCards = async () => {
     const url = URL.createObjectURL(await createBackup())
@@ -78,120 +53,44 @@ export default function App() {
     URL.revokeObjectURL(url)
   }
 
-  if (showAuth) {
-    return (
-      <main className="h-full">
-        <Toaster position="top-center" />
-        <AuthPanel onClose={() => void handleCloseAuth()} />
-      </main>
-    )
-  }
-
   return (
     <main className="h-full flex flex-col">
       <Toaster position="top-center" />
-      <header className="h-14 px-3 border-b border-border flex items-center justify-between gap-2">
-        <button
-          className="text-sm font-medium min-w-12"
-          onClick={draft.flip}
-        >
-          {draft.isFlipped ? 'Back' : 'Front'}
-        </button>
-        <select
-          className="min-w-0 max-w-44 bg-background-secondary rounded-lg px-2 py-1 text-sm"
-          value={selectedId}
-          onChange={event => select(event.target.value)}
-        >
-          {topics.map(topic => (
-            <option key={topic.id} value={topic.id}>
-              {topic.title}
-            </option>
-          ))}
-        </select>
-        <button
-          className="text-primary font-semibold text-sm disabled:opacity-40"
-          disabled={draft.busy || draft.isEmpty}
-          onClick={() => void draft.save()}
-        >
-          {draft.isDraft ? 'Save draft' : 'Save'}
-        </button>
-      </header>
-
-      <section className="relative flex-1 min-h-0 flex items-center justify-center overflow-hidden">
-        <Card
-          ref={draft.cardRef}
-          data={draft.card}
-          isFlipped={draft.isFlipped}
-          isEditable
-          autoFocus
-          handleChange={draft.handleChange}
-        />
-      </section>
-
-      <div className="px-3">
-        <CardToolbar
-          isTextDisabled={draft.card[draft.side].blocks.at(-1)?.type === 'text'}
-          onAddBlocks={draft.appendBlocks}
-          onFocusLast={() =>
-            draft.cardRef.current?.focusContent(draft.side, 'last')
-          }
-          onFlip={draft.flip}
-        />
-        <div className="grid grid-cols-2 gap-2 py-2">
-          <button
-            className="border border-border rounded-lg py-2 text-sm flex items-center justify-center gap-2"
-            onClick={draft.captureSelection}
-          >
-            <MousePointer2 size={17} /> Selection
-          </button>
-          <button
-            className="border border-border rounded-lg py-2 text-sm flex items-center justify-center gap-2"
-            onClick={draft.captureScreenshot}
-          >
-            <Camera size={17} /> Screenshot
-          </button>
-        </div>
-      </div>
-
-      <footer className="p-3 border-t border-border flex gap-2">
-        {session ? (
-          <button
-            className="flex-1 border border-border rounded-lg py-2 text-sm flex justify-center gap-2"
-            onClick={() => void signOut()}
-          >
-            <LogOut size={17} /> Sign out
-          </button>
-        ) : (
-          <button
-            className="flex-1 bg-primary text-primary-foreground rounded-lg py-2 text-sm flex justify-center gap-2"
-            disabled={draft.busy}
-            onClick={signIn}
-          >
-            <LogIn size={17} /> Sign in to sync
-          </button>
-        )}
-        <button
-          className="flex-1 border border-border rounded-lg py-2 text-sm flex justify-center gap-2 disabled:opacity-40"
-          disabled={!savedCount}
-          onClick={() => void exportCards()}
-        >
-          <Download size={17} /> Export ({savedCount})
-        </button>
-        {isPro && (
-          <button
-            title="Sync now"
-            className="border border-border rounded-lg p-2"
-            onClick={syncNow}
-          >
-            <RefreshCw size={17} />
-          </button>
-        )}
-      </footer>
-      <ProUpgradeModal
-        isOpen={showProUpgrade}
-        onClose={closeProUpgrade}
-        onUpgrade={openUpgrade}
-      />
+      {session.showAuth ? (
+        <AuthPanel onClose={() => void handleCloseAuth()} />
+      ) : (
+        <>
+          {view === 'cards' ? (
+            <CardsScreen
+              count={cards.savedCount}
+              onShowEditor={() => setView('editor')}
+            />
+          ) : (
+            <EditorScreen
+              draft={draft}
+              topics={topics.topics}
+              selectedId={topics.selectedId}
+              onSelectTopic={topics.select}
+              onShowCards={() => setView('cards')}
+            />
+          )}
+          <PanelFooter
+            signedIn={Boolean(session.session)}
+            isPro={session.isPro}
+            busy={draft.busy}
+            savedCount={cards.savedCount}
+            onSignIn={session.signIn}
+            onSignOut={() => void session.signOut()}
+            onExport={() => void exportCards()}
+            onSync={session.syncNow}
+          />
+          <ProUpgradeModal
+            isOpen={session.showProUpgrade}
+            onClose={session.closeProUpgrade}
+            onUpgrade={session.openUpgrade}
+          />
+        </>
+      )}
     </main>
   )
 }
