@@ -30,7 +30,7 @@
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
     "test:ci": "pnpm test:unit && pnpm test:integration && pnpm test:e2e",
-    "test:db:prepare": "tsx testing/scripts/prepare-db.ts",
+    "test:db:prepare": "pnpm --filter spaced_rep_pwa_server exec tsx ../../testing/scripts/prepare-db.ts",
     "test:testing:typecheck": "tsc -p testing/tsconfig.json --noEmit"
   },
   "packageManager": "pnpm@12.3.4+sha512.961aa41fb077da3a04a441d9f8e15ebc0c96da8ef710b2eb67bf9ee7cb0610eabd48f1fd85f51cffe73846785fa0f87c56a3a872a1d893f8446741b5cce45457",
@@ -48,7 +48,6 @@
     "prettier": "^3.7.4",
     "redis": "^6.1.0",
     "supertest": "^7.1.4",
-    "tsx": "^4.23.1",
     "typescript": "7.0.2",
     "vite": "^8.3.0",
     "vitest": "^5.0.0"

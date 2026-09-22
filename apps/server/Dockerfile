@@ -23,3 +23,16 @@ RUN pnpm prisma:generate
 EXPOSE 3000
 # Migrations are run separately (never on container start)
 CMD ["pnpm", "dev"]
+
+FROM base AS production
+ENV NODE_ENV=production
+COPY --from=deps /app ./
+COPY tsconfig.base.json ./
+COPY packages/sync-protocol ./packages/sync-protocol
+COPY apps/server ./apps/server
+WORKDIR /app/apps/server
+RUN pnpm prisma:generate
+USER node
+EXPOSE 3000
+# Migrations are run separately (never on container start)
+CMD ["pnpm", "start"]
