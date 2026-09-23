@@ -91,7 +91,6 @@ export function useDraftCard({
       setSource(message.payload.source)
       await persist(next)
       await removeKeys([PENDING_KEY])
-      toast.success(`Added from ${message.payload.source.title || 'page'}`)
     },
     [persist]
   )
