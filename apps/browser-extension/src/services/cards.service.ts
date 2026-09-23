@@ -69,11 +69,15 @@ export async function updateCard(
   return card
 }
 
-export async function deleteCards(ids: string[]): Promise<void> {
+export async function deleteCards(
+  ids: string[],
+  enqueueSync = true
+): Promise<void> {
   await writeList(
     CARDS_KEY,
     (await getCards()).filter(card => !ids.includes(card.id))
   )
+  if (!enqueueSync) return
   for (const id of ids) {
     if (await dropFor(id)) continue
     await enqueueCard(id, 'delete', Date.now())

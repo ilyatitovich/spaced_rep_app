@@ -87,6 +87,9 @@ export default function App() {
           <PanelFooter
             savedCount={cards.savedCount}
             view={view}
+            onExport={async () => {
+              await cards.refresh()
+            }}
             onShowEditor={() => setView('editor')}
             onShowCards={() => setView('cards')}
           />

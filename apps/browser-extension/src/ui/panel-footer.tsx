@@ -1,6 +1,7 @@
+import { useCallback } from 'react'
 import Button from '@/components/ui/button'
 import { Download, List, SquarePen } from 'lucide-react'
-import { exportCards } from '@ext/lib/cards'
+import { exportCards } from '@ext/lib/export'
 
 interface PanelFooterProps {
   savedCount: number
@@ -21,7 +22,7 @@ export default function PanelFooter({
 }: PanelFooterProps) {
   const handleExport = useCallback(async () => {
     await exportCards()
-    if (onExport) void onExport()
+    await onExport?.()
   }, [onExport])
 
   const toggleButton =

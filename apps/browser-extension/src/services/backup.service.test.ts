@@ -36,7 +36,7 @@ it('exports locally saved cards in the app backup format', async () => {
   ]
   await saveCard(data, topic.id)
 
-  const blob = await createBackup()
+  const { blob } = await createBackup()
   const text = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => resolve(String(reader.result))
