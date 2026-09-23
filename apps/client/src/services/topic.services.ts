@@ -334,8 +334,7 @@ export async function shareTopic(topic: Topic): Promise<void> {
     if (navigator.canShare?.({ files: [file] })) {
       await navigator.share({
         files: [file],
-        title: topic.title,
-        text: topic.title
+        title: topic.title
       })
       return
     }
