@@ -214,14 +214,16 @@ html[data-theme='light'] {
     (16pt floor + safe area). Portrait L/R insets are 0; the home-indicator
     inset (~34pt) is what actually clears Super Retina corner radius.
   */
+  .pb-safe-margins {
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  }
+
   .px-safe-margins {
-    /* padding-inline: max(
+    padding-inline: max(
       1rem,
       env(safe-area-inset-left, 0px),
-      env(safe-area-inset-right, 0px),
-      env(safe-area-inset-bottom, 0px)
-    ); */
-    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+      env(safe-area-inset-right, 0px)
+    );
   }
 
   .card-stage {

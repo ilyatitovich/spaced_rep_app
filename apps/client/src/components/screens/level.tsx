@@ -191,7 +191,7 @@ export default function LevelScreen({
             </div>
           )}
 
-          <div className="w-full p-4 px-safe-margins">
+          <div className="w-full p-4 pb-safe-margins">
             <p className="text-[12px] text-foreground-muted whitespace-pre-line">
               {getLevelDescription(currentLevelId)}
             </p>
