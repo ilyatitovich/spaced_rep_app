@@ -1,3 +1,11 @@
+export function downloadFile(file: File): void {
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(file)
+  link.download = file.name
+  link.click()
+  setTimeout(() => URL.revokeObjectURL(link.href), 1000)
+}
+
 export async function shareFile(
   file: File,
   title?: string,
@@ -10,11 +18,7 @@ export async function shareFile(
       text
     })
   } else {
-    const link = document.createElement('a')
-    link.href = URL.createObjectURL(file)
-    link.download = file.name
-    link.click()
-    setTimeout(() => URL.revokeObjectURL(link.href), 1000)
+    downloadFile(file)
   }
 }
 

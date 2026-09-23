@@ -105,8 +105,10 @@ export default function LevelScreen({
     try {
       const topicId = levelCards[0].topicId
       await shareCards(selectedItems, topicId, Number(currentLevelId))
-    } catch {
-      toast.error('Failed to share cards')
+    } catch (error) {
+      toast.error(
+        `Failed to share cards: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
     }
   }
 
