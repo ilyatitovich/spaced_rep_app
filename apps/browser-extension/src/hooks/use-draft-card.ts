@@ -36,6 +36,7 @@ export function useDraftCard({
   onSaved?: () => Promise<unknown> | unknown
 }) {
   const cardRef = useRef<CardHandle>(null)
+  const onCardAdvancedRef = useRef<(() => void) | null>(null)
   const [card, setCard] = useState<CardData>(emptyCardData)
   const cardStateRef = useRef(card)
   const [isFlipped, setIsFlipped] = useState(false)
@@ -108,6 +109,12 @@ export function useDraftCard({
     return () => chrome.runtime.onMessage.removeListener(listener)
   }, [handleCapture])
 
+  const showNextCard = (next: CardData) => {
+    setCard(next)
+    setIsFlipped(false)
+    onCardAdvancedRef.current?.()
+  }
+
   const save = async () => {
     setBusy(true)
     try {
@@ -118,7 +125,7 @@ export function useDraftCard({
         editingIdRef.current = null
         setEditingCardId(null)
         const stored = await readValue(DRAFT_KEY)
-        setCard(stored ? decodeCardData(stored) : emptyCardData())
+        showNextCard(stored ? decodeCardData(stored) : emptyCardData())
       } else {
         const tab = await getActivePage()
         const destination =
@@ -133,13 +140,11 @@ export function useDraftCard({
             )
           ).id
         await saveCard(data, destination, isPro)
-        setCard(emptyCardData())
+        showNextCard(emptyCardData())
         await removeKeys([DRAFT_KEY])
       }
       await flushOutbox()
-      setIsFlipped(false)
       await onSaved?.()
-      toast.success(isPro ? 'Saved and synced' : 'Saved locally')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Could not save')
     } finally {
@@ -170,6 +175,7 @@ export function useDraftCard({
   return {
     card,
     cardRef,
+    onCardAdvancedRef,
     side,
     isFlipped,
     isDraft,

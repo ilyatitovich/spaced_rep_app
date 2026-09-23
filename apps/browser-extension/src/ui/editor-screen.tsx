@@ -1,9 +1,16 @@
+import { useEffect, useRef, useState } from 'react'
+
 import Card from '@/components/card'
+import Button from '@/components/ui/button'
 import CardToolbar from '@/components/ui/card-toolbar'
+import CardContainer from '@/components/wrappers/card-container'
+import type { CardHandle } from '@/types'
+import { emptyCardData } from '@ext/lib/card-codec'
 import type { Topic } from '@/models/topic.model'
 import type { useDraftCard } from '@ext/hooks/use-draft-card'
 import TopicPicker from './topic-picker'
-import Button from '@/components/ui/button'
+
+const blankCardTemplate = emptyCardData()
 
 interface EditorScreenProps {
   draft: ReturnType<typeof useDraftCard>
@@ -24,6 +31,27 @@ export default function EditorScreen({
   onCreateTopic,
   onRenameTopic
 }: EditorScreenProps) {
+  const [isFirstCardActive, setIsFirstCardActive] = useState(true)
+  const [isInitialRender, setIsInitialRender] = useState(true)
+  const secondCardRef = useRef<CardHandle>(null)
+  const {
+    card: cardData,
+    cardRef: currentCardRef,
+    isFlipped,
+    handleChange
+  } = draft
+
+  useEffect(() => {
+    const onCardAdvanced = draft.onCardAdvancedRef
+    onCardAdvanced.current = () => {
+      setIsFirstCardActive(prev => !prev)
+      setIsInitialRender(false)
+    }
+    return () => {
+      onCardAdvanced.current = null
+    }
+  }, [draft.onCardAdvancedRef])
+
   return (
     <>
       <div className="h-14 px-3 border-b border-border flex items-center justify-between gap-2 relative">
@@ -49,16 +77,26 @@ export default function EditorScreen({
           {draft.isDraft ? 'Save draft' : 'Save'}
         </Button>
       </div>
-      <section className="relative flex-1 min-h-0 flex items-center justify-center overflow-hidden">
+      <CardContainer>
         <Card
-          ref={draft.cardRef}
-          data={draft.card}
-          isFlipped={draft.isFlipped}
+          ref={isFirstCardActive ? currentCardRef : secondCardRef}
+          className={isFirstCardActive ? 'scale-up' : 'move-right'}
+          data={isFirstCardActive ? cardData : blankCardTemplate}
+          isFlipped={isFirstCardActive ? isFlipped : false}
           isEditable
-          autoFocus
-          handleChange={draft.handleChange}
+          autoFocus={isFirstCardActive}
+          handleChange={handleChange}
         />
-      </section>
+        <Card
+          ref={isFirstCardActive ? secondCardRef : currentCardRef}
+          className={`${isInitialRender ? 'hidden' : ''} ${isFirstCardActive ? 'move-right' : 'scale-up'}`.trim()}
+          data={isFirstCardActive ? blankCardTemplate : cardData}
+          isFlipped={isFirstCardActive ? false : isFlipped}
+          isEditable
+          autoFocus={!isFirstCardActive}
+          handleChange={handleChange}
+        />
+      </CardContainer>
       <div className="pb-6">
         <CardToolbar
           isTextDisabled={draft.card[draft.side].blocks.at(-1)?.type === 'text'}

@@ -53,17 +53,17 @@ export default function App() {
   return (
     <main className="h-full flex flex-col">
       <Toaster position="top-center" />
-      <PanelHeader
-        isSignedIn={Boolean(session.session)}
-        isLoading={draft.busy}
-        onSignIn={session.signIn}
-        onSignOut={() => void session.signOut()}
-      />
 
       {session.showAuth ? (
         <AuthPanel onClose={() => void handleCloseAuth()} />
       ) : (
         <>
+          <PanelHeader
+            isSignedIn={Boolean(session.session)}
+            isLoading={draft.busy}
+            onSignIn={session.signIn}
+            onSignOut={() => void session.signOut()}
+          />
           {view === 'cards' ? (
             <CardsScreen
               cards={cards.cards}
