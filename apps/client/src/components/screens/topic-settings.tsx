@@ -1,4 +1,4 @@
-import { ArrowUpFromLine, Pencil, Trash } from 'lucide-react'
+import { ArrowUpFromLine, Pencil, Share, Trash } from 'lucide-react'
 import type { ChangeEvent, FormEvent } from 'react'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'react-hot-toast'
@@ -13,6 +13,7 @@ import {
 } from '@/components'
 import { TITLE_MAX_LENGTH } from '@/lib'
 import type { Topic } from '@/models'
+import { exportTopic } from '@/services'
 import { useTopicsStore } from '@/store'
 
 type TopicSettingsProps = {
@@ -95,6 +96,40 @@ export default function TopicSettings({
     }
   }
 
+  const handleShareTopic = async (): Promise<void> => {
+    let fileUrl: string | undefined
+
+    try {
+      const exported = await exportTopic(topic.id)
+      fileUrl = exported.fileUrl
+      const file = new File(
+        [await (await fetch(fileUrl)).blob()],
+        exported.fileName,
+        { type: 'application/json' }
+      )
+
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: topic.title,
+          text: topic.title
+        })
+        return
+      }
+
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(file)
+      link.download = exported.fileName
+      link.click()
+      setTimeout(() => URL.revokeObjectURL(link.href), 1000)
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return
+      toast.error('Couldn’t share topic')
+    } finally {
+      if (fileUrl) URL.revokeObjectURL(fileUrl)
+    }
+  }
+
   return (
     <Screen isOpen={isOpen} onClose={handleClose}>
       <div className="h-full bg-background flex flex-col overflow-hidden">
@@ -141,6 +176,16 @@ export default function TopicSettings({
           >
             <ArrowUpFromLine size={18} />
             <span>Export topic</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="lg"
+            className="gap-2"
+            onClick={handleShareTopic}
+          >
+            <Share size={18} />
+            <span>Share topic</span>
           </Button>
         </div>
 
