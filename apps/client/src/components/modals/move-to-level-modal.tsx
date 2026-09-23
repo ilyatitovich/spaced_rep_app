@@ -28,14 +28,14 @@ export default function MoveToLevelModal({
           return (
             <li key={level}>
               <Button
-                variant="ghost"
+                variant="unstyled"
                 size="lg"
                 disabled={isCurrent}
                 onClick={() => {
                   onSelect(level)
                   onClose()
                 }}
-                className="w-full rounded-xl bg-muted disabled:opacity-50 active:bg-secondary"
+                className="text-primary w-full rounded-xl bg-muted disabled:opacity-50 disabled:text-muted-foreground"
               >
                 {levelLabel(level)}
                 {isCurrent ? ' (current)' : ''}
