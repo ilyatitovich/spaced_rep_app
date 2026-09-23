@@ -40,7 +40,7 @@ export default function CardsScreen({
           return (
             <section key={topicId} className="py-3">
               <h2 className="text-xs font-medium text-foreground-muted mb-1">
-                {titles.get(topicId) ?? 'Untitled'} ({items.length})
+                Topic: {titles.get(topicId) ?? 'Untitled'} ({items.length})
               </h2>
               {items.map(card => (
                 <CardRow
