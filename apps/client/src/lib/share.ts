@@ -17,3 +17,9 @@ export async function shareFile(
     setTimeout(() => URL.revokeObjectURL(link.href), 1000)
   }
 }
+
+export function getJsonFile(data: unknown, fileName: string): File {
+  return new File([JSON.stringify(data, null, 2)], fileName, {
+    type: 'application/json'
+  })
+}

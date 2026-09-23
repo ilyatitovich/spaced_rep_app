@@ -14,10 +14,11 @@ import {
 import { useSelectionMode } from '@/hooks'
 import { getReviewMessage, getLevelDescription, levelLabel } from '@/lib'
 import { Card } from '@/models'
-import { deleteCardsBulk, updateCardsLevelBulk } from '@/services'
+import { deleteCardsBulk, shareCards, updateCardsLevelBulk } from '@/services'
 import { List } from 'lucide-react'
+import toast from 'react-hot-toast'
 
-type LevelScreenProps = {
+interface LevelScreenProps {
   isOpen: boolean
   levelId: string
   isDone: boolean
@@ -97,6 +98,15 @@ export default function LevelScreen({
       cancelSelectionMode()
     } catch (error) {
       console.error('Failed to move selected cards:', error)
+    }
+  }
+
+  const handleShareSelectedItems = async (): Promise<void> => {
+    try {
+      const topicId = levelCards[0].topicId
+      await shareCards(selectedItems, topicId, Number(currentLevelId))
+    } catch {
+      toast.error('Failed to share cards')
     }
   }
 
@@ -194,6 +204,7 @@ export default function LevelScreen({
         countItemsForDelete={selectedItems.length}
         handleDelete={handleDeleteSelectedItems}
         handleMove={handleMoveSelectedItems}
+        handleShare={handleShareSelectedItems}
         currentLevel={Number(currentLevelId)}
         nameItemsForDelete="card"
       />

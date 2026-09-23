@@ -1,4 +1,4 @@
-import { FolderInput, Trash } from 'lucide-react'
+import { FolderInput, Share, Trash } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 import { ConfirmDeleteModal, MoveToLevelModal } from '@/components'
@@ -9,6 +9,7 @@ type SelectionModeFooterProps = {
   nameItemsForDelete: 'topic' | 'card'
   handleDelete: () => void | Promise<void>
   handleMove?: (level: number) => void
+  handleShare?: () => Promise<void>
   currentLevel?: number
   isHidden?: boolean
 }
@@ -18,6 +19,7 @@ export default function SelectionModeFooter({
   nameItemsForDelete,
   handleDelete,
   handleMove,
+  handleShare,
   currentLevel = 0,
   isHidden = false
 }: SelectionModeFooterProps) {
@@ -57,6 +59,19 @@ export default function SelectionModeFooter({
             <span>Move</span>
           </Button>
         )}
+        {handleShare && (
+          <Button
+            onClick={handleShare}
+            disabled={countItemsForDelete === 0}
+            className="flex-col gap-2 text-xs"
+          >
+            <span>
+              <Share />
+            </span>
+            <span>Share</span>
+          </Button>
+        )}
+
         <Button
           variant="dangerLink"
           onClick={() => setIsConfirmDeleteModalOpen(true)}

@@ -1,3 +1,4 @@
+import { promisifyRequest, yieldToMain } from '@/lib'
 import {
   enqueueSync,
   enqueueSyncBulk,
@@ -17,21 +18,12 @@ import {
 import { withTransaction, STORES, CARDS_TOPIC_LEVEL_INDEX } from '@/lib/db'
 import { normalizeCardData } from '@/lib/normalize-card'
 import { parseImportJson } from '@/lib/parse-import-json'
+import { getJsonFile, shareFile } from '@/lib/share'
 import { decodeCardData } from '@/lib/sync-serialize'
 import { Card } from '@/models'
+import { getTopicById } from './topic.services'
 
 const IMPORT_CHUNK = 50
-
-function yieldToMain(): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, 0))
-}
-
-function promisifyRequest<T>(request: IDBRequest<T>): Promise<T> {
-  return new Promise((resolve, reject) => {
-    request.onsuccess = () => resolve(request.result)
-    request.onerror = () => reject(request.error)
-  })
-}
 
 async function getCardById(cardId: string): Promise<Card | undefined> {
   return withTransaction(STORES.CARDS, 'readonly', stores =>
@@ -39,6 +31,18 @@ async function getCardById(cardId: string): Promise<Card | undefined> {
       stores[STORES.CARDS].get(cardId) as IDBRequest<Card | undefined>
     )
   )
+}
+
+async function getCardsByIds(cardIds: string[]): Promise<Card[]> {
+  return withTransaction([STORES.CARDS], 'readonly', async stores => {
+    const store = stores[STORES.CARDS]
+
+    const cards = await Promise.all(
+      cardIds.map(id => promisifyRequest<Card | undefined>(store.get(id)))
+    )
+
+    return cards.filter((card): card is Card => card !== undefined)
+  })
 }
 
 export async function getCardsByTopicAndLevel(
@@ -360,8 +364,7 @@ export async function importCards(
 }
 
 export type AnkiImportProgress =
-  | { phase: 'parsing' }
-  | { phase: 'saving'; done: number; total: number }
+  { phase: 'parsing' } | { phase: 'saving'; done: number; total: number }
 
 export async function importAnkiApkg(
   file: File,
@@ -370,10 +373,12 @@ export async function importAnkiApkg(
 ): Promise<number> {
   onProgress?.({ phase: 'parsing' })
 
-  const [{ runAnkiImportWorker }, { sanitizeImportedCard }] = await Promise.all([
-    import('@/lib/anki/run-anki-import-worker'),
-    import('@/lib/anki/sanitize-imported-card')
-  ])
+  const [{ runAnkiImportWorker }, { sanitizeImportedCard }] = await Promise.all(
+    [
+      import('@/lib/anki/run-anki-import-worker'),
+      import('@/lib/anki/sanitize-imported-card')
+    ]
+  )
 
   const cards = await runAnkiImportWorker(await file.arrayBuffer(), topicId)
   if (cards.length === 0) {
@@ -436,4 +441,22 @@ export async function importAnkiApkg(
   triggerSync()
 
   return importedIds.length
+}
+
+export async function shareCards(
+  cardIds: string[],
+  topicId: string,
+  level: number
+): Promise<void> {
+  try {
+    const topic = await getTopicById(topicId)
+    if (!topic) throw new Error('Topic not found')
+    const cards = await getCardsByIds(cardIds)
+    const fileName = `topic-${topic.topic.title}-level-${level}-${new Date().toISOString()}.json`
+    const file = getJsonFile(cards, fileName)
+    await shareFile(file, 'Cards')
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') return
+    throw error
+  }
 }
