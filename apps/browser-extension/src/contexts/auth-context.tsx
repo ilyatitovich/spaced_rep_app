@@ -4,10 +4,10 @@ import {
   requestEmailOtp,
   signInWithPasskey as signInWithPasskeyRequest,
   signOut as signOutSession,
-  verifyEmailOtp as verifyEmailOtpRequest
-} from '../lib/auth'
+  verifyEmailOtp as verifyEmailOtpRequest,
+  unavailable
+} from '@ext/lib'
 import type { ExtensionSession } from '../types'
-import { unavailable } from '@ext/lib'
 
 interface AuthContextValue {
   session: ExtensionSession | null

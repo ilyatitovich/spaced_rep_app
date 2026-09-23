@@ -7,7 +7,7 @@ import type {
 import type { ExtensionSession } from '../types'
 
 const SESSION_KEY = 'auth.session'
-const API_URL = (
+export const API_URL = (
   import.meta.env.WXT_PUBLIC_API_URL ?? 'http://localhost:3000'
 ).replace(/\/$/, '')
 
@@ -118,5 +118,3 @@ export async function freshSession(): Promise<ExtensionSession | null> {
 export async function signOut(): Promise<void> {
   await chrome.storage.local.remove(SESSION_KEY)
 }
-
-export { API_URL }
