@@ -4,7 +4,15 @@ import {
   refreshSyncQueueDepth,
   triggerSync
 } from './sync.service'
-import { withTransaction, STORES, CARDS_TOPIC_LEVEL_INDEX, LEVELS } from '@/lib'
+import {
+  withTransaction,
+  STORES,
+  CARDS_TOPIC_LEVEL_INDEX,
+  LEVELS,
+  shareFile,
+  promisifyRequest,
+  yieldToMain
+} from '@/lib'
 import {
   adjustCardMediaStats,
   addEmbeddedMedia,
@@ -14,6 +22,9 @@ import {
 } from '@/lib/card-media-stats'
 import { encodeCardData } from '@/lib/sync-serialize'
 import { Topic, Card, updateWeek } from '@/models'
+import type { ExportedFile } from '@/types'
+
+const DELETE_CHUNK = 50
 
 export async function createTopic(topic: Topic): Promise<void> {
   try {
@@ -120,19 +131,6 @@ export async function getTopicById(
   )
 }
 
-const DELETE_CHUNK = 50
-
-function yieldToMain(): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, 0))
-}
-
-function promisifyRequest<T>(request: IDBRequest<T>): Promise<T> {
-  return new Promise((resolve, reject) => {
-    request.onsuccess = () => resolve(request.result)
-    request.onerror = () => reject(request.error)
-  })
-}
-
 export async function deleteTopic(topicId: string): Promise<void> {
   const cards = await withTransaction(
     STORES.CARDS,
@@ -214,27 +212,10 @@ export async function deleteTopic(topicId: string): Promise<void> {
   triggerSync()
 }
 
-export async function updateTopic(topic: Topic): Promise<void> {
-  topic.updatedAt = Date.now()
-
-  await withTransaction([STORES.TOPICS], 'readwrite', async stores => {
-    const store = stores[STORES.TOPICS]
-
-    await new Promise<void>((resolve, reject) => {
-      const request = store.put(topic)
-      request.onsuccess = () => resolve()
-      request.onerror = () =>
-        reject(request.error ?? new Error('Failed to update topic'))
-    })
-  })
-
-  await enqueueSync(STORES.TOPICS, topic.id, 'upsert')
-  triggerSync()
-}
-
-export async function updateTopics(topics: Topic[]): Promise<void> {
+async function persistTopics(topics: Topic[]): Promise<void> {
+  const now = Date.now()
   topics.forEach(topic => {
-    topic.updatedAt = Date.now()
+    topic.updatedAt = now
   })
 
   await withTransaction([STORES.TOPICS], 'readwrite', async stores => {
@@ -259,9 +240,15 @@ export async function updateTopics(topics: Topic[]): Promise<void> {
   triggerSync()
 }
 
-export async function exportTopic(
-  topicId: string
-): Promise<Record<string, string>> {
+export function updateTopic(topic: Topic): Promise<void> {
+  return persistTopics([topic])
+}
+
+export function updateTopics(topics: Topic[]): Promise<void> {
+  return persistTopics(topics)
+}
+
+export async function exportTopic(topicId: string): Promise<ExportedFile> {
   return withTransaction(
     [STORES.TOPICS, STORES.CARDS],
     'readonly',
@@ -309,10 +296,8 @@ export async function exportTopic(
         type: 'application/json'
       })
 
-      const url = URL.createObjectURL(blob)
-
       return {
-        fileUrl: url,
+        blob,
         fileName: `topic-${topic.title}-${topic.id}-${payload.exportedAt}.json`
       }
     }
@@ -320,34 +305,12 @@ export async function exportTopic(
 }
 
 export async function shareTopic(topic: Topic): Promise<void> {
-  let fileUrl: string | undefined
-
   try {
-    const exported = await exportTopic(topic.id)
-    fileUrl = exported.fileUrl
-    const file = new File(
-      [await (await fetch(fileUrl)).blob()],
-      exported.fileName,
-      { type: 'application/json' }
-    )
-
-    if (navigator.canShare?.({ files: [file] })) {
-      await navigator.share({
-        files: [file],
-        title: topic.title
-      })
-      return
-    }
-
-    const link = document.createElement('a')
-    link.href = URL.createObjectURL(file)
-    link.download = exported.fileName
-    link.click()
-    setTimeout(() => URL.revokeObjectURL(link.href), 1000)
+    const { blob, fileName } = await exportTopic(topic.id)
+    const file = new File([blob], fileName, { type: 'application/json' })
+    await shareFile(file, topic.title)
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') return
     throw error
-  } finally {
-    if (fileUrl) URL.revokeObjectURL(fileUrl)
   }
 }

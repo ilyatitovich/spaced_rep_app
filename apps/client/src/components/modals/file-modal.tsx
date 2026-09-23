@@ -81,7 +81,8 @@ export default function FileModal(props: FileModalProps) {
       kind === 'export-app' ? exportAppData() : exportTopic(topicId ?? '')
 
     run
-      .then(({ fileUrl, fileName }) => {
+      .then(({ blob, fileName }) => {
+        const fileUrl = URL.createObjectURL(blob)
         if (isCancelled) {
           URL.revokeObjectURL(fileUrl)
           return

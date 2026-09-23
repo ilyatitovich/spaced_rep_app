@@ -14,6 +14,7 @@ import {
 } from '@/lib/card-media-stats'
 import { decodeCardData, encodeCardData } from '@/lib/sync-serialize'
 import { Card, Topic } from '@/models'
+import type { ExportedFile } from '@/types'
 
 const BACKUP_VERSION = 1
 const UUID_RE =
@@ -23,7 +24,7 @@ function ensureUuid(id: string): string {
   return UUID_RE.test(id) ? id : crypto.randomUUID()
 }
 
-export async function exportAppData(): Promise<Record<string, string>> {
+export async function exportAppData(): Promise<ExportedFile> {
   return withTransaction(
     [STORES.TOPICS, STORES.CARDS],
     'readonly',
@@ -60,7 +61,7 @@ export async function exportAppData(): Promise<Record<string, string>> {
       })
 
       return {
-        fileUrl: URL.createObjectURL(blob),
+        blob,
         fileName: `spaced-rep-backup-${exportedAt}.json`
       }
     }
