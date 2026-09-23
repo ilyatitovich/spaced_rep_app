@@ -1,10 +1,6 @@
 import { useEffect, useState } from 'react'
 
-import {
-  getActivePage,
-  subscribeActivePage,
-  type ActivePage
-} from '../lib/active-page'
+import { getActivePage, subscribeActivePage, type ActivePage } from '@ext/lib'
 
 export function useActivePage(
   fallback?: Partial<ActivePage> | null

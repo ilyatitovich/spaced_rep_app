@@ -7,8 +7,9 @@ import {
   verifyEmailOtp as verifyEmailOtpRequest
 } from '../lib/auth'
 import type { ExtensionSession } from '../types'
+import { unavailable } from '@ext/lib'
 
-type AuthContextValue = {
+interface AuthContextValue {
   session: ExtensionSession | null
   isConfigured: boolean
   capabilities: { google: boolean; passkey: boolean; emailOtp: boolean }
@@ -20,9 +21,6 @@ type AuthContextValue = {
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
-
-const unavailable = (method: string) => () =>
-  Promise.reject(new Error(`${method} is not available in the extension`))
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AuthContextValue>(
