@@ -215,12 +215,12 @@ html[data-theme='light'] {
     inset (~34pt) is what actually clears Super Retina corner radius.
   */
   .px-safe-margins {
-    padding-inline: max(
+    /* padding-inline: max(
       1rem,
       env(safe-area-inset-left, 0px),
       env(safe-area-inset-right, 0px),
       env(safe-area-inset-bottom, 0px)
-    );
+    ); */
     padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
   }
 
