@@ -8,7 +8,7 @@ import type { CardHandle } from '@/types'
 import { emptyCardData } from '@ext/lib/card-codec'
 import type { Topic } from '@/models/topic.model'
 import type { useDraftCard } from '@ext/hooks/use-draft-card'
-import TopicPicker from './topic-picker'
+import TopicPicker from '../ui/topic-picker'
 
 const blankCardTemplate = emptyCardData()
 

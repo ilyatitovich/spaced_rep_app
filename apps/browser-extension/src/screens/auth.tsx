@@ -6,7 +6,7 @@ import type { AuthStep } from '@/types'
 
 import { AuthProvider } from '@ext/contexts'
 
-export default function AuthPanel({ onClose }: { onClose: () => void }) {
+export default function AuthScreen({ onClose }: { onClose: () => void }) {
   const [step, setStep] = useState<AuthStep>('methods')
   return (
     <AuthProvider>

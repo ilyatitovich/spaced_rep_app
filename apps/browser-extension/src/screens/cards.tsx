@@ -3,7 +3,7 @@ import { useState } from 'react'
 import ConfirmDeleteModal from '@/components/modals/confirm-delete-modal'
 import type { Topic } from '@/models/topic.model'
 import type { Card } from '@ext/types'
-import CardRow from './card-row'
+import CardRow from '../ui/card-row'
 
 interface CardsScreenProps {
   cards: Card[]

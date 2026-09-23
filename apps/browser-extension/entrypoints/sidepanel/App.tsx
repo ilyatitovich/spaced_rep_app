@@ -7,10 +7,8 @@ import { useCards } from '@ext/hooks/use-cards'
 import { useDraftCard } from '@ext/hooks/use-draft-card'
 import { useSession } from '@ext/hooks/use-session'
 import { useTopics } from '@ext/hooks/use-topics'
-import CardsScreen from '@ext/ui/cards-screen'
-import EditorScreen from '@ext/ui/editor-screen'
+import { CardsScreen, EditorScreen, AuthScreen } from '@ext/screens'
 import PanelFooter from '@ext/ui/panel-footer'
-import AuthPanel from './auth-panel'
 import PanelHeader from '@ext/ui/panel-header'
 
 export default function App() {
@@ -55,7 +53,7 @@ export default function App() {
       <Toaster position="top-center" />
 
       {session.showAuth ? (
-        <AuthPanel onClose={() => void handleCloseAuth()} />
+        <AuthScreen onClose={() => void handleCloseAuth()} />
       ) : (
         <>
           <PanelHeader
