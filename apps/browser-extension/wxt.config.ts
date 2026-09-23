@@ -5,21 +5,27 @@ import svgr from 'vite-plugin-svgr'
 import { defineConfig } from 'wxt'
 
 const extensionRoot = path.dirname(fileURLToPath(import.meta.url))
+
 const apiOrigin = new URL(
   process.env.WXT_PUBLIC_API_URL ?? 'http://localhost:3000'
 ).origin
+
 const appOrigin = new URL(
   process.env.WXT_PUBLIC_APP_URL ?? 'http://localhost:5173'
 ).origin
+
 /** Presigned object host (MinIO local / R2). Required for PUT/GET without optional grants. */
 const mediaOrigin = new URL(
   process.env.WXT_PUBLIC_MEDIA_URL ?? 'http://localhost:9000'
 ).origin
+
 const appHost = new URL(appOrigin).hostname
+
 const webauthnHostPermission =
   appHost === 'localhost' || appHost === '127.0.0.1'
     ? 'http://localhost/*'
     : `https://${appHost}/*`
+
 const clientSource = path.resolve(extensionRoot, '../client/src')
 
 export default defineConfig({
@@ -72,7 +78,17 @@ export default defineConfig({
     ],
     optional_host_permissions: ['http://*/*', 'https://*/*'],
     action: {
+      default_icon: {
+        '16': 'icons/icon-16.png',
+        '32': 'icons/icon-32.png',
+        '48': 'icons/icon-48.png'
+      },
       default_title: 'Create a flashcard'
+    },
+    icons: {
+      '16': 'icons/icon-16.png',
+      '32': 'icons/icon-32.png',
+      '48': 'icons/icon-48.png'
     }
   }
 })
