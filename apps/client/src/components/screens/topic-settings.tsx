@@ -1,4 +1,4 @@
-import { ArrowUpFromLine, Pencil, Share, Trash } from 'lucide-react'
+import { Pencil, Share, Trash } from 'lucide-react'
 import type { ChangeEvent, FormEvent } from 'react'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'react-hot-toast'
@@ -6,14 +6,13 @@ import { toast } from 'react-hot-toast'
 import {
   BackButton,
   ConfirmDeleteModal,
-  FileModal,
   Header,
   Screen,
   Button
 } from '@/components'
 import { TITLE_MAX_LENGTH } from '@/lib'
 import type { Topic } from '@/models'
-import { exportTopic } from '@/services'
+import { shareTopic } from '@/services'
 import { useTopicsStore } from '@/store'
 
 type TopicSettingsProps = {
@@ -31,7 +30,7 @@ export default function TopicSettings({
   const [error, setError] = useState('')
   const [isConfirmDeleteModalOpen, setIsConfirmDeleteModalOpen] =
     useState(false)
-  const [isExportModalOpen, setIsExportModalOpen] = useState(false)
+
   const deleteTopics = useTopicsStore(state => state.deleteTopics)
   const updateTopic = useTopicsStore(state => state.updateTopic)
 
@@ -97,36 +96,10 @@ export default function TopicSettings({
   }
 
   const handleShareTopic = async (): Promise<void> => {
-    let fileUrl: string | undefined
-
     try {
-      const exported = await exportTopic(topic.id)
-      fileUrl = exported.fileUrl
-      const file = new File(
-        [await (await fetch(fileUrl)).blob()],
-        exported.fileName,
-        { type: 'application/json' }
-      )
-
-      if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: topic.title,
-          text: topic.title
-        })
-        return
-      }
-
-      const link = document.createElement('a')
-      link.href = URL.createObjectURL(file)
-      link.download = exported.fileName
-      link.click()
-      setTimeout(() => URL.revokeObjectURL(link.href), 1000)
-    } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') return
-      toast.error('Couldn’t share topic')
-    } finally {
-      if (fileUrl) URL.revokeObjectURL(fileUrl)
+      await shareTopic(topic)
+    } catch {
+      toast.error('Failed to share topic')
     }
   }
 
@@ -172,16 +145,6 @@ export default function TopicSettings({
             variant="outline"
             size="lg"
             className="gap-2"
-            onClick={() => setIsExportModalOpen(true)}
-          >
-            <ArrowUpFromLine size={18} />
-            <span>Export topic</span>
-          </Button>
-
-          <Button
-            variant="outline"
-            size="lg"
-            className="gap-2"
             onClick={handleShareTopic}
           >
             <Share size={18} />
@@ -208,12 +171,6 @@ export default function TopicSettings({
         onClose={() => setIsConfirmDeleteModalOpen(false)}
         count={1}
         itemName="topic"
-      />
-      <FileModal
-        kind="export-topic"
-        isOpen={isExportModalOpen}
-        onClose={() => setIsExportModalOpen(false)}
-        topicId={topic.id}
       />
     </Screen>
   )

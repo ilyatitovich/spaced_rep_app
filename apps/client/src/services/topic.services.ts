@@ -4,12 +4,7 @@ import {
   refreshSyncQueueDepth,
   triggerSync
 } from './sync.service'
-import {
-  withTransaction,
-  STORES,
-  CARDS_TOPIC_LEVEL_INDEX,
-  LEVELS
-} from '@/lib'
+import { withTransaction, STORES, CARDS_TOPIC_LEVEL_INDEX, LEVELS } from '@/lib'
 import {
   adjustCardMediaStats,
   addEmbeddedMedia,
@@ -106,16 +101,15 @@ export async function getTopicById(
         LEVELS.map(
           level =>
             new Promise<void>((resolve, reject) => {
-              const req = levelIndex.count(
-                IDBKeyRange.only([topicId, level])
-              )
+              const req = levelIndex.count(IDBKeyRange.only([topicId, level]))
               req.onsuccess = () => {
                 levelCounts[level] = req.result
                 resolve()
               }
               req.onerror = () =>
                 reject(
-                  req.error ?? new Error(`Failed to count cards at level ${level}`)
+                  req.error ??
+                    new Error(`Failed to count cards at level ${level}`)
                 )
             })
         )
@@ -140,12 +134,16 @@ function promisifyRequest<T>(request: IDBRequest<T>): Promise<T> {
 }
 
 export async function deleteTopic(topicId: string): Promise<void> {
-  const cards = await withTransaction(STORES.CARDS, 'readonly', async stores => {
-    const index = stores[STORES.CARDS].index('topicId')
-    return promisifyRequest<Card[]>(
-      index.getAll(IDBKeyRange.only(topicId)) as IDBRequest<Card[]>
-    )
-  })
+  const cards = await withTransaction(
+    STORES.CARDS,
+    'readonly',
+    async stores => {
+      const index = stores[STORES.CARDS].index('topicId')
+      return promisifyRequest<Card[]>(
+        index.getAll(IDBKeyRange.only(topicId)) as IDBRequest<Card[]>
+      )
+    }
+  )
 
   let mediaDelta: EmbeddedCardMedia = {
     bytes: 0,
@@ -319,4 +317,38 @@ export async function exportTopic(
       }
     }
   )
+}
+
+export async function shareTopic(topic: Topic): Promise<void> {
+  let fileUrl: string | undefined
+
+  try {
+    const exported = await exportTopic(topic.id)
+    fileUrl = exported.fileUrl
+    const file = new File(
+      [await (await fetch(fileUrl)).blob()],
+      exported.fileName,
+      { type: 'application/json' }
+    )
+
+    if (navigator.canShare?.({ files: [file] })) {
+      await navigator.share({
+        files: [file],
+        title: topic.title,
+        text: topic.title
+      })
+      return
+    }
+
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(file)
+    link.download = exported.fileName
+    link.click()
+    setTimeout(() => URL.revokeObjectURL(link.href), 1000)
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') return
+    throw error
+  } finally {
+    if (fileUrl) URL.revokeObjectURL(fileUrl)
+  }
 }
