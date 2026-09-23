@@ -1,8 +1,9 @@
-import { TITLE_MAX_LENGTH } from '@/lib/constants'
 import { createTopic as buildTopic, type Topic } from '@/models/topic.model'
 import { readList, readValue, writeList, writeValue } from '../lib/chrome-store'
 import { PAGE_TOPICS_KEY, SELECTED_TOPIC_KEY, TOPICS_KEY } from '../lib/keys'
 import { enqueue } from './outbox.service'
+
+const TITLE_MAX_LENGTH = 30
 
 export const getTopics = () => readList<Topic>(TOPICS_KEY)
 

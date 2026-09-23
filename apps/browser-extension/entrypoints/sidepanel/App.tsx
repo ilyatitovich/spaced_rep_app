@@ -7,11 +7,11 @@ import { useCards } from '@ext/hooks/use-cards'
 import { useDraftCard } from '@ext/hooks/use-draft-card'
 import { useSession } from '@ext/hooks/use-session'
 import { useTopics } from '@ext/hooks/use-topics'
-import { createBackup } from '@ext/services/backup.service'
 import CardsScreen from '@ext/ui/cards-screen'
 import EditorScreen from '@ext/ui/editor-screen'
 import PanelFooter from '@ext/ui/panel-footer'
 import AuthPanel from './auth-panel'
+import PanelHeader from '@ext/ui/panel-header'
 
 export default function App() {
   const session = useSession()
@@ -50,18 +50,16 @@ export default function App() {
     else session.openProUpgrade()
   }, [session.closeAuth, session.openProUpgrade, refresh])
 
-  const exportCards = async () => {
-    const url = URL.createObjectURL(await createBackup())
-    const anchor = document.createElement('a')
-    anchor.href = url
-    anchor.download = `spaced-rep-browser-cards-${new Date().toISOString()}.json`
-    anchor.click()
-    URL.revokeObjectURL(url)
-  }
-
   return (
     <main className="h-full flex flex-col">
       <Toaster position="top-center" />
+      <PanelHeader
+        isSignedIn={Boolean(session.session)}
+        isLoading={draft.busy}
+        onSignIn={session.signIn}
+        onSignOut={() => void session.signOut()}
+      />
+
       {session.showAuth ? (
         <AuthPanel onClose={() => void handleCloseAuth()} />
       ) : (
@@ -70,7 +68,7 @@ export default function App() {
             <CardsScreen
               cards={cards.cards}
               topics={topics.topics}
-              onShowEditor={() => setView('editor')}
+
               onEdit={card => {
                 draft.edit(card)
                 setView('editor')
@@ -86,18 +84,13 @@ export default function App() {
               onSelectTopic={topics.select}
               onCreateTopic={topics.create}
               onRenameTopic={title => void topics.rename(title)}
-              onShowCards={() => setView('cards')}
             />
           )}
           <PanelFooter
-            signedIn={Boolean(session.session)}
-            isPro={session.isPro}
-            busy={draft.busy}
             savedCount={cards.savedCount}
-            onSignIn={session.signIn}
-            onSignOut={() => void session.signOut()}
-            onExport={() => void exportCards()}
-            onSync={session.syncNow}
+            view={view}
+            onShowEditor={() => setView('editor')}
+            onShowCards={() => setView('cards')}
           />
           <ProUpgradeModal
             isOpen={session.showProUpgrade}

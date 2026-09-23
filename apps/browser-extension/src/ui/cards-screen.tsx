@@ -1,4 +1,3 @@
-import { SquarePen } from 'lucide-react'
 import { useState } from 'react'
 
 import ConfirmDeleteModal from '@/components/modals/confirm-delete-modal'
@@ -6,10 +5,9 @@ import type { Topic } from '@/models/topic.model'
 import type { Card } from '@ext/types'
 import CardRow from './card-row'
 
-type CardsScreenProps = {
+interface CardsScreenProps {
   cards: Card[]
   topics: Topic[]
-  onShowEditor: () => void
   onEdit: (card: Card) => void
   onDelete: (ids: string[]) => Promise<unknown> | unknown
 }
@@ -17,7 +15,6 @@ type CardsScreenProps = {
 export default function CardsScreen({
   cards,
   topics,
-  onShowEditor,
   onEdit,
   onDelete
 }: CardsScreenProps) {
@@ -32,13 +29,10 @@ export default function CardsScreen({
 
   return (
     <section className="flex-1 min-h-0 flex flex-col">
-      <header className="h-14 px-3 border-b border-border flex items-center justify-between gap-2">
-        <button title="Editor" onClick={onShowEditor}>
-          <SquarePen size={17} />
-        </button>
+      <div className="h-14 px-3 border-b border-border flex items-center justify-between gap-2">
         <span className="text-sm font-medium">Cards</span>
         <span className="text-sm">{cards.length}</span>
-      </header>
+      </div>
       <div className="flex-1 min-h-0 overflow-auto px-3">
         {topicIds.map(topicId => {
           const items = cards.filter(card => card.topicId === topicId)

@@ -1,12 +1,11 @@
-import { Camera, List, MousePointer2 } from 'lucide-react'
-
 import Card from '@/components/card'
 import CardToolbar from '@/components/ui/card-toolbar'
 import type { Topic } from '@/models/topic.model'
 import type { useDraftCard } from '@ext/hooks/use-draft-card'
 import TopicPicker from './topic-picker'
+import Button from '@/components/ui/button'
 
-type EditorScreenProps = {
+interface EditorScreenProps {
   draft: ReturnType<typeof useDraftCard>
   topics: Topic[]
   selectedId: string
@@ -14,7 +13,6 @@ type EditorScreenProps = {
   onSelectTopic: (id: string) => void
   onCreateTopic: (title: string) => void
   onRenameTopic: (title: string) => void
-  onShowCards: () => void
 }
 
 export default function EditorScreen({
@@ -24,18 +22,11 @@ export default function EditorScreen({
   pageTitle,
   onSelectTopic,
   onCreateTopic,
-  onRenameTopic,
-  onShowCards
+  onRenameTopic
 }: EditorScreenProps) {
   return (
     <>
-      <header className="h-14 px-3 border-b border-border flex items-center justify-between gap-2">
-        <button
-          className="text-sm font-medium min-w-12"
-          onClick={draft.flip}
-        >
-          {draft.isFlipped ? 'Back' : 'Front'}
-        </button>
+      <div className="h-14 px-3 border-b border-border flex items-center justify-between gap-2 relative">
         <TopicPicker
           topics={topics}
           selectedId={selectedId}
@@ -44,17 +35,20 @@ export default function EditorScreen({
           onCreate={onCreateTopic}
           onRename={onRenameTopic}
         />
-        <button
-          className="text-primary font-semibold text-sm disabled:opacity-40"
+
+        <span className="text-sm font-medium min-w-12 absolute left-1/2 -translate-x-1/2">
+          {draft.isFlipped ? 'Back' : 'Front'}
+        </span>
+
+        <Button
+          variant="ghost"
+          className="text-sm"
           disabled={draft.busy || draft.isEmpty}
           onClick={() => void draft.save()}
         >
           {draft.isDraft ? 'Save draft' : 'Save'}
-        </button>
-        <button title="Cards" onClick={onShowCards}>
-          <List size={17} />
-        </button>
-      </header>
+        </Button>
+      </div>
       <section className="relative flex-1 min-h-0 flex items-center justify-center overflow-hidden">
         <Card
           ref={draft.cardRef}
@@ -65,7 +59,7 @@ export default function EditorScreen({
           handleChange={draft.handleChange}
         />
       </section>
-      <div className="px-3">
+      <div className="pb-6">
         <CardToolbar
           isTextDisabled={draft.card[draft.side].blocks.at(-1)?.type === 'text'}
           onAddBlocks={draft.appendBlocks}
@@ -74,20 +68,6 @@ export default function EditorScreen({
           }
           onFlip={draft.flip}
         />
-        <div className="grid grid-cols-2 gap-2 py-2">
-          <button
-            className="border border-border rounded-lg py-2 text-sm flex items-center justify-center gap-2"
-            onClick={draft.captureSelection}
-          >
-            <MousePointer2 size={17} /> Selection
-          </button>
-          <button
-            className="border border-border rounded-lg py-2 text-sm flex items-center justify-center gap-2"
-            onClick={draft.captureScreenshot}
-          >
-            <Camera size={17} /> Screenshot
-          </button>
-        </div>
       </div>
     </>
   )

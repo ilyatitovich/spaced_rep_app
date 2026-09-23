@@ -1,60 +1,52 @@
-import { Download, LogIn, LogOut, RefreshCw } from 'lucide-react'
+import Button from '@/components/ui/button'
+import { Download, List, SquarePen } from 'lucide-react'
+import { exportCards } from '@ext/lib/cards'
 
-type PanelFooterProps = {
-  signedIn: boolean
-  isPro: boolean
-  busy: boolean
+interface PanelFooterProps {
   savedCount: number
-  onSignIn: () => void
-  onSignOut: () => void
-  onExport: () => void
-  onSync: () => void
+  view: 'editor' | 'cards'
+  onShowEditor: () => void
+  onShowCards: () => void
+  onExport?: () => Promise<void>
 }
 
+const buttonClassName = 'text-sm flex gap-2 flex-1'
+
 export default function PanelFooter({
-  signedIn,
-  isPro,
-  busy,
   savedCount,
-  onSignIn,
-  onSignOut,
+  view,
   onExport,
-  onSync
+  onShowCards,
+  onShowEditor
 }: PanelFooterProps) {
+  const handleExport = useCallback(async () => {
+    await exportCards()
+    if (onExport) void onExport()
+  }, [onExport])
+
+  const toggleButton =
+    view === 'editor'
+      ? { Icon: List, label: 'Show cards', onClick: onShowCards }
+      : { Icon: SquarePen, label: 'Create card', onClick: onShowEditor }
+
   return (
-    <footer className="p-3 border-t border-border flex gap-2">
-      {signedIn ? (
-        <button
-          className="flex-1 border border-border rounded-lg py-2 text-sm flex justify-center gap-2"
-          onClick={onSignOut}
-        >
-          <LogOut size={17} /> Sign out
-        </button>
-      ) : (
-        <button
-          className="flex-1 bg-primary text-primary-foreground rounded-lg py-2 text-sm flex justify-center gap-2"
-          disabled={busy}
-          onClick={onSignIn}
-        >
-          <LogIn size={17} /> Sign in to sync
-        </button>
-      )}
-      <button
-        className="flex-1 border border-border rounded-lg py-2 text-sm flex justify-center gap-2 disabled:opacity-40"
+    <footer className="p-3 border-t border-border flex gap-2 items-center justify-center">
+      <Button
+        variant="outline"
+        className={`${buttonClassName} disabled:opacity-40`}
         disabled={!savedCount}
-        onClick={onExport}
+        onClick={handleExport}
       >
-        <Download size={17} /> Export
-      </button>
-      {isPro && (
-        <button
-          title="Sync now"
-          className="border border-border rounded-lg p-2"
-          onClick={onSync}
-        >
-          <RefreshCw size={17} />
-        </button>
-      )}
+        <Download size={17} /> Export {savedCount ? `(${savedCount})` : ''}
+      </Button>
+
+      <Button
+        variant="outline"
+        className={buttonClassName}
+        onClick={toggleButton.onClick}
+      >
+        <toggleButton.Icon size={17} /> {toggleButton.label}
+      </Button>
     </footer>
   )
 }
