@@ -21,7 +21,7 @@ import {
   type EmbeddedCardMedia
 } from '@/lib/card-media-stats'
 import { encodeCardData } from '@/lib/sync-serialize'
-import { Topic, Card, updateWeek } from '@/models'
+import { Topic, Card, updateWeek, reactivateTopic } from '@/models'
 import type { ExportedFile } from '@/types'
 
 const DELETE_CHUNK = 50
@@ -70,7 +70,7 @@ export async function getAllTopics(): Promise<Topic[]> {
   const updated: Topic[] = []
 
   for (const topic of topics) {
-    if (topic.nextUpdateDate <= Date.now()) {
+    if (!topic.isArchived && topic.nextUpdateDate <= Date.now()) {
       updateWeek(topic)
       updated.push(topic)
     }
@@ -245,6 +245,20 @@ export function updateTopic(topic: Topic): Promise<void> {
 }
 
 export function updateTopics(topics: Topic[]): Promise<void> {
+  return persistTopics(topics)
+}
+
+export function archiveTopics(topics: Topic[]): Promise<void> {
+  topics.forEach(topic => {
+    topic.isArchived = true
+  })
+
+  return persistTopics(topics)
+}
+
+export function unarchiveTopics(topics: Topic[]): Promise<void> {
+  topics.forEach(reactivateTopic)
+
   return persistTopics(topics)
 }
 

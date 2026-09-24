@@ -10,6 +10,7 @@ export interface Topic {
   nextUpdateDate: number
   updatedAt: number
   deletedAt: number | null
+  isArchived?: boolean
 }
 
 export function createTopic(title: string): Topic {
@@ -74,4 +75,13 @@ export function updateWeek(topic: Topic): void {
 
   topic.nextUpdateDate = getNextUpdateDate()
   topic.updatedAt = Date.now()
+}
+
+export function reactivateTopic(topic: Topic): void {
+  const pivot = Date.now()
+
+  topic.pivot = pivot
+  topic.week = setStartWeek(pivot)
+  topic.nextUpdateDate = getNextUpdateDate()
+  topic.isArchived = false
 }
