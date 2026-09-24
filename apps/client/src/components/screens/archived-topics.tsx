@@ -90,7 +90,13 @@ export default function ArchivedTopicsScreen({
               </div>
             </div>
           ) : (
-            <ul className="h-full px-4 pt-0 pb-20 overflow-y-auto">
+            <ul
+              className={`h-full px-4 pt-0 overflow-y-auto ${
+                isSelectionMode
+                  ? 'pb-[calc(8rem+env(safe-area-inset-bottom,0px))]'
+                  : 'pb-[calc(6.5rem+env(safe-area-inset-bottom,0px))]'
+              }`}
+            >
               {archivedTopics.map(topic => (
                 <li key={topic.id}>
                   <TopicItem
