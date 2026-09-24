@@ -2,7 +2,7 @@ import type { ChangeEvent, FormEvent } from 'react'
 import { useCallback, useState } from 'react'
 import { toast } from 'react-hot-toast'
 
-import { BackButton, Button, Header, Screen } from '@/components'
+import { BackButton, Button, Checkbox, Header, Screen } from '@/components'
 import { TITLE_MAX_LENGTH } from '@/lib'
 
 import { createTopic } from '@/services'
@@ -104,15 +104,12 @@ export default function CreateTopic({ isOpen, onCreate }: CreateTopicProps) {
             Choose a short, clear name. This will be shown in your topics list.
           </p>
 
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isArchived}
-              onChange={e => setIsArchived(e.target.checked)}
-              className="size-4 rounded border-border"
-            />
-            <span className="text-sm">Mark topic as archived</span>
-          </label>
+          <Checkbox
+            id="create-topic-archived"
+            checked={isArchived}
+            onChange={setIsArchived}
+            label="Mark topic as archived"
+          />
         </form>
       </div>
     </Screen>

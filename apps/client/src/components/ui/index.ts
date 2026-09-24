@@ -1,5 +1,6 @@
 export { default as Button } from './button'
 export type { ButtonProps, ButtonVariant, ButtonSize } from './button'
+export { default as Checkbox } from './checkbox'
 export { default as Avatar } from './avatar'
 export { default as Spinner } from './spinner'
 export { default as TopicItem } from './topic-item'
