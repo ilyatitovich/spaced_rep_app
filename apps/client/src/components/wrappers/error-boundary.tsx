@@ -6,6 +6,7 @@ import {
   type ReactElement,
   type ReactNode
 } from 'react'
+import { captureException } from '@sentry/browser'
 
 import Button from '@/components/ui/button'
 
@@ -64,6 +65,9 @@ export class ErrorBoundary extends Component<
 
   override componentDidCatch(error: unknown, info: ErrorInfo) {
     console.error(error, info.componentStack)
+    captureException(error, {
+      contexts: { react: { componentStack: info.componentStack } }
+    })
   }
 
   override componentDidUpdate(prevProps: ErrorBoundaryProps) {

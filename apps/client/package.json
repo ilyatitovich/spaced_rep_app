@@ -18,6 +18,9 @@
     "@codemirror/lang-javascript": "^6.2.4",
     "@codemirror/lang-python": "^6.2.1",
     "@codemirror/lang-sql": "^6.10.0",
+    "@sentry/browser": "^10.75.2",
+    "@sentry/react": "^10.75.2",
+    "@sentry/replay": "10.75.2",
     "@simplewebauthn/browser": "^13.3.0",
     "@spaced-rep/sync-client": "workspace:*",
     "@spaced-rep/sync-protocol": "workspace:*",
@@ -42,6 +45,7 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@sentry/vite-plugin": "^5.4.0",
     "@tailwindcss/vite": "^4.3.3",
     "@testing-library/jest-dom": "6.9.1",
     "@testing-library/react": "16.3.1",

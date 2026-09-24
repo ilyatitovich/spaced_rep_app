@@ -1,5 +1,6 @@
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
+import { sentryVitePlugin } from '@sentry/vite-plugin'
 import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
 import type { VitePWAOptions } from 'vite-plugin-pwa'
@@ -7,6 +8,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 import svgr from 'vite-plugin-svgr'
 
 const isDev = process.env.NODE_ENV === 'development'
+const sentryAuthToken = process.env.SENTRY_AUTH_TOKEN
 
 const pwaOptions: Partial<VitePWAOptions> = {
   registerType: 'prompt',
@@ -73,7 +75,26 @@ const pwaOptions: Partial<VitePWAOptions> = {
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react(), svgr(), tailwindcss(), VitePWA(pwaOptions)],
+  build: {
+    sourcemap: 'hidden'
+  },
+  plugins: [
+    react(),
+    svgr(),
+    tailwindcss(),
+    VitePWA(pwaOptions),
+    // Uploads only when SENTRY_AUTH_TOKEN is set (CI / local release builds).
+    ...(sentryAuthToken
+      ? [
+          sentryVitePlugin({
+            org: process.env.SENTRY_ORG || 'spacedrep',
+            project: process.env.SENTRY_PROJECT || 'javascript-react',
+            authToken: sentryAuthToken,
+            sourcemaps: { filesToDeleteAfterUpload: ['**/*.map'] }
+          })
+        ]
+      : [])
+  ],
   resolve: {
     alias: {
       '@': resolve(import.meta.dirname, 'src'),

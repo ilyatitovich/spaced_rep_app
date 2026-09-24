@@ -1,3 +1,5 @@
+import './instrument'
+
 import './styles/index.css'
 
 import { StrictMode } from 'react'

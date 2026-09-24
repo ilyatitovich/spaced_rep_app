@@ -1,5 +1,6 @@
 import { createBrowserRouter } from 'react-router'
 import { useState } from 'react'
+import * as Sentry from '@sentry/react'
 
 import {
   NotFoundPage,
@@ -23,7 +24,11 @@ function IndexRoute() {
     <StartScreen onStart={() => setComplete(true)} />
   )
 }
-export default createBrowserRouter([
+
+const sentryCreateBrowserRouter =
+  Sentry.wrapCreateBrowserRouter(createBrowserRouter)
+
+export default sentryCreateBrowserRouter([
   {
     path: '/',
     element: <Root />,
