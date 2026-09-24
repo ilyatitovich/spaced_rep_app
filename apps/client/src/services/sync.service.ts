@@ -468,7 +468,7 @@ async function bumpQueueAttempts(item: QueueItem): Promise<void> {
   })
 }
 
-function topicToRecord(topic: Topic): TopicRecord {
+export function topicToRecord(topic: Topic): TopicRecord {
   return {
     id: topic.id,
     title: topic.title,
@@ -500,7 +500,7 @@ async function cardToWireRecord(card: Card): Promise<{
   }
 }
 
-function recordToTopic(record: TopicRecord): Topic {
+export function recordToTopic(record: TopicRecord): Topic {
   return rowToTopic({
     id: record.id,
     user_id: '',

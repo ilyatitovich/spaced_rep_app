@@ -100,6 +100,9 @@ export default function CreateTopic({ isOpen, onCreate }: CreateTopicProps) {
 
             {error && <span className="text-danger text-sm">{error}</span>}
           </div>
+          <p className="text-foreground-muted text-sm">
+            Choose a short, clear name. This will be shown in your topics list.
+          </p>
 
           <label className="flex items-center gap-3 cursor-pointer">
             <input
@@ -108,12 +111,8 @@ export default function CreateTopic({ isOpen, onCreate }: CreateTopicProps) {
               onChange={e => setIsArchived(e.target.checked)}
               className="size-4 rounded border-border"
             />
-            <span className="text-sm">Mark as archived</span>
+            <span className="text-sm">Mark topic as archived</span>
           </label>
-
-          <p className="text-foreground-muted text-sm">
-            Choose a short, clear name. This will be shown in your topics list.
-          </p>
         </form>
       </div>
     </Screen>

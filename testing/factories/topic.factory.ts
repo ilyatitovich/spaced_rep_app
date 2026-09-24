@@ -12,6 +12,7 @@ export type TopicBuildInput = {
   pivot: bigint
   week: Prisma.InputJsonValue
   nextUpdateDate: bigint
+  isArchived: boolean
   updatedAt: Date
   deletedAt: Date | null
 }
@@ -27,6 +28,7 @@ export const topicFactory = {
       pivot: BigInt(now),
       week: [],
       nextUpdateDate: BigInt(now + 86_400_000),
+      isArchived: false,
       updatedAt: new Date(now),
       deletedAt: null,
       ...overrides
@@ -45,6 +47,7 @@ export const topicFactory = {
         pivot: data.pivot,
         week: data.week,
         nextUpdateDate: data.nextUpdateDate,
+        isArchived: data.isArchived,
         updatedAt: data.updatedAt,
         deletedAt: data.deletedAt
       }
