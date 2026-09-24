@@ -28,6 +28,8 @@ export const TopicRecordSchema = z.object({
   pivot: z.number(),
   weekJson: z.string(),
   nextUpdateDate: z.number(),
+  // Nullish: clients older than this field must still validate.
+  isArchived: z.boolean().nullish(),
   updatedAt: z.number(),
   deletedAt: z.number().nullish()
 })

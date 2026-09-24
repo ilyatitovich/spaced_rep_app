@@ -12,6 +12,7 @@ export function topicRecordToDb(
     pivot: BigInt(record.pivot),
     week: JSON.parse(record.weekJson) as Prisma.InputJsonValue,
     nextUpdateDate: BigInt(record.nextUpdateDate),
+    isArchived: record.isArchived ?? false,
     updatedAt: new Date(record.updatedAt),
     deletedAt: record.deletedAt ? new Date(record.deletedAt) : null
   }
@@ -23,6 +24,7 @@ export function dbTopicToRecord(row: {
   pivot: bigint
   week: unknown
   nextUpdateDate: bigint
+  isArchived: boolean
   updatedAt: Date
   deletedAt: Date | null
 }): TopicRecord {
@@ -32,6 +34,7 @@ export function dbTopicToRecord(row: {
     pivot: Number(row.pivot),
     weekJson: JSON.stringify(row.week ?? []),
     nextUpdateDate: Number(row.nextUpdateDate),
+    isArchived: row.isArchived,
     updatedAt: row.updatedAt.getTime(),
     deletedAt: row.deletedAt?.getTime() ?? null
   }

@@ -475,6 +475,7 @@ function topicToRecord(topic: Topic): TopicRecord {
     pivot: topic.pivot,
     weekJson: JSON.stringify(topic.week),
     nextUpdateDate: topic.nextUpdateDate,
+    isArchived: topic.isArchived ?? false,
     updatedAt: topic.updatedAt ?? Date.now(),
     deletedAt: null
   }
@@ -507,6 +508,7 @@ function recordToTopic(record: TopicRecord): Topic {
     pivot: record.pivot,
     week: JSON.parse(record.weekJson),
     next_update_date: record.nextUpdateDate,
+    is_archived: record.isArchived ?? false,
     updated_at: new Date(record.updatedAt).toISOString(),
     deleted_at:
       record.deletedAt != null ? new Date(record.deletedAt).toISOString() : null

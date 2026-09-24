@@ -188,6 +188,7 @@ async function applyTopicUpsert(input: {
         pivot: data.pivot,
         week: data.week,
         nextUpdateDate: data.nextUpdateDate,
+        isArchived: data.isArchived,
         updatedAt: data.updatedAt,
         deletedAt: null
       }
@@ -216,6 +217,7 @@ async function applyTopicUpsert(input: {
         pivot: data.pivot,
         week: data.week,
         nextUpdateDate: data.nextUpdateDate,
+        isArchived: data.isArchived,
         updatedAt: data.updatedAt,
         deletedAt: null
       }
@@ -446,6 +448,7 @@ export async function applyPushBatch(input: {
           pivot: 0,
           weekJson: '[]',
           nextUpdateDate: 0,
+          isArchived: false,
           updatedAt: mutation.updatedAt,
           deletedAt: mutation.updatedAt
         }

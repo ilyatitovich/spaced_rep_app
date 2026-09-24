@@ -115,6 +115,7 @@ export async function bootstrapTopics(): Promise<Topic[]> {
       pivot: record.topic.pivot,
       week: JSON.parse(record.topic.weekJson) as Topic['week'],
       nextUpdateDate: record.topic.nextUpdateDate,
+      isArchived: record.topic.isArchived ?? false,
       updatedAt: record.topic.updatedAt,
       deletedAt: null
     }
@@ -167,6 +168,7 @@ export async function buildOutboxMutations(
           pivot: topic.pivot,
           weekJson: JSON.stringify(topic.week),
           nextUpdateDate: topic.nextUpdateDate,
+          isArchived: topic.isArchived ?? false,
           updatedAt: topic.updatedAt,
           deletedAt: null
         }

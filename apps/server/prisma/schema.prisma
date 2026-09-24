@@ -109,6 +109,7 @@ model Topic {
   pivot          BigInt
   week           Json
   nextUpdateDate BigInt    @map("next_update_date")
+  isArchived     Boolean   @default(false) @map("is_archived")
   // Client-supplied LWW timestamp (do not use @updatedAt)
   updatedAt      DateTime  @map("updated_at") @db.Timestamptz
   deletedAt      DateTime? @map("deleted_at") @db.Timestamptz

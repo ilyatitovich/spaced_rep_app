@@ -25,6 +25,7 @@ export type TopicRow = {
   pivot: number
   week: Array<Day | null>
   next_update_date: number
+  is_archived: boolean
   updated_at: string
   deleted_at: string | null
 }
@@ -120,6 +121,7 @@ export function topicToRow(topic: Topic, userId: string): TopicRow {
     pivot: topic.pivot,
     week: topic.week,
     next_update_date: topic.nextUpdateDate,
+    is_archived: topic.isArchived ?? false,
     updated_at: new Date(topic.updatedAt ?? Date.now()).toISOString(),
     deleted_at: null
   }
@@ -132,6 +134,7 @@ export function rowToTopic(row: TopicRow): Topic {
     pivot: row.pivot,
     week: row.week,
     nextUpdateDate: row.next_update_date,
+    isArchived: row.is_archived,
     updatedAt: new Date(row.updated_at).getTime(),
     deletedAt: new Date(row.deleted_at ?? Date.now()).getTime() ?? null
   }
