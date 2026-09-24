@@ -1,4 +1,4 @@
-import { FolderInput, Share, Trash } from 'lucide-react'
+import { Archive, ArchiveRestore, FolderInput, Share, Trash } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 import { ConfirmDeleteModal, MoveToLevelModal } from '@/components'
@@ -10,6 +10,8 @@ type SelectionModeFooterProps = {
   handleDelete: () => void | Promise<void>
   handleMove?: (level: number) => void
   handleShare?: () => Promise<void>
+  handleArchive?: () => void | Promise<void>
+  archiveLabel?: 'Archive' | 'Unarchive'
   currentLevel?: number
   isHidden?: boolean
 }
@@ -20,6 +22,8 @@ export default function SelectionModeFooter({
   handleDelete,
   handleMove,
   handleShare,
+  handleArchive,
+  archiveLabel = 'Archive',
   currentLevel = 0,
   isHidden = false
 }: SelectionModeFooterProps) {
@@ -35,7 +39,12 @@ export default function SelectionModeFooter({
     setIsMoveModalOpen(false)
   }, [isHidden])
 
-  const justifyContent = handleMove ? 'justify-between' : 'justify-center'
+  const justifyContent =
+    handleMove || handleArchive || handleShare
+      ? 'justify-between'
+      : 'justify-center'
+
+  const ArchiveIcon = archiveLabel === 'Unarchive' ? ArchiveRestore : Archive
 
   return (
     <>
@@ -57,6 +66,18 @@ export default function SelectionModeFooter({
               <FolderInput />
             </span>
             <span>Move</span>
+          </Button>
+        )}
+        {handleArchive && (
+          <Button
+            onClick={handleArchive}
+            disabled={countItemsForDelete === 0}
+            className="flex-col gap-2 text-xs"
+          >
+            <span>
+              <ArchiveIcon />
+            </span>
+            <span>{archiveLabel}</span>
           </Button>
         )}
         {handleShare && (

@@ -17,14 +17,16 @@ import {
   TopicSettingsScreen
 } from '@/components'
 import { getToday, LEVELS } from '@/lib'
-import { Topic, Card } from '@/models'
+import { Topic, Card, type Day } from '@/models'
 import {
   getTopicById,
   getCardsByTopicAndLevel,
   subscribeSyncData
 } from '@/services'
 
-type TopicPageProps = {
+const EMPTY_WEEK: Array<Day | null> = Array(7).fill(null)
+
+interface TopicPageProps {
   isOpen: boolean
   topicId: string
   onClose: () => void
@@ -170,7 +172,13 @@ export default function TopicScreen({
 
         {topic && (
           <div ref={contentRef} className="h-[92dvh] p-4 pb-30 overflow-y-auto">
-            <Week week={topic.week} />
+            {topic.isArchived ? (
+              <div className="opacity-40 pointer-events-none">
+                <Week week={EMPTY_WEEK} />
+              </div>
+            ) : (
+              <Week week={topic.week} />
+            )}
 
             <div className="flex items-center justify-between mt-10 py-2">
               <span className="font-bold">Levels</span>
@@ -194,7 +202,7 @@ export default function TopicScreen({
               ))}
             </ul>
 
-            {!topic.week[getToday()]?.isDone && (
+            {!topic.isArchived && !topic.week[getToday()]?.isDone && (
               <TestButton
                 todayLevels={topic.week[getToday()]!.todayLevels}
                 onClick={() =>

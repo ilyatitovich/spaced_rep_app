@@ -16,6 +16,7 @@ type CreateTopicProps = {
 export default function CreateTopic({ isOpen, onCreate }: CreateTopicProps) {
   const [title, setTitle] = useState('')
   const [error, setError] = useState('')
+  const [isArchived, setIsArchived] = useState(false)
 
   const handleTitleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setTitle(e.target.value)
@@ -49,13 +50,15 @@ export default function CreateTopic({ isOpen, onCreate }: CreateTopicProps) {
         week: setStartWeek(pivot),
         nextUpdateDate: getNextUpdateDate(),
         updatedAt: pivot,
-        deletedAt: null
+        deletedAt: null,
+        ...(isArchived ? { isArchived: true } : {})
       }
 
       await createTopic(topic)
       onCreate(topic)
       toast.success('Topic created!')
       setTitle('')
+      setIsArchived(false)
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message)
@@ -67,6 +70,7 @@ export default function CreateTopic({ isOpen, onCreate }: CreateTopicProps) {
   const handleClose = useCallback(() => {
     setTitle('')
     setError('')
+    setIsArchived(false)
     toast.dismissAll()
   }, [])
 
@@ -96,6 +100,16 @@ export default function CreateTopic({ isOpen, onCreate }: CreateTopicProps) {
 
             {error && <span className="text-danger text-sm">{error}</span>}
           </div>
+
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isArchived}
+              onChange={e => setIsArchived(e.target.checked)}
+              className="size-4 rounded border-border"
+            />
+            <span className="text-sm">Mark as archived</span>
+          </label>
 
           <p className="text-foreground-muted text-sm">
             Choose a short, clear name. This will be shown in your topics list.

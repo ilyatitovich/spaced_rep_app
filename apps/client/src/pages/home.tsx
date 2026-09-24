@@ -1,9 +1,10 @@
-import { CircleUserRound, List } from 'lucide-react'
+import { Archive, CircleUserRound, List } from 'lucide-react'
 import { useEffect } from 'react'
 import { useSearchParams } from 'react-router'
 import { useDebouncedCallback } from 'use-debounce'
 
 import {
+  ArchivedTopicsScreen,
   Avatar,
   SettingsScreen,
   Button,
@@ -26,10 +27,13 @@ import AuthScreen from '@/components/screens/auth'
 
 export default function HomePage() {
   const topics = useTopicsStore(state => state.topics)
+  const archivedTopics = useTopicsStore(state => state.archivedTopics)
+  const searchQuery = useTopicsStore(state => state.searchQuery)
   const isLoading = useTopicsStore(state => state.isLoading)
   const loadTopics = useTopicsStore(state => state.loadTopics)
   const addTopic = useTopicsStore(state => state.addTopic)
   const deleteTopics = useTopicsStore(state => state.deleteTopics)
+  const archiveTopics = useTopicsStore(state => state.archiveTopics)
   const searchTopics = useTopicsStore(state => state.searchTopics)
 
   const { status } = useSync()
@@ -50,6 +54,7 @@ export default function HomePage() {
   const currentTopic = searchParams.get('topicId')
   const isSettingsOpen = searchParams.get('settings') === 'true'
   const isAuthScreenOpen = searchParams.get('auth') === 'true'
+  const isArchivedOpen = searchParams.get('archived') === 'true'
 
   const avatarUrl = user?.user_metadata?.avatar_url
   const avatarInitial = (user?.email?.[0] ?? '?').toUpperCase()
@@ -76,6 +81,15 @@ export default function HomePage() {
       await deleteTopics(ids)
       return useTopicsStore.getState().topics.length === 0
     })
+
+  const handleArchiveSelected = async (): Promise<void> => {
+    try {
+      await archiveTopics(selectedItems)
+      cancelSelectionMode()
+    } catch (error) {
+      console.error('Failed to archive topics:', error)
+    }
+  }
 
   const handleSearch = useDebouncedCallback((value: string) => {
     searchTopics(value)
@@ -109,6 +123,18 @@ export default function HomePage() {
           </Button>
         </Header>
         <Search onSearch={handleSearch} placeholder="Search topics" />
+
+        {archivedTopics.length > 0 && !searchQuery && (
+          <Button
+            variant="unstyled"
+            className="w-full flex items-center gap-3 px-4 py-3 text-left text-foreground-muted"
+            onClick={() => setSearchParams({ archived: 'true' })}
+          >
+            <Archive size={18} />
+            <span className="flex-1 font-medium">Archived</span>
+            <span className="text-sm">{archivedTopics.length}</span>
+          </Button>
+        )}
 
         <div className="relative h-[calc(100dvh-60px)]">
           <div className="absolute w-full h-4 bg-linear-to-b from-background to-background/30" />
@@ -146,6 +172,7 @@ export default function HomePage() {
           countItemsForDelete={selectedItems.length}
           nameItemsForDelete="topic"
           handleDelete={handleDeleteSelectedItems}
+          handleArchive={handleArchiveSelected}
         />
       </ScreenLayer>
 
@@ -153,10 +180,19 @@ export default function HomePage() {
 
       <SettingsScreen isOpen={isSettingsOpen} />
 
+      <ArchivedTopicsScreen isOpen={isArchivedOpen} />
+
       <TopicScreen
         isOpen={currentTopic !== null}
         topicId={currentTopic ?? ''}
-        onClose={() => setSearchParams({})}
+        onClose={() =>
+          setSearchParams(prev => {
+            const params = new URLSearchParams(prev)
+            params.delete('topicId')
+            params.delete('topicSettings')
+            return params
+          })
+        }
       />
 
       <AuthScreen isOpen={isAuthScreenOpen} />

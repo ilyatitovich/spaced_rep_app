@@ -1,4 +1,4 @@
-import { Pencil, Share, Trash } from 'lucide-react'
+import { Archive, ArchiveRestore, Pencil, Share, Trash } from 'lucide-react'
 import type { ChangeEvent, FormEvent } from 'react'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'react-hot-toast'
@@ -33,6 +33,8 @@ export default function TopicSettings({
 
   const deleteTopics = useTopicsStore(state => state.deleteTopics)
   const updateTopic = useTopicsStore(state => state.updateTopic)
+  const archiveTopics = useTopicsStore(state => state.archiveTopics)
+  const unarchiveTopics = useTopicsStore(state => state.unarchiveTopics)
 
   useEffect(() => {
     if (isOpen) {
@@ -103,6 +105,22 @@ export default function TopicSettings({
     }
   }
 
+  const handleToggleArchive = async (): Promise<void> => {
+    try {
+      if (topic.isArchived) {
+        await unarchiveTopics(topic.id)
+        toast.success('Topic unarchived')
+      } else {
+        await archiveTopics(topic.id)
+        toast.success('Topic archived')
+      }
+      onClose()
+    } catch (error) {
+      console.error('Failed to update archive state:', error)
+      toast.error('Please try again')
+    }
+  }
+
   return (
     <Screen isOpen={isOpen} onClose={handleClose}>
       <div className="h-full bg-background flex flex-col overflow-hidden">
@@ -141,15 +159,36 @@ export default function TopicSettings({
             </div>
           </form>
 
-          <Button
-            variant="outline"
-            size="lg"
-            className="gap-2"
-            onClick={handleShareTopic}
-          >
-            <Share size={18} />
-            <span>Share topic</span>
-          </Button>
+          <div className="flex flex-col gap-3">
+            <Button
+              variant="outline"
+              size="lg"
+              className="gap-2"
+              onClick={handleShareTopic}
+            >
+              <Share size={18} />
+              <span>Share topic</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              size="lg"
+              className="gap-2"
+              onClick={handleToggleArchive}
+            >
+              {topic.isArchived ? (
+                <>
+                  <ArchiveRestore size={18} />
+                  <span>Unarchive topic</span>
+                </>
+              ) : (
+                <>
+                  <Archive size={18} />
+                  <span>Archive topic</span>
+                </>
+              )}
+            </Button>
+          </div>
         </div>
 
         <div className="absolute bottom-0 w-full p-4 flex justify-center items-center">
