@@ -5,4 +5,5 @@ allowBuilds:
   '@prisma/engines': true
   esbuild: true
   prisma: true
+  spawn-sync: true
   unrs-resolver: true
