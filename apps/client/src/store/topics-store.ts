@@ -1,16 +1,28 @@
 import { searchTopics } from '@/lib'
 import { Topic } from '@/models'
 import {
+  archiveTopics as persistArchiveTopics,
   deleteTopic,
   getAllTopics,
   subscribeSyncData,
+  unarchiveTopics as persistUnarchiveTopics,
   updateTopic
 } from '@/services'
 import { create } from 'zustand'
 
+const applyFilters = (allTopics: Topic[], searchQuery: string) => ({
+  allTopics,
+  topics: searchTopics(
+    allTopics.filter(t => !t.isArchived),
+    searchQuery
+  ),
+  archivedTopics: allTopics.filter(t => t.isArchived)
+})
+
 type TopicsStore = {
   isLoading: boolean
   topics: Topic[]
+  archivedTopics: Topic[]
   currentTopic: Topic | null
   allTopics: Topic[]
   searchQuery: string
@@ -19,12 +31,15 @@ type TopicsStore = {
   addTopic: (topic: Topic) => void
   updateTopic: (topic: Topic) => Promise<void>
   deleteTopics: (ids: string | string[]) => Promise<void>
+  archiveTopics: (ids: string | string[]) => Promise<void>
+  unarchiveTopics: (ids: string | string[]) => Promise<void>
   searchTopics: (query: string) => void
   setCurrentTopic: (topic: Topic) => void
 }
 
 export const useTopicsStore = create<TopicsStore>((set, get) => ({
   topics: [],
+  archivedTopics: [],
   currentTopic: null,
   allTopics: [],
   isLoading: false,
@@ -34,8 +49,7 @@ export const useTopicsStore = create<TopicsStore>((set, get) => ({
       set({ isLoading: true })
       const allTopics = await getAllTopics()
       set({
-        allTopics,
-        topics: searchTopics(allTopics, get().searchQuery),
+        ...applyFilters(allTopics, get().searchQuery),
         isLoading: false
       })
     } catch (error) {
@@ -46,50 +60,54 @@ export const useTopicsStore = create<TopicsStore>((set, get) => ({
   refreshTopics: async () => {
     try {
       const allTopics = await getAllTopics()
-      set(state => ({
-        allTopics,
-        topics: searchTopics(allTopics, state.searchQuery)
-      }))
+      set(state => applyFilters(allTopics, state.searchQuery))
     } catch (error) {
       console.error('Failed to refresh topics:', error)
     }
   },
   addTopic: (topic: Topic) =>
-    set(state => {
-      const allTopics = [topic, ...state.allTopics]
-      return { allTopics, topics: searchTopics(allTopics, state.searchQuery) }
-    }),
+    set(state =>
+      applyFilters([topic, ...state.allTopics], state.searchQuery)
+    ),
   updateTopic: async (topic: Topic) => {
     await updateTopic(topic)
-    set(state => ({
-      allTopics: state.allTopics.map(t => (t.id === topic.id ? topic : t)),
-      topics: searchTopics(
+    set(state =>
+      applyFilters(
         state.allTopics.map(t => (t.id === topic.id ? topic : t)),
         state.searchQuery
       )
-    }))
+    )
   },
   deleteTopics: async (ids: string | string[]) => {
-    await Promise.all(
-      Array.isArray(ids) ? ids.map(id => deleteTopic(id)) : [deleteTopic(ids)]
-    )
-    set(state => ({
-      allTopics: state.allTopics.filter(topic =>
-        !Array.isArray(ids) ? ids.includes(topic.id) : !ids.includes(topic.id)
-      ),
-      topics: searchTopics(
-        state.allTopics.filter(topic =>
-          !Array.isArray(ids) ? ids.includes(topic.id) : !ids.includes(topic.id)
-        ),
+    const idList = Array.isArray(ids) ? ids : [ids]
+    await Promise.all(idList.map(id => deleteTopic(id)))
+    set(state =>
+      applyFilters(
+        state.allTopics.filter(topic => !idList.includes(topic.id)),
         state.searchQuery
       )
-    }))
+    )
   },
-
+  archiveTopics: async (ids: string | string[]) => {
+    const idList = Array.isArray(ids) ? ids : [ids]
+    const idSet = new Set(idList)
+    const toArchive = get().allTopics.filter(t => idSet.has(t.id))
+    if (toArchive.length === 0) return
+    await persistArchiveTopics(toArchive)
+    set(state => applyFilters(state.allTopics, state.searchQuery))
+  },
+  unarchiveTopics: async (ids: string | string[]) => {
+    const idList = Array.isArray(ids) ? ids : [ids]
+    const idSet = new Set(idList)
+    const toUnarchive = get().allTopics.filter(t => idSet.has(t.id))
+    if (toUnarchive.length === 0) return
+    await persistUnarchiveTopics(toUnarchive)
+    set(state => applyFilters(state.allTopics, state.searchQuery))
+  },
   searchTopics: (query: string) =>
     set(state => ({
       searchQuery: query,
-      topics: searchTopics(state.allTopics, query)
+      ...applyFilters(state.allTopics, query)
     })),
   setCurrentTopic: (topic: Topic) => set({ currentTopic: topic })
 }))
