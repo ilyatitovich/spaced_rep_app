@@ -1,5 +1,5 @@
 import type { ReactNode, TransitionEvent } from 'react'
-import { useState, useEffect, useId, useRef } from 'react'
+import { useState, useEffect, useLayoutEffect, useId, useRef } from 'react'
 
 import BackButton from '@/components/ui/back-button'
 import Button from '@/components/ui/button'
@@ -85,33 +85,41 @@ export default function Screen({
   const [isInitialRender, setIsInitialRender] = useState(true)
   const [errorResetKey, setErrorResetKey] = useState(0)
   const rootRef = useRef<HTMLDivElement>(null)
-  const wasOpenRef = useRef(isOpen)
+  const wasOpenRef = useRef(false)
+  const pendingOpenRef = useRef(false)
+  const onOpenRef = useRef(onOpen)
+  const onCloseRef = useRef(onClose)
   const shouldDisableAnimation = !useShouldAnimate()
+
+  onOpenRef.current = onOpen
+  onCloseRef.current = onClose
 
   useEffect(() => {
     if (rootRef.current) rootRef.current.inert = !isOpen
   }, [isOpen])
 
   useEffect(() => {
+    const justOpened = !wasOpenRef.current && isOpen
     const justClosed = wasOpenRef.current && !isOpen
     wasOpenRef.current = isOpen
-    if (justClosed && shouldDisableAnimation) onClose?.()
-  }, [isOpen, shouldDisableAnimation, onClose])
+
+    if (justOpened) {
+      pendingOpenRef.current = true
+      setIsInitialRender(false)
+    }
+    if (justClosed && shouldDisableAnimation) onCloseRef.current?.()
+  }, [isOpen, shouldDisableAnimation])
+
+  useLayoutEffect(() => {
+    if (!isOpen || isInitialRender || !pendingOpenRef.current) return
+    pendingOpenRef.current = false
+    onOpenRef.current?.()
+  }, [isOpen, isInitialRender])
 
   useEffect(() => {
     if (!isOpen) return
     setErrorResetKey(key => key + 1)
   }, [isOpen])
-
-  useEffect(() => {
-    if (!isOpen) return
-
-    onOpen?.()
-
-    if (isInitialRender) {
-      setIsInitialRender(false)
-    }
-  }, [isInitialRender, isOpen, onOpen])
 
   const handleTransitionEnd = (event: TransitionEvent<HTMLDivElement>) => {
     if (shouldDisableAnimation) return
