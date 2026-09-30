@@ -19,7 +19,8 @@ export default function TopicItem({
   onSelect,
   onOpen
 }: TopicItemProps) {
-  const { todayLevels } = topic.week[getToday()] as Day
+  const day = topic.week[getToday()] as Day
+  const todayLevels = day?.todayLevels ?? []
 
   const handleClick = () => {
     if (isSelectionMode) {
