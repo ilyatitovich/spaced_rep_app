@@ -235,8 +235,10 @@ export default function TopicScreen({
             isOpen={levelId !== ''}
             levelId={levelId}
             isDone={
-              topic.week[getToday()]!.isDone &&
-              topic.week[getToday()]!.todayLevels.includes(Number(levelId))
+              (topic.week[getToday()]?.isDone ?? false) &&
+              (topic.week[getToday()]?.todayLevels ?? []).includes(
+                Number(levelId)
+              )
             }
             cards={levelCards}
             startDate={topic.pivot}
