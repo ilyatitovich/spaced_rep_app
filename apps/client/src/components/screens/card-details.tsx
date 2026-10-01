@@ -462,12 +462,6 @@ export default function CardDetailsScreen({
         )}
       </Header>
 
-      <div className="flex justify-center items-center">
-        <p className="text-sm text-gray-500">
-          {currentIndex + 1} / {total}
-        </p>
-      </div>
-
       <div
         ref={containerRef}
         className="overflow-clip"
