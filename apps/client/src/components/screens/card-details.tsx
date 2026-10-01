@@ -22,13 +22,14 @@ import {
   getTopScreen,
   isCardDataEqual,
   normalizeCardData,
-  removeLastSearchParam
+  removeLastSearchParam,
+  mod
 } from '@/lib'
 import { Card as CardModel } from '@/models'
 import { deleteCardsBulk, updateCard, updateCardsLevelBulk } from '@/services'
 import type { CardData, CardHandle, SideBlock, SideName } from '@/types'
 
-type CardDetailsScreenProps = {
+interface CardDetailsScreenProps {
   isOpen: boolean
   cards: CardModel[] | null | undefined
   cardId: string | null | undefined
@@ -49,8 +50,6 @@ const isCarouselControl = (target: EventTarget | null) =>
   !!target.closest(
     'button, label, input, select, audio, textarea, a, [role="slider"]'
   )
-
-const mod = (n: number, m: number) => ((n % m) + m) % m
 
 const getCardData = (card: CardModel | null | undefined): CardData =>
   normalizeCardData(card?.data)
@@ -462,6 +461,12 @@ export default function CardDetailsScreen({
           </Button>
         )}
       </Header>
+
+      <div className="flex justify-center items-center">
+        <p className="text-sm text-gray-500">
+          {currentIndex + 1} / {total}
+        </p>
+      </div>
 
       <div
         ref={containerRef}
