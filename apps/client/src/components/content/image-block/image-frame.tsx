@@ -39,7 +39,9 @@ export default function ImageFrame({
         }`.trim()}
       >
         <CloudOff className="w-8 h-8" strokeWidth={1.75} />
-        <span className="text-sm text-center px-3">{OFFLINE_EXTERNAL_LABEL}</span>
+        <span className="text-sm text-center px-3">
+          {OFFLINE_EXTERNAL_LABEL}
+        </span>
       </div>
     )
   }

@@ -1,10 +1,7 @@
 import { createHash } from 'node:crypto'
 import { isWireMediaRef } from '@spaced-rep/sync-protocol'
 import type { Prisma } from '../generated/prisma/client.js'
-import {
-  sha256HexToBase64,
-  type R2Storage
-} from '../shared/lib/r2-storage.js'
+import { sha256HexToBase64, type R2Storage } from '../shared/lib/r2-storage.js'
 
 type MediaBytes = { bytes: Uint8Array; type: string }
 
@@ -43,7 +40,9 @@ function isObject(value: unknown): value is Record<string, unknown> {
 }
 
 function isRemoteSrc(value: unknown): boolean {
-  return isObject(value) && typeof value.src === 'string' && !('buffer' in value)
+  return (
+    isObject(value) && typeof value.src === 'string' && !('buffer' in value)
+  )
 }
 
 /** Postgres / JSON wire shape before v3: `{ buffer: base64, type }`. */

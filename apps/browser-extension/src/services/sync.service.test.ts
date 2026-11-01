@@ -1,4 +1,8 @@
-import { isWireMediaRef, PROTOCOL_VERSION, sha256Hex } from '@spaced-rep/sync-protocol'
+import {
+  isWireMediaRef,
+  PROTOCOL_VERSION,
+  sha256Hex
+} from '@spaced-rep/sync-protocol'
 import type { Topic } from '@/models/topic.model'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { arrayBufferToBase64 } from '../../../client/src/lib/image'

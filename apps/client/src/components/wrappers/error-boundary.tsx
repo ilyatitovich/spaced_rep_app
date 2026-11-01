@@ -24,7 +24,9 @@ export function ErrorFallback({ error, onRetry }: ErrorFallbackProps) {
     <main>
       <div className="h-dvh flex flex-col items-center justify-center gap-4 px-4">
         <h1 className="font-bold text-2xl">Something went wrong</h1>
-        {isDev && message ? <p className="text-foreground-subtle text-center">{message}</p> : null}
+        {isDev && message ? (
+          <p className="text-foreground-subtle text-center">{message}</p>
+        ) : null}
         {isDev && stack ? (
           <pre className="max-w-full overflow-auto text-xs text-foreground-subtle">
             <code>{stack}</code>
@@ -51,16 +53,31 @@ interface ErrorBoundaryProps {
 interface ErrorBoundaryState {
   hasError: boolean
   error: unknown
+  resetKey: unknown
 }
 
 export class ErrorBoundary extends Component<
   ErrorBoundaryProps,
   ErrorBoundaryState
 > {
-  override state: ErrorBoundaryState = { hasError: false, error: null }
+  override state: ErrorBoundaryState = {
+    hasError: false,
+    error: null,
+    resetKey: this.props.resetKey
+  }
 
-  static getDerivedStateFromError(error: unknown): ErrorBoundaryState {
+  static getDerivedStateFromError(error: unknown): Partial<ErrorBoundaryState> {
     return { hasError: true, error }
+  }
+
+  static getDerivedStateFromProps(
+    props: ErrorBoundaryProps,
+    state: ErrorBoundaryState
+  ): Partial<ErrorBoundaryState> | null {
+    if (props.resetKey === state.resetKey) return null
+    return state.hasError
+      ? { hasError: false, error: null, resetKey: props.resetKey }
+      : { resetKey: props.resetKey }
   }
 
   override componentDidCatch(error: unknown, info: ErrorInfo) {
@@ -68,12 +85,6 @@ export class ErrorBoundary extends Component<
     captureException(error, {
       contexts: { react: { componentStack: info.componentStack } }
     })
-  }
-
-  override componentDidUpdate(prevProps: ErrorBoundaryProps) {
-    if (this.state.hasError && prevProps.resetKey !== this.props.resetKey) {
-      this.setState({ hasError: false, error: null })
-    }
   }
 
   handleRetry = () => {

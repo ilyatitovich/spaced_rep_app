@@ -26,12 +26,19 @@ export function toCodeLang(raw: string | undefined): CodeLang {
 
 // ponytail: keyword scores, highlight.js if guesses fail in the wild
 const DETECT: { lang: Exclude<CodeLang, 'code'>; patterns: RegExp[] }[] = [
-  { lang: 'py', patterns: [/\bdef\s+\w+/, /\belif\b/, /\bself\./, /\bprint\s*\(/] },
+  {
+    lang: 'py',
+    patterns: [/\bdef\s+\w+/, /\belif\b/, /\bself\./, /\bprint\s*\(/]
+  },
   { lang: 'sql', patterns: [/\bSELECT\b/i, /\bFROM\b/i, /\bWHERE\b/i] },
   { lang: 'sh', patterns: [/^#!/, /\becho\b/, /\$\w+/] },
   {
     lang: 'ts',
-    patterns: [/\binterface\s+\w+/, /\btype\s+\w+\s*=/, /:\s*(?:string|number|boolean)\b/]
+    patterns: [
+      /\binterface\s+\w+/,
+      /\btype\s+\w+\s*=/,
+      /:\s*(?:string|number|boolean)\b/
+    ]
   },
   {
     lang: 'js',

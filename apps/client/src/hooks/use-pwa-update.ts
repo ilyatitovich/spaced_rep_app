@@ -50,9 +50,8 @@ export function PwaUpdateProvider({ children }: { children: ReactNode }) {
       void registrationRef.current?.update()
       void (async () => {
         const { useSettingsStore } = await import('@/store/settings-store')
-        const { ensurePushSubscription } = await import(
-          '@/services/push.service'
-        )
+        const { ensurePushSubscription } =
+          await import('@/services/push.service')
         const reminders =
           useSettingsStore.getState().settings?.notifications.reminders ?? []
         await ensurePushSubscription(reminders)

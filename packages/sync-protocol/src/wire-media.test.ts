@@ -84,11 +84,10 @@ describe('wire media transform', () => {
       back: { side: 'back', blocks: [{ type: 'text', html: '<p>A</p>' }] }
     }
 
-    const local = (await fromWireCardData(
-      wire,
-      new Map([[hash, image]])
-    )) as {
-      front: { blocks: Array<{ content: { buffer: ArrayBuffer; type: string } }> }
+    const local = (await fromWireCardData(wire, new Map([[hash, image]]))) as {
+      front: {
+        blocks: Array<{ content: { buffer: ArrayBuffer; type: string } }>
+      }
     }
     const content = local.front.blocks[0]?.content
 

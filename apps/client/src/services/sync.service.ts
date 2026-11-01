@@ -666,7 +666,10 @@ async function applyTopicConflict(
 /** Shared incoming pipeline for HTTP pull, bootstrap/reconcile, and WS onDelta. */
 export async function applyPullDelta(delta: PullDelta): Promise<void> {
   // Hydrate + verify all owned media before any local write or watermark bump.
-  const hydratedCardData = await hydrateIncomingCardData(delta, httpSyncMediaApi)
+  const hydratedCardData = await hydrateIncomingCardData(
+    delta,
+    httpSyncMediaApi
+  )
 
   let didMutateLocal = false
   let maxUpdatedAt = 0
@@ -1059,7 +1062,12 @@ export async function initialSync(userId: string): Promise<void> {
 
 /** Mint a new sync deviceId and rejoin after DEVICE_REVOKED. Uses a Pro slot. */
 export async function reconnectRevokedDevice(): Promise<void> {
-  if (!currentUserId || !syncEntitled || !isBackendConfigured() || !syncBackend) {
+  if (
+    !currentUserId ||
+    !syncEntitled ||
+    !isBackendConfigured() ||
+    !syncBackend
+  ) {
     return
   }
   if (state.status === 'syncing') return

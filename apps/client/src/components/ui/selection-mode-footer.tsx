@@ -1,4 +1,10 @@
-import { Archive, ArchiveRestore, FolderInput, Share, Trash } from 'lucide-react'
+import {
+  Archive,
+  ArchiveRestore,
+  FolderInput,
+  Share,
+  Trash
+} from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 import { ConfirmDeleteModal, MoveToLevelModal } from '@/components'

@@ -1,7 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useEditorState, type Editor } from '@tiptap/react'
-import { Bold, CodeXml, Italic, List, ListOrdered, Underline } from 'lucide-react'
+import {
+  Bold,
+  CodeXml,
+  Italic,
+  List,
+  ListOrdered,
+  Underline
+} from 'lucide-react'
 import Button from '../../ui/button'
 
 const KEYBOARD_GAP_PX = 8

@@ -471,6 +471,10 @@ export default function CardDetailsScreen({
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerCancel}
       >
+        <p className="text-center text-sm text-gray-500">
+          {currentIndex + 1}/{total}
+        </p>
+
         <div
           ref={trackRef}
           className="flex"

@@ -33,7 +33,9 @@ export default function CardsLeftBadge({
           strokeLinecap="round"
           className="stroke-foreground transition-[stroke-dashoffset,opacity] duration-450 ease-in-out"
           style={{
-            strokeDashoffset: isHidden ? circumference + 1 : circumference * (1 - progress),
+            strokeDashoffset: isHidden
+              ? circumference + 1
+              : circumference * (1 - progress),
             opacity: isHidden ? 0 : 1
           }}
         />

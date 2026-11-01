@@ -21,7 +21,10 @@ export function clozeToBlank(html: string): string {
 
 /** Reveal cloze answers (first alternative before `|`). */
 export function clozeToAnswer(html: string): string {
-  return html.replace(CLOZE_RE, (_, answer: string) => answer.split('|')[0] ?? '')
+  return html.replace(
+    CLOZE_RE,
+    (_, answer: string) => answer.split('|')[0] ?? ''
+  )
 }
 
 function isBlankHtml(html: string): boolean {
@@ -160,11 +163,7 @@ export function pickFrontBackHtml(
 
   const question = named.get('question') ?? named.get('text')
   if (question !== undefined) {
-    const lead = [
-      named.get('rubric'),
-      named.get('image'),
-      named.get('audio')
-    ]
+    const lead = [named.get('rubric'), named.get('image'), named.get('audio')]
     return {
       front: joinHtmlParts([
         ...lead,

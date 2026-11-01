@@ -42,7 +42,9 @@ function parseArgs(argv: string[]) {
         throw new Error('--batch-size must be a positive integer')
       }
     } else if (arg === '--help' || arg === '-h') {
-      console.log(`Usage: backfill:media [--dry-run] [--user-id <uuid>] [--batch-size N]`)
+      console.log(
+        `Usage: backfill:media [--dry-run] [--user-id <uuid>] [--batch-size N]`
+      )
       process.exit(0)
     } else {
       throw new Error(`Unknown argument: ${arg}`)

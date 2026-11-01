@@ -102,25 +102,29 @@ async function adjustMediaCacheStats(delta: MediaCacheStats): Promise<void> {
 }
 
 async function scanMediaCacheStats(): Promise<MediaCacheStats> {
-  const stats = await withTransaction(STORES.MEDIA_CACHE, 'readonly', stores => {
-    return new Promise<MediaCacheStats>((resolve, reject) => {
-      let bytes = 0
-      let count = 0
-      const request = stores[STORES.MEDIA_CACHE].openCursor()
-      request.onsuccess = () => {
-        const cursor = request.result
-        if (!cursor) {
-          resolve({ bytes, count })
-          return
+  const stats = await withTransaction(
+    STORES.MEDIA_CACHE,
+    'readonly',
+    stores => {
+      return new Promise<MediaCacheStats>((resolve, reject) => {
+        let bytes = 0
+        let count = 0
+        const request = stores[STORES.MEDIA_CACHE].openCursor()
+        request.onsuccess = () => {
+          const cursor = request.result
+          if (!cursor) {
+            resolve({ bytes, count })
+            return
+          }
+          const record = cursor.value as MediaCacheRecord
+          bytes += record.buffer.byteLength
+          count++
+          cursor.continue()
         }
-        const record = cursor.value as MediaCacheRecord
-        bytes += record.buffer.byteLength
-        count++
-        cursor.continue()
-      }
-      request.onerror = () => reject(request.error)
-    })
-  })
+        request.onerror = () => reject(request.error)
+      })
+    }
+  )
   await writeMediaCacheMeta(stats)
   return stats
 }

@@ -65,10 +65,7 @@ export function mediaObjectKey(userId: string, hashHex: string): string {
   return `${userId}/${hashHex}`
 }
 
-function createClient(
-  config: R2StorageConfig,
-  endpoint: string
-): S3Client {
+function createClient(config: R2StorageConfig, endpoint: string): S3Client {
   const clientConfig: S3ClientConfig = {
     region: config.region,
     endpoint,
@@ -85,8 +82,7 @@ function createClient(
 }
 
 export function createR2Storage(config: R2StorageConfig): R2Storage {
-  const expiresIn =
-    config.presignExpiresInSeconds ?? PRESIGN_EXPIRES_IN_SECONDS
+  const expiresIn = config.presignExpiresInSeconds ?? PRESIGN_EXPIRES_IN_SECONDS
   const apiClient = createClient(config, config.endpoint)
   const presignClient = createClient(
     config,
@@ -185,8 +181,8 @@ export function resolveR2EndpointFromEnv(): string | null {
 export function isR2Configured(): boolean {
   return Boolean(
     env.R2_ACCESS_KEY_ID &&
-      env.R2_SECRET_ACCESS_KEY &&
-      resolveR2EndpointFromEnv()
+    env.R2_SECRET_ACCESS_KEY &&
+    resolveR2EndpointFromEnv()
   )
 }
 

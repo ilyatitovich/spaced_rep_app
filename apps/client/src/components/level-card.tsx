@@ -1,5 +1,11 @@
 import { Check, CloudOff, Volume2 } from 'lucide-react'
-import { useRef, useLayoutEffect, useEffect, useState, type ReactNode } from 'react'
+import {
+  useRef,
+  useLayoutEffect,
+  useEffect,
+  useState,
+  type ReactNode
+} from 'react'
 
 import { useOnline } from '@/hooks'
 import {
@@ -22,7 +28,10 @@ type LevelCardProps = {
 }
 
 function stripHtml(html: string): string {
-  return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim()
+  return html
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .trim()
 }
 
 function previewBlock(blocks: SideBlock[]): SideBlock | undefined {

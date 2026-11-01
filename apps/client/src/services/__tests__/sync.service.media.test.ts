@@ -44,9 +44,7 @@ vi.mock('@/lib/db', async importOriginal => {
       async (
         storeNames: string[] | string,
         _mode: IDBTransactionMode,
-        callback: (
-          stores: Record<string, IDBObjectStore>
-        ) => Promise<unknown>
+        callback: (stores: Record<string, IDBObjectStore>) => Promise<unknown>
       ) => {
         const names = Array.isArray(storeNames) ? storeNames : [storeNames]
         const stores: Record<string, IDBObjectStore> = {}
@@ -105,9 +103,8 @@ vi.mock('../sync-http.client', () => ({
   httpSyncMediaApi: { planUploads: vi.fn(), planDownloads: vi.fn() }
 }))
 
-const { applyPullDelta, pushChanges, enqueueSync } = await import(
-  '../sync.service'
-)
+const { applyPullDelta, pushChanges, enqueueSync } =
+  await import('../sync.service')
 const { withTransaction } = await import('../../lib/db')
 
 function bytes(values: number[]): ArrayBuffer {
@@ -215,8 +212,11 @@ describe('applyPullDelta (shared pull/bootstrap/reconcile/WS path)', () => {
     const stored = table(STORES.CARDS).get('card-1') as Card
     expect(stored.id).toBe('card-1')
     expect(
-      (stored.data as { front: { blocks: Array<{ content: { buffer: ArrayBuffer } }> } })
-        .front.blocks[0]!.content.buffer
+      (
+        stored.data as {
+          front: { blocks: Array<{ content: { buffer: ArrayBuffer } }> }
+        }
+      ).front.blocks[0]!.content.buffer
     ).toBe(buffer)
     expect(table(STORES.SYNC_META).get('lastPulledAt')).toEqual({
       key: 'lastPulledAt',

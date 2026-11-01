@@ -99,18 +99,19 @@ export default function Screen({
   }, [isOpen])
 
   useEffect(() => {
-    const justOpened = !wasOpenRef.current && isOpen
     const justClosed = wasOpenRef.current && !isOpen
-    wasOpenRef.current = isOpen
-
-    if (justOpened) {
-      pendingOpenRef.current = true
-      setIsInitialRender(false)
-    }
+    if (!isOpen) wasOpenRef.current = false
     if (justClosed && shouldDisableAnimation) onCloseRef.current?.()
   }, [isOpen, shouldDisableAnimation])
 
   useLayoutEffect(() => {
+    const justOpened = !wasOpenRef.current && isOpen
+    if (justOpened) {
+      wasOpenRef.current = true
+      pendingOpenRef.current = true
+      if (isInitialRender) setIsInitialRender(false)
+    }
+
     if (!isOpen || isInitialRender || !pendingOpenRef.current) return
     pendingOpenRef.current = false
     onOpenRef.current?.()

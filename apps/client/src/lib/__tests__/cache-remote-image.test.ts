@@ -49,11 +49,12 @@ describe('cacheRemoteImage', () => {
 
   it('stores bytes on IDB miss + fetch, and does not fetch again', async () => {
     const store = memoryStore()
-    const fetchMock = vi.fn(async () =>
-      new Response(pngBytes(), {
-        status: 200,
-        headers: { 'content-type': 'image/png' }
-      })
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(pngBytes(), {
+          status: 200,
+          headers: { 'content-type': 'image/png' }
+        })
     )
 
     const first = await cacheRemoteImage('http://i.imgur.com/a.png', {

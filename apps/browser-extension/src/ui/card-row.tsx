@@ -65,7 +65,11 @@ export default function CardRow({
           </span>
         )}
       </button>
-      <button title="Delete card" className="p-2 text-danger" onClick={onDelete}>
+      <button
+        title="Delete card"
+        className="p-2 text-danger"
+        onClick={onDelete}
+      >
         <Trash2 size={16} />
       </button>
     </div>

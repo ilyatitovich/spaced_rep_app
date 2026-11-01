@@ -142,14 +142,20 @@ describe('replaceTextSelectionWithCode', () => {
       replaceTextSelectionWithCode(
         [
           { type: 'text', html: '<p>print(1)</p>' },
-          { type: 'image', content: { buffer: new ArrayBuffer(0), type: 'image/webp' } }
+          {
+            type: 'image',
+            content: { buffer: new ArrayBuffer(0), type: 'image/webp' }
+          }
         ],
         0,
         { beforeHtml: '', code: 'print(1)', afterHtml: '<p></p>' }
       )
     ).toEqual([
       { type: 'code', lang: 'py', code: 'print(1)' },
-      { type: 'image', content: { buffer: new ArrayBuffer(0), type: 'image/webp' } }
+      {
+        type: 'image',
+        content: { buffer: new ArrayBuffer(0), type: 'image/webp' }
+      }
     ])
   })
 

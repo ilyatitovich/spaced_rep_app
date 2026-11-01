@@ -20,5 +20,4 @@ export async function writeValue(key: string, value: unknown): Promise<void> {
 
 export const removeKeys = (keys: string[]) => chrome.storage.local.remove(keys)
 
-export const clearEphemeralStorage = () =>
-  removeKeys([DRAFT_KEY, PENDING_KEY])
+export const clearEphemeralStorage = () => removeKeys([DRAFT_KEY, PENDING_KEY])

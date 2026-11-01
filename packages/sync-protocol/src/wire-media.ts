@@ -28,7 +28,9 @@ export function isLocalMediaBuffer(value: unknown): value is MediaDBRecord {
 }
 
 function isRemoteSrc(value: unknown): boolean {
-  return isObject(value) && typeof value.src === 'string' && !('buffer' in value)
+  return (
+    isObject(value) && typeof value.src === 'string' && !('buffer' in value)
+  )
 }
 
 function isBlocksSide(side: Record<string, unknown>): boolean {

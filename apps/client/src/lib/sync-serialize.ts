@@ -91,9 +91,7 @@ export function decodeSide(side: AnyCardSide): AnyCardSide {
   if (isBase64Image(side.content)) {
     return {
       ...side,
-      content: base64ToArrayBuffer(
-        side.content as unknown as ImageBase64Record
-      )
+      content: base64ToArrayBuffer(side.content as unknown as ImageBase64Record)
     }
   }
   return side

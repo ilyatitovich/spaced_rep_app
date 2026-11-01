@@ -85,9 +85,7 @@ function nameToZipIndex(raw: Record<string, string>): Map<string, string> {
   return new Map(entries)
 }
 
-async function readMediaMap(
-  zip: JSZip
-): Promise<Map<string, AnkiMediaFile>> {
+async function readMediaMap(zip: JSZip): Promise<Map<string, AnkiMediaFile>> {
   const mediaFile = zip.file('media')
   if (!mediaFile) return new Map()
 

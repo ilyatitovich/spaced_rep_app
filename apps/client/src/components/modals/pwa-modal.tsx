@@ -50,7 +50,11 @@ export default function PwaModal() {
             improvements.
           </p>
           <div className="flex gap-3">
-            <Button variant="secondary" className="flex-1" onClick={handleClose}>
+            <Button
+              variant="secondary"
+              className="flex-1"
+              onClick={handleClose}
+            >
               Later
             </Button>
             <Button variant="primary" className="flex-1" onClick={updateNow}>
@@ -66,7 +70,11 @@ export default function PwaModal() {
             It&apos;s better to install for the best experience.
           </p>
           <div className="flex gap-3">
-            <Button variant="secondary" className="flex-1" onClick={handleClose}>
+            <Button
+              variant="secondary"
+              className="flex-1"
+              onClick={handleClose}
+            >
               Maybe later
             </Button>
             <Button
@@ -95,15 +103,11 @@ export default function PwaModal() {
               <span className="font-medium">Add to Home Screen</span>.
             </li>
             <li>
-              3. Tap <span className="font-medium">Add</span>, then open the
-              app from your Home Screen.
+              3. Tap <span className="font-medium">Add</span>, then open the app
+              from your Home Screen.
             </li>
           </ol>
-          <Button
-            variant="secondary"
-            className="w-full"
-            onClick={handleClose}
-          >
+          <Button variant="secondary" className="w-full" onClick={handleClose}>
             Got it
           </Button>
         </>
@@ -115,11 +119,7 @@ export default function PwaModal() {
             Use Share → Add to Home Screen in this browser, then open the app
             from the icon to enable install features and push.
           </p>
-          <Button
-            variant="secondary"
-            className="w-full"
-            onClick={handleClose}
-          >
+          <Button variant="secondary" className="w-full" onClick={handleClose}>
             Got it
           </Button>
         </>
@@ -131,11 +131,7 @@ export default function PwaModal() {
             You might already have this installed — open it from your home
             screen for the best experience.
           </p>
-          <Button
-            variant="secondary"
-            className="w-full"
-            onClick={handleClose}
-          >
+          <Button variant="secondary" className="w-full" onClick={handleClose}>
             Got it
           </Button>
         </>

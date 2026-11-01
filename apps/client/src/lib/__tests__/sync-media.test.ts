@@ -150,9 +150,7 @@ describe('hydrateIncomingCardData', () => {
   it('downloads, verifies, and replaces wire refs with buffers', async () => {
     const buffer = bytes([7, 8, 9])
     const hash = await sha256Hex(buffer)
-    const get = vi
-      .fn()
-      .mockResolvedValue(new Response(buffer, { status: 200 }))
+    const get = vi.fn().mockResolvedValue(new Response(buffer, { status: 200 }))
     vi.stubGlobal('fetch', get)
 
     const api: SyncMediaApi = {
@@ -203,7 +201,9 @@ describe('hydrateIncomingCardData', () => {
     )
 
     const data = hydrated.get('card-1') as {
-      front: { blocks: Array<{ content: { buffer: ArrayBuffer; type: string } }> }
+      front: {
+        blocks: Array<{ content: { buffer: ArrayBuffer; type: string } }>
+      }
     }
     expect(bufferEquals(data.front.blocks[0]!.content.buffer, buffer)).toBe(
       true

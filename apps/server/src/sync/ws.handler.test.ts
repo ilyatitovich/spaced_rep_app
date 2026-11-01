@@ -81,7 +81,7 @@ describe('sync websocket entitlement', () => {
 
     const ws = new WebSocket(`ws://127.0.0.1:${address.port}/sync/ws`, {
       headers: {
-        Authorization: 'Bearer token',
+        'Authorization': 'Bearer token',
         'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) TestBrowser/1.0'
       }
     })

@@ -47,10 +47,7 @@ export class BadGatewayError extends AppError {
 }
 
 export type MediaErrorCode =
-  | 'MEDIA_NOT_FOUND'
-  | 'MEDIA_INTEGRITY'
-  | 'MEDIA_TOO_LARGE'
-  | 'MEDIA_INVALID'
+  'MEDIA_NOT_FOUND' | 'MEDIA_INTEGRITY' | 'MEDIA_TOO_LARGE' | 'MEDIA_INVALID'
 
 export class MediaRefError extends Error {
   readonly code: MediaErrorCode

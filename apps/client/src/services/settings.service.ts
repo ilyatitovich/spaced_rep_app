@@ -297,7 +297,9 @@ async function removeOutbox(id: string): Promise<void> {
 }
 
 /** Drop outbox row only if it is still the same op we just flushed. */
-async function removeOutboxIfUnchanged(item: SettingsOutboxItem): Promise<boolean> {
+async function removeOutboxIfUnchanged(
+  item: SettingsOutboxItem
+): Promise<boolean> {
   const latest = await getOutboxItem(item.id)
   if (!latest || latest.opId !== item.opId) return false
   await removeOutbox(item.id)

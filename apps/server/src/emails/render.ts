@@ -17,7 +17,10 @@ handlebars.registerPartial('header', load('partials/header.html'))
 handlebars.registerPartial('footer', load('partials/footer.html'))
 handlebars.registerPartial('button', load('partials/button.html'))
 
-const compiled = new Map<string, Handlebars.TemplateDelegate<Record<string, unknown>>>()
+const compiled = new Map<
+  string,
+  Handlebars.TemplateDelegate<Record<string, unknown>>
+>()
 
 function compile(rel: string) {
   const cached = compiled.get(rel)

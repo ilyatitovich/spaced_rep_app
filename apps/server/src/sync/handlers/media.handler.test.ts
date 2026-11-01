@@ -14,9 +14,8 @@ vi.mock('../media.service.js', async importOriginal => ({
   MAX_MEDIA_ITEMS: 100
 }))
 
-const { mediaDownloadsHandler, mediaUploadsHandler } = await import(
-  './media.handler.js'
-)
+const { mediaDownloadsHandler, mediaUploadsHandler } =
+  await import('./media.handler.js')
 
 describe('media HTTP handlers', () => {
   beforeEach(() => {

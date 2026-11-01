@@ -1,7 +1,4 @@
-import {
-  decodeCardData,
-  encodeCardData
-} from '@/lib/sync-serialize'
+import { decodeCardData, encodeCardData } from '@/lib/sync-serialize'
 import type { CardData, LegacyCardData } from '@/types'
 
 function bytes(values: number[]): ArrayBuffer {

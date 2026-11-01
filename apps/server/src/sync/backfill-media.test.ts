@@ -259,9 +259,7 @@ describe('backfillOneCard / runMediaBackfill', () => {
 
     const stats = await runMediaBackfill({ prisma, storage })
     expect(stats.rewritten).toBe(0)
-    expect(stats.errors).toEqual([
-      { cardId: 'card-fail', error: 'R2 down' }
-    ])
+    expect(stats.errors).toEqual([{ cardId: 'card-fail', error: 'R2 down' }])
     expect(update).not.toHaveBeenCalled()
   })
 
@@ -303,11 +301,13 @@ describe('backfillOneCard / runMediaBackfill', () => {
       []
     ]
     let page = 0
-    const findMany = vi.fn(async (args: { where?: { id?: { gt: string } } }) => {
-      if (page === 0) expect(args.where?.id).toBeUndefined()
-      if (page === 1) expect(args.where?.id).toEqual({ gt: 'card-a' })
-      return pages[page++] ?? []
-    })
+    const findMany = vi.fn(
+      async (args: { where?: { id?: { gt: string } } }) => {
+        if (page === 0) expect(args.where?.id).toBeUndefined()
+        if (page === 1) expect(args.where?.id).toEqual({ gt: 'card-a' })
+        return pages[page++] ?? []
+      }
+    )
     const prisma: BackfillPrisma = {
       card: { findMany, update }
     }

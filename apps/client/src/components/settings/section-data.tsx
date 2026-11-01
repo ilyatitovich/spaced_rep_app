@@ -326,11 +326,11 @@ export default function SectionData({ isOpen }: SectionDataProps) {
                 {lastError &&
                   status !== 'revoked' &&
                   status !== 'update_required' && (
-                  <span className="text-danger">
-                    Something went wrong. Try again, or contact us if it keeps
-                    happening.
-                  </span>
-                )}
+                    <span className="text-danger">
+                      Something went wrong. Try again, or contact us if it keeps
+                      happening.
+                    </span>
+                  )}
                 {failedOps.length > 0 && (
                   <span className="text-warning">
                     {failedOps.length} failed op

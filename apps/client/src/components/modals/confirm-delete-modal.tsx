@@ -26,11 +26,7 @@ export default function ConfirmDeleteModal({
   }, [isOpen])
 
   const label =
-    count > 1
-      ? `${count} ${itemName}s`
-      : count === 1
-        ? itemName
-        : itemName
+    count > 1 ? `${count} ${itemName}s` : count === 1 ? itemName : itemName
 
   const handleClose = (): void => {
     if (isDeleting) return
@@ -69,7 +65,11 @@ export default function ConfirmDeleteModal({
           </p>
 
           <div className="flex gap-3">
-            <Button variant="secondary" className="flex-1" onClick={handleClose}>
+            <Button
+              variant="secondary"
+              className="flex-1"
+              onClick={handleClose}
+            >
               Cancel
             </Button>
             <Button

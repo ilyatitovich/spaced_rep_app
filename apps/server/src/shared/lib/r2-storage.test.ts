@@ -43,9 +43,8 @@ vi.mock('@aws-sdk/s3-request-presigner', () => ({
   getSignedUrl: (...args: unknown[]) => getSignedUrl(...args)
 }))
 
-const { createR2Storage, mediaObjectKey, sha256HexToBase64 } = await import(
-  './r2-storage.js'
-)
+const { createR2Storage, mediaObjectKey, sha256HexToBase64 } =
+  await import('./r2-storage.js')
 
 describe('r2-storage', () => {
   beforeEach(() => {

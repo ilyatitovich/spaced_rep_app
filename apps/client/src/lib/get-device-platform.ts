@@ -117,7 +117,8 @@ function browserName(lowerUa: string): string | null {
   if (/firefox\/|fxios\//.test(lowerUa)) return 'Firefox'
   if (lowerUa.includes('samsungbrowser')) return 'Samsung Internet'
   if (/chrome\/|crios\//.test(lowerUa)) return 'Chrome'
-  if (lowerUa.includes('safari/') && !lowerUa.includes('chrome')) return 'Safari'
+  if (lowerUa.includes('safari/') && !lowerUa.includes('chrome'))
+    return 'Safari'
   return null
 }
 

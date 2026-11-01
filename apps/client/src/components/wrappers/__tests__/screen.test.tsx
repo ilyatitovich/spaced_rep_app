@@ -60,5 +60,18 @@ describe('Screen onOpen', () => {
     )
 
     expect(onOpen).toHaveBeenCalledTimes(1)
+
+    rerender(
+      <Screen isOpen={false} onOpen={onOpen}>
+        <div>content</div>
+      </Screen>
+    )
+    rerender(
+      <Screen isOpen onOpen={onOpen}>
+        <div>content</div>
+      </Screen>
+    )
+
+    expect(onOpen).toHaveBeenCalledTimes(2)
   })
 })

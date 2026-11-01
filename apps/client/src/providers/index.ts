@@ -29,4 +29,9 @@ export const auth = backend?.auth ?? null
 export const sync = backend?.sync ?? null
 export const settings = backend?.settings ?? null
 
-export type { AuthPort, SyncPort, SettingsPort, AuthCapabilities } from './types'
+export type {
+  AuthPort,
+  SyncPort,
+  SettingsPort,
+  AuthCapabilities
+} from './types'

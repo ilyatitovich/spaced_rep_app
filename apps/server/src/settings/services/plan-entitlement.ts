@@ -22,7 +22,8 @@ export function isSubscriptionEntitled(
   now: Date = new Date()
 ): boolean {
   if (ALWAYS_ENTITLED.has(status)) return true
-  if (status === 'CANCELED') return endsAt != null && endsAt.getTime() > now.getTime()
+  if (status === 'CANCELED')
+    return endsAt != null && endsAt.getTime() > now.getTime()
   return false
 }
 

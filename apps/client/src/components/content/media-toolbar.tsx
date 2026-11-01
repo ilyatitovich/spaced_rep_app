@@ -22,11 +22,7 @@ export default function MediaToolbar({
 }: MediaToolbarProps) {
   return (
     <div className="flex w-full items-center justify-between p-2">
-      <Button
-        variant="icon"
-        aria-label={removeLabel}
-        onClick={onRemove}
-      >
+      <Button variant="icon" aria-label={removeLabel} onClick={onRemove}>
         <Trash2 strokeWidth={2.5} className="w-3.5 h-3.5" />
       </Button>
       <div className="flex items-center gap-1">

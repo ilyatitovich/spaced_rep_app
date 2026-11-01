@@ -33,7 +33,8 @@ export type PushSubscribeResult =
   | { ok: true }
   | {
       ok: false
-      reason: 'unsupported' | 'need-install' | 'denied' | 'unauthenticated' | 'error'
+      reason:
+        'unsupported' | 'need-install' | 'denied' | 'unauthenticated' | 'error'
       message: string
     }
 
@@ -85,9 +86,7 @@ export async function subscribeToPush(): Promise<PushSubscribeResult> {
       existing ??
       (await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(
-          publicKey
-        ) as BufferSource
+        applicationServerKey: urlBase64ToUint8Array(publicKey) as BufferSource
       }))
 
     const json = subscription.toJSON()
@@ -111,8 +110,7 @@ export async function subscribeToPush(): Promise<PushSubscribeResult> {
     return {
       ok: false,
       reason: 'error',
-      message:
-        error instanceof Error ? error.message : 'Failed to enable push.'
+      message: error instanceof Error ? error.message : 'Failed to enable push.'
     }
   }
 }

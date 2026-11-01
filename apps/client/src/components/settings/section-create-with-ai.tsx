@@ -76,7 +76,9 @@ export default function SectionCreateWithAi({
           <SettingsActionRow
             icon={<ExternalLink size={18} />}
             label="Open skill"
-            onClick={() => window.open(SKILL_URL, '_blank', 'noopener,noreferrer')}
+            onClick={() =>
+              window.open(SKILL_URL, '_blank', 'noopener,noreferrer')
+            }
           />
           <a
             href={SKILL_URL}

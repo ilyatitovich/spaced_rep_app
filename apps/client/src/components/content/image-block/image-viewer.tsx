@@ -29,7 +29,9 @@ export default function ImageViewer({
       ref={rootRef}
       data-screen=""
       className={`fixed inset-0 z-60 flex items-center justify-center transition-opacity duration-300 ${
-        isOpen ? 'opacity-100 starting:opacity-0' : 'opacity-0 pointer-events-none'
+        isOpen
+          ? 'opacity-100 starting:opacity-0'
+          : 'opacity-0 pointer-events-none'
       }`}
       role="dialog"
       aria-modal="true"

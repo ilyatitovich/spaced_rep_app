@@ -50,7 +50,11 @@ describe('isPlanEntitled', () => {
 
   it('allows pro_plus for pro when active', () => {
     expect(
-      isPlanEntitled({ ...base, plan: 'pro_plus', status: 'active' }, 'pro', now)
+      isPlanEntitled(
+        { ...base, plan: 'pro_plus', status: 'active' },
+        'pro',
+        now
+      )
     ).toBe(true)
   })
 

@@ -42,9 +42,7 @@ export function useTopics() {
       pageUrlRef.current = page.url
       const mapped = await getTopicIdForPage(page.url)
       if (!previous) {
-        setSelectedId(
-          await resolveSelectedTopicId(await getTopics(), mapped)
-        )
+        setSelectedId(await resolveSelectedTopicId(await getTopics(), mapped))
         return
       }
       if (previous === page.url) return

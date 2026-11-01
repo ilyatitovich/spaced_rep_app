@@ -1,9 +1,6 @@
 import { createHash } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
-import {
-  createR2Storage,
-  sha256HexToBase64
-} from './r2-storage.js'
+import { createR2Storage, sha256HexToBase64 } from './r2-storage.js'
 
 const ENDPOINT = process.env.R2_ENDPOINT || 'http://127.0.0.1:9000'
 const ACCESS_KEY = process.env.R2_ACCESS_KEY_ID || 'minioadmin'

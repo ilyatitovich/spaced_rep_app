@@ -25,28 +25,34 @@ export default function App() {
   })
   const page = useActivePage(draft.source)
   const [view, setView] = useState<'editor' | 'cards'>('editor')
+  const refreshSession = session.refresh
+  const closeAuth = session.closeAuth
+  const openProUpgrade = session.openProUpgrade
+  const refreshTopics = topics.refresh
+  const syncPage = topics.syncPage
+  const refreshCards = cards.refresh
 
   const refresh = useCallback(async () => {
-    const snapshot = await session.refresh()
-    await Promise.all([topics.refresh(snapshot.isPro), cards.refresh()])
+    const snapshot = await refreshSession()
+    await Promise.all([refreshTopics(snapshot.isPro), refreshCards()])
     return snapshot
-  }, [session.refresh, topics.refresh, cards.refresh])
+  }, [refreshSession, refreshTopics, refreshCards])
 
   useEffect(() => {
     void refresh().catch(error => toast.error(String(error)))
   }, [refresh])
 
   useEffect(() => {
-    void topics.syncPage(page)
-  }, [page.url, topics.syncPage])
+    void syncPage(page)
+  }, [page, syncPage])
 
   const handleCloseAuth = useCallback(async () => {
-    session.closeAuth()
+    closeAuth()
     const snapshot = await refresh()
     if (!snapshot.session) return
     if (snapshot.isPro) toast.success('Sync enabled')
-    else session.openProUpgrade()
-  }, [session.closeAuth, session.openProUpgrade, refresh])
+    else openProUpgrade()
+  }, [closeAuth, openProUpgrade, refresh])
 
   return (
     <main className="h-full flex flex-col">

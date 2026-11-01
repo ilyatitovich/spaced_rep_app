@@ -74,10 +74,7 @@ export default function SectionSubscription({
       const { url } = await createBillingCheckout(session.accessToken, {
         interval: billingInterval
       })
-      if (
-        url.startsWith('http') &&
-        !url.startsWith(window.location.origin)
-      ) {
+      if (url.startsWith('http') && !url.startsWith(window.location.origin)) {
         window.location.assign(url)
         return
       }

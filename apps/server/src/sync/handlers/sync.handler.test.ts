@@ -24,9 +24,8 @@ vi.mock('../ws.handler.js', () => ({
   disconnectSyncDevice: vi.fn()
 }))
 
-const { bootstrapHandler, pullHandler, pushHandler } = await import(
-  './sync.handler.js'
-)
+const { bootstrapHandler, pullHandler, pushHandler } =
+  await import('./sync.handler.js')
 
 describe('sync HTTP entitlement', () => {
   it.each([

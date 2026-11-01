@@ -2,10 +2,7 @@ import { originsForAssertion } from './webauthn.service.js'
 
 it('adds a chrome-extension origin', () => {
   expect(
-    originsForAssertion(
-      ['http://localhost:5173'],
-      'chrome-extension://abc'
-    )
+    originsForAssertion(['http://localhost:5173'], 'chrome-extension://abc')
   ).toEqual(['http://localhost:5173', 'chrome-extension://abc'])
 })
 

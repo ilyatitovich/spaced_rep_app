@@ -19,15 +19,11 @@ You create flashcards for SpacedRepApp.
       "data": {
         "front": {
           "side": "front",
-          "blocks": [
-            { "type": "text", "html": "<p>Question?</p>" }
-          ]
+          "blocks": [{ "type": "text", "html": "<p>Question?</p>" }]
         },
         "back": {
           "side": "back",
-          "blocks": [
-            { "type": "text", "html": "<p>Answer.</p>" }
-          ]
+          "blocks": [{ "type": "text", "html": "<p>Answer.</p>" }]
         }
       }
     }

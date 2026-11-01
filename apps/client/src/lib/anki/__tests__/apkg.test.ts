@@ -17,9 +17,7 @@ async function buildApkg(options: {
 }): Promise<ArrayBuffer> {
   const SQL = await initSqlJs()
   const db = new SQL.Database()
-  db.run(
-    'CREATE TABLE col (id INTEGER PRIMARY KEY, models TEXT NOT NULL)'
-  )
+  db.run('CREATE TABLE col (id INTEGER PRIMARY KEY, models TEXT NOT NULL)')
   db.run(
     'CREATE TABLE notes (id INTEGER PRIMARY KEY, mid INTEGER NOT NULL, flds TEXT NOT NULL)'
   )
@@ -108,17 +106,18 @@ describe('fieldHtmlToBlocks', () => {
   })
 
   it('keeps missing local image filenames as text', () => {
-    expect(
-      fieldHtmlToBlocks('<img src="missing.png">', new Map())
-    ).toEqual([{ type: 'text', html: 'missing.png' }])
+    expect(fieldHtmlToBlocks('<img src="missing.png">', new Map())).toEqual([
+      { type: 'text', html: 'missing.png' }
+    ])
   })
 })
 
 describe('pickFrontBackHtml', () => {
   it('uses Front/Back field names', () => {
-    expect(
-      pickFrontBackHtml(['Q', 'A'], ['Front', 'Back'])
-    ).toEqual({ front: 'Q', back: 'A' })
+    expect(pickFrontBackHtml(['Q', 'A'], ['Front', 'Back'])).toEqual({
+      front: 'Q',
+      back: 'A'
+    })
   })
 
   it('maps cloze Question decks instead of Id/Category', () => {
@@ -164,10 +163,7 @@ describe('parseApkg + apkgToCards', () => {
 
     const apkg = await buildApkg({
       notes: [
-        [
-          'Front <img src="photo.png">',
-          'Back [sound:clip.mp3] <b>ok</b>'
-        ]
+        ['Front <img src="photo.png">', 'Back [sound:clip.mp3] <b>ok</b>']
       ],
       media: {
         photo: { bytes: pngBytes, name: 'photo.png' },
@@ -198,9 +194,7 @@ describe('parseApkg + apkgToCards', () => {
     expect(data.front.blocks.some(b => b.type === 'image')).toBe(true)
     expect(data.back.blocks.some(b => b.type === 'audio')).toBe(true)
     expect(
-      data.back.blocks.some(
-        b => b.type === 'text' && b.html.includes('<b>')
-      )
+      data.back.blocks.some(b => b.type === 'text' && b.html.includes('<b>'))
     ).toBe(true)
   })
 

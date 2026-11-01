@@ -161,7 +161,6 @@ describe('billing service', () => {
         provider: 'NONE'
       })
     })
-
   })
 
   it('creates checkout server-side with authenticated identity', async () => {

@@ -14,8 +14,9 @@ vi.mock('@/services', () => ({
 }))
 
 vi.mock('@/store', () => ({
-  useTopicsStore: (select: (s: { loadTopics: () => Promise<void> }) => unknown) =>
-    select({ loadTopics: vi.fn(async () => {}) })
+  useTopicsStore: (
+    select: (s: { loadTopics: () => Promise<void> }) => unknown
+  ) => select({ loadTopics: vi.fn(async () => {}) })
 }))
 
 vi.mock('react-hot-toast', () => ({
@@ -28,9 +29,12 @@ beforeEach(() => {
 
 function dropBackup() {
   const file = new File(['{}'], 'backup.json', { type: 'application/json' })
-  fireEvent.drop(screen.getByRole('region', { name: 'Drop a file to import' }), {
-    dataTransfer: { files: [file] }
-  })
+  fireEvent.drop(
+    screen.getByRole('region', { name: 'Drop a file to import' }),
+    {
+      dataTransfer: { files: [file] }
+    }
+  )
   return file
 }
 

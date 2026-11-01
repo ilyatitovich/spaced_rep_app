@@ -134,113 +134,117 @@ export default function SettingsScreen({ isOpen }: SettingsScreenProps) {
   return (
     <>
       <Screen isOpen={isOpen}>
-      <div className="h-full bg-background flex flex-col">
-        <Header>
-          <BackButton />
-          <span className="font-bold">Account</span>
-          <span className="w-7" aria-hidden />
-        </Header>
+        <div className="h-full bg-background flex flex-col">
+          <Header>
+            <BackButton />
+            <span className="font-bold">Account</span>
+            <span className="w-7" aria-hidden />
+          </Header>
 
-        <div className="flex flex-col gap-6 overflow-y-auto h-[92dvh] p-4 pb-30">
-          {isConfigured && isLoading ? (
-            <Spinner />
-          ) : (
-            <>
-              <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3">
-                <Avatar url={avatarUrl} initial={initial} />
-                <div className="flex-1 flex flex-col gap-1 min-w-0">
-                  <p className="font-bold truncate">{displayName}</p>
-                  <p className="text-sm text-foreground-muted">
-                    {planLabel} plan
-                  </p>
+          <div className="flex flex-col gap-6 overflow-y-auto h-[92dvh] p-4 pb-30">
+            {isConfigured && isLoading ? (
+              <Spinner />
+            ) : (
+              <>
+                <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3">
+                  <Avatar url={avatarUrl} initial={initial} />
+                  <div className="flex-1 flex flex-col gap-1 min-w-0">
+                    <p className="font-bold truncate">{displayName}</p>
+                    <p className="text-sm text-foreground-muted">
+                      {planLabel} plan
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              <SettingsGroup label="General">
-                <SettingsNavRow
-                  icon={<Info />}
-                  label="About"
-                  onClick={() => openSection(setSearchParams, 'about')}
-                />
-                <SettingsNavRow
-                  icon={<Sparkles />}
-                  label="Create with AI"
-                  onClick={() => openSection(setSearchParams, 'create-with-ai')}
-                />
-                <SettingsNavRow
-                  icon={needRefresh ? <Download /> : <RefreshCw />}
-                  label={
-                    needRefresh ? 'Update available' : 'Check for updates'
-                  }
-                  onClick={handleUpdateRow}
-                />
-                <SettingsNavRow
-                  icon={<Settings2 />}
-                  label="Preferences"
-                  value={themeValue}
-                  onClick={() => openSection(setSearchParams, 'preferences')}
-                />
-                <SettingsNavRow
-                  icon={<Bell />}
-                  label="Notifications"
-                  onClick={() => openSection(setSearchParams, 'notifications')}
-                />
-                <SettingsNavRow
-                  icon={<KeyRound />}
-                  label="Passkeys"
-                  onClick={() => openSection(setSearchParams, 'passkeys')}
-                />
-              </SettingsGroup>
-
-              <SettingsGroup label="Plan & privacy">
-                <SettingsNavRow
-                  icon={<CreditCard />}
-                  label="Subscription"
-                  value={planLabel}
-                  onClick={() => openSection(setSearchParams, 'subscription')}
-                />
-                <SettingsNavRow
-                  icon={<Shield />}
-                  label="Privacy"
-                  onClick={() => openSection(setSearchParams, 'privacy')}
-                />
-                <SettingsNavRow
-                  icon={<Cloud />}
-                  label="Data & Sync"
-                  onClick={() => openSection(setSearchParams, 'data')}
-                />
-              </SettingsGroup>
-
-              <SettingsGroup>
-                {user ? (
-                  <SettingsActionRow
-                    icon={<LogOut size={18} />}
-                    label="Sign out"
-                    onClick={() => void signOut()}
-                    destructive
+                <SettingsGroup label="General">
+                  <SettingsNavRow
+                    icon={<Info />}
+                    label="About"
+                    onClick={() => openSection(setSearchParams, 'about')}
                   />
-                ) : (
-                  <SettingsActionRow
-                    icon={<Lock size={18} />}
-                    label="Sign in"
-                    onClick={handleSignInOpen}
+                  <SettingsNavRow
+                    icon={<Sparkles />}
+                    label="Create with AI"
+                    onClick={() =>
+                      openSection(setSearchParams, 'create-with-ai')
+                    }
                   />
-                )}
-              </SettingsGroup>
-            </>
-          )}
+                  <SettingsNavRow
+                    icon={needRefresh ? <Download /> : <RefreshCw />}
+                    label={
+                      needRefresh ? 'Update available' : 'Check for updates'
+                    }
+                    onClick={handleUpdateRow}
+                  />
+                  <SettingsNavRow
+                    icon={<Settings2 />}
+                    label="Preferences"
+                    value={themeValue}
+                    onClick={() => openSection(setSearchParams, 'preferences')}
+                  />
+                  <SettingsNavRow
+                    icon={<Bell />}
+                    label="Notifications"
+                    onClick={() =>
+                      openSection(setSearchParams, 'notifications')
+                    }
+                  />
+                  <SettingsNavRow
+                    icon={<KeyRound />}
+                    label="Passkeys"
+                    onClick={() => openSection(setSearchParams, 'passkeys')}
+                  />
+                </SettingsGroup>
+
+                <SettingsGroup label="Plan & privacy">
+                  <SettingsNavRow
+                    icon={<CreditCard />}
+                    label="Subscription"
+                    value={planLabel}
+                    onClick={() => openSection(setSearchParams, 'subscription')}
+                  />
+                  <SettingsNavRow
+                    icon={<Shield />}
+                    label="Privacy"
+                    onClick={() => openSection(setSearchParams, 'privacy')}
+                  />
+                  <SettingsNavRow
+                    icon={<Cloud />}
+                    label="Data & Sync"
+                    onClick={() => openSection(setSearchParams, 'data')}
+                  />
+                </SettingsGroup>
+
+                <SettingsGroup>
+                  {user ? (
+                    <SettingsActionRow
+                      icon={<LogOut size={18} />}
+                      label="Sign out"
+                      onClick={() => void signOut()}
+                      destructive
+                    />
+                  ) : (
+                    <SettingsActionRow
+                      icon={<Lock size={18} />}
+                      label="Sign in"
+                      onClick={handleSignInOpen}
+                    />
+                  )}
+                </SettingsGroup>
+              </>
+            )}
+          </div>
         </div>
-      </div>
-    </Screen>
+      </Screen>
 
-    <SectionPreferences isOpen={isPreferencesOpen} />
-    <SectionNotifications isOpen={isNotificationsOpen} />
-    <SectionPasskeys isOpen={isPasskeysOpen} />
-    <SectionSubscription isOpen={isSubscriptionOpen} />
-    <SectionPrivacy isOpen={isPrivacyOpen} />
-    <SectionData isOpen={isDataOpen} />
-    <SectionAbout isOpen={isAboutOpen} />
-    <SectionCreateWithAi isOpen={isCreateWithAiOpen} />
+      <SectionPreferences isOpen={isPreferencesOpen} />
+      <SectionNotifications isOpen={isNotificationsOpen} />
+      <SectionPasskeys isOpen={isPasskeysOpen} />
+      <SectionSubscription isOpen={isSubscriptionOpen} />
+      <SectionPrivacy isOpen={isPrivacyOpen} />
+      <SectionData isOpen={isDataOpen} />
+      <SectionAbout isOpen={isAboutOpen} />
+      <SectionCreateWithAi isOpen={isCreateWithAiOpen} />
     </>
   )
 }
