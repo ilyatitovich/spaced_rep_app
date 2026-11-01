@@ -1,5 +1,5 @@
 import { createBrowserRouter } from 'react-router'
-import { useState } from 'react'
+// import { useState } from 'react'
 import * as Sentry from '@sentry/react'
 
 import {
@@ -9,21 +9,22 @@ import {
   OAuthGoogleCallbackPage,
   RouteErrorPage
 } from '@/pages'
-import { StartScreen } from './components'
-import { useAuth } from './contexts'
-import { isOnboardingComplete } from './lib'
+// import { StartScreen } from './components'
+// import { useAuth } from './contexts'
+// import { isOnboardingComplete } from './lib'
 
-function IndexRoute() {
-  const { session } = useAuth()
-  const [complete, setComplete] = useState(isOnboardingComplete)
-  // Auth success sets session + onboarding flag, but does not remount this route —
-  // so also leave start when a session appears (email OTP / passkey).
-  return complete || session ? (
-    <HomePage />
-  ) : (
-    <StartScreen onStart={() => setComplete(true)} />
-  )
-}
+// function IndexRoute() {
+//   const { session } = useAuth()
+//   const [complete, setComplete] = useState(isOnboardingComplete)
+//   // Auth success sets session + onboarding flag, but does not remount this route —
+//   // so also leave start when a session appears (email OTP / passkey).
+
+//   return complete || session ? (
+//     <HomePage />
+//   ) : (
+//     <StartScreen onStart={() => setComplete(true)} />
+//   )
+// }
 
 const sentryCreateBrowserRouter =
   Sentry.wrapCreateBrowserRouter(createBrowserRouter)
@@ -36,7 +37,7 @@ export default sentryCreateBrowserRouter([
     children: [
       {
         index: true,
-        element: <IndexRoute />
+        element: <HomePage />
       },
       {
         path: 'oauth/google/callback',
