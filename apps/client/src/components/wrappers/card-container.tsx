@@ -2,10 +2,16 @@ import type { ReactNode } from 'react'
 
 type CardContainerProps = {
   children: ReactNode
+  className?: string
 }
 
-export default function CardContainer({ children }: CardContainerProps) {
+export default function CardContainer({
+  children,
+  className = 'h-[70dvh]'
+}: CardContainerProps) {
   return (
-    <div className="h-[70dvh] flex justify-center items-center">{children}</div>
+    <div className={`${className} flex justify-center items-center`}>
+      {children}
+    </div>
   )
 }

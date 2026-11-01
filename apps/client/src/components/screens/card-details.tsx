@@ -448,85 +448,94 @@ export default function CardDetailsScreen({
       onOpen={handleOpen}
       isVertical
     >
-      <Header>
-        <BackButton />
-        <span>{isFlipped ? 'Back' : 'Front'}</span>
-        {isEditable ? (
-          <Button key="save" onClick={() => handleSaveCard()}>
-            Save
-          </Button>
-        ) : (
-          <Button key="edit" onClick={() => setIsEditable(true)}>
-            Edit
-          </Button>
-        )}
-      </Header>
+      <div className="flex h-full flex-col">
+        <Header>
+          <BackButton />
+          <span>{isFlipped ? 'Back' : 'Front'}</span>
+          {isEditable ? (
+            <Button key="save" onClick={() => handleSaveCard()}>
+              Save
+            </Button>
+          ) : (
+            <Button key="edit" onClick={() => setIsEditable(true)}>
+              Edit
+            </Button>
+          )}
+        </Header>
 
-      <div
-        ref={containerRef}
-        className="overflow-clip"
-        style={{ touchAction: 'pan-y' }}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerCancel}
-      >
-        <p className="text-center text-sm text-gray-500">
+        <p className="shrink-0 text-center text-sm text-gray-500">
           {currentIndex + 1}/{total}
         </p>
 
         <div
-          ref={trackRef}
-          className="flex"
-          style={{ width: '300%', willChange: 'transform' }}
+          ref={containerRef}
+          className="min-h-0 flex-1 overflow-clip"
+          style={{ touchAction: 'pan-y' }}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerCancel}
         >
           <div
-            style={{ flex: '0 0 33.3333%', pointerEvents: 'none' }}
-            aria-hidden
+            ref={trackRef}
+            className="flex h-full"
+            style={{ width: '300%', willChange: 'transform' }}
           >
-            <CardContainer>
-              <Card data={getCardData(prevCard)} isFlipped={false} />
-            </CardContainer>
-          </div>
+            <div
+              className="h-full"
+              style={{ flex: '0 0 33.3333%', pointerEvents: 'none' }}
+              aria-hidden
+            >
+              <CardContainer className="h-full">
+                <Card data={getCardData(prevCard)} isFlipped={false} />
+              </CardContainer>
+            </div>
 
-          <div style={{ flex: '0 0 33.3333%' }}>
-            <CardContainer>
-              <Card
-                key={card?.id ?? currentIndex}
-                ref={cardRef}
-                data={cardData}
-                isFlipped={isFlipped}
-                isEditable={isEditable}
-                handleFocus={() => setIsEdited(true)}
-                handleBlur={handleBlur}
-                handleChange={handleChangeBlocks}
+            <div className="h-full" style={{ flex: '0 0 33.3333%' }}>
+              <CardContainer className="h-full">
+                <Card
+                  key={card?.id ?? currentIndex}
+                  ref={cardRef}
+                  data={cardData}
+                  isFlipped={isFlipped}
+                  isEditable={isEditable}
+                  handleFocus={() => setIsEdited(true)}
+                  handleBlur={handleBlur}
+                  handleChange={handleChangeBlocks}
+                />
+              </CardContainer>
+            </div>
+
+            <div
+              className="h-full"
+              style={{ flex: '0 0 33.3333%', pointerEvents: 'none' }}
+              aria-hidden
+            >
+              <CardContainer className="h-full">
+                <Card data={getCardData(nextCard)} isFlipped={false} />
+              </CardContainer>
+            </div>
+          </div>
+        </div>
+
+        <div className="shrink-0 pb-[calc(5rem+env(safe-area-inset-bottom,0px))]">
+          {isEditable ? (
+            <CardToolbar
+              isTextDisabled={cardData[side].blocks.at(-1)?.type === 'text'}
+              onAddBlocks={appendBlocks}
+              onFocusLast={() => cardRef.current?.focusContent(side, 'last')}
+              onFlip={() => setIsFlipped(prev => !prev)}
+            />
+          ) : (
+            <div className="pt-1 flex justify-center items-center">
+              <CardButton
+                type="flip"
+                onClick={() => setIsFlipped(prev => !prev)}
               />
-            </CardContainer>
-          </div>
-
-          <div
-            style={{ flex: '0 0 33.3333%', pointerEvents: 'none' }}
-            aria-hidden
-          >
-            <CardContainer>
-              <Card data={getCardData(nextCard)} isFlipped={false} />
-            </CardContainer>
-          </div>
+            </div>
+          )}
         </div>
       </div>
-
-      {isEditable ? (
-        <CardToolbar
-          isTextDisabled={cardData[side].blocks.at(-1)?.type === 'text'}
-          onAddBlocks={appendBlocks}
-          onFocusLast={() => cardRef.current?.focusContent(side, 'last')}
-          onFlip={() => setIsFlipped(prev => !prev)}
-        />
-      ) : (
-        <div className="pt-1 pb-20 flex justify-center items-center">
-          <CardButton type="flip" onClick={() => setIsFlipped(prev => !prev)} />
-        </div>
-      )}
 
       <SelectionModeFooter
         countItemsForDelete={card ? 1 : 0}
