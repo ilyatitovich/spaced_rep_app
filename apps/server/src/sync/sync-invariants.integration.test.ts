@@ -157,6 +157,121 @@ describe('pullChanges single cursor', () => {
     expect(new Set(all.topicIds)).toEqual(new Set(topics.map(t => t.id)))
     expect(new Set(all.cardIds)).toEqual(new Set(cards.map(c => c.id)))
   })
+
+  it('does not strand rows that share updatedAt across a page boundary', async () => {
+    const user = await userFactory.create()
+    const tied = new Date(BASE + 5000)
+    const topics = await Promise.all(
+      Array.from({ length: 3 }, (_, i) =>
+        topicFactory.create({
+          userId: user.id,
+          title: `tied-topic-${i}`,
+          updatedAt: tied
+        })
+      )
+    )
+    const cards = await Promise.all(
+      Array.from({ length: 3 }, () =>
+        cardFactory.create({
+          userId: user.id,
+          topicId: topics[0]!.id,
+          updatedAt: tied
+        })
+      )
+    )
+    const later = await topicFactory.create({
+      userId: user.id,
+      title: 'later',
+      updatedAt: new Date(BASE + 6000)
+    })
+
+    const all = await pullAll(user.id, 2)
+    expect(new Set(all.topicIds)).toEqual(
+      new Set([...topics.map(t => t.id), later.id])
+    )
+    expect(new Set(all.cardIds)).toEqual(new Set(cards.map(c => c.id)))
+  })
+
+  it('only returns the caller’s rows, even when another user shares timestamps', async () => {
+    const user = await userFactory.create()
+    const other = await userFactory.create()
+    const updatedAt = new Date(BASE)
+    const mine = await topicFactory.create({ userId: user.id, updatedAt })
+    const myCard = await cardFactory.create({
+      userId: user.id,
+      topicId: mine.id,
+      updatedAt
+    })
+    const theirs = await topicFactory.create({ userId: other.id, updatedAt })
+    const theirCard = await cardFactory.create({
+      userId: other.id,
+      topicId: theirs.id,
+      updatedAt
+    })
+
+    const all = await pullAll(user.id, 2)
+    expect(all.topicIds).toEqual([mine.id])
+    expect(all.cardIds).toEqual([myCard.id])
+
+    const bootstrapped = await bootstrap({
+      userId: other.id,
+      deviceId: crypto.randomUUID()
+    })
+    expect(
+      bootstrapped.records.map(r => (r.topic ?? r.card)?.id).sort()
+    ).toEqual([theirs.id, theirCard.id].sort())
+  })
+
+  it('does not return a stale-timestamp row past an advanced cursor, but a full pull and the fanout delta carry it', async () => {
+    // Known limitation: the cursor is the client LWW timestamp, so an offline
+    // device pushing an old updatedAt is invisible to peers pulling from a
+    // newer watermark. Peers learn about it via fanout or a from-epoch pull.
+    const user = await userFactory.create()
+    const offlineDevice = crypto.randomUUID()
+    await topicFactory.create({
+      userId: user.id,
+      title: 'recent',
+      updatedAt: new Date(BASE + 10_000)
+    })
+    const peerCursor = (
+      await pullChanges({ userId: user.id, since: EPOCH_ISO })
+    ).watermark
+    expect(peerCursor).toBe(new Date(BASE + 10_000).toISOString())
+
+    vi.mocked(publishFanout).mockClear()
+    const staleId = crypto.randomUUID()
+    await applyPushBatch({
+      userId: user.id,
+      deviceId: offlineDevice,
+      mutations: [
+        topicUpsert({
+          id: staleId,
+          title: 'stale',
+          updatedAt: BASE + 1000,
+          deviceId: offlineDevice
+        })
+      ]
+    })
+
+    const fromPeerCursor = await pullChanges({
+      userId: user.id,
+      since: peerCursor
+    })
+    expect(fromPeerCursor.records).toHaveLength(0)
+
+    const fromEpoch = await pullChanges({ userId: user.id, since: EPOCH_ISO })
+    expect(fromEpoch.records.map(r => r.topic?.id)).toContain(staleId)
+
+    const envelope = vi
+      .mocked(publishFanout)
+      .mock.calls.map(([arg]) => arg)
+      .find(arg => arg.envelope.kind === 'pullDelta')
+    expect(envelope?.excludeDeviceId).toBe(offlineDevice)
+    expect(
+      envelope?.envelope.kind === 'pullDelta' &&
+        envelope.envelope.pullDelta.records.map(r => r.topic?.id)
+    ).toContain(staleId)
+  })
 })
 
 describe('applyPushBatch fanout watermark', () => {

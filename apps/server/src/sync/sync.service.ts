@@ -620,7 +620,31 @@ export async function pullChanges(input: {
       x.row.updatedAt.getTime() - y.row.updatedAt.getTime() ||
       x.row.id.localeCompare(y.row.id)
   )
-  const selected = merged.slice(0, limit)
+  const cut = merged.slice(0, limit)
+
+  // The cursor is a bare timestamp matched with `gt`, so rows sharing the last
+  // row's updatedAt would be skipped by the next page. Include every tie.
+  const boundary = cut.at(-1)?.row.updatedAt
+  const [tiedTopics, tiedCards] = boundary
+    ? await Promise.all([
+        prisma.topic.findMany({
+          where: { userId: input.userId, updatedAt: boundary }
+        }),
+        prisma.card.findMany({
+          where: { userId: input.userId, updatedAt: boundary }
+        })
+      ])
+    : [[], []]
+  const seen = new Set(cut.map(r => r.row.id))
+  const selected = [
+    ...cut,
+    ...tiedTopics
+      .filter(row => !seen.has(row.id))
+      .map(row => ({ kind: 'topic' as const, row })),
+    ...tiedCards
+      .filter(row => !seen.has(row.id))
+      .map(row => ({ kind: 'card' as const, row }))
+  ]
 
   // Topics first for FK ordering on client
   const records: SyncRecord[] = [
