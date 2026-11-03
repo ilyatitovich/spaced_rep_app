@@ -1,13 +1,22 @@
 import { originsForAssertion } from './webauthn.service.js'
 
-it('adds a chrome-extension origin', () => {
+const configured = ['http://localhost:5173']
+const allowlist = ['http://localhost:5173', 'chrome-extension://abc']
+
+it('adds an allowlisted chrome-extension origin', () => {
   expect(
-    originsForAssertion(['http://localhost:5173'], 'chrome-extension://abc')
+    originsForAssertion(configured, 'chrome-extension://abc', allowlist)
   ).toEqual(['http://localhost:5173', 'chrome-extension://abc'])
+})
+
+it('does not add a chrome-extension origin outside the allowlist', () => {
+  expect(
+    originsForAssertion(configured, 'chrome-extension://evil', allowlist)
+  ).toEqual(configured)
 })
 
 it('ignores non-extension origins', () => {
   expect(
-    originsForAssertion(['http://localhost:5173'], 'https://attacker.example')
-  ).toEqual(['http://localhost:5173'])
+    originsForAssertion(configured, 'https://attacker.example', allowlist)
+  ).toEqual(configured)
 })

@@ -42,8 +42,6 @@ function mimeFromName(name: string): string {
       return 'image/gif'
     case 'webp':
       return 'image/webp'
-    case 'svg':
-      return 'image/svg+xml'
     case 'mp3':
       return 'audio/mpeg'
     case 'ogg':

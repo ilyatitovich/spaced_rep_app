@@ -23,13 +23,16 @@ export function getWebAuthnConfig() {
   }
 }
 
+/** Only allowlisted chrome-extension origins may join the WebAuthn expected set. */
 export function originsForAssertion(
   configured: string[],
-  origin: string | null
+  origin: string | null,
+  allowlist: readonly string[] = env.CORS_ORIGIN
 ): string[] {
   if (
     !origin?.startsWith('chrome-extension://') ||
-    configured.includes(origin)
+    configured.includes(origin) ||
+    !allowlist.includes(origin)
   ) {
     return configured
   }

@@ -23,7 +23,7 @@ export const ALLOWED_MEDIA_TYPES = new Set([
   'image/jpeg',
   'image/gif',
   'image/webp',
-  'image/svg+xml',
+  // image/svg+xml omitted — scriptable SVG on the media host is stored XSS
   'audio/mpeg',
   'audio/ogg',
   'audio/wav',

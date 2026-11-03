@@ -23,7 +23,12 @@ Sentry.init({
       createRoutesFromChildren,
       matchRoutes
     }),
-    replayIntegration()
+    replayIntegration({
+      // Study cards and OTP fields must not leave the device via Replay.
+      maskAllText: true,
+      maskAllInputs: true,
+      blockAllMedia: true
+    })
   ],
   tracesSampleRate: isProd ? 0.2 : 1.0,
   tracePropagationTargets: ['localhost', ...(apiUrl ? [apiUrl] : [])],

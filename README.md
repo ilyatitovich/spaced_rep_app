@@ -13,7 +13,7 @@ Inspired by [Nicky Case’s explanation of spaced repetition](https://ncase.me/r
 - Optional Express sync for signed-in Pro accounts (email OTP, Google, passkeys)
 - PWA install / update prompts
 
-Sync model (outbox, last-write-wins, tombstones, 3-device cap): **[docs/sync.md](docs/sync.md)**. Architecture notes: **[CONTEXT.md](CONTEXT.md)**.
+Sync model (outbox, last-write-wins, tombstones, 3-device cap): **[docs/sync.md](docs/sync.md)**. Architecture notes: **[CONTEXT.md](CONTEXT.md)**. Unpaid beta API deploy: **[docs/deploy.md](docs/deploy.md)**.
 
 ## Tech stack
 

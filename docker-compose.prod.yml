@@ -2,7 +2,8 @@ x-logging: &default-logging
   driver: json-file
   options:
     max-size: '10m'
-    max-file: '3'
+    max-file: '5'
+    tag: '{{.Name}}'
 
 services:
   postgres:
@@ -27,11 +28,15 @@ services:
     image: redis:7-alpine
     container_name: spaced_rep_redis
     restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     command:
       [
         'redis-server',
         '--appendonly',
         'yes',
+        '--requirepass',
+        '${REDIS_PASSWORD}',
         '--maxmemory',
         '128mb',
         '--maxmemory-policy',
@@ -40,11 +45,28 @@ services:
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
+      test: ['CMD-SHELL', 'redis-cli -a "$$REDIS_PASSWORD" ping | grep -q PONG']
       interval: 5s
       timeout: 5s
       retries: 5
       start_period: 5s
+    logging: *default-logging
+
+  migrate:
+    image: ghcr.io/${GHCR_OWNER:-local}/spacedrep-server:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile
+      target: production
+    container_name: spaced_rep_migrate
+    env_file: .env
+    environment:
+      NODE_ENV: production
+    command: ['pnpm', 'prisma:migrate:deploy']
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: 'no'
     logging: *default-logging
 
   server:
@@ -59,9 +81,10 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
+      BETA_OPEN_PRO: ${BETA_OPEN_PRO:-true}
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
     healthcheck:
@@ -70,12 +93,33 @@ services:
           'CMD',
           'node',
           '-e',
-          "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+          "fetch('http://127.0.0.1:3000/health').then(async r=>{const b=await r.json();process.exit(r.ok&&b.status==='ok'?0:1)}).catch(()=>process.exit(1))"
         ]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
+    logging: *default-logging
+
+  backup:
+    image: postgres:17-alpine
+    container_name: spaced_rep_backup
+    restart: unless-stopped
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      BACKUP_ENCRYPTION_KEY: ${BACKUP_ENCRYPTION_KEY}
+      BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
+      BACKUP_KEEP_COUNT: ${BACKUP_KEEP_COUNT:-7}
+    volumes:
+      - ./infra/backup/backup-loop.sh:/scripts/backup-loop.sh:ro
+      - backup_data:/backups
+    entrypoint: ['/bin/sh', '/scripts/backup-loop.sh']
+    depends_on:
+      postgres:
+        condition: service_healthy
     logging: *default-logging
 
   caddy:
@@ -97,5 +141,6 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  backup_data:
   caddy_data:
   caddy_config:

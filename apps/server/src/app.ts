@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
@@ -9,6 +10,7 @@ import { settingsRouter } from './settings/router.js'
 import { billingWebhookHandler } from './settings/handlers/settings.handler.js'
 import { syncRouter } from './sync/router.js'
 import { env } from './shared/config/env.js'
+import { checkHealth } from './shared/lib/health.js'
 import { logger } from './shared/lib/logger.js'
 import { errorHandler } from './shared/middleware/error-handler.js'
 
@@ -36,7 +38,28 @@ export function createApp() {
     })
   )
   app.use(compression())
-  app.use(pinoHttp({ logger }))
+  app.use(
+    pinoHttp({
+      logger,
+      genReqId(req, res) {
+        const header = req.headers['x-request-id']
+        const id =
+          typeof header === 'string' && header.length > 0
+            ? header
+            : randomUUID()
+        res.setHeader('x-request-id', id)
+        return id
+      },
+      redact: {
+        paths: [
+          'req.headers.authorization',
+          'req.headers.cookie',
+          'res.headers["set-cookie"]'
+        ],
+        censor: '[Redacted]'
+      }
+    })
+  )
   app.post(
     '/settings/billing/webhook',
     express.raw({ type: 'application/json', limit: '256kb' }),
@@ -45,8 +68,9 @@ export function createApp() {
   app.use(express.json({ limit: '1mb' }))
   app.use(express.urlencoded({ extended: true }))
 
-  app.use('/health', (_req, res) => {
-    res.status(200).json({ status: 'ok' })
+  app.get('/health', async (_req, res) => {
+    const health = await checkHealth()
+    res.status(health.status === 'ok' ? 200 : 503).json(health)
   })
 
   app.use('/auth', authRouter)

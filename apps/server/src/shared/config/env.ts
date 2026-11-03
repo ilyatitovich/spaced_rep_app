@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import dotenv from 'dotenv'
 import { z } from 'zod'
+import { productionEnvIssues } from './production-env.js'
 
 const rootDir = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -106,6 +107,11 @@ const envSchema = z.object({
     .default('false')
     .transform(value => value === 'true'),
   BILLING_RETURN_URL: z.string().default(''),
+  /** Unpaid public beta: grant Pro without Lemon. Not the empty-API-key local path. */
+  BETA_OPEN_PRO: z
+    .string()
+    .default('false')
+    .transform(value => value === 'true'),
   // Private R2 (prod) or MinIO (local). Tests may omit credentials and inject a mock.
   R2_ACCOUNT_ID: z.string().default(''),
   R2_BUCKET: z.string().default('spaced-rep-media'),
@@ -129,6 +135,12 @@ if (!parsed.success) {
     'Invalid environment variables:',
     parsed.error.flatten().fieldErrors
   )
+  process.exit(1)
+}
+
+const productionIssues = productionEnvIssues(parsed.data)
+if (productionIssues.length > 0) {
+  console.error('Unsafe production environment:', productionIssues)
   process.exit(1)
 }
 

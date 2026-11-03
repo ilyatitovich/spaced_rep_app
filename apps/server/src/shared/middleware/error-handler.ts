@@ -4,7 +4,7 @@ import { statusToErrorCode } from '../lib/http.js'
 import { logger } from '../lib/logger.js'
 import { env } from '../config/env.js'
 
-export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
+export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   if (err instanceof AppError) {
     res.status(err.statusCode).json({
       error: {
@@ -15,7 +15,7 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     return
   }
 
-  logger.error({ err }, 'Unhandled error')
+  logger.error({ err, requestId: req.id }, 'Unhandled error')
   res.status(500).json({
     error: {
       code: 'INTERNAL_ERROR',

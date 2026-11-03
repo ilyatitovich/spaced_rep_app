@@ -148,6 +148,20 @@ describe('planMediaUploads', () => {
         ]
       })
     ).rejects.toMatchObject({ code: 'MEDIA_INVALID' })
+
+    await expect(
+      planMediaUploads({
+        userId: 'user-1',
+        items: [
+          {
+            hash: HASH_A,
+            type: 'image/svg+xml',
+            byteLength: 10,
+            checksum: sha256HexToBase64(HASH_A)
+          }
+        ]
+      })
+    ).rejects.toMatchObject({ code: 'MEDIA_INVALID' })
   })
 
   it('dedupes identical hashes and scopes keys to the user', async () => {

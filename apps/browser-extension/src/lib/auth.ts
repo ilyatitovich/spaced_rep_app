@@ -116,5 +116,20 @@ export async function freshSession(): Promise<ExtensionSession | null> {
 }
 
 export async function signOut(): Promise<void> {
+  const session = await getSession()
+  if (session?.accessToken) {
+    try {
+      await fetch(`${API_URL}/auth/logout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.accessToken}`
+        },
+        body: '{}'
+      })
+    } catch {
+      // Best-effort revoke; always clear local session.
+    }
+  }
   await chrome.storage.local.remove(SESSION_KEY)
 }
