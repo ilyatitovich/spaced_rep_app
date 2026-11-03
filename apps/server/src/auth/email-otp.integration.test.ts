@@ -30,6 +30,24 @@ vi.mock('./services/mail.service.js', async importOriginal => {
   }
 })
 
+const { EXTENSION_ORIGIN } = vi.hoisted(() => ({
+  EXTENSION_ORIGIN: 'chrome-extension://allowlisted-extension-id'
+}))
+
+// Allowlist an extension origin, as production does, so the test proves the
+// `Origin` header alone grants nothing.
+vi.mock('../shared/config/env.js', async importOriginal => {
+  const actual =
+    await importOriginal<typeof import('../shared/config/env.js')>()
+  return {
+    ...actual,
+    env: {
+      ...actual.env,
+      CORS_ORIGIN: [...actual.env.CORS_ORIGIN, EXTENSION_ORIGIN]
+    }
+  }
+})
+
 const COOLDOWN_MESSAGE = 'Please wait before requesting another code.'
 const RATE_LIMIT_MESSAGE = 'Too many requests. Please try again later.'
 
@@ -375,6 +393,22 @@ describe('turnstile', () => {
 
     vi.stubGlobal('fetch', turnstileResponse({ success: true }))
     expect((await postRequest(email)).status).toBe(200)
+  })
+
+  it('does not skip Turnstile for a forged allowlisted extension Origin', async () => {
+    const fetchMock = turnstileResponse({ success: false })
+    vi.stubGlobal('fetch', fetchMock)
+    const agent = await createTestAgent()
+
+    const res = await agent
+      .post('/auth/email/request')
+      .set('Origin', EXTENSION_ORIGIN)
+      .send({ email: uniqueEmail('ts-forged'), turnstileToken: 'extension' })
+
+    expect(res.status).toBe(400)
+    expect(res.body.error?.code).toBe('TURNSTILE_FAILED')
+    expect(fetchMock).toHaveBeenCalledOnce()
+    expect(await getTestPrisma().otpCode.count()).toBe(0)
   })
 
   it('requires a Turnstile token', async () => {

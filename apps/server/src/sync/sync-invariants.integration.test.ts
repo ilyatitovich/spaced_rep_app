@@ -450,6 +450,51 @@ describe('applyPushBatch idempotency', () => {
   })
 })
 
+describe('applyPushBatch edit after a lost ack', () => {
+  it('stores the edit pushed under a fresh opId after the first push landed unacknowledged', async () => {
+    const user = await userFactory.create()
+    const deviceId = crypto.randomUUID()
+    const topic = await topicFactory.create({
+      userId: user.id,
+      updatedAt: new Date(BASE)
+    })
+    const cardId = crypto.randomUUID()
+    const firstOpId = crypto.randomUUID()
+    const secondOpId = crypto.randomUUID()
+    const push = (mutation: Mutation) =>
+      applyPushBatch({ userId: user.id, deviceId, mutations: [mutation] })
+
+    // Push lands, ack is lost; the client then edits and re-pushes the same record.
+    await push(
+      cardUpsert({
+        id: cardId,
+        topicId: topic.id,
+        updatedAt: BASE + 1000,
+        deviceId,
+        body: 'before',
+        opId: firstOpId
+      })
+    )
+    const ack = await push(
+      cardUpsert({
+        id: cardId,
+        topicId: topic.id,
+        updatedAt: BASE + 2000,
+        deviceId,
+        body: 'after',
+        opId: secondOpId
+      })
+    )
+
+    expect(ack.acceptedOpIds).toEqual([secondOpId])
+    expect(await wasOpApplied(user.id, secondOpId)).toBe(true)
+    const { records } = await pullChanges({ userId: user.id, since: EPOCH_ISO })
+    const stored = records.find(r => r.card)?.card
+    expect(JSON.parse(stored!.dataJson)).toEqual({ body: 'after' })
+    expect(stored!.updatedAt).toBe(BASE + 2000)
+  })
+})
+
 describe('applyPushBatch apply + idempotency atomicity', () => {
   it('leaves neither the row nor the idempotency mark when the mark cannot commit', async () => {
     const user = await userFactory.create()

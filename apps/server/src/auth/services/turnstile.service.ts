@@ -6,21 +6,16 @@ interface TurnstileResponse {
   'error-codes'?: string[]
 }
 
-function isAllowlistedExtensionOrigin(
-  origin: string | null | undefined
-): boolean {
-  return Boolean(
-    origin?.startsWith('chrome-extension://') &&
-    env.CORS_ORIGIN.includes(origin)
-  )
-}
+const VERIFY_TIMEOUT_MS = 5_000
 
+/**
+ * Every caller must pass Turnstile. Never skip on the `Origin` header: it is
+ * attacker-controlled outside browsers (see ADR-3).
+ */
 export async function verifyTurnstileToken(
   token: string,
-  remoteIp?: string | null,
-  origin?: string | null
+  remoteIp?: string | null
 ): Promise<void> {
-  if (isAllowlistedExtensionOrigin(origin)) return
   const body = new URLSearchParams()
   body.set('secret', env.TURNSTILE_SECRET_KEY)
   body.set('response', token)
@@ -33,7 +28,8 @@ export async function verifyTurnstileToken(
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body
+        body,
+        signal: AbortSignal.timeout(VERIFY_TIMEOUT_MS)
       }
     )
     result = (await response.json()) as TurnstileResponse

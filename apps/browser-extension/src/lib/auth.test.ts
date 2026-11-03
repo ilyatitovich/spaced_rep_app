@@ -1,11 +1,5 @@
 import { startAuthentication } from '@simplewebauthn/browser'
-import {
-  freshSession,
-  getSession,
-  signInWithPasskey,
-  signOut,
-  verifyEmailOtp
-} from './auth'
+import { freshSession, getSession, signInWithPasskey, signOut } from './auth'
 
 vi.mock('@simplewebauthn/browser', () => ({
   startAuthentication: vi.fn()
@@ -27,25 +21,6 @@ beforeEach(() => {
       }
     }
   } as unknown as typeof chrome
-})
-
-it('stores the session returned by email verification', async () => {
-  globalThis.fetch = (async () =>
-    new Response(
-      JSON.stringify({
-        data: {
-          accessToken: 'access',
-          refreshToken: 'refresh',
-          expiresIn: 900,
-          user: { id: 'user-1', email: 'a@b.com' }
-        }
-      }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
-    )) as typeof fetch
-
-  const session = await verifyEmailOtp('a@b.com', '123456')
-  expect(session.user.email).toBe('a@b.com')
-  expect(await getSession()).toEqual(session)
 })
 
 it('stores the session returned by passkey verification', async () => {

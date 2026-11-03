@@ -1,10 +1,8 @@
 import { createContext, useContext, useMemo, type ReactNode } from 'react'
 
 import {
-  requestEmailOtp,
   signInWithPasskey as signInWithPasskeyRequest,
   signOut as signOutSession,
-  verifyEmailOtp as verifyEmailOtpRequest,
   unavailable
 } from '@ext/lib'
 import type { ExtensionSession } from '@ext/types'
@@ -27,15 +25,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       session: null,
       isConfigured: true,
-      capabilities: { google: false, passkey: true, emailOtp: true },
+      capabilities: { google: false, passkey: true, emailOtp: false },
       signInWithGoogle: unavailable('Google sign-in'),
       signInWithPasskey: async () => {
         await signInWithPasskeyRequest()
       },
-      sendEmailOtp: requestEmailOtp,
-      verifyEmailOtp: async (email, token) => {
-        await verifyEmailOtpRequest(email, token)
-      },
+      sendEmailOtp: unavailable('Email sign-in'),
+      verifyEmailOtp: unavailable('Email sign-in'),
       signOut: signOutSession
     }),
     []

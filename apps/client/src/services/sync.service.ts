@@ -433,12 +433,12 @@ async function coalesceAndPutQueueItem(
     return
   }
 
-  let opId: string = crypto.randomUUID()
+  // Always mint a new opId: the server skips any opId it already applied, so
+  // reusing one (e.g. after a lost push ack) would silently drop the new body.
+  // Only createdAt carries over, and only when the replaced op can't be mid-push.
+  const opId = crypto.randomUUID()
   let createdAt = Date.now()
-  // Reuse opId only if that op can't be mid-push — an ack for it would otherwise
-  // delete this replacement row.
   if (existing?.operation === next && !inFlightOpIds.has(existing.opId)) {
-    opId = existing.opId
     createdAt = existing.createdAt
   }
 

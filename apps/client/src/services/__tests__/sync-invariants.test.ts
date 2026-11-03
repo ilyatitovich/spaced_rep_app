@@ -260,6 +260,39 @@ describe('queue coalescing', () => {
     expect(row?.operation).toBe('upsert')
     expect(row?.opId).not.toBe(upsertOpId)
   })
+
+  it('an edit after a lost push ack is sent under a new opId, keeping queue order', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    try {
+      vi.setSystemTime(10_000)
+      const card = await seedCard()
+      await enqueueSync(STORES.CARDS, card.id, 'upsert')
+
+      // The server applies the push but the response never reaches the client.
+      pushMock.mockRejectedValueOnce(new Error('network: response lost'))
+      await expect(pushChanges('device-1')).rejects.toThrow('response lost')
+      const firstOpId = pushMock.mock.calls[0]![0].mutations[0].opId as string
+
+      vi.setSystemTime(20_000)
+      await enqueueSync(STORES.CARDS, card.id, 'upsert')
+
+      // The server remembers firstOpId and would skip a body sent under it.
+      const row = table(STORES.SYNC_QUEUE).get(
+        `${STORES.CARDS}:${card.id}`
+      ) as {
+        opId: string
+        createdAt: number
+      }
+      expect(row.opId).not.toBe(firstOpId)
+      expect(row.createdAt).toBe(10_000)
+
+      pushMock.mockImplementationOnce(async input => acceptAll(input))
+      await pushChanges('device-1')
+      expect(pushMock.mock.calls[1]![0].mutations[0].opId).not.toBe(firstOpId)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
 })
 
 describe('pull watermark and post-push pull', () => {

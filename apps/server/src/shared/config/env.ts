@@ -68,6 +68,7 @@ const envSchema = z.object({
   OTP_TTL_SECONDS: z.coerce.number().int().positive().default(600),
   OTP_RESEND_COOLDOWN_SECONDS: z.coerce.number().int().positive().default(60),
   OTP_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
+  OTP_GLOBAL_HOURLY_LIMIT: z.coerce.number().int().positive().default(500),
   TURNSTILE_SECRET_KEY: z.string().min(1, 'TURNSTILE_SECRET_KEY is required'),
   RESEND_API_KEY: z.string().min(1, 'RESEND_API_KEY is required'),
   EMAIL_FROM: z.string().min(1, 'EMAIL_FROM is required'),

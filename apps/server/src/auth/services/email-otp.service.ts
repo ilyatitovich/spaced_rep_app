@@ -112,6 +112,12 @@ export async function requestEmailOtp(input: {
     limit: 5,
     windowSeconds: HOUR
   })
+  // Caps total sends (mail cost, sender reputation) when IPs and emails rotate.
+  await enforceRateLimit({
+    key: 'otp:req:global',
+    limit: env.OTP_GLOBAL_HOURLY_LIMIT,
+    windowSeconds: HOUR
+  })
   // Cooldown must run before send work, but only "locks" after success —
   // check via SET NX here so concurrent requests race cleanly.
   await enforceCooldown({

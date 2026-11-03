@@ -1,13 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('../../shared/config/env.js', () => ({
-  env: {
-    CORS_ORIGIN: [
-      'http://localhost:5173',
-      'chrome-extension://allowlisted-extension-id'
-    ],
-    TURNSTILE_SECRET_KEY: 'test-secret'
-  }
+  env: { TURNSTILE_SECRET_KEY: 'test-secret' }
 }))
 
 const { verifyTurnstileToken } = await import('./turnstile.service.js')
@@ -18,22 +12,22 @@ describe('verifyTurnstileToken', () => {
     vi.restoreAllMocks()
   })
 
-  it('skips bot checks for an allowlisted chrome-extension origin', async () => {
-    const fetchMock = vi.fn()
+  it('accepts a token Cloudflare confirms', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ json: async () => ({ success: true }) })
     vi.stubGlobal('fetch', fetchMock)
 
     await expect(
-      verifyTurnstileToken(
-        'not-a-token',
-        null,
-        'chrome-extension://allowlisted-extension-id'
-      )
+      verifyTurnstileToken('good-token', '203.0.113.9')
     ).resolves.toBeUndefined()
 
-    expect(fetchMock).not.toHaveBeenCalled()
+    const body = fetchMock.mock.calls[0]![1].body as URLSearchParams
+    expect(body.get('response')).toBe('good-token')
+    expect(body.get('remoteip')).toBe('203.0.113.9')
   })
 
-  it('does not skip Turnstile for a non-allowlisted chrome-extension origin', async () => {
+  it('rejects a token Cloudflare refuses', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
@@ -44,8 +38,30 @@ describe('verifyTurnstileToken', () => {
       })
     )
 
-    await expect(
-      verifyTurnstileToken('not-a-token', null, 'chrome-extension://evil')
-    ).rejects.toMatchObject({ code: 'TURNSTILE_FAILED' })
+    await expect(verifyTurnstileToken('not-a-token')).rejects.toMatchObject({
+      code: 'TURNSTILE_FAILED'
+    })
+  })
+
+  it('bounds the Cloudflare call with a timeout signal', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ json: async () => ({ success: true }) })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await verifyTurnstileToken('good-token')
+
+    expect(fetchMock.mock.calls[0]![1].signal).toBeInstanceOf(AbortSignal)
+  })
+
+  it('fails closed when the Cloudflare call is aborted', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockRejectedValue(new DOMException('timed out', 'TimeoutError'))
+    )
+
+    await expect(verifyTurnstileToken('good-token')).rejects.toMatchObject({
+      code: 'TURNSTILE_FAILED'
+    })
   })
 })

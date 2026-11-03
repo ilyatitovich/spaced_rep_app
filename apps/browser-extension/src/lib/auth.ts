@@ -60,24 +60,6 @@ async function persist(session: ExtensionSession): Promise<ExtensionSession> {
   return session
 }
 
-export async function requestEmailOtp(
-  email: string,
-  turnstileToken: string
-): Promise<void> {
-  await post('/auth/email/request', { email, turnstileToken })
-}
-
-export async function verifyEmailOtp(
-  email: string,
-  code: string
-): Promise<ExtensionSession> {
-  const tokens = await post<TokenResponse>('/auth/email/verify', {
-    email,
-    code
-  })
-  return persist(toSession(tokens))
-}
-
 function isWebAuthnAbort(error: unknown): boolean {
   return (
     error instanceof Error &&
