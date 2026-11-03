@@ -51,7 +51,7 @@ function originFromClientData(clientDataJSON: string): string | null {
 
 function expectedOrigins(
   clientDataJSON: string,
-  requestOrigin?: string | null
+  requestOrigin?: string | null | undefined
 ): string[] {
   const configured = getWebAuthnConfig().origins
   return originsForAssertion(
@@ -93,16 +93,20 @@ export async function createRegistrationOptions(input: {
 }
 
 export async function createAuthenticationOptions(input: {
-  allowCredentials?: Array<{
-    id: string
-    transports?: AuthenticatorTransportFuture[]
-  }>
+  allowCredentials?:
+    | Array<{
+        id: string
+        transports?: AuthenticatorTransportFuture[]
+      }>
+    | undefined
 }): Promise<PublicKeyCredentialRequestOptionsJSON> {
   const { rpID } = getWebAuthnConfig()
 
   return generateAuthenticationOptions({
     rpID,
-    allowCredentials: input.allowCredentials,
+    ...(input.allowCredentials !== undefined
+      ? { allowCredentials: input.allowCredentials }
+      : {}),
     userVerification: 'required',
     timeout: 60_000
   })
@@ -111,7 +115,7 @@ export async function createAuthenticationOptions(input: {
 export async function verifyRegistration(input: {
   response: RegistrationResponseJSON
   expectedChallenge: string
-  origin?: string | null
+  origin?: string | null | undefined
 }): Promise<VerifiedRegistrationResponse> {
   const { rpID } = getWebAuthnConfig()
 
@@ -131,7 +135,7 @@ export async function verifyAuthentication(input: {
   response: AuthenticationResponseJSON
   expectedChallenge: string
   credential: WebAuthnCredential
-  origin?: string | null
+  origin?: string | null | undefined
 }): Promise<VerifiedAuthenticationResponse> {
   const { rpID } = getWebAuthnConfig()
 

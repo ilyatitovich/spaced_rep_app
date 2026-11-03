@@ -59,9 +59,10 @@ export function detectCodeLang(code: string): CodeLang {
     .filter(s => s.score >= DETECT_THRESHOLD)
     .sort((a, b) => b.score - a.score)
 
-  if (scored.length === 0) return 'code'
-  if (scored.length > 1 && scored[0].score === scored[1].score) return 'code'
-  return scored[0].lang
+  const top = scored[0]
+  const next = scored[1]
+  if (!top || (next && top.score === next.score)) return 'code'
+  return top.lang
 }
 
 /** Prefer a known class alias; otherwise guess from code. */

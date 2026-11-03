@@ -1,5 +1,5 @@
 import Modal from './modal'
-import Button from '../ui/button'
+import Button from '@/components/ui/button'
 
 interface ProUpgradeModalProps {
   isOpen: boolean

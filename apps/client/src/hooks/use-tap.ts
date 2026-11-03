@@ -1,7 +1,7 @@
 import type { TouchEvent } from 'react'
 import { useRef, useCallback } from 'react'
 
-type UseTapOptions = {
+interface UseTapOptions {
   maxDistance?: number // px
   maxDuration?: number // ms
 }
@@ -15,6 +15,7 @@ export function useTap(callback?: () => void, options: UseTapOptions = {}) {
 
   const onTouchStart = useCallback((e: TouchEvent) => {
     const t = e.touches[0]
+    if (!t) return
     startX.current = t.clientX
     startY.current = t.clientY
     startTime.current = Date.now()
@@ -23,6 +24,7 @@ export function useTap(callback?: () => void, options: UseTapOptions = {}) {
   const onTouchEnd = useCallback(
     (e: TouchEvent) => {
       const t = e.changedTouches[0]
+      if (!t) return
       const dx = Math.abs(t.clientX - startX.current)
       const dy = Math.abs(t.clientY - startY.current)
       const dt = Date.now() - startTime.current

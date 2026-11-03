@@ -19,7 +19,7 @@ const applyFilters = (allTopics: Topic[], searchQuery: string) => ({
   archivedTopics: allTopics.filter(t => t.isArchived)
 })
 
-type TopicsStore = {
+interface TopicsStore {
   isLoading: boolean
   topics: Topic[]
   archivedTopics: Topic[]

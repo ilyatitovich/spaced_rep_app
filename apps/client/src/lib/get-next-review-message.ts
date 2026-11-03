@@ -16,7 +16,7 @@ function getNextReviewDate(
 
   for (let offset = minOffset; offset < minOffset + CYCLE_LENGTH; offset++) {
     const index = (cycleDay + offset) % CYCLE_LENGTH
-    if (LEITNER_64_DAY_SCHEDULE[index].includes(level)) {
+    if (LEITNER_64_DAY_SCHEDULE[index]?.includes(level)) {
       return addDays(from, offset)
     }
   }

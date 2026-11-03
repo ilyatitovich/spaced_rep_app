@@ -1,6 +1,8 @@
 import { useSyncExternalStore } from 'react'
 
-export const MOBILE_BREAKPOINT = 640 // px
+import { MOBILE_BREAKPOINT } from '@/lib/constants'
+
+export { MOBILE_BREAKPOINT }
 
 function subscribe(callback: () => void) {
   const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`)

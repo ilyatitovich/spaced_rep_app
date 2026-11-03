@@ -15,15 +15,15 @@ import { getWsUrl } from './sync-http.client'
 export type WsConnectionState =
   'disconnected' | 'connecting' | 'authenticating' | 'active'
 
-type WsListeners = {
-  onDelta?: (delta: PullDelta) => void
-  onPushAck?: (ack: PushAck) => void
-  onConflict?: (conflict: TopicConflictResolved) => void
-  onStateChange?: (state: WsConnectionState) => void
-  onTokenExpired?: () => void
-  onPlanRequired?: () => void
-  onDeviceRevoked?: () => void
-  onProtocolMismatch?: () => void
+interface WsListeners {
+  onDelta?: ((delta: PullDelta) => void) | undefined
+  onPushAck?: ((ack: PushAck) => void) | undefined
+  onConflict?: ((conflict: TopicConflictResolved) => void) | undefined
+  onStateChange?: ((state: WsConnectionState) => void) | undefined
+  onTokenExpired?: (() => void) | undefined
+  onPlanRequired?: (() => void) | undefined
+  onDeviceRevoked?: (() => void) | undefined
+  onProtocolMismatch?: (() => void) | undefined
 }
 
 const HIGH_WATER_BYTES = 512 * 1024

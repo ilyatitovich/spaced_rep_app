@@ -4,7 +4,7 @@ import { Share } from 'lucide-react'
 import Modal from './modal'
 import { usePwaInstall, usePwaUpdate } from '@/hooks'
 import { isOnboardingComplete } from '@/lib'
-import Button from '../ui/button'
+import Button from '@/components/ui/button'
 
 type Kind =
   | 'update'

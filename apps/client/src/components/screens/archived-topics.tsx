@@ -13,7 +13,7 @@ import {
 import { useSelectionMode } from '@/hooks'
 import { useTopicsStore } from '@/store'
 
-type ArchivedTopicsScreenProps = {
+interface ArchivedTopicsScreenProps {
   isOpen: boolean
 }
 

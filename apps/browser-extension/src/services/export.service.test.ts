@@ -1,7 +1,7 @@
-import { emptyCardData } from './card-codec'
-import { exportCards } from './export'
-import { getCard, saveCard } from '../services/cards.service'
-import { getOutbox } from '../services/outbox.service'
+import { emptyCardData } from '@ext/lib/card-codec'
+import { getCard, saveCard } from './cards.service'
+import { exportCards } from './export.service'
+import { getOutbox } from './outbox.service'
 
 const values: Record<string, unknown> = {}
 

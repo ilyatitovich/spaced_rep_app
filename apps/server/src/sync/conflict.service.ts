@@ -107,16 +107,14 @@ export async function purgeSyncedTombstones(userId: string): Promise<void> {
   await prisma.card.deleteMany({
     where: {
       userId,
-      deletedAt: { not: null },
-      OR: [{ deletedAt: { lte: minPulled } }, { deletedAt: { lt: ttlCutoff } }]
+      deletedAt: { not: null, lte: minPulled }
     }
   })
 
   await prisma.topic.deleteMany({
     where: {
       userId,
-      deletedAt: { not: null },
-      OR: [{ deletedAt: { lte: minPulled } }, { deletedAt: { lt: ttlCutoff } }]
+      deletedAt: { not: null, lte: minPulled }
     }
   })
 }

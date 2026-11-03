@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import Modal from '../modal'
+import Modal from '@/components/modals/modal'
 
 describe('Modal header', () => {
   it('shows CloseButton on center and skips it on sheet', () => {

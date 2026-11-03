@@ -1,8 +1,8 @@
 import { joinNumbers } from '@/lib'
 
-import Button from './button'
+import Button from '@/components/ui/button'
 
-type TestButtonProps = {
+interface TestButtonProps {
   todayLevels: number[]
   onClick: () => void
 }

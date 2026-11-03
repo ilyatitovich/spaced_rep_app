@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import TurnstileWidget from './turnstile-widget'
 import { getAuthErrorMessage } from '@/lib/auth-errors'
 import { OTPInput, REGEXP_ONLY_DIGITS, type SlotProps } from 'input-otp'
-import Button from '../ui/button'
+import Button from '@/components/ui/button'
 
 const OTP_LENGTH = 6
 const RESEND_COOLDOWN_SECONDS = 60
@@ -14,7 +14,7 @@ function digitsOnly(text: string): string {
   return text.replace(/\D/g, '').slice(0, OTP_LENGTH)
 }
 
-type AuthOtpFormProps = {
+interface AuthOtpFormProps {
   email: string
   onVerify: (token: string) => Promise<void>
   onResend: (turnstileToken: string) => Promise<void>
@@ -23,7 +23,7 @@ type AuthOtpFormProps = {
 
 function maskEmail(email: string): string {
   const [local, domain] = email.split('@')
-  if (!domain) return email
+  if (!local || !domain) return email
   const visible = local.slice(0, 1)
   return `${visible}${'*'.repeat(Math.max(local.length - 1, 1))}@${domain}`
 }

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { canFocusForKeyboard, runInTapFocus } from '../pwa'
+import { canFocusForKeyboard, runInTapFocus } from '@/lib/pwa'
 
 describe('canFocusForKeyboard', () => {
   afterEach(() => {

@@ -23,11 +23,12 @@ import {
 import { Card as CardModel, Topic } from '@/models'
 import { getCardsByTopicAndLevel, updateCard, updateTopic } from '@/services'
 
-type TestScreenProps = {
+interface TestScreenProps {
   isOpen: boolean
   topic: Topic
 }
 
+// oxlint-disable-next-line sonarjs/cognitive-complexity
 export default function TestScreen({ isOpen, topic }: TestScreenProps) {
   const [isFlipped, setIsFlipped] = useState(false)
   const [cards, setCards] = useState<CardModel[] | null>(null)

@@ -6,7 +6,7 @@ import { UnauthorizedError } from '../../shared/lib/errors.js'
 const encoder = new TextEncoder()
 const jwtSecret = encoder.encode(env.JWT_SECRET)
 
-export type AccessTokenPayload = {
+export interface AccessTokenPayload {
   userId: string
   sessionId: string
 }

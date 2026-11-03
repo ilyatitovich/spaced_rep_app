@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 
-type UseFontSizeOptions = {
+interface UseFontSizeOptions {
   small?: number // fallback for <= 50
   medium?: number // for > 50
   large?: number // for > 70

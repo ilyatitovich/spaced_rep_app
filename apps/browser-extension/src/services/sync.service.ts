@@ -7,13 +7,13 @@ import {
   type MediaDownloadPlanItem,
   type MediaUploadPlanItem,
   type SyncMediaApi
-} from '../../../client/src/lib/sync-media'
-import { API_URL, freshSession } from '../lib/auth'
-import { decodeCardData } from '../lib/card-codec'
-import { readValue, writeValue } from '../lib/chrome-store'
-import { DEVICE_KEY, WATERMARK_KEY } from '../lib/keys'
+} from '@/lib/sync-media'
+import { API_URL, freshSession } from '@ext/lib/auth'
+import { decodeCardData } from '@ext/lib/card-codec'
+import { readValue, writeValue } from '@ext/lib/chrome-store'
+import { DEVICE_KEY, WATERMARK_KEY } from '@ext/lib/keys'
 import type { Topic } from '@/models/topic.model'
-import type { Card } from '../types'
+import type { Card } from '@ext/types'
 import { getCard } from './cards.service'
 import {
   getOutbox,
@@ -128,7 +128,11 @@ export async function bootstrapTopics(): Promise<Topic[]> {
   return topics
 }
 
-type OutboxPair = { item: OutboxItem; card?: Card; topic?: Topic }
+interface OutboxPair {
+  item: OutboxItem
+  card?: Card
+  topic?: Topic
+}
 
 /** Decode chrome.storage base64 media → wire refs; collect unique buffers for upload. */
 export async function buildOutboxMutations(
@@ -205,6 +209,7 @@ export async function buildOutboxMutations(
   return { mutations, mediaByHash }
 }
 
+// oxlint-disable-next-line sonarjs/cognitive-complexity
 export async function flushOutbox(): Promise<void> {
   if (!(await hasPro())) return
   const now = Date.now()

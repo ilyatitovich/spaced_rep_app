@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { describeSyncDevice } from '../get-device-platform'
+import { describeSyncDevice } from '@/lib/get-device-platform'
 
 const UAS = {
   iphone:

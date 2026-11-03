@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-type TurnstileWidgetProps = {
+interface TurnstileWidgetProps {
   onToken: (token: string | null) => void
 }
 

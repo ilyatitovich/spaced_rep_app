@@ -5,9 +5,12 @@ const MAX_REMOTE_IMAGE_BYTES = 5 * 1024 * 1024
 
 export type MediaCacheRecord = MediaDBRecord & { url: string }
 
-export type MediaCacheStats = { bytes: number; count: number }
+export interface MediaCacheStats {
+  bytes: number
+  count: number
+}
 
-type CacheRemoteImageOptions = {
+interface CacheRemoteImageOptions {
   fetch?: typeof globalThis.fetch
   isOnline?: () => boolean
   getCached?: (url: string) => Promise<MediaCacheRecord | undefined>

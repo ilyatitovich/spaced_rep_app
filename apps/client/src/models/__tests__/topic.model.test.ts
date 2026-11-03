@@ -5,7 +5,7 @@ import {
   getNextUpdateDate,
   reactivateTopic,
   setStartWeek
-} from '../topic.model'
+} from '@/models/topic.model'
 
 afterEach(() => {
   vi.useRealTimers()

@@ -5,7 +5,7 @@ import { STORES, withTransaction } from '@/lib/db'
 export type { EmbeddedCardMedia } from '@/lib/card-media-stats'
 export { sumEmbeddedCardMedia } from '@/lib/card-media-stats'
 
-export type StorageUsage = {
+export interface StorageUsage {
   usage: number
   quota: number
   estimateAvailable: boolean

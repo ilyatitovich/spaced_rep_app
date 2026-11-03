@@ -1,18 +1,18 @@
 import JSZip from 'jszip'
 import type { Database, SqlJsStatic } from 'sql.js'
 
-export type AnkiMediaFile = {
+export interface AnkiMediaFile {
   buffer: ArrayBuffer
   type: string
 }
 
-export type ParsedAnkiNote = {
+export interface ParsedAnkiNote {
   fields: string[]
   /** Parallel to `fields`; empty when the note type is unknown. */
   fieldNames: string[]
 }
 
-export type ParsedApkg = {
+export interface ParsedApkg {
   notes: ParsedAnkiNote[]
   /** Original Anki media filename → file bytes */
   mediaByName: Map<string, AnkiMediaFile>
@@ -119,8 +119,9 @@ async function readMediaMap(zip: JSZip): Promise<Map<string, AnkiMediaFile>> {
 function readFieldNamesByMid(db: Database): Map<number, string[]> {
   try {
     const result = db.exec('SELECT models FROM col')
-    if (!result.length) return new Map()
-    const raw = result[0].values[0]?.[0]
+    const first = result[0]
+    if (!first) return new Map()
+    const raw = first.values[0]?.[0]
     if (typeof raw !== 'string') return new Map()
 
     const models = JSON.parse(raw) as Record<
@@ -146,13 +147,14 @@ function readNotes(dbBytes: Uint8Array, SQL: SqlJsStatic): ParsedAnkiNote[] {
   try {
     const fieldNamesByMid = readFieldNamesByMid(db)
     const result = db.exec('SELECT mid, flds FROM notes')
-    if (!result.length) return []
+    const first = result[0]
+    if (!first) return []
 
-    const midCol = result[0].columns.indexOf('mid')
-    const fldsCol = result[0].columns.indexOf('flds')
+    const midCol = first.columns.indexOf('mid')
+    const fldsCol = first.columns.indexOf('flds')
     if (fldsCol < 0) return []
 
-    return result[0].values
+    return first.values
       .map(row => {
         const flds = row[fldsCol]
         if (typeof flds !== 'string') return null

@@ -101,6 +101,7 @@ Vitest (unit + integration) and Playwright (e2e). See **[testing/README.md](test
 pnpm test:unit
 pnpm test:integration   # needs Docker + spaced_rep_test DB
 pnpm test:e2e
+pnpm test:mutation      # Stryker; unit projects only
 ```
 
 Linting uses **oxlint** (see [docs/oxlint-migration.md](docs/oxlint-migration.md)). Pre-commit hooks run via Husky.
@@ -108,6 +109,7 @@ Linting uses **oxlint** (see [docs/oxlint-migration.md](docs/oxlint-migration.md
 ```bash
 pnpm lint
 pnpm format:check
+pnpm jscpd
 ```
 
 ## 📝 License

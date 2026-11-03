@@ -2,7 +2,7 @@ import { Monitor, Smartphone, Tablet, Trash2 } from 'lucide-react'
 
 import type { SyncDeviceSummary } from '@/lib/api'
 import { describeSyncDevice, formatLastSeen } from '@/lib'
-import Button from '../ui/button'
+import Button from '@/components/ui/button'
 
 interface SyncedDeviceProps {
   device: SyncDeviceSummary

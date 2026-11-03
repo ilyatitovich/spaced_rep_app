@@ -3,19 +3,19 @@ import toast from 'react-hot-toast'
 
 import { appendSideBlocks, isSideEmpty } from '@/lib/check-content'
 import type { CardData, CardHandle, SideBlock, SideName } from '@/types'
-import { getActivePage } from '../lib/active-page'
+import { getActivePage } from '@ext/lib/active-page'
 import {
   decodeCardData,
   emptyCardData,
   encodeCardData
-} from '../lib/card-codec'
-import { normalizeCapture } from '../lib/capture'
-import { readValue, removeKeys, writeValue } from '../lib/chrome-store'
-import { DRAFT_KEY, PENDING_KEY } from '../lib/keys'
-import { saveCard, updateCard } from '../services/cards.service'
-import { flushOutbox } from '../services/sync.service'
-import { ensureTopicForPage } from '../services/topics.service'
-import type { Card, CapturedContent, RuntimeMessage } from '../types'
+} from '@ext/lib/card-codec'
+import { normalizeCapture } from '@ext/lib/capture'
+import { readValue, removeKeys, writeValue } from '@ext/lib/chrome-store'
+import { DRAFT_KEY, PENDING_KEY } from '@ext/lib/keys'
+import { saveCard, updateCard } from '@ext/services/cards.service'
+import { flushOutbox } from '@ext/services/sync.service'
+import { ensureTopicForPage } from '@ext/services/topics.service'
+import type { Card, CapturedContent, RuntimeMessage } from '@ext/types'
 
 function isCaptureMessage(value: unknown): value is RuntimeMessage {
   if (typeof value !== 'object' || value === null || !('type' in value)) {

@@ -3,7 +3,7 @@ import { getTestPrisma } from '../../db/prisma.js'
 import { userFactory } from '../../factories/user.factory.js'
 import { createTestAgent } from '../http/supertest-app.js'
 
-export type AuthTokens = {
+export interface AuthTokens {
   accessToken: string
   refreshToken: string
   expiresIn: number
@@ -19,7 +19,7 @@ export async function createSessionForUser(input?: {
   authMethod?: AuthMethod
 }): Promise<AuthTokens> {
   const user = await userFactory.create({
-    email: input?.email,
+    ...(input?.email !== undefined ? { email: input.email } : {}),
     emailVerifiedAt: new Date()
   })
 
@@ -59,7 +59,9 @@ export async function revokeSession(accessToken: string): Promise<void> {
 }
 
 export async function createAuthenticatedAgent(email?: string) {
-  const tokens = await createSessionForUser({ email })
+  const tokens = await createSessionForUser(
+    email !== undefined ? { email } : undefined
+  )
   const agent = await createTestAgent()
   return {
     agent,

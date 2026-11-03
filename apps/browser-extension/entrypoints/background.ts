@@ -1,8 +1,8 @@
-import { isAppUrl } from '../src/lib/app-url'
-import type { RawCapture } from '../src/lib/capture'
-import { PENDING_KEY } from '../src/lib/keys'
-import { flushOutbox } from '../src/services/sync.service'
-import type { RuntimeMessage, SideName } from '../src/types'
+import { isAppUrl } from '@ext/lib/app-url'
+import type { RawCapture } from '@ext/lib/capture'
+import { PENDING_KEY } from '@ext/lib/keys'
+import { flushOutbox } from '@ext/services/sync.service'
+import type { RuntimeMessage, SideName } from '@ext/types'
 
 async function activeTab(): Promise<chrome.tabs.Tab> {
   const [tab] = await chrome.tabs.query({
@@ -23,7 +23,7 @@ async function send(message: RuntimeMessage): Promise<void> {
 
 async function captureSelection(side: SideName): Promise<void> {
   const tab = await activeTab()
-  const [{ result }] = await chrome.scripting.executeScript({
+  const [injected] = await chrome.scripting.executeScript({
     target: { tabId: tab.id! },
     func: () => {
       const selection = window.getSelection()
@@ -45,7 +45,8 @@ async function captureSelection(side: SideName): Promise<void> {
       }
     }
   })
-  await send({ type: 'RAW_CAPTURE', side, raw: result as RawCapture })
+  if (!injected?.result) throw new Error('Nothing selected')
+  await send({ type: 'RAW_CAPTURE', side, raw: injected.result })
 }
 
 async function captureScreenshot(side: SideName): Promise<void> {

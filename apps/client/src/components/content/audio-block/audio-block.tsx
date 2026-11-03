@@ -9,14 +9,14 @@ import { useCallback, useRef, useState } from 'react'
 import { Play, Square } from 'lucide-react'
 
 import type { MediaDBRecord } from '@/types'
-import MediaToolbar from '../media-toolbar'
-import ObjectUrl from '../object-url'
+import MediaToolbar from '@/components/content/media-toolbar'
+import ObjectUrl from '@/components/content/object-url'
 import { AUDIO_FILE_ACCEPT } from '@/lib/constants'
-import Button from '../../ui/button'
+import Button from '@/components/ui/button'
 
-type AudioBlockProps = {
+interface AudioBlockProps {
   content: MediaDBRecord
-  isEditable?: boolean
+  isEditable?: boolean | undefined
   onChange?: (content: MediaDBRecord) => void
   onRemove?: () => void
   onFocus?: () => void

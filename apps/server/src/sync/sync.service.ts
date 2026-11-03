@@ -28,6 +28,8 @@ import {
   pruneAppliedOps,
   wasOpApplied
 } from './idempotency.service.js'
+
+const RECORD_NOT_OWNED = 'Record not owned by user'
 import { publishFanout } from './fanout.service.js'
 import {
   cardRecordToDb,
@@ -84,7 +86,7 @@ export async function reportDevice(input: {
   userId: string
   deviceId: string
   lastPulledAt?: string
-  userAgent?: string | null
+  userAgent?: string | null | undefined
 }): Promise<void> {
   await prisma.$transaction(async tx => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${input.userId}))`
@@ -160,7 +162,7 @@ async function applyTopicUpsert(input: {
 
   const existing = await prisma.topic.findUnique({ where: { id: topic.id } })
   if (existing && existing.userId !== input.userId) {
-    throw new BadRequestError('Record not owned by user', 'FORBIDDEN')
+    throw new BadRequestError(RECORD_NOT_OWNED, 'FORBIDDEN')
   }
 
   if (
@@ -188,7 +190,7 @@ async function applyTopicUpsert(input: {
         pivot: data.pivot,
         week: data.week,
         nextUpdateDate: data.nextUpdateDate,
-        isArchived: data.isArchived,
+        isArchived: data.isArchived ?? false,
         updatedAt: data.updatedAt,
         deletedAt: null
       }
@@ -217,7 +219,7 @@ async function applyTopicUpsert(input: {
         pivot: data.pivot,
         week: data.week,
         nextUpdateDate: data.nextUpdateDate,
-        isArchived: data.isArchived,
+        isArchived: data.isArchived ?? false,
         updatedAt: data.updatedAt,
         deletedAt: null
       }
@@ -248,9 +250,17 @@ async function applyCardUpsert(input: {
     throw new BadRequestError('Card upsert missing payload', 'VALIDATION_ERROR')
   }
 
+  const topic = await prisma.topic.findUnique({
+    where: { id: card.topicId },
+    select: { userId: true }
+  })
+  if (!topic || topic.userId !== input.userId) {
+    throw new BadRequestError('Topic not owned by user', 'FORBIDDEN')
+  }
+
   const existing = await prisma.card.findUnique({ where: { id: card.id } })
   if (existing && existing.userId !== input.userId) {
-    throw new BadRequestError('Record not owned by user', 'FORBIDDEN')
+    throw new BadRequestError(RECORD_NOT_OWNED, 'FORBIDDEN')
   }
 
   if (
@@ -273,9 +283,9 @@ async function applyCardUpsert(input: {
     create: data,
     update: {
       topicId: data.topicId,
-      level: data.level,
+      level: data.level ?? 0,
       data: data.data,
-      reviewDate: data.reviewDate,
+      reviewDate: data.reviewDate ?? null,
       updatedAt: data.updatedAt,
       deletedAt: null
     }
@@ -295,8 +305,9 @@ async function applyDelete(input: {
     const existing = await prisma.topic.findUnique({ where: { id: recordId } })
     if (!existing) return
     if (existing.userId !== input.userId) {
-      throw new BadRequestError('Record not owned by user', 'FORBIDDEN')
+      throw new BadRequestError(RECORD_NOT_OWNED, 'FORBIDDEN')
     }
+    if (existing.updatedAt.getTime() > now.getTime()) return
     if (input.hardDelete) {
       await prisma.topic
         .delete({ where: { id: recordId } })
@@ -313,8 +324,9 @@ async function applyDelete(input: {
   const existing = await prisma.card.findUnique({ where: { id: recordId } })
   if (!existing) return
   if (existing.userId !== input.userId) {
-    throw new BadRequestError('Record not owned by user', 'FORBIDDEN')
+    throw new BadRequestError(RECORD_NOT_OWNED, 'FORBIDDEN')
   }
+  if (existing.updatedAt.getTime() > now.getTime()) return
   if (input.hardDelete) {
     await prisma.card.delete({ where: { id: recordId } }).catch(() => undefined)
   } else {
@@ -325,6 +337,7 @@ async function applyDelete(input: {
   }
 }
 
+// oxlint-disable-next-line sonarjs/cognitive-complexity
 export async function applyPushBatch(input: {
   userId: string
   deviceId: string
@@ -363,6 +376,7 @@ export async function applyPushBatch(input: {
       }
 
       if (mutation.operation === 'upsert') {
+        // oxlint-disable-next-line sonarjs/nested-control-flow
         if (mutation.table === 'topics') {
           const result = await applyTopicUpsert({
             userId: input.userId,
@@ -426,13 +440,6 @@ export async function applyPushBatch(input: {
 
   await pruneAppliedOps(input.userId)
 
-  const delta = await pullChanges({
-    userId: input.userId,
-    since: EPOCH_ISO,
-    // Only broadcast what changed recently — use last 5s window for fanout
-    limit: 100
-  })
-
   // Narrow fanout: rebuild delta from accepted mutations' records
   const fanoutRecords: SyncRecord[] = []
   for (const mutation of ordered) {
@@ -482,7 +489,11 @@ export async function applyPushBatch(input: {
       kind: 'pullDelta',
       pullDelta: {
         records: fanoutRecords,
-        watermark: delta.watermark,
+        watermark: new Date(
+          Math.max(
+            ...fanoutRecords.map(r => (r.topic ?? r.card)?.updatedAt ?? 0)
+          )
+        ).toISOString(),
         more: false
       }
     }
@@ -542,21 +553,33 @@ export async function pullChanges(input: {
     })
   ])
 
+  const merged = [
+    ...topics.map(row => ({ kind: 'topic' as const, row })),
+    ...cards.map(row => ({ kind: 'card' as const, row }))
+  ].sort(
+    (x, y) =>
+      x.row.updatedAt.getTime() - y.row.updatedAt.getTime() ||
+      x.row.id.localeCompare(y.row.id)
+  )
+  const selected = merged.slice(0, limit)
+
   // Topics first for FK ordering on client
   const records: SyncRecord[] = [
-    ...topics.map(t => ({ topic: dbTopicToRecord(t) })),
-    ...cards.map(c => ({ card: dbCardToRecord(c) }))
+    ...selected.flatMap(r =>
+      r.kind === 'topic' ? [{ topic: dbTopicToRecord(r.row) }] : []
+    ),
+    ...selected.flatMap(r =>
+      r.kind === 'card' ? [{ card: dbCardToRecord(r.row) }] : []
+    )
   ]
 
-  let maxMs = since.getTime()
-  for (const t of topics) maxMs = Math.max(maxMs, t.updatedAt.getTime())
-  for (const c of cards) maxMs = Math.max(maxMs, c.updatedAt.getTime())
-
-  const more = topics.length + cards.length >= limit * 2
+  const last = selected.at(-1)
+  const more =
+    merged.length > limit || topics.length === limit || cards.length === limit
 
   return {
     records,
-    watermark: new Date(maxMs).toISOString(),
+    watermark: (last?.row.updatedAt ?? since).toISOString(),
     more
   }
 }
@@ -565,7 +588,7 @@ export async function bootstrap(input: {
   userId: string
   deviceId: string
   lastPulledAt?: string
-  userAgent?: string | null
+  userAgent?: string | null | undefined
 }): Promise<PullDelta> {
   const since = input.lastPulledAt || EPOCH_ISO
   const delta = await pullChanges({ userId: input.userId, since })
@@ -583,7 +606,7 @@ export async function finishSyncCycle(input: {
   userId: string
   deviceId: string
   lastPulledAt: string
-  userAgent?: string | null
+  userAgent?: string | null | undefined
 }): Promise<void> {
   await reportDevice({
     userId: input.userId,

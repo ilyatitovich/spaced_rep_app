@@ -4,10 +4,10 @@ import { Logo } from '@/components'
 import { completeOnboarding } from '@/lib'
 import { useState } from 'react'
 import { AuthStep } from '@/types'
-import AuthMethods from '../auth/auth-methods'
-import Button from '../ui/button'
+import AuthMethods from '@/components/auth/auth-methods'
+import Button from '@/components/ui/button'
 
-type StartScreenProps = {
+interface StartScreenProps {
   onStart: () => void
 }
 

@@ -19,7 +19,7 @@ import type { AuthCapabilities } from '@/providers'
 import { initialSync, setSyncEntitlement, setSyncUser } from '@/services'
 import { useSettingsStore } from '@/store/settings-store'
 
-type AuthContextValue = {
+interface AuthContextValue {
   session: AuthSession | null
   user: AuthUser | null
   isLoading: boolean

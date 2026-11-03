@@ -12,6 +12,8 @@ export class Day {
   }
 
   public setLevelList(pivot: number): void {
-    this.todayLevels = LEITNER_64_DAY_SCHEDULE[getCycleDay(pivot, this.date)]
+    const levels = LEITNER_64_DAY_SCHEDULE[getCycleDay(pivot, this.date)]
+    if (!levels) throw new Error('Schedule index out of range')
+    this.todayLevels = levels
   }
 }

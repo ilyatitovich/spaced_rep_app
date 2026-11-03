@@ -8,7 +8,7 @@ import type { CardData, CardHandle, SideBlock, SideName } from '@/types'
 
 const isIos = () => /iPad|iPhone|iPod/.test(navigator.userAgent)
 
-type CardProps = {
+interface CardProps {
   data: CardData | unknown
   isFlipped: boolean
   isEditable?: boolean

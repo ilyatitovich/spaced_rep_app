@@ -1,4 +1,4 @@
-import { emptyCardData } from '../lib/card-codec'
+import { emptyCardData } from '@ext/lib/card-codec'
 import { createBackup } from './backup.service'
 import { saveCard } from './cards.service'
 import { createTopic } from './topics.service'

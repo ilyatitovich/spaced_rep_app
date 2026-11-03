@@ -13,7 +13,7 @@ import { blobToRecord, getCroppedImage } from '@/lib/image'
 
 const Cropper = lazy(() => import('react-easy-crop'))
 
-type ImageEditorScreenProps = {
+interface ImageEditorScreenProps {
   isOpen: boolean
   imageUrl: string
   onClose: () => void
@@ -38,19 +38,21 @@ export default function ImageEditorScreen({
   const [naturalAspect, setNaturalAspect] = useState(4 / 3)
 
   useEffect(() => {
-    if (isOpen) {
-      setHasOpened(true)
-      // Paint closed (translate-y-100vh) first, then open — otherwise first paint skips the enter transition.
-      let inner = 0
-      const outer = requestAnimationFrame(() => {
-        inner = requestAnimationFrame(() => setIsVisible(true))
-      })
-      return () => {
-        cancelAnimationFrame(outer)
-        cancelAnimationFrame(inner)
-      }
+    if (!isOpen) {
+      setIsVisible(false)
+      return undefined
     }
-    setIsVisible(false)
+
+    setHasOpened(true)
+    // Paint closed (translate-y-100vh) first, then open — otherwise first paint skips the enter transition.
+    let inner = 0
+    const outer = requestAnimationFrame(() => {
+      inner = requestAnimationFrame(() => setIsVisible(true))
+    })
+    return () => {
+      cancelAnimationFrame(outer)
+      cancelAnimationFrame(inner)
+    }
   }, [isOpen])
 
   const handleCropComplete = useCallback((_: Area, pixels: Area) => {

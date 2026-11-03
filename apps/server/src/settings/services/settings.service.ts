@@ -65,9 +65,9 @@ export async function getSettingsDocument(
 export async function patchPreferences(
   userId: string,
   input: {
-    theme?: string
-    language?: string
-    timezone?: string
+    theme?: string | undefined
+    language?: string | undefined
+    timezone?: string | undefined
     updatedAt: number
     deviceId: string
   }
@@ -107,8 +107,8 @@ export async function patchPreferences(
 export async function patchLearning(
   userId: string,
   input: {
-    weekStartsOn?: number
-    dailyNewCardLimit?: number | null
+    weekStartsOn?: number | undefined
+    dailyNewCardLimit?: number | null | undefined
     updatedAt: number
     deviceId: string
   }
@@ -149,9 +149,9 @@ export async function patchLearning(
 export async function patchNotifications(
   userId: string,
   input: {
-    enabled?: boolean
-    timezone?: string
-    reminders?: ReminderDto[]
+    enabled?: boolean | undefined
+    timezone?: string | undefined
+    reminders?: ReminderDto[] | undefined
     updatedAt: number
     deviceId: string
   }

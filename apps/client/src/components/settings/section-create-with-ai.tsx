@@ -7,7 +7,7 @@ import { SettingsActionRow, SettingsGroup } from './settings-ui'
 const SKILL_URL = '/llm/SKILL.md'
 const PROMPT_URL = '/llm/prompt.md'
 
-type SectionCreateWithAiProps = {
+interface SectionCreateWithAiProps {
   isOpen: boolean
 }
 

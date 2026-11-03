@@ -7,8 +7,8 @@ import {
 } from 'react'
 
 import Modal from './modal'
-import Spinner from '../ui/spinner'
-import Button from '../ui/button'
+import Spinner from '@/components/ui/spinner'
+import Button from '@/components/ui/button'
 import { isAnkiApkg } from '@/lib'
 import {
   exportAppData,
@@ -20,13 +20,15 @@ import {
 import { useTopicsStore } from '@/store'
 import toast from 'react-hot-toast'
 
+const IMPORT_APP = 'import-app' as const
+
 type FileModalProps = {
   isOpen: boolean
   onClose: () => void
 } & (
   | { kind: 'export-app' }
   | { kind: 'export-topic'; topicId: string }
-  | { kind: 'import-app' }
+  | { kind: typeof IMPORT_APP }
   | {
       kind: 'import-cards'
       topicId: string
@@ -37,7 +39,7 @@ type FileModalProps = {
 const TITLES = {
   'export-app': 'Export All Data',
   'export-topic': 'Export Topic',
-  'import-app': 'Import All Data',
+  [IMPORT_APP]: 'Import All Data',
   'import-cards': 'Import Cards'
 } as const
 
@@ -122,7 +124,7 @@ export default function FileModal(props: FileModalProps) {
     setProgress(null)
 
     try {
-      if (kind === 'import-app') {
+      if (kind === IMPORT_APP) {
         const { topics, cards } = await importAppData(source)
         await loadTopics()
         finish(`Imported ${topics} topics and ${cards} cards`, 'success')
@@ -184,7 +186,7 @@ export default function FileModal(props: FileModalProps) {
     void runImport(file)
   }
 
-  const isImport = kind === 'import-app' || kind === 'import-cards'
+  const isImport = kind === IMPORT_APP || kind === 'import-cards'
 
   return (
     <Modal
@@ -240,14 +242,14 @@ export default function FileModal(props: FileModalProps) {
             className="w-full"
             onClick={() => fileInputRef.current?.click()}
           >
-            {kind === 'import-app'
+            {kind === IMPORT_APP
               ? 'Drop or choose JSON'
               : 'Drop or choose JSON or Anki (.apkg)'}
           </Button>
           <input
             ref={fileInputRef}
             type="file"
-            accept={kind === 'import-app' ? 'application/json' : '*/*'}
+            accept={kind === IMPORT_APP ? 'application/json' : '*/*'}
             className="hidden"
             onChange={handleFileSelect}
           />

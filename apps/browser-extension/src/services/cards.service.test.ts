@@ -1,6 +1,6 @@
-import { emptyCardData } from '../lib/card-codec'
-import { CARDS_KEY } from '../lib/keys'
-import type { Card } from '../types'
+import { emptyCardData } from '@ext/lib/card-codec'
+import { CARDS_KEY } from '@ext/lib/keys'
+import type { Card } from '@ext/types'
 import { deleteCards, getCard, saveCard, updateCard } from './cards.service'
 import { getOutbox } from './outbox.service'
 

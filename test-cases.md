@@ -16,26 +16,41 @@
 
 **Priority:** Medium
 
-## TC-2: Guest user deletes cards before sign-in — sync queue cleanup
+## TC-2: Sync queue — idle coalesce vs in-flight ack
 
 **Preconditions:**
 
-- User is not authenticated (guest/offline mode)
-- TC-1 has been executed: 800+ cards have been imported and are present in the sync queue
+- Backend sync is configured (queue writes are enabled)
+- A card (or topic) id is known
+
+### Idle path (fixed)
 
 **Steps:**
 
-1. Without signing in, delete all imported cards
-2. Check the contents of the sync queue
-3. Sign in a pro account
-4. Check network requests and server state
+1. Enqueue an upsert for the record
+2. Before any push starts, enqueue a delete for the same record
+3. Inspect the sync queue; sign in a Pro account and observe network/server if desired
 
 **Expected Result:**
 
-- After step 2: the sync queue contains no entries for the deleted cards/topics — create mutations for them have been removed/collapsed (net-zero), not left as orphaned entries
-- After step 4: no requests are sent to the server for the deleted cards; no corresponding data appears on the server
+- The pending upsert and delete coalesce to net-zero: the queue has no entry for that record
+- Nothing is created on the server for that record
 
-**Actual Result (current bug):**
-Cards/topics remain in the sync queue after deletion. Upon sign-in, mutations for the deleted cards are synced to the server, creating orphaned data.
+**Coverage:** Unit coalesce (`coalesceQueuedOperation`) and the client idle create-then-delete sync invariant.
 
-**Priority:** High — leads to orphaned data on the server and unnecessary sync load on first sign-in
+### In-flight ack path (under test)
+
+**Steps:**
+
+1. Enqueue an upsert and start a push so that upsert is in flight
+2. While the push is in flight, enqueue a delete (or edit) for the same record
+3. The server acks the in-flight upsert
+4. Inspect the sync queue, then allow sync to continue
+
+**Expected Result:**
+
+- The ack removes only the acked upsert opId
+- The delete/edit that replaced it on the same record remains queued under a new opId and is pushed next
+- The server ends with the delete (or newer edit), not a resurrected upsert-only state
+
+**Priority:** High — an ack that keys only on `table:recordId` drops the follow-up op and can leave orphaned server rows

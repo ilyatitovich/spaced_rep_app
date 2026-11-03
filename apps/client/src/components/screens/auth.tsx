@@ -4,9 +4,9 @@ import { AuthStep } from '@/types'
 import { useCallback, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { toast } from 'react-hot-toast'
-import AuthMethods from '../auth/auth-methods'
+import AuthMethods from '@/components/auth/auth-methods'
 
-type AuthScreenProps = {
+interface AuthScreenProps {
   isOpen: boolean
 }
 

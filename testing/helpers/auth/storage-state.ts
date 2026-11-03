@@ -8,7 +8,7 @@ import { createSessionForUser } from './session.js'
 const AUTH_DIR = path.join(getRepoRoot(), 'testing/.auth')
 const AUTH_SESSION_KEY = 'auth.session'
 
-export type StorageAuthSession = {
+export interface StorageAuthSession {
   accessToken: string
   refreshToken: string
   expiresAt: number
@@ -62,7 +62,9 @@ export async function authenticatedContext(
   browser: Browser,
   email?: string
 ): Promise<{ context: BrowserContext; tokens: AuthTokens }> {
-  const tokens = await createSessionForUser({ email })
+  const tokens = await createSessionForUser(
+    email !== undefined ? { email } : undefined
+  )
   const context = await browser.newContext({
     storageState: createStorageState(tokens)
   })

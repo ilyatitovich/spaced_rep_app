@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react'
 
 import Button from './button'
 
-type SelectionModeHeaderProps = {
+interface SelectionModeHeaderProps {
   selectedItemsCount: number
   isAllSelected: boolean
   handleCancel: () => void

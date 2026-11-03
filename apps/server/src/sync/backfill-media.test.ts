@@ -169,7 +169,8 @@ describe('backfillOneCard / runMediaBackfill', () => {
         }
       }
     })
-    expect(update.mock.calls[0]![0].data).not.toHaveProperty('updatedAt')
+    const updated = update.mock.calls.at(0) as [{ data: object }] | undefined
+    expect(updated?.[0].data).not.toHaveProperty('updatedAt')
   })
 
   it('skips put when HeadObject already matches', async () => {

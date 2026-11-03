@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { STORES } from '../../lib/db'
-import type { Card } from '../../models'
+import { STORES } from '@/lib/db'
+import type { Card } from '@/models'
 import { sha256Hex } from '@spaced-rep/sync-protocol'
 
 const pushMock = vi.fn()

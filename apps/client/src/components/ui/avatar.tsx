@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 
-type AvatarProps = {
-  url?: string
+interface AvatarProps {
+  url?: string | undefined
   initial?: string
   size?: 'sm' | 'md'
 }

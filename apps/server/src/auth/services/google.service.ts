@@ -11,14 +11,14 @@ const GOOGLE_JWKS = createRemoteJWKSet(
   new URL('https://www.googleapis.com/oauth2/v3/certs')
 )
 
-export type GoogleIdClaims = {
+export interface GoogleIdClaims {
   sub: string
   email: string
   emailVerified: boolean
   picture?: string
 }
 
-type GoogleTokenResponse = {
+interface GoogleTokenResponse {
   id_token?: string
   error?: string
   error_description?: string

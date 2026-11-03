@@ -12,14 +12,14 @@ import { LONGTEXT_THRESHOLD } from '@/lib/constants'
 import { getClipboardImage } from '@/lib/image'
 import { sanitizeCardHtml } from '@/lib/sanitize-html'
 
-export type TextBlockEditorHandle = {
+export interface TextBlockEditorHandle {
   getHtml: () => string
   focus: () => void
   reset: () => void
   getEditor: () => Editor | null
 }
 
-type TextBlockEditorProps = {
+interface TextBlockEditorProps {
   html: string
   isEditable?: boolean
   onFocus?: FocusEventHandler<HTMLElement>

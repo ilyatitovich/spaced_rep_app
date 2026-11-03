@@ -1,13 +1,13 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 
-import { CloseButton } from '../ui/back-button'
-import Button from '../ui/button'
+import { CloseButton } from '@/components/back-button'
+import Button from '@/components/ui/button'
 
 interface ModalProps {
   isOpen: boolean
   onClose: () => void
   variant?: 'sheet' | 'center'
-  title?: string
+  title?: string | undefined
   children: ReactNode
 }
 

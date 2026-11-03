@@ -1,4 +1,4 @@
-import Spaceship from '../assets/images/rocket-ship.svg?react'
+import Spaceship from '@/assets/images/rocket-ship.svg?react'
 
 export default function TestDoneMessage() {
   return (

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { parseImportJson } from '../parse-import-json'
+import { parseImportJson } from '@/lib/parse-import-json'
 
 describe('parseImportJson', () => {
   it('parses plain JSON', () => {

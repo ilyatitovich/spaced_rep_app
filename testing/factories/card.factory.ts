@@ -4,7 +4,7 @@ import type {
 } from '../../apps/server/src/generated/prisma/client.js'
 import { getTestPrisma } from '../db/prisma.js'
 
-export type CardBuildInput = {
+export interface CardBuildInput {
   id: string
   userId: string
   topicId: string

@@ -20,7 +20,7 @@ import {
 import { getAuthErrorMessage } from '@/lib/auth-errors'
 import { getAuthSession } from '@/lib/auth-storage'
 import { getDevicePlatform } from '@/lib/get-device-platform'
-import Modal from '../modals/modal'
+import Modal from '@/components/modals/modal'
 import { SettingsActionRow, SettingsGroup } from './settings-ui'
 
 function formatDate(iso: string | null): string {
@@ -71,10 +71,11 @@ function listFooter(passkeys: PasskeySummary[]): string {
   return 'Passkeys let you sign in with Face ID, Touch ID, or your device PIN.'
 }
 
-type SectionPasskeysProps = {
+interface SectionPasskeysProps {
   isOpen: boolean
 }
 
+// oxlint-disable-next-line sonarjs/cognitive-complexity
 export default function SectionPasskeys({ isOpen }: SectionPasskeysProps) {
   const { user, session } = useAuth()
   const { isOnline } = useSync()

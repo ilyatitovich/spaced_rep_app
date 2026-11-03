@@ -1,8 +1,8 @@
 import Modal from './modal'
 import { LEVELS, levelLabel } from '@/lib'
-import Button from '../ui/button'
+import Button from '@/components/ui/button'
 
-type MoveToLevelModalProps = {
+interface MoveToLevelModalProps {
   isOpen: boolean
   onClose: () => void
   onSelect: (level: number) => void

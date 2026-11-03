@@ -14,7 +14,7 @@ import type { PlanTier, UserSettingsDocument } from '@/types/settings.types'
 import { initialSync, setSyncEntitlement } from '@/services/sync.service'
 import { create } from 'zustand'
 
-type SettingsStore = {
+interface SettingsStore {
   userId: string | null
   settings: UserSettingsDocument | null
   isLoading: boolean

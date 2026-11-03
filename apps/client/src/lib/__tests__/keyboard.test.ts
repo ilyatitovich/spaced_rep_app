@@ -11,7 +11,7 @@ import {
   matchShortcut,
   SCREEN_ATTR,
   trapTab
-} from '../keyboard'
+} from '@/lib/keyboard'
 
 function keydown(
   key: string,

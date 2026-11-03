@@ -3,8 +3,8 @@ import { Outlet, RouterProvider, createMemoryRouter } from 'react-router'
 import { render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import NotFoundPage from '../not-found'
-import RouteErrorPage from '../route-error'
+import NotFoundPage from '@/pages/not-found'
+import RouteErrorPage from '@/pages/route-error'
 
 function Boom() {
   throw new Error('route crash')

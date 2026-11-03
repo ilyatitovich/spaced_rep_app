@@ -41,6 +41,7 @@ pnpm test                 # all Vitest projects (unit + integration)
 pnpm test:unit            # unit only (no DB): client, server, sync-protocol, sync-client, browser-extension, testing
 pnpm test:integration     # server API + DB/Redis
 pnpm test:coverage        # Vitest with V8 coverage report (no percentage gate)
+pnpm test:mutation        # Stryker mutation testing (unit projects, HTML report in reports/)
 pnpm test:watch           # Vitest watch mode
 
 pnpm test:e2e             # Playwright (chromium, firefox, webkit)
@@ -177,11 +178,12 @@ Faker is seeded (`42`) in integration setup for deterministic data.
 
 ## CI
 
-`[.github/workflows/tests.yml](../.github/workflows/tests.yml)` runs three parallel jobs on push to `main` and on PRs:
+`[.github/workflows/tests.yml](../.github/workflows/tests.yml)` runs four parallel jobs on push to `main` and on PRs:
 
 1. **Unit** — `pnpm test:unit --coverage` (client, server, sync-protocol, sync-client, browser-extension, testing). Uploads the V8 HTML/LCOV report as an artifact. No coverage percentage gate.
 2. **Integration** — Postgres 17 + Redis 7 service containers; `pnpm test:integration`
 3. **E2E** — same services + Chromium only (`pnpm test:e2e --project=chromium`); Playwright report artifacts. Firefox and WebKit stay in `playwright.config.ts` for local runs.
+4. **Duplication** — `pnpm jscpd` (fails above 5% duplicated lines)
 
 CI remaps compose ports (`5433→5432`, `6380→6379`) to the Actions service host ports.
 

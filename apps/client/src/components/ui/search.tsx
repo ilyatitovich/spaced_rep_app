@@ -3,7 +3,7 @@ import { useState, type ChangeEvent } from 'react'
 
 import Button from './button'
 
-type SearchProps = {
+interface SearchProps {
   value?: string
   onSearch: (value: string) => void
   placeholder?: string

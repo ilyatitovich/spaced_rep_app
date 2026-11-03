@@ -1,8 +1,8 @@
 import { isSideEmpty } from '@/lib/check-content'
-import { encodeCardData } from '../lib/card-codec'
-import { readList, writeList } from '../lib/chrome-store'
-import { CARDS_KEY } from '../lib/keys'
-import type { Card, CardData } from '../types'
+import { encodeCardData } from '@ext/lib/card-codec'
+import { readList, writeList } from '@ext/lib/chrome-store'
+import { CARDS_KEY } from '@ext/lib/keys'
+import type { Card, CardData } from '@ext/types'
 import { dropFor, enqueue } from './outbox.service'
 
 export const getCards = () => readList<Card>(CARDS_KEY)

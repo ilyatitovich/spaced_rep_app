@@ -4,8 +4,8 @@ import { CloudOff, ImageOff } from 'lucide-react'
 const OFFLINE_EXTERNAL_LABEL =
   'You’re offline. This image is on an external host.'
 
-type ImageFrameProps = {
-  src?: string
+interface ImageFrameProps {
+  src?: string | undefined
   alt?: string
   className?: string
   placeholderClassName?: string

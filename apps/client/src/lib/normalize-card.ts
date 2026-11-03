@@ -71,9 +71,7 @@ export function splitTextAndCodeBlocks(html: string): SideBlock[] {
 
   while ((match = re.exec(html)) !== null) {
     const before = html.slice(last, match.index)
-    if (before.replace(/<[^>]*>/g, '').trim() || before.includes('<img')) {
-      blocks.push({ type: 'text', html: before })
-    } else if (before.trim()) {
+    if (before.trim()) {
       blocks.push({ type: 'text', html: before })
     }
     const code = decodeEntities(match[2] ?? '')

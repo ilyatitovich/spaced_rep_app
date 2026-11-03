@@ -3,7 +3,7 @@ import { ChevronRight } from 'lucide-react'
 import { levelLabel } from '@/lib'
 import Button from './ui/button'
 
-type LevelRowProps = {
+interface LevelRowProps {
   levelId: number
   cardsNumber: number
   onLevelOpen: () => void

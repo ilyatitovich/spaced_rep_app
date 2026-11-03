@@ -17,7 +17,7 @@ import {
 import { applyPushBatch, pullChanges, reportDevice } from './sync.service.js'
 import { startFanoutSubscriber, subscribeFanout } from './fanout.service.js'
 
-type Conn = {
+interface Conn {
   ws: WebSocket
   userId: string
   deviceId: string
@@ -118,6 +118,7 @@ async function authenticateUpgrade(
   }
 }
 
+// oxlint-disable-next-line sonarjs/cognitive-complexity
 async function handleMessage(conn: Conn, data: string): Promise<void> {
   let envelope: SyncEnvelope
   try {

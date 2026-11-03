@@ -1,7 +1,7 @@
 import type { BrowserContext } from '@playwright/test'
 import { WEBAUTHN_TEST_RP_ID } from '../../config/constants.js'
 
-export type VirtualPasskey = {
+export interface VirtualPasskey {
   id: string
   rpId: string
   userHandle: string

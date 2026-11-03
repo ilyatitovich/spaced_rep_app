@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { useScreenStackStore } from '../screen-stack-store'
+import { useScreenStackStore } from '@/store/screen-stack-store'
 
 afterEach(() => {
   useScreenStackStore.setState({ stack: [] })

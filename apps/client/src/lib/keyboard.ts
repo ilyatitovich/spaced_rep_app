@@ -129,6 +129,7 @@ export function trapTab(event: KeyboardEvent): void {
 
   const first = tabbables[0]
   const last = tabbables[tabbables.length - 1]
+  if (!first || !last) return
   const active = document.activeElement
   const isInside = active instanceof Node && screen.contains(active)
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatBytes } from '../format-bytes'
+import { formatBytes } from '@/lib/format-bytes'
 
 describe('formatBytes', () => {
   it('formats zero and small byte counts', () => {

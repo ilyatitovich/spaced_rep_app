@@ -1,14 +1,14 @@
 import type { ReactNode } from 'react'
 import { Crop, SquarePen, Trash2 } from 'lucide-react'
 
-import Button from '../ui/button'
+import Button from '@/components/ui/button'
 
-type MediaToolbarProps = {
+interface MediaToolbarProps {
   removeLabel: string
   changeLabel: string
   onRemove: () => void
   editLabel?: string
-  onEdit?: () => void
+  onEdit?: (() => void) | undefined
   children: ReactNode
 }
 

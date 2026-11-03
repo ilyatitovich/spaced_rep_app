@@ -1,10 +1,10 @@
 import { ChevronLeft, X } from 'lucide-react'
 import { useSearchParams } from 'react-router'
 
-import Button from './button'
+import Button from '@/components/ui/button'
 import { removeLastSearchParam } from '@/lib/remove-last-search-param'
 
-type BackButtonProps = {
+interface BackButtonProps {
   icon?: 'chevron' | 'x'
 }
 

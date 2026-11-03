@@ -14,11 +14,11 @@ self.addEventListener('message', event => {
   }
 })
 
-type PushPayload = {
-  title?: string
-  body?: string
-  url?: string
-  icon?: string
+interface PushPayload {
+  title?: string | undefined
+  body?: string | undefined
+  url?: string | undefined
+  icon?: string | undefined
 }
 
 self.addEventListener('push', event => {

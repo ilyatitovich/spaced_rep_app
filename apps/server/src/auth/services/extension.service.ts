@@ -8,7 +8,7 @@ import { createSessionWithTokens } from './session.service.js'
 const PREFIX = 'auth:extension:'
 const TTL_SECONDS = 120
 
-type Grant = {
+interface Grant {
   userId: string
   redirectUri: string
   state: string
@@ -44,8 +44,8 @@ export async function exchangeExtensionGrant(input: {
   code: string
   codeVerifier: string
   redirectUri: string
-  ipAddress?: string | null
-  userAgent?: string | null
+  ipAddress?: string | null | undefined
+  userAgent?: string | null | undefined
 }) {
   validateRedirectUri(input.redirectUri)
   const redis = getRedis()

@@ -1,4 +1,4 @@
-import { MOBILE_BREAKPOINT } from '@/hooks'
+import { MOBILE_BREAKPOINT } from '@/lib/constants'
 
 const POPUP_WIDTH = MOBILE_BREAKPOINT - 20
 const POPUP_HEIGHT = 860

@@ -3,13 +3,19 @@ import { apkgToCards } from './to-card-data'
 import type { Card } from '@/models/card.model'
 import type { SideBlock } from '@/types'
 
-type Request = {
+interface Request {
   buffer: ArrayBuffer
   topicId: string
 }
 
-type OkResponse = { ok: true; cards: Card[] }
-type ErrResponse = { ok: false; message: string }
+interface OkResponse {
+  ok: true
+  cards: Card[]
+}
+interface ErrResponse {
+  ok: false
+  message: string
+}
 
 function collectMediaBuffers(cards: Card[]): Transferable[] {
   // Same Anki media file can appear on many notes; transfer list must be unique.
@@ -17,6 +23,7 @@ function collectMediaBuffers(cards: Card[]): Transferable[] {
   for (const card of cards) {
     for (const side of [card.data.front, card.data.back]) {
       for (const block of side.blocks as SideBlock[]) {
+        // oxlint-disable-next-line sonarjs/nested-control-flow
         if (
           (block.type === 'image' || block.type === 'audio') &&
           'buffer' in block.content

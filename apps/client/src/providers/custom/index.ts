@@ -42,7 +42,7 @@ import type {
   SettingsPort,
   SyncPort,
   SyncRealtimeHandlers
-} from '../types'
+} from '@/providers/types'
 
 function isWebAuthnAbort(error: unknown): boolean {
   return (

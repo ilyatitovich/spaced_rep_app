@@ -9,7 +9,7 @@ import { runInTapFocus } from '@/lib/pwa'
 import type { CodeLang } from '@/lib/code-lang'
 import type { MediaDBRecord, SideBlock } from '@/types'
 
-type CardToolbarProps = {
+interface CardToolbarProps {
   isTextDisabled: boolean
   onAddBlocks: (blocks: SideBlock[]) => void
   onFocusLast: () => void

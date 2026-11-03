@@ -1,7 +1,10 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { ErrorBoundary, ErrorFallback } from '../error-boundary'
+import {
+  ErrorBoundary,
+  ErrorFallback
+} from '@/components/wrappers/error-boundary'
 
 let shouldThrow = true
 

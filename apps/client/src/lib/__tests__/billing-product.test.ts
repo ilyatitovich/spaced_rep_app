@@ -9,7 +9,7 @@ import {
   PRO_PRICES,
   SELLABLE_PLANS,
   SOFT_PAYWALL_TRIGGERS
-} from '../billing-product'
+} from '@/lib/billing-product'
 
 describe('billing product decisions', () => {
   it('uses a soft paywall (not post-login)', () => {

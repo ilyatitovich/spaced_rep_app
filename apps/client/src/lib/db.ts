@@ -12,7 +12,7 @@ export const STORES = {
   SUBSCRIPTION_CACHE: 'subscription_cache',
   SETTINGS_OUTBOX: 'settings_outbox',
   MEDIA_CACHE: 'media_cache'
-}
+} as const
 
 /** Compound index on cards for level-scoped queries */
 export const CARDS_TOPIC_LEVEL_INDEX = 'topicId_level'
@@ -96,16 +96,18 @@ function openDatabase(): Promise<IDBDatabase> {
   })
 }
 
-export async function withTransaction<T>(
-  storeNames: string[] | string,
+export async function withTransaction<T, const K extends string>(
+  storeNames: readonly K[] | K,
   mode: IDBTransactionMode,
-  callback: (stores: Record<string, IDBObjectStore>) => Promise<T>
+  callback: (stores: { [P in K]: IDBObjectStore }) => Promise<T>
 ): Promise<T> {
   const db = await openDatabase()
-  const storeList = Array.isArray(storeNames) ? storeNames : [storeNames]
-  const transaction = db.transaction(storeList, mode)
+  const storeList = (
+    Array.isArray(storeNames) ? storeNames : [storeNames]
+  ) as readonly K[]
+  const transaction = db.transaction([...storeList], mode)
 
-  const stores: Record<string, IDBObjectStore> = {}
+  const stores = {} as { [P in K]: IDBObjectStore }
   for (const name of storeList) {
     stores[name] = transaction.objectStore(name)
   }

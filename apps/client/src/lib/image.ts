@@ -1,6 +1,6 @@
 import type { ImageBase64Record, MediaDBRecord } from '@/types'
 
-export type CropArea = {
+export interface CropArea {
   x: number
   y: number
   width: number
@@ -163,7 +163,8 @@ export function arrayBufferToBase64(
   const len = bytes.byteLength
 
   for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode(bytes[i])
+    const byte = bytes[i]
+    if (byte !== undefined) binary += String.fromCharCode(byte)
   }
 
   return { buffer: btoa(binary), type: record.type }

@@ -80,9 +80,11 @@ describe('sync HTTP entitlement', () => {
       deviceId: '11111111-1111-4111-8111-111111111111',
       userAgent: 'test-agent'
     })
-    expect(reportDevice.mock.invocationCallOrder[0]).toBeLessThan(
-      applyPushBatch.mock.invocationCallOrder[0]
-    )
+    const reportedAt = reportDevice.mock.invocationCallOrder[0]
+    const appliedAt = applyPushBatch.mock.invocationCallOrder[0]
+    expect(reportedAt).toBeDefined()
+    expect(appliedAt).toBeDefined()
+    expect(reportedAt ?? 0).toBeLessThan(appliedAt ?? 0)
   })
 })
 

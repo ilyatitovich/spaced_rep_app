@@ -1,6 +1,6 @@
 import { Archive, ArchiveRestore, Pencil, Share, Trash } from 'lucide-react'
 import type { ChangeEvent, FormEvent } from 'react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { toast } from 'react-hot-toast'
 
 import {
@@ -15,7 +15,7 @@ import type { Topic } from '@/models'
 import { shareTopic } from '@/services'
 import { useTopicsStore } from '@/store'
 
-type TopicSettingsProps = {
+interface TopicSettingsProps {
   isOpen: boolean
   topic: Topic
   onClose: () => void
@@ -36,11 +36,10 @@ export default function TopicSettings({
   const archiveTopics = useTopicsStore(state => state.archiveTopics)
   const unarchiveTopics = useTopicsStore(state => state.unarchiveTopics)
 
-  useEffect(() => {
-    if (isOpen) {
-      setTitle(topic.title)
-    }
-  }, [isOpen, topic.title])
+  const onOpen = useCallback(() => {
+    setTitle(topic.title)
+    setError('')
+  }, [topic.title])
 
   const handleTitleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setTitle(e.target.value)
@@ -122,7 +121,7 @@ export default function TopicSettings({
   }
 
   return (
-    <Screen isOpen={isOpen} onClose={handleClose}>
+    <Screen isOpen={isOpen} onClose={handleClose} onOpen={onOpen}>
       <div className="h-full bg-background flex flex-col overflow-hidden">
         <Header>
           <BackButton />

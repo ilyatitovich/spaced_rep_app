@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import Button from '@/components/ui/button'
 import { Download, List, SquarePen } from 'lucide-react'
-import { exportCards } from '@ext/lib/export'
+import { exportCards } from '@ext/services/export.service'
 
 interface PanelFooterProps {
   savedCount: number

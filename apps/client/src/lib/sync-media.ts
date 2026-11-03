@@ -24,14 +24,14 @@ export type MediaUploadPlanItem =
       }
     }
 
-export type MediaDownloadPlanItem = {
+export interface MediaDownloadPlanItem {
   hash: string
   url: string
   type: string
   byteLength: number
 }
 
-export type SyncMediaApi = {
+export interface SyncMediaApi {
   planUploads(
     items: {
       hash: string

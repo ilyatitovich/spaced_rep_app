@@ -1,4 +1,4 @@
-import { OUTBOX_KEY } from '../lib/keys'
+import { OUTBOX_KEY } from '@ext/lib/keys'
 import { getOutbox } from './outbox.service'
 
 const values: Record<string, unknown> = {}

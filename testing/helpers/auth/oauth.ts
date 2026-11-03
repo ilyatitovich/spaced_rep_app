@@ -19,7 +19,7 @@ export async function createOAuthSession(input?: {
   const providerUserId = input?.providerUserId ?? crypto.randomUUID()
 
   const user = await userFactory.create({
-    email: input?.email,
+    ...(input?.email !== undefined ? { email: input.email } : {}),
     emailVerifiedAt: new Date()
   })
 

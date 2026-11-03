@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react'
 
-import { deleteCards, getCards } from '../services/cards.service'
-import { flushOutbox } from '../services/sync.service'
-import type { Card } from '../types'
+import { deleteCards, getCards } from '@ext/services/cards.service'
+import { flushOutbox } from '@ext/services/sync.service'
+import type { Card } from '@ext/types'
 
 export function useCards() {
   const [cards, setCards] = useState<Card[]>([])

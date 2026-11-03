@@ -1,0 +1,49 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  // Files and dependencies fail the run. Export and type findings stay
+  // available with `pnpm knip --exports` until that cleanup is worth doing.
+  "exclude": [
+    "exports",
+    "nsExports",
+    "types",
+    "nsTypes",
+    "enumMembers",
+    "namespaceMembers",
+    "duplicates"
+  ],
+  // `pnpm exec prisma` runs with cwd in apps/server, where the binary is installed.
+  "ignoreBinaries": ["prisma"],
+  // Kept for the auth and WebAuthn e2e suites. See e2e/fixtures.ts.
+  "ignoreFiles": [
+    "testing/fixtures/auth.fixture.ts",
+    "testing/fixtures/webauthn.fixture.ts"
+  ],
+  "workspaces": {
+    ".": {
+      "entry": [
+        "testing/scripts/prepare-db.ts",
+        // Loaded from stryker.config.json, not imported.
+        "vitest.mutation.config.ts"
+      ]
+    },
+    "apps/client": {
+      "entry": [
+        "src/{index,cli,main}.{js,mjs,cjs,jsx,ts,tsx,mts,cts}!",
+        // vite-plugin-pwa only sees a VitePWA() argument, and these options live in a variable.
+        "src/sw.ts!"
+      ]
+    },
+    "apps/browser-extension": {
+      // Resolved from a Vite plugin resolveId hook, not a static import.
+      "entry": ["src/turnstile-stub.tsx!"]
+    },
+    "apps/server": {
+      "ignoreDependencies": [
+        // Generated client imports @prisma/client; that output is gitignored.
+        "@prisma/client",
+        // pino({ transport }) is behind a ternary, which the Pino plugin skips.
+        "pino-pretty"
+      ]
+    }
+  }
+}

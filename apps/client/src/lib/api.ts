@@ -20,8 +20,9 @@ import type {
 } from '@/types/settings.types'
 
 const apiUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, '') ?? ''
+const API_URL_MISSING = 'VITE_API_URL is not configured'
 
-export type AuthTokenResponse = {
+export interface AuthTokenResponse {
   accessToken: string
   refreshToken: string
   expiresIn: number
@@ -29,7 +30,7 @@ export type AuthTokenResponse = {
   user: AuthUser
 }
 
-type ApiErrorBody = {
+interface ApiErrorBody {
   error?: { code?: string; message?: string }
 }
 
@@ -70,7 +71,7 @@ async function postJson<T>(
   init?: { accessToken?: string }
 ): Promise<T> {
   if (!apiUrl) {
-    throw new ApiError(0, 'VITE_API_URL is not configured')
+    throw new ApiError(0, API_URL_MISSING)
   }
 
   const headers: Record<string, string> = {
@@ -92,7 +93,7 @@ async function postJson<T>(
 
 async function getJson<T>(path: string, accessToken: string): Promise<T> {
   if (!apiUrl) {
-    throw new ApiError(0, 'VITE_API_URL is not configured')
+    throw new ApiError(0, API_URL_MISSING)
   }
 
   const response = await fetch(`${apiUrl}${path}`, {
@@ -199,7 +200,7 @@ export async function verifyEmailOtp(input: {
   return session
 }
 
-export type PasskeySummary = {
+export interface PasskeySummary {
   id: string
   name: string | null
   deviceType: string | null
@@ -255,7 +256,7 @@ export async function deletePasskey(
   passkeyId: string
 ): Promise<{ ok: true }> {
   if (!apiUrl) {
-    throw new ApiError(0, 'VITE_API_URL is not configured')
+    throw new ApiError(0, API_URL_MISSING)
   }
 
   const response = await fetch(`${apiUrl}/auth/passkeys/${passkeyId}`, {
@@ -272,7 +273,7 @@ async function patchJson<T>(
   accessToken: string
 ): Promise<T> {
   if (!apiUrl) {
-    throw new ApiError(0, 'VITE_API_URL is not configured')
+    throw new ApiError(0, API_URL_MISSING)
   }
 
   const response = await fetch(`${apiUrl}${path}`, {
@@ -293,7 +294,7 @@ async function putJson<T>(
   accessToken: string
 ): Promise<T> {
   if (!apiUrl) {
-    throw new ApiError(0, 'VITE_API_URL is not configured')
+    throw new ApiError(0, API_URL_MISSING)
   }
 
   const response = await fetch(`${apiUrl}${path}`, {
@@ -314,7 +315,7 @@ async function deleteJson<T>(
   accessToken: string
 ): Promise<T> {
   if (!apiUrl) {
-    throw new ApiError(0, 'VITE_API_URL is not configured')
+    throw new ApiError(0, API_URL_MISSING)
   }
 
   const response = await fetch(`${apiUrl}${path}`, {
@@ -386,7 +387,7 @@ export async function createBillingCheckout(
   return postJson('/settings/billing/checkout', body, { accessToken })
 }
 
-export type SyncDeviceSummary = {
+export interface SyncDeviceSummary {
   id: string
   name: string | null
   lastSeenAt: string

@@ -1,4 +1,4 @@
-export type ActivePage = {
+export interface ActivePage {
   title: string
   url: string
 }

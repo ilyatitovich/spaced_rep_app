@@ -442,6 +442,7 @@ export function stopBillingReconciler(): void {
   reconciliationTimer = null
 }
 
+// oxlint-disable-next-line sonarjs/cognitive-complexity
 export async function processLemonWebhook(body: Buffer, signature: string) {
   if (!verifyLemonSignature(body, signature)) {
     throw new UnauthorizedError('Invalid webhook signature')
@@ -509,6 +510,7 @@ export async function processLemonWebhook(body: Buffer, signature: string) {
             const parsedAttributes = subscriptionAttributesSchema.safeParse(
               payload.data.attributes
             )
+            // oxlint-disable-next-line sonarjs/nested-control-flow
             if (!parsedAttributes.success) {
               throw new BadRequestError('Invalid subscription webhook payload')
             }
@@ -521,6 +523,7 @@ export async function processLemonWebhook(body: Buffer, signature: string) {
             const parsedSubscriptionId = z
               .union([z.string().min(1), z.number()])
               .safeParse(payload.data.attributes.subscription_id)
+            // oxlint-disable-next-line sonarjs/nested-control-flow
             if (!parsedSubscriptionId.success) {
               throw new BadRequestError('Missing payment subscription_id')
             }

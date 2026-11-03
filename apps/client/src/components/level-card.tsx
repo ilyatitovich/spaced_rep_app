@@ -18,7 +18,7 @@ import { Card } from '@/models'
 import type { SideBlock } from '@/types'
 import Button from './ui/button'
 
-type LevelCardProps = {
+interface LevelCardProps {
   card: Card
   isSelected: boolean
   isSelectionMode: boolean
@@ -46,6 +46,7 @@ function previewBlock(blocks: SideBlock[]): SideBlock | undefined {
   )
 }
 
+// oxlint-disable-next-line sonarjs/cognitive-complexity
 export default function LevelCard({
   card,
   isSelected,

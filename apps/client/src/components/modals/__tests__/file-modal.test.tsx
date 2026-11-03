@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import toast from 'react-hot-toast'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import FileModal from '../file-modal'
+import FileModal from '@/components/modals/file-modal'
 import { importAppData } from '@/services'
 
 vi.mock('@/services', () => ({

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { coalesceQueuedOperation } from '../sync.service'
+import { coalesceQueuedOperation } from '@/services/sync.service'
 
 describe('coalesceQueuedOperation', () => {
   it('drops a pending upsert when the same record is deleted before it syncs', () => {

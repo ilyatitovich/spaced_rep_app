@@ -17,7 +17,7 @@ export function getVapidPublicKey(): string {
 export async function upsertPushSubscription(
   userId: string,
   body: UpsertSubscriptionBody,
-  userAgent?: string | null
+  userAgent?: string | null | undefined
 ) {
   return prisma.pushSubscription.upsert({
     where: { endpoint: body.endpoint },
@@ -50,11 +50,11 @@ export async function deletePushSubscription(
   return result.count > 0
 }
 
-export type PushPayload = {
+export interface PushPayload {
   title: string
   body: string
-  url?: string
-  type?: string
+  url?: string | undefined
+  type?: string | undefined
 }
 
 export async function sendPushToUser(

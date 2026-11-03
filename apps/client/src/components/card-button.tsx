@@ -10,7 +10,7 @@ import {
 import type { ElementType } from 'react'
 
 import type { CodeLang } from '@/lib'
-import Button from './button'
+import Button from '@/components/ui/button'
 import TsLogo from '@/assets/lang-logos/ts-14px.svg?react'
 import PythonLogo from '@/assets/lang-logos/python-14px.svg?react'
 import SqlLogo from '@/assets/lang-logos/sql-14px.svg?react'
@@ -54,8 +54,8 @@ function Trigger({
   onClick
 }: {
   type: CardButtonProps['type']
-  isDisabled?: boolean
-  isOpen?: boolean
+  isDisabled?: boolean | undefined
+  isOpen?: boolean | undefined
   onClick: () => void
 }) {
   const { Icon, label } = META[type]
@@ -85,7 +85,7 @@ function MenuButton({
   items
 }: {
   type: 'code' | 'media'
-  isDisabled?: boolean
+  isDisabled?: boolean | undefined
   items: {
     key: string
     label: string

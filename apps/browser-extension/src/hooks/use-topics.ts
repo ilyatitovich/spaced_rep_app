@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from 'react'
 
 import { TITLE_MAX_LENGTH } from '@/lib/constants'
 import type { Topic } from '@/models/topic.model'
-import { bootstrapTopics } from '../services/sync.service'
+import { bootstrapTopics } from '@ext/services/sync.service'
 import {
   createTopic,
   getTopicIdForPage,
@@ -10,7 +10,7 @@ import {
   renameTopic,
   resolveSelectedTopicId,
   setSelectedTopicId
-} from '../services/topics.service'
+} from '@ext/services/topics.service'
 
 export function useTopics() {
   const [topics, setTopics] = useState<Topic[]>([])

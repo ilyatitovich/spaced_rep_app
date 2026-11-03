@@ -2,7 +2,7 @@ import { render } from '@testing-library/react'
 import { MemoryRouter, useSearchParams } from 'react-router'
 import { describe, expect, it } from 'vitest'
 
-import { useKeyboardManager } from '../use-shortcuts'
+import { useKeyboardManager } from '@/hooks/use-shortcuts'
 
 function Harness() {
   useKeyboardManager()

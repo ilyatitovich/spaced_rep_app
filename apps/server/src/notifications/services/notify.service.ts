@@ -14,7 +14,7 @@ const resend = new Resend(env.RESEND_API_KEY)
 
 export type NotifyChannel = 'PUSH' | 'EMAIL'
 
-export type NotifyUserInput = {
+export interface NotifyUserInput {
   userId: string
   type: string
   title: string

@@ -30,6 +30,8 @@ dev-dist/
 vite.svg
 
 coverage/
+.stryker-tmp/
+reports/
 testing/.auth/
 playwright-report/
 test-results/

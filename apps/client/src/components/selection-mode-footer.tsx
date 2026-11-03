@@ -8,9 +8,9 @@ import {
 import { useEffect, useRef, useState } from 'react'
 
 import { ConfirmDeleteModal, MoveToLevelModal } from '@/components'
-import Button from './button'
+import Button from '@/components/ui/button'
 
-type SelectionModeFooterProps = {
+interface SelectionModeFooterProps {
   countItemsForDelete: number
   nameItemsForDelete: 'topic' | 'card'
   handleDelete: () => void | Promise<void>

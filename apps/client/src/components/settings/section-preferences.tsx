@@ -9,7 +9,7 @@ const THEME_OPTIONS = [
   { value: 'dark', label: 'Dark' }
 ]
 
-type SectionPreferencesProps = {
+interface SectionPreferencesProps {
   isOpen: boolean
 }
 

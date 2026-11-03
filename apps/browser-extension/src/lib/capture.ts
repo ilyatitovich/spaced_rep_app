@@ -1,13 +1,13 @@
 import DOMPurify from 'dompurify'
-import { resolveCodeLang } from '../../../client/src/lib/code-lang'
-import type { CapturedContent, SideBlock } from '../types'
+import { resolveCodeLang } from '@/lib/code-lang'
+import type { CapturedContent, SideBlock } from '@ext/types'
 
-export type RawCapture = {
-  html?: string
-  text?: string
-  code?: string
-  imageUrl?: string
-  audioUrl?: string
+export interface RawCapture {
+  html?: string | undefined
+  text?: string | undefined
+  code?: string | undefined
+  imageUrl?: string | undefined
+  audioUrl?: string | undefined
   title: string
   url: string
 }

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Children, CSSProperties } from 'react'
 
-type HeaderProps = {
+interface HeaderProps {
   children: ReactNode | ReactNode[]
   className?: string
 }

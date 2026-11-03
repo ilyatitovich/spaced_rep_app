@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import Screen from '../screen'
+import Screen from '@/components/wrappers/screen'
 
 vi.mock('@/hooks/use-should-animate', () => ({
   useShouldAnimate: () => false

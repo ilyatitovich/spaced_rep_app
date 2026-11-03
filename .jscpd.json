@@ -1,0 +1,21 @@
+{
+  "path": ["."],
+  "minLines": 5,
+  "minTokens": 50,
+  "mode": "mild",
+  "format": ["javascript", "jsx", "typescript", "tsx", "css"],
+  "crossFormats": "js-ts",
+  "ignore": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/coverage/**",
+    "**/.stryker-tmp/**",
+    "**/reports/**",
+    "**/generated/**",
+    "**/*.min.*"
+  ],
+  "gitignore": true,
+  "reporters": ["console"],
+  "threshold": 5,
+  "failOnEmpty": true
+}

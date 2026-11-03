@@ -7,7 +7,7 @@ import {
   verifyEmailOtp as verifyEmailOtpRequest,
   unavailable
 } from '@ext/lib'
-import type { ExtensionSession } from '../types'
+import type { ExtensionSession } from '@ext/types'
 
 interface AuthContextValue {
   session: ExtensionSession | null

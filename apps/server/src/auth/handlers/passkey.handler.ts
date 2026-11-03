@@ -1,4 +1,8 @@
 import type { Request, Response, NextFunction } from 'express'
+import type {
+  AuthenticationResponseJSON,
+  RegistrationResponseJSON
+} from '@simplewebauthn/server'
 import { BadRequestError } from '../../shared/lib/errors.js'
 import { parseBody, sendData } from '../../shared/lib/http.js'
 import {
@@ -42,7 +46,7 @@ export async function passkeyRegisterVerifyHandler(
     const body = parseBody(passkeyRegisterVerifySchema, req.body)
     const passkey = await verifyRegister({
       userId: req.auth!.userId,
-      credential: body.credential,
+      credential: body.credential as RegistrationResponseJSON,
       name: body.name,
       ipAddress: req.ip,
       userAgent: req.get('user-agent'),
@@ -79,7 +83,7 @@ export async function passkeyLoginVerifyHandler(
   try {
     const body = parseBody(passkeyLoginVerifySchema, req.body)
     const tokens = await verifyLogin({
-      credential: body.credential,
+      credential: body.credential as AuthenticationResponseJSON,
       ipAddress: req.ip,
       userAgent: req.get('user-agent'),
       origin: req.get('origin')

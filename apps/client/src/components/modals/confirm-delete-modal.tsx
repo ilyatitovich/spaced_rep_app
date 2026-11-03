@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 
 import Modal from './modal'
-import Spinner from '../ui/spinner'
-import Button from '../ui/button'
+import Spinner from '@/components/ui/spinner'
+import Button from '@/components/ui/button'
 
 interface ConfirmDeleteModalProps {
   isOpen: boolean
@@ -25,8 +25,7 @@ export default function ConfirmDeleteModal({
     if (!isOpen) setIsDeleting(false)
   }, [isOpen])
 
-  const label =
-    count > 1 ? `${count} ${itemName}s` : count === 1 ? itemName : itemName
+  const label = count > 1 ? `${count} ${itemName}s` : itemName
 
   const handleClose = (): void => {
     if (isDeleting) return

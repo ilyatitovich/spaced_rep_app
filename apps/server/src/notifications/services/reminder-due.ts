@@ -10,7 +10,7 @@ const WEEKDAY_TO_BIT: Record<string, number> = {
 
 const GRACE_MINUTES = 10
 
-export type LocalClock = {
+export interface LocalClock {
   year: number
   month: number
   day: number

@@ -1,5 +1,5 @@
-import { createBackup } from '@ext/services/backup.service'
-import { deleteCards } from '@ext/services/cards.service'
+import { createBackup } from './backup.service'
+import { deleteCards } from './cards.service'
 
 export async function exportCards(): Promise<void> {
   const { blob, cardIds } = await createBackup()

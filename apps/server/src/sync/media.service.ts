@@ -30,7 +30,7 @@ export const ALLOWED_MEDIA_TYPES = new Set([
   'audio/mp4'
 ])
 
-export type MediaUploadItem = {
+export interface MediaUploadItem {
   hash: string
   type: string
   byteLength: number
@@ -47,7 +47,7 @@ export type MediaUploadResult =
       headers: PresignedPut['headers']
     }
 
-export type MediaDownloadResult = {
+export interface MediaDownloadResult {
   hash: string
   url: string
   type: string

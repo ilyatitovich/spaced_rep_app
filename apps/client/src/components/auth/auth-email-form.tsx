@@ -4,9 +4,9 @@ import { useState } from 'react'
 import TurnstileWidget from './turnstile-widget'
 import { getAuthErrorMessage } from '@/lib/auth-errors'
 import { validateEmail } from '@/lib/validate-email'
-import Button from '../ui/button'
+import Button from '@/components/ui/button'
 
-type AuthEmailFormProps = {
+interface AuthEmailFormProps {
   onSubmit: (email: string, turnstileToken: string) => Promise<void>
   onBack: () => void
 }

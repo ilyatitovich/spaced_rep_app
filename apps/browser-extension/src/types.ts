@@ -1,12 +1,8 @@
-import type {
-  CardData,
-  SideBlock,
-  SideName
-} from '../../client/src/types/card.types'
+import type { CardData, SideBlock, SideName } from '@/types/card.types'
 
 export type { CardData, SideBlock, SideName }
 
-export type Card = {
+export interface Card {
   id: string
   topicId: string
   level: number
@@ -15,12 +11,12 @@ export type Card = {
   updatedAt: number
 }
 
-export type CapturedContent = {
+export interface CapturedContent {
   blocks: SideBlock[]
   source: { title: string; url: string }
 }
 
-export type ExtensionSession = {
+export interface ExtensionSession {
   accessToken: string
   refreshToken: string
   expiresAt: number

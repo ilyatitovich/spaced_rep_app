@@ -21,10 +21,11 @@ function isUniqueViolation(err: unknown): boolean {
   )
 }
 
+// oxlint-disable-next-line sonarjs/cognitive-complexity
 async function resolveGoogleUser(input: {
   sub: string
   email: string
-  picture?: string
+  picture?: string | undefined
 }): Promise<{ id: string; email: string }> {
   const avatarData = input.picture ? { avatarUrl: input.picture } : {}
 

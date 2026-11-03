@@ -71,7 +71,7 @@ function channelLabel(channel: NotificationChannel): string {
   return channel === 'push' ? 'Push' : 'Email'
 }
 
-type SectionNotificationsProps = {
+interface SectionNotificationsProps {
   isOpen: boolean
 }
 

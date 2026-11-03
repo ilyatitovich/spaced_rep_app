@@ -12,7 +12,7 @@ import {
   signAccessToken
 } from './token.service.js'
 
-export type TokenPairResult = {
+export interface TokenPairResult {
   accessToken: string
   refreshToken: string
   expiresIn: number
@@ -20,11 +20,11 @@ export type TokenPairResult = {
   user: AuthUser
 }
 
-type CreateSessionInput = {
+interface CreateSessionInput {
   userId: string
   authMethod: AuthMethod
-  ipAddress?: string | null
-  userAgent?: string | null
+  ipAddress?: string | null | undefined
+  userAgent?: string | null | undefined
   metadata?: Prisma.InputJsonValue
 }
 
@@ -76,7 +76,7 @@ export async function createSessionWithTokens(
         type: SecurityEventType.SESSION_CREATED,
         ipAddress: input.ipAddress ?? null,
         userAgent: input.userAgent ?? null,
-        metadata: input.metadata ?? undefined
+        ...(input.metadata !== undefined ? { metadata: input.metadata } : {})
       }
     })
 
@@ -99,7 +99,10 @@ export async function createSessionWithTokens(
 
 export async function rotateRefreshToken(
   rawRefreshToken: string,
-  meta?: { ipAddress?: string | null; userAgent?: string | null }
+  meta?: {
+    ipAddress?: string | null | undefined
+    userAgent?: string | null | undefined
+  }
 ): Promise<TokenPairResult> {
   const tokenHash = hashToken(rawRefreshToken)
   const existing = await prisma.refreshToken.findUnique({
@@ -212,7 +215,10 @@ export async function rotateRefreshToken(
 export async function revokeSession(
   sessionId: string,
   userId: string,
-  meta?: { ipAddress?: string | null; userAgent?: string | null }
+  meta?: {
+    ipAddress?: string | null | undefined
+    userAgent?: string | null | undefined
+  }
 ) {
   await prisma.$transaction(async tx => {
     const session = await tx.session.findFirst({

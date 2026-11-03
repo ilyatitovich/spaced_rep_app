@@ -1,4 +1,4 @@
-type CardsLeftBadgeProps = {
+interface CardsLeftBadgeProps {
   current: number
   total: number
 }

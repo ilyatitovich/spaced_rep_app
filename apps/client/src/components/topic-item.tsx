@@ -1,10 +1,10 @@
 import { Check } from 'lucide-react'
 
 import { formatTimestamp, getToday, joinNumbers } from '@/lib'
-import Button from './button'
+import Button from '@/components/ui/button'
 import { Topic, Day } from '@/models'
 
-type TopicItemProps = {
+interface TopicItemProps {
   topic: Topic
   isSelectionMode?: boolean
   isSelected: boolean

@@ -1,8 +1,8 @@
 import { startOfDayTs } from '@/lib/get-today'
 
-export type StudyCard = {
+export interface StudyCard {
   level: number
-  reviewDate?: number | null
+  reviewDate?: number | null | undefined
 }
 
 export function gradeCard(

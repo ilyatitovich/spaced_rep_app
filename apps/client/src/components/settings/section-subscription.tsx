@@ -47,7 +47,7 @@ function formatDate(ts: number | null): string {
   })
 }
 
-type SectionSubscriptionProps = {
+interface SectionSubscriptionProps {
   isOpen: boolean
 }
 

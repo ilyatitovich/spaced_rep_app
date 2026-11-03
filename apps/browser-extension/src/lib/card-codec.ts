@@ -1,5 +1,5 @@
 import { arrayBufferToBase64, base64ToArrayBuffer } from '@/lib/image'
-import type { CardData, SideBlock } from '../types'
+import type { CardData, SideBlock } from '@ext/types'
 
 export function emptyCardData(): CardData {
   return {

@@ -5,8 +5,8 @@ import { browserSupportsWebAuthn } from '@simplewebauthn/browser'
 
 import AuthEmailForm from './auth-email-form'
 import AuthOtpForm from './auth-otp-form'
-import { GoogleIcon } from '../ui/icons/google'
-import Button from '../ui/button'
+import { GoogleIcon } from '@/components/ui/icons/google'
+import Button from '@/components/ui/button'
 import { useAuth } from '@/contexts'
 import { getAuthErrorMessage } from '@/lib/auth-errors'
 import { AuthStep } from '@/types'
@@ -26,7 +26,7 @@ function persistLastUsedAuthMethod(id: AuthMethodId) {
   localStorage.setItem(LAST_USED_KEY, id)
 }
 
-type AuthMethodButtonProps = {
+interface AuthMethodButtonProps {
   icon: React.ReactNode
   label: string
   onClick: () => void
@@ -64,7 +64,7 @@ function AuthMethodButton({
   )
 }
 
-type AuthMethodsProps = {
+interface AuthMethodsProps {
   step: AuthStep
   onStepChange: (step: AuthStep) => void
   onSuccess?: () => void

@@ -1,4 +1,4 @@
-export type AuthContext = {
+export interface AuthContext {
   userId: string
   sessionId: string
 }

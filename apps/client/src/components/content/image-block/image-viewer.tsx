@@ -3,9 +3,9 @@ import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 
 import ImageFrame from './image-frame'
-import Button from '../../ui/button'
+import Button from '@/components/ui/button'
 
-type ImageViewerProps = {
+interface ImageViewerProps {
   isOpen: boolean
   imageUrl: string
   alt?: string

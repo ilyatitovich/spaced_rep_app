@@ -28,7 +28,11 @@ export async function shareFile(
   const share = shareableFile(file)
   if (navigator.canShare?.({ files: [share] })) {
     try {
-      await navigator.share({ files: [share], title, text })
+      await navigator.share({
+        files: [share],
+        ...(title !== undefined ? { title } : {}),
+        ...(text !== undefined ? { text } : {})
+      })
       return
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError')

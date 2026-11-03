@@ -1,6 +1,164 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["eslint", "typescript", "unicorn", "oxc", "react", "jsx-a11y"],
+  "plugins": [
+    "eslint",
+    "typescript",
+    "unicorn",
+    "oxc",
+    "react",
+    "jsx-a11y",
+    "vitest"
+  ],
+  "jsPlugins": [
+    "eslint-plugin-sonarjs",
+    "eslint-plugin-react-you-might-not-need-an-effect",
+    "eslint-plugin-playwright",
+    "./oxlint-plugins/boundaries.js",
+    "./oxlint-plugins/import-alias.js"
+  ],
+  "settings": {
+    "boundaries/elements": [
+      {
+        "type": "ui",
+        "pattern": "apps/client/src/components/ui",
+        "partialMatch": false,
+        "exclusive": true
+      },
+      {
+        "type": "components",
+        "pattern": "apps/client/src/components",
+        "partialMatch": false
+      },
+      {
+        "type": "pages",
+        "pattern": "apps/client/src/pages",
+        "partialMatch": false
+      },
+      {
+        "type": "services",
+        "pattern": [
+          "apps/client/src/services",
+          "apps/browser-extension/src/services",
+          "apps/server/src/auth/services",
+          "apps/server/src/notifications/services",
+          "apps/server/src/settings/services"
+        ],
+        "partialMatch": false
+      },
+      {
+        "type": "store",
+        "pattern": "apps/client/src/store",
+        "partialMatch": false
+      },
+      {
+        "type": "hooks",
+        "pattern": [
+          "apps/client/src/hooks",
+          "apps/browser-extension/src/hooks"
+        ],
+        "partialMatch": false
+      },
+      {
+        "type": "contexts",
+        "pattern": [
+          "apps/client/src/contexts",
+          "apps/browser-extension/src/contexts"
+        ],
+        "partialMatch": false
+      },
+      {
+        "type": "lib",
+        "pattern": [
+          "apps/client/src/lib",
+          "apps/browser-extension/src/lib",
+          "apps/server/src/shared/lib"
+        ],
+        "partialMatch": false
+      },
+      {
+        "type": "types",
+        "pattern": ["apps/client/src/types", "apps/server/src/shared/types"],
+        "partialMatch": false
+      },
+      {
+        "type": "models",
+        "pattern": "apps/client/src/models",
+        "partialMatch": false
+      },
+      {
+        "type": "config",
+        "pattern": "apps/server/src/shared/config",
+        "partialMatch": false
+      },
+      {
+        "type": "handlers",
+        "pattern": [
+          "apps/server/src/auth/handlers",
+          "apps/server/src/notifications/handlers",
+          "apps/server/src/settings/handlers",
+          "apps/server/src/sync/handlers"
+        ],
+        "partialMatch": false
+      },
+      {
+        "type": "packages",
+        "pattern": ["packages/sync-client/src", "packages/sync-protocol/src"],
+        "partialMatch": false
+      },
+      {
+        "type": "testkit",
+        "pattern": ["testing", "e2e"],
+        "partialMatch": false
+      }
+    ],
+    "boundaries/files": [
+      {
+        "pattern": "**/*.{test,spec}.{ts,tsx}",
+        "category": "test",
+        "exclusive": true
+      },
+      {
+        "pattern": "**/__tests__/**",
+        "category": "test",
+        "exclusive": true
+      },
+      {
+        "pattern": "**/*.{mock,mocks}.{ts,tsx}",
+        "category": "mock",
+        "exclusive": true
+      },
+      {
+        "pattern": "**/__mocks__/**",
+        "category": "mock",
+        "exclusive": true
+      },
+      {
+        "pattern": "**/mocks/**",
+        "category": "mock",
+        "exclusive": true
+      },
+      {
+        "pattern": "apps/server/src/**/*.service.ts",
+        "category": "server-service"
+      },
+      {
+        "pattern": "apps/server/src/**/*.handler.ts",
+        "category": "server-handler"
+      },
+      {
+        "pattern": "apps/server/src/**/router.ts",
+        "category": "server-router"
+      },
+      {
+        "pattern": "apps/client/src/router.tsx",
+        "category": "client-router"
+      },
+      {
+        "pattern": "**/*.{ts,tsx,js,mjs,cjs}",
+        "category": "prod"
+      }
+    ]
+  },
   "categories": {
     "correctness": "error"
   },
@@ -8,6 +166,8 @@
     "**/dist/**",
     "**/dev-dist/**",
     "**/coverage/**",
+    "**/.stryker-tmp/**",
+    "**/reports/**",
     "**/node_modules/**",
     "**/playwright-report/**",
     "**/test-results/**",
@@ -23,12 +183,399 @@
         "caughtErrorsIgnorePattern": "^_"
       }
     ],
+    "typescript/no-explicit-any": "error",
+    // 175 exports are missing a return type, and 76 `!` assertions are already
+    // in the tree. These stay off until that backlog is annotated; flipping
+    // them to "error" fails the pre-commit hook.
+    "typescript/no-non-null-assertion": "off",
+    "typescript/explicit-module-boundary-types": "off",
+    "typescript/consistent-type-definitions": ["error", "interface"],
+    "vitest/expect-expect": "error",
+    "vitest/no-focused-tests": "error",
+    "vitest/require-mock-type-parameters": "off",
+    "vitest/no-conditional-expect": "off",
+    "vitest/require-to-throw-message": "off",
+    "sonarjs/cognitive-complexity": "error",
+    "sonarjs/nested-control-flow": "error",
+    "sonarjs/no-duplicate-string": ["error", { "threshold": 4 }],
+    "sonarjs/no-duplicated-branches": "error",
+    "sonarjs/no-all-duplicated-branches": "error",
+    "sonarjs/no-identical-functions": "error",
+    "sonarjs/no-identical-conditions": "error",
+    "sonarjs/no-identical-expressions": "error",
+    "sonarjs/no-nested-switch": "error",
+    "sonarjs/no-collapsible-if": "error",
+    "react-you-might-not-need-an-effect/no-derived-state": "error",
+    "react-you-might-not-need-an-effect/no-chain-state-updates": "error",
+    "react-you-might-not-need-an-effect/no-reset-all-state-on-prop-change": "error",
+    "react-you-might-not-need-an-effect/no-pass-live-state-to-parent": "error",
+    "react-you-might-not-need-an-effect/no-pass-data-to-parent": "error",
     "react/react-in-jsx-scope": "off",
     "eslint/no-empty-pattern": "off",
     "typescript/no-useless-empty-export": "off",
     "jsx-a11y/prefer-tag-over-role": "off",
     "jsx-a11y/no-autofocus": "off",
     "jsx-a11y/role-has-required-aria-props": "off",
-    "jsx-a11y/control-has-associated-label": "off"
-  }
+    "jsx-a11y/control-has-associated-label": "off",
+    "boundaries/dependencies": [
+      "error",
+      {
+        "default": "allow",
+        "checkInternals": true,
+        "policies": [
+          {
+            "from": [
+              {
+                "element": { "type": "services" },
+                "file": { "categories": "prod" }
+              },
+              {
+                "file": { "categories": "server-service" }
+              }
+            ],
+            "disallow": [
+              {
+                "to": {
+                  "element": {
+                    "type": [
+                      "components",
+                      "ui",
+                      "pages",
+                      "hooks",
+                      "contexts",
+                      "store",
+                      "handlers"
+                    ]
+                  }
+                }
+              },
+              {
+                "to": {
+                  "file": {
+                    "categories": {
+                      "anyOf": [
+                        "server-handler",
+                        "server-router",
+                        "client-router"
+                      ]
+                    }
+                  }
+                }
+              }
+            ],
+            "message": "Services stay UI-free: a service must not import components, hooks, stores, or handlers. Move the shared type next to the service, and let the component or handler call the service."
+          },
+          {
+            "from": {
+              "element": { "type": "store" },
+              "file": { "categories": "prod" }
+            },
+            "disallow": {
+              "to": {
+                "element": {
+                  "type": ["components", "ui", "pages", "hooks", "contexts"]
+                }
+              }
+            },
+            "message": "Stores stay UI-free. A store may call a service; a component reads the store."
+          },
+          {
+            "from": {
+              "element": { "type": "lib" },
+              "file": { "categories": "prod" }
+            },
+            "disallow": [
+              {
+                "to": {
+                  "element": {
+                    "type": [
+                      "services",
+                      "components",
+                      "ui",
+                      "pages",
+                      "hooks",
+                      "contexts",
+                      "store",
+                      "handlers"
+                    ]
+                  }
+                }
+              },
+              {
+                "to": {
+                  "file": {
+                    "categories": {
+                      "anyOf": [
+                        "server-service",
+                        "server-handler",
+                        "server-router",
+                        "client-router"
+                      ]
+                    }
+                  }
+                }
+              }
+            ],
+            "message": "Utilities stay free of UI and services. Pass the value in, or move the function up next to its caller."
+          },
+          {
+            "from": { "element": { "type": "config" } },
+            "disallow": {
+              "to": {
+                "element": {
+                  "type": [
+                    "lib",
+                    "services",
+                    "handlers",
+                    "components",
+                    "ui",
+                    "models",
+                    "types",
+                    "store",
+                    "hooks",
+                    "pages"
+                  ]
+                }
+              }
+            },
+            "message": "Configuration stays free of domain logic. Read the value from the environment and pass it into the service."
+          },
+          {
+            "from": { "element": { "type": "types" } },
+            "dependency": { "kind": "value" },
+            "disallow": {
+              "to": { "element": { "type": ["lib", "models"] } }
+            },
+            "message": "Types stay free of domain logic. Use import type, or move the type into types/."
+          },
+          {
+            "from": { "element": { "type": "types" } },
+            "disallow": {
+              "to": {
+                "element": {
+                  "type": [
+                    "services",
+                    "components",
+                    "ui",
+                    "pages",
+                    "hooks",
+                    "contexts",
+                    "store",
+                    "handlers"
+                  ]
+                }
+              }
+            },
+            "message": "Types stay free of domain logic. Keep runtime code out of types/."
+          },
+          {
+            "from": {
+              "element": { "type": "models" },
+              "file": { "categories": "prod" }
+            },
+            "disallow": {
+              "to": {
+                "element": {
+                  "type": [
+                    "services",
+                    "components",
+                    "ui",
+                    "pages",
+                    "hooks",
+                    "contexts",
+                    "store"
+                  ]
+                }
+              }
+            },
+            "message": "Models stay free of UI and services. A model may use lib and types; call it from the service or the component."
+          },
+          {
+            "from": {
+              "element": { "type": "ui" },
+              "file": { "categories": "prod" }
+            },
+            "disallow": {
+              "to": {
+                "element": {
+                  "type": [
+                    "components",
+                    "services",
+                    "store",
+                    "hooks",
+                    "contexts",
+                    "pages",
+                    "lib",
+                    "models",
+                    "types",
+                    "handlers"
+                  ]
+                }
+              }
+            },
+            "message": "The design system stays free of application state, API calls, and domain code. Move this component out of components/ui, or pass the data in as props."
+          },
+          {
+            "from": { "file": { "categories": "client-router" } },
+            "disallow": {
+              "to": {
+                "element": {
+                  "type": [
+                    "components",
+                    "ui",
+                    "services",
+                    "store",
+                    "hooks",
+                    "contexts",
+                    "lib",
+                    "models",
+                    "types",
+                    "handlers"
+                  ]
+                }
+              }
+            },
+            "message": "The router only maps routes to pages. Move this import into the page."
+          },
+          {
+            "from": { "file": { "categories": "server-router" } },
+            "disallow": [
+              {
+                "to": {
+                  "element": {
+                    "type": ["services", "lib", "models", "components", "ui"]
+                  }
+                }
+              },
+              { "to": { "file": { "categories": "server-service" } } }
+            ],
+            "message": "A server router only maps routes to handlers. Move this import into the handler."
+          },
+          {
+            "from": {
+              "element": {
+                "type": [
+                  "components",
+                  "ui",
+                  "services",
+                  "store",
+                  "hooks",
+                  "contexts",
+                  "lib",
+                  "models",
+                  "types"
+                ]
+              },
+              "file": { "categories": "prod" }
+            },
+            "disallow": {
+              "to": { "element": { "type": "pages" } }
+            },
+            "message": "Pages are only imported by the router. Move the shared component out of pages/."
+          },
+          {
+            "from": {
+              "element": {
+                "type": [
+                  "components",
+                  "ui",
+                  "services",
+                  "store",
+                  "hooks",
+                  "contexts",
+                  "lib",
+                  "models",
+                  "types",
+                  "pages"
+                ]
+              }
+            },
+            "disallow": {
+              "to": { "file": { "categories": "client-router" } }
+            },
+            "message": "Nothing but the app entry imports the router. The router only maps routes to pages."
+          },
+          {
+            "from": { "file": { "categories": "prod" } },
+            "disallow": {
+              "to": { "file": { "categories": { "anyOf": ["test", "mock"] } } }
+            },
+            "message": "Mocks and tests stay out of production builds. Import the real module."
+          },
+          {
+            "from": {
+              "element": {
+                "type": [
+                  "ui",
+                  "components",
+                  "services",
+                  "lib",
+                  "types",
+                  "models",
+                  "config",
+                  "store",
+                  "hooks",
+                  "contexts",
+                  "pages",
+                  "handlers",
+                  "packages"
+                ]
+              },
+              "file": { "categories": "prod" }
+            },
+            "disallow": { "to": { "element": { "type": "testkit" } } },
+            "message": "Test helpers stay out of production builds. Import the real module."
+          },
+          {
+            "from": { "element": { "type": "packages" } },
+            "disallow": {
+              "to": {
+                "element": {
+                  "type": [
+                    "ui",
+                    "components",
+                    "services",
+                    "lib",
+                    "types",
+                    "models",
+                    "store",
+                    "hooks",
+                    "contexts",
+                    "pages",
+                    "handlers"
+                  ]
+                }
+              }
+            },
+            "message": "Shared packages stay free of app code. Move the shared type into the package."
+          }
+        ]
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "apps/client/src/**/*.{ts,tsx}",
+        "apps/browser-extension/**/*.{ts,tsx}"
+      ],
+      "rules": {
+        "import-alias/prefer-alias": "error"
+      }
+    },
+    {
+      "files": ["**/*.{test,spec}.{ts,tsx}", "**/__tests__/**"],
+      "rules": {
+        "sonarjs/no-duplicate-string": "off"
+      }
+    },
+    {
+      "files": ["e2e/**/*.ts"],
+      "rules": {
+        "playwright/no-conditional-in-test": "error",
+        "playwright/missing-playwright-await": "error",
+        "playwright/no-focused-test": "error"
+      }
+    }
+  ]
 }

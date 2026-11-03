@@ -4,14 +4,14 @@ import type {
   PublicKeyCredentialRequestOptionsJSON
 } from '@simplewebauthn/browser'
 
-import type { ExtensionSession } from '../types'
+import type { ExtensionSession } from '@ext/types'
 
 const SESSION_KEY = 'auth.session'
 export const API_URL = (
   import.meta.env.WXT_PUBLIC_API_URL ?? 'http://localhost:3000'
 ).replace(/\/$/, '')
 
-type TokenResponse = {
+interface TokenResponse {
   accessToken: string
   refreshToken: string
   expiresIn: number

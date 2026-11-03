@@ -16,18 +16,18 @@ import { useFontSize } from '@/hooks/use-font-size'
 import { getLanguageExtension, type CodeLang } from '@/lib/code-lang'
 import { canFocusForKeyboard } from '@/lib/pwa'
 import type { CodeBlock } from '@/types'
-import Button from '../../ui/button'
+import Button from '@/components/ui/button'
 
-export type CodeBlockEditorHandle = {
+export interface CodeBlockEditorHandle {
   focus: () => void
 }
 
-type CodeBlockEditorProps = {
+interface CodeBlockEditorProps {
   value: CodeBlock
-  isEditable?: boolean
-  onChange?: (value: CodeBlock) => void
-  onFocus?: () => void
-  onRemove?: () => void
+  isEditable?: boolean | undefined
+  onChange?: ((value: CodeBlock) => void) | undefined
+  onFocus?: (() => void) | undefined
+  onRemove?: (() => void) | undefined
 }
 
 const LANG_LABEL: Record<CodeLang, string> = {

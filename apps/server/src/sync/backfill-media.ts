@@ -3,9 +3,12 @@ import { isWireMediaRef } from '@spaced-rep/sync-protocol'
 import type { Prisma } from '../generated/prisma/client.js'
 import { sha256HexToBase64, type R2Storage } from '../shared/lib/r2-storage.js'
 
-type MediaBytes = { bytes: Uint8Array; type: string }
+interface MediaBytes {
+  bytes: Uint8Array
+  type: string
+}
 
-export type BackfillStats = {
+export interface BackfillStats {
   scanned: number
   rewritten: number
   skipped: number
@@ -13,14 +16,14 @@ export type BackfillStats = {
   errors: Array<{ cardId: string; error: string }>
 }
 
-export type BackfillCardRow = {
+export interface BackfillCardRow {
   id: string
   userId: string
   data: unknown
 }
 
 /** Minimal Prisma surface used by the backfill runner (injectable for tests). */
-export type BackfillPrisma = {
+export interface BackfillPrisma {
   card: {
     findMany: (args: {
       where?: { userId?: string; id?: { gt: string } }
@@ -152,7 +155,7 @@ export async function ensureMediaObjects(input: {
   userId: string
   mediaByHash: Map<string, MediaBytes>
   /** Keys already confirmed this run (`userId/hash`). */
-  confirmedKeys?: Set<string>
+  confirmedKeys?: Set<string> | undefined
 }): Promise<number> {
   const confirmed = input.confirmedKeys ?? new Set<string>()
   let uploaded = 0
@@ -188,8 +191,8 @@ export async function backfillOneCard(input: {
   prisma: BackfillPrisma
   storage: R2Storage
   card: BackfillCardRow
-  dryRun?: boolean
-  confirmedKeys?: Set<string>
+  dryRun?: boolean | undefined
+  confirmedKeys?: Set<string> | undefined
 }): Promise<{
   status: 'rewritten' | 'skipped'
   uploaded: number
@@ -218,10 +221,11 @@ export async function backfillOneCard(input: {
   return { status: 'rewritten', uploaded }
 }
 
+// oxlint-disable-next-line sonarjs/cognitive-complexity
 export async function runMediaBackfill(input: {
   prisma: BackfillPrisma
   storage: R2Storage
-  dryRun?: boolean
+  dryRun?: boolean | undefined
   userId?: string
   batchSize?: number
   onProgress?: (stats: BackfillStats) => void
@@ -259,6 +263,7 @@ export async function runMediaBackfill(input: {
           dryRun: input.dryRun,
           confirmedKeys
         })
+        // oxlint-disable-next-line sonarjs/nested-control-flow
         if (result.status === 'skipped') stats.skipped += 1
         else {
           stats.rewritten += 1

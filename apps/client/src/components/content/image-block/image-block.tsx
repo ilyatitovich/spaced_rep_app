@@ -3,11 +3,11 @@ import { useEffect, useState } from 'react'
 import { Maximize2 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 
-import MediaToolbar from '../media-toolbar'
-import ObjectUrl from '../object-url'
+import MediaToolbar from '@/components/content/media-toolbar'
+import ObjectUrl from '@/components/content/object-url'
 import ImageFrame from './image-frame'
 import ImageViewer from './image-viewer'
-import ImageEditorScreen from '../../screens/image-editor'
+import ImageEditorScreen from '@/components/screens/image-editor'
 import Spinner from '@/components/ui/spinner'
 import Button from '@/components/ui/button'
 import { useOnline } from '@/hooks/use-online'
@@ -15,15 +15,16 @@ import { cacheRemoteImage, toHttpsImageUrl } from '@/lib/cache-remote-image'
 import { blobToRecord, processImage } from '@/lib/image'
 import type { ImageContent, MediaDBRecord } from '@/types'
 
-type ImageBlockProps = {
+interface ImageBlockProps {
   content: ImageContent
-  isEditable?: boolean
+  isEditable?: boolean | undefined
   onChange?: (content: MediaDBRecord) => void
   onRemove?: () => void
   onFocus?: () => void
   alt?: string
 }
 
+// oxlint-disable-next-line sonarjs/cognitive-complexity
 export default function ImageBlock({
   content,
   isEditable,

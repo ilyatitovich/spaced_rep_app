@@ -87,24 +87,24 @@ export function channelFromJson(channel: string): NotificationChannel {
   return mapped
 }
 
-export type PreferencesDto = {
+export interface PreferencesDto {
   theme: string
   language: string
   timezone: string
   updatedAt: number
-  updatedByDeviceId?: string
+  updatedByDeviceId?: string | undefined
   applied?: boolean
 }
 
-export type LearningDto = {
+export interface LearningDto {
   weekStartsOn: number
   dailyNewCardLimit: number | null
   updatedAt: number
-  updatedByDeviceId?: string
+  updatedByDeviceId?: string | undefined
   applied?: boolean
 }
 
-export type ReminderDto = {
+export interface ReminderDto {
   id: string
   timeLocal: string
   daysOfWeek: number
@@ -114,16 +114,16 @@ export type ReminderDto = {
   updatedAt: number
 }
 
-export type NotificationsDto = {
+export interface NotificationsDto {
   enabled: boolean
   timezone: string
   reminders: ReminderDto[]
   updatedAt: number
-  updatedByDeviceId?: string
+  updatedByDeviceId?: string | undefined
   applied?: boolean
 }
 
-export type SubscriptionDto = {
+export interface SubscriptionDto {
   plan: string
   status: string
   provider: string
@@ -134,7 +134,7 @@ export type SubscriptionDto = {
   serverUpdatedAt: number
 }
 
-export type SettingsDocumentDto = {
+export interface SettingsDocumentDto {
   preferences: PreferencesDto
   learning: LearningDto
   notifications: NotificationsDto

@@ -1,7 +1,7 @@
 import { ChevronRight } from 'lucide-react'
 import type { ReactNode } from 'react'
 
-import Button from '../ui/button'
+import Button from '@/components/ui/button'
 
 export function SettingsGroup({
   label,

@@ -1,6 +1,6 @@
 import type { SyncOperation, SyncTable } from '@spaced-rep/sync-protocol'
-import { readList, writeList } from '../lib/chrome-store'
-import { OUTBOX_KEY } from '../lib/keys'
+import { readList, writeList } from '@ext/lib/chrome-store'
+import { OUTBOX_KEY } from '@ext/lib/keys'
 
 export interface OutboxItem {
   id: string
@@ -12,7 +12,7 @@ export interface OutboxItem {
   nextAttemptAt: number
 }
 
-type LegacyOutboxItem = {
+interface LegacyOutboxItem {
   id: string
   cardId: string
   attempts: number

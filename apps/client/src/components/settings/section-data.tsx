@@ -27,7 +27,7 @@ import {
 } from '@/lib/api'
 import { PRO_DEVICE_LIMIT } from '@/lib/billing-product'
 import { getSyncDiagnostics } from '@/services'
-import Modal from '../modals/modal'
+import Modal from '@/components/modals/modal'
 import { SyncedDevice } from './synced-device'
 import {
   SettingsActionRow,
@@ -35,7 +35,7 @@ import {
   SettingsInfoRow
 } from './settings-ui'
 
-type SectionDataProps = {
+interface SectionDataProps {
   isOpen: boolean
 }
 
@@ -69,6 +69,7 @@ function formatCardMedia(stats: StorageUsage | null): string {
   return `${formatBytes(stats.cardMediaBytes)} · ${images} · ${audio}`
 }
 
+// oxlint-disable-next-line sonarjs/cognitive-complexity
 export default function SectionData({ isOpen }: SectionDataProps) {
   const { user } = useAuth()
   const {

@@ -1,20 +1,20 @@
 const AUTH_SESSION_KEY = 'auth.session'
 const PKCE_KEY = 'auth.pkce'
 
-export type AuthUser = {
+export interface AuthUser {
   id: string
   email: string
   user_metadata?: Record<string, string>
 }
 
-export type AuthSession = {
+export interface AuthSession {
   accessToken: string
   refreshToken: string
   expiresAt: number
   user: AuthUser
 }
 
-export type PkcePending = {
+export interface PkcePending {
   codeVerifier: string
   state: string
   /** Path + search to restore after OAuth (auth param already stripped). */

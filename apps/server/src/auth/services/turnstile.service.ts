@@ -1,7 +1,7 @@
 import { BadRequestError } from '../../shared/lib/errors.js'
 import { env } from '../../shared/config/env.js'
 
-type TurnstileResponse = {
+interface TurnstileResponse {
   'success': boolean
   'error-codes'?: string[]
 }

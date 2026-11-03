@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { Day } from '@/models'
-import { completeStudyDay, gradeCard, selectDueCards } from '../study'
+import { completeStudyDay, gradeCard, selectDueCards } from '@/lib/study'
 
 describe('selectDueCards', () => {
   const now = new Date(2026, 10, 4, 15, 0, 0).getTime() // Wed

@@ -13,13 +13,13 @@ import type {
   UserSettingsDocument
 } from '@/types/settings.types'
 
-export type AuthCapabilities = {
+export interface AuthCapabilities {
   google: boolean
   passkey: boolean
   emailOtp: boolean
 }
 
-export type AuthPort = {
+export interface AuthPort {
   capabilities: AuthCapabilities
   getSession(): Promise<AuthSession | null>
   getCurrentUser(): Promise<AuthUser | null>
@@ -33,7 +33,7 @@ export type AuthPort = {
   onAuthStateChange(cb: (session: AuthSession | null) => void): () => void
 }
 
-export type SyncRealtimeHandlers = {
+export interface SyncRealtimeHandlers {
   onDelta: (delta: PullDelta) => void
   onConflict: (conflict: TopicConflictResolved) => void
   onStateChange?: (state: 'active' | 'disconnected' | 'connecting') => void
@@ -43,7 +43,7 @@ export type SyncRealtimeHandlers = {
   onProtocolMismatch?: () => void
 }
 
-export type SyncRealtimeHandle = {
+export interface SyncRealtimeHandle {
   connect(input: {
     deviceId: string
     lastPulledAt: string
@@ -55,7 +55,7 @@ export type SyncRealtimeHandle = {
   updateResume?(lastPulledAt: string, pendingOpCount: number): void
 }
 
-export type SyncPort = {
+export interface SyncPort {
   push(input: { deviceId: string; mutations: Mutation[] }): Promise<PushAck>
   pull(input: { deviceId: string; since: string }): Promise<PullDelta>
   bootstrap(input: {
@@ -66,7 +66,7 @@ export type SyncPort = {
   connectRealtime?(handlers: SyncRealtimeHandlers): SyncRealtimeHandle
 }
 
-export type SettingsPort = {
+export interface SettingsPort {
   fetchSettings(): Promise<UserSettingsDocument>
   fetchSubscription(): Promise<SubscriptionSnapshot>
   patchPreferences(
@@ -95,7 +95,7 @@ export type SettingsPort = {
   }): Promise<{ deleted: boolean }>
 }
 
-export type BackendPorts = {
+export interface BackendPorts {
   auth: AuthPort
   sync: SyncPort
   settings: SettingsPort

@@ -9,7 +9,7 @@ import {
   ListOrdered,
   Underline
 } from 'lucide-react'
-import Button from '../../ui/button'
+import Button from '@/components/ui/button'
 
 const KEYBOARD_GAP_PX = 8
 
@@ -42,7 +42,7 @@ function useKeyboardDockTop(enabled: boolean) {
   return top
 }
 
-type TextFormatToolbarProps = {
+interface TextFormatToolbarProps {
   visible: boolean
   editor: Editor | null
   onBold: () => void

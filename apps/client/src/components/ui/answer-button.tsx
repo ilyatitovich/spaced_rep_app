@@ -1,6 +1,6 @@
 import Button from './button'
 
-type AnswerButtonProps = {
+interface AnswerButtonProps {
   isCorrect: boolean
   onAnswer: (isCorrect: boolean) => void
 }

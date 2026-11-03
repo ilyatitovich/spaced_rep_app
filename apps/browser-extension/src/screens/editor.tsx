@@ -2,13 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 
 import Card from '@/components/card'
 import Button from '@/components/ui/button'
-import CardToolbar from '@/components/ui/card-toolbar'
+import CardToolbar from '@/components/card-toolbar'
 import CardContainer from '@/components/wrappers/card-container'
 import type { CardHandle } from '@/types'
 import { emptyCardData } from '@ext/lib/card-codec'
 import type { Topic } from '@/models/topic.model'
 import type { useDraftCard } from '@ext/hooks/use-draft-card'
-import TopicPicker from '../ui/topic-picker'
+import TopicPicker from '@ext/ui/topic-picker'
 
 const blankCardTemplate = emptyCardData()
 

@@ -4,7 +4,7 @@ import {
   sha256HexToBase64,
   uploadOwnedMedia,
   type SyncMediaApi
-} from '../sync-media'
+} from '@/lib/sync-media'
 import { sha256Hex } from '@spaced-rep/sync-protocol'
 
 function bytes(values: number[]): ArrayBuffer {

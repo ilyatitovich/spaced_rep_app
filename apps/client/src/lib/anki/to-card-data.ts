@@ -7,7 +7,7 @@ const SOUND_RE = /\[sound:([^\]]+)\]/gi
 const IMG_RE = /<img\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/gi
 const CLOZE_RE = /\{\{c\d+::(.*?)(?:::[^}]*)?\}\}/gs
 
-type MediaHit = {
+interface MediaHit {
   index: number
   end: number
   kind: 'image' | 'audio'

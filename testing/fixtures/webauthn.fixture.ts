@@ -4,7 +4,7 @@ import {
   WebAuthnHelper
 } from '../helpers/webauthn/virtual-authenticator.js'
 
-type WebAuthnFixtures = {
+interface WebAuthnFixtures {
   webAuthn: WebAuthnHelper
 }
 

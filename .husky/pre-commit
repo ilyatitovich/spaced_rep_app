@@ -1,2 +1,4 @@
 pnpm lint
 pnpm format:check
+pnpm knip
+pnpm exec jscpd --reporters threshold

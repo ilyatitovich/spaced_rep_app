@@ -1,14 +1,14 @@
 import type { ReactNode, TransitionEvent } from 'react'
 import { useState, useEffect, useLayoutEffect, useId, useRef } from 'react'
 
-import BackButton from '@/components/ui/back-button'
+import BackButton from '@/components/back-button'
 import Button from '@/components/ui/button'
 import { useShouldAnimate } from '@/hooks/use-should-animate'
 import { useScreenStackStore } from '@/store/screen-stack-store'
 
 import { ErrorBoundary, type ErrorFallbackProps } from './error-boundary'
 
-type ScreenLayerProps = {
+interface ScreenLayerProps {
   isOpen?: boolean
   className?: string
   children: ReactNode
@@ -53,7 +53,7 @@ export function ScreenLayer({
   )
 }
 
-type ScreenProps = {
+interface ScreenProps {
   isOpen: boolean
   isVertical?: boolean
   onClose?: () => void

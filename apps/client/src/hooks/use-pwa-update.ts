@@ -10,7 +10,7 @@ import {
 } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 
-type PwaUpdateContextValue = {
+interface PwaUpdateContextValue {
   needRefresh: boolean
   showPrompt: boolean
   updateNow: () => void

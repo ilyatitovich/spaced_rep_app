@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { shareFile } from '../share'
+import { shareFile } from '@/lib/share'
 
 describe('shareFile', () => {
   afterEach(() => {

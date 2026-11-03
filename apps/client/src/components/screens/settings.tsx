@@ -64,7 +64,7 @@ function openSection(
   })
 }
 
-type SettingsScreenProps = {
+interface SettingsScreenProps {
   isOpen: boolean
 }
 

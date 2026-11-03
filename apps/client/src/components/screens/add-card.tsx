@@ -17,7 +17,7 @@ import { Card as CardModel } from '@/models'
 import { createCard } from '@/services'
 import type { CardData, CardHandle, SideBlock, SideName } from '@/types'
 
-type NewCardPageProps = {
+interface NewCardPageProps {
   isOpen: boolean
   topicId: string
   onAdd: (payload: { level: number; card: CardModel }) => void

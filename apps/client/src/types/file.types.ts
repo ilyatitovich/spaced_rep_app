@@ -1,4 +1,4 @@
-export type ExportedFile = {
+export interface ExportedFile {
   blob: Blob
   fileName: string
 }

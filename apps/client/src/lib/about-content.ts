@@ -1,4 +1,4 @@
-export type AboutSection = {
+export interface AboutSection {
   title: string
   body: string
 }

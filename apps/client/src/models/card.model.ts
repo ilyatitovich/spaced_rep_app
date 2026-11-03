@@ -5,7 +5,7 @@ export class Card {
   topicId: string
   level: number
   data: CardData
-  reviewDate?: number
+  reviewDate?: number | undefined
   updatedAt: number
 
   constructor(data: CardData, topicId: string, level: number = 0) {

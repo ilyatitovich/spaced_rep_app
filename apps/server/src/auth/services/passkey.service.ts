@@ -33,7 +33,7 @@ import {
 const HOUR = 60 * 60
 const VERIFY_FAILED = 'Passkey verification failed'
 
-export type PasskeySummary = {
+export interface PasskeySummary {
   id: string
   name: string | null
   deviceType: string | null
@@ -47,6 +47,13 @@ function toTransportList(
 ): AuthenticatorTransportFuture[] | undefined {
   if (transports.length === 0) return undefined
   return transports as AuthenticatorTransportFuture[]
+}
+
+function credentialTransports(transports: string[]): {
+  transports?: AuthenticatorTransportFuture[]
+} {
+  const list = toTransportList(transports)
+  return list ? { transports: list } : {}
 }
 
 function secondsFromNow(seconds: number): Date {
@@ -133,7 +140,7 @@ function isUniqueViolation(err: unknown): boolean {
 
 export async function getRegisterOptions(input: {
   userId: string
-  ipAddress?: string | null
+  ipAddress?: string | null | undefined
 }): Promise<PublicKeyCredentialCreationOptionsJSON> {
   await enforceRateLimit({
     key: `webauthn:reg:opts:user:${input.userId}`,
@@ -164,10 +171,12 @@ export async function getRegisterOptions(input: {
   const options = await createRegistrationOptions({
     userId: user.id,
     email: user.email,
-    excludeCredentials: passkeys.map(p => ({
-      id: p.credentialId,
-      transports: toTransportList(p.transports)
-    }))
+    excludeCredentials: passkeys.map(p => {
+      const transports = toTransportList(p.transports)
+      return transports
+        ? { id: p.credentialId, transports }
+        : { id: p.credentialId }
+    })
   })
 
   await storeChallenge({
@@ -182,10 +191,10 @@ export async function getRegisterOptions(input: {
 export async function verifyRegister(input: {
   userId: string
   credential: RegistrationResponseJSON
-  name?: string
-  ipAddress?: string | null
-  userAgent?: string | null
-  origin?: string | null
+  name?: string | undefined
+  ipAddress?: string | null | undefined
+  userAgent?: string | null | undefined
+  origin?: string | null | undefined
 }): Promise<PasskeySummary> {
   await enforceRateLimit({
     key: `webauthn:reg:verify:user:${input.userId}`,
@@ -309,8 +318,8 @@ export async function verifyRegister(input: {
 }
 
 export async function getLoginOptions(input: {
-  email?: string
-  ipAddress?: string | null
+  email?: string | undefined
+  ipAddress?: string | null | undefined
 }): Promise<PublicKeyCredentialRequestOptionsJSON> {
   const ip = input.ipAddress ?? 'unknown'
   await enforceRateLimit({
@@ -337,10 +346,12 @@ export async function getLoginOptions(input: {
     })
 
     if (user && !user.disabledAt && user.passkeys.length > 0) {
-      allowCredentials = user.passkeys.map(p => ({
-        id: p.credentialId,
-        transports: toTransportList(p.transports)
-      }))
+      allowCredentials = user.passkeys.map(p => {
+        const transports = toTransportList(p.transports)
+        return transports
+          ? { id: p.credentialId, transports }
+          : { id: p.credentialId }
+      })
     }
   }
 
@@ -357,9 +368,9 @@ export async function getLoginOptions(input: {
 
 export async function verifyLogin(input: {
   credential: AuthenticationResponseJSON
-  ipAddress?: string | null
-  userAgent?: string | null
-  origin?: string | null
+  ipAddress?: string | null | undefined
+  userAgent?: string | null | undefined
+  origin?: string | null | undefined
 }): Promise<TokenPairResult> {
   const ip = input.ipAddress ?? 'unknown'
   await enforceRateLimit({
@@ -412,7 +423,7 @@ export async function verifyLogin(input: {
         id: passkey.credentialId,
         publicKey: new Uint8Array(passkey.publicKey),
         counter: Number(passkey.counter),
-        transports: toTransportList(passkey.transports)
+        ...credentialTransports(passkey.transports)
       }
     })
   } catch (err) {
@@ -520,8 +531,8 @@ export async function listPasskeys(userId: string): Promise<{
 export async function revokePasskey(input: {
   userId: string
   passkeyId: string
-  ipAddress?: string | null
-  userAgent?: string | null
+  ipAddress?: string | null | undefined
+  userAgent?: string | null | undefined
 }): Promise<{ ok: true }> {
   const existing = await prisma.passkey.findFirst({
     where: {

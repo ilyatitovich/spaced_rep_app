@@ -1,4 +1,4 @@
-export type AuthUser = {
+export interface AuthUser {
   id: string
   email: string
   user_metadata?: { avatar_url: string }

@@ -1,6 +1,6 @@
 import { STORES, withTransaction } from '@/lib/db'
 
-export type EmbeddedCardMedia = {
+export interface EmbeddedCardMedia {
   bytes: number
   images: number
   audio: number

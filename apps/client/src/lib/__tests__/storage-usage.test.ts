@@ -4,7 +4,7 @@ import {
   addEmbeddedMedia,
   subEmbeddedMedia,
   sumEmbeddedCardMedia
-} from '../card-media-stats'
+} from '@/lib/card-media-stats'
 
 describe('sumEmbeddedCardMedia', () => {
   it('sums image and audio ArrayBuffers and skips remote src-only images', () => {

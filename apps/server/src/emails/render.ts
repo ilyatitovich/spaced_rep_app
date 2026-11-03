@@ -30,25 +30,24 @@ function compile(rel: string) {
   return template
 }
 
-function context(data: Record<string, unknown>): Record<string, unknown> {
-  return { brand, founder, year: new Date().getFullYear(), ...data }
+function context(data: object): Record<string, unknown> {
+  return {
+    brand,
+    founder,
+    year: new Date().getFullYear(),
+    ...(data as Record<string, unknown>)
+  }
 }
 
-export function renderHtml(
-  name: string,
-  data: Record<string, unknown> = {}
-): string {
+export function renderHtml(name: string, data: object = {}): string {
   return juice(compile(`templates/${name}.html`)(context(data)))
 }
 
-export function renderText(
-  name: string,
-  data: Record<string, unknown> = {}
-): string {
+export function renderText(name: string, data: object = {}): string {
   return compile(`templates/${name}.txt`)(context(data)).trim()
 }
 
-export type OtpEmailParams = {
+export interface OtpEmailParams {
   code: string
   expiresInMinutes: number
   to: string
@@ -56,7 +55,7 @@ export type OtpEmailParams = {
 
 function maskEmail(email: string): string {
   const [local, domain] = email.split('@')
-  if (!domain) return email
+  if (!local || !domain) return email
   const visible = local.slice(0, 1)
   return `${visible}${'*'.repeat(Math.max(local.length - 1, 1))}@${domain}`
 }
@@ -81,10 +80,10 @@ export function renderOtpEmailText(params: OtpEmailParams): string {
   return renderText('otp', otpData(params))
 }
 
-export type NotificationEmailParams = {
+export interface NotificationEmailParams {
   title: string
   body: string
-  url?: string
+  url?: string | undefined
 }
 
 export function renderNotificationEmailHtml(

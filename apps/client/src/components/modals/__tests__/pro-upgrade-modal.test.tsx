@@ -3,8 +3,8 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, useSearchParams } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import ProUpgradeModal from '../pro-upgrade-modal'
-import ProUpgradeOnSignIn from '../pro-upgrade-on-sign-in'
+import ProUpgradeModal from '@/components/modals/pro-upgrade-modal'
+import ProUpgradeOnSignIn from '@/components/modals/pro-upgrade-on-sign-in'
 
 const pullRemote = vi.fn()
 const hasPlan = vi.fn()

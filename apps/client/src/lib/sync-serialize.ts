@@ -18,7 +18,7 @@ import type {
   SideContent
 } from '@/types'
 
-export type TopicRow = {
+export interface TopicRow {
   id: string
   user_id: string
   title: string
@@ -30,7 +30,7 @@ export type TopicRow = {
   deleted_at: string | null
 }
 
-export type CardRow = {
+export interface CardRow {
   id: string
   user_id: string
   topic_id: string

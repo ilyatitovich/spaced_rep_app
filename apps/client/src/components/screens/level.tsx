@@ -1,5 +1,5 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useSearchParams } from 'react-router'
 
 import {
@@ -41,8 +41,11 @@ export default function LevelScreen({
   onDeleteCards,
   onMoveCards
 }: LevelScreenProps) {
-  const [levelCards, setLevelCards] = useState<Card[]>([])
+  const [movedAwayIds, setMovedAwayIds] = useState<string[]>([])
   const [currentLevelId, setCurrentLevelId] = useState('')
+  const levelCards = (isOpen ? cards : []).filter(
+    card => !movedAwayIds.includes(card.id)
+  )
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const {
@@ -58,19 +61,15 @@ export default function LevelScreen({
   const [_, setSearchParams] = useSearchParams()
 
   const onOpen = useCallback(() => {
-    setLevelCards(cards)
+    setMovedAwayIds([])
     setCurrentLevelId(levelId)
-  }, [cards, levelId])
+  }, [levelId])
 
   const onClose = useCallback(() => {
     cancelSelectionMode()
-    setLevelCards([])
+    setMovedAwayIds([])
     setCurrentLevelId('')
   }, [cancelSelectionMode])
-
-  useEffect(() => {
-    if (isOpen) setLevelCards(cards)
-  }, [isOpen, cards])
 
   const handleSelectAll = (isSelectAll: boolean): void => {
     selectAll(
@@ -93,7 +92,7 @@ export default function LevelScreen({
     try {
       await updateCardsLevelBulk(moved, toLevel)
       const remaining = levelCards.filter(card => !selectedIds.has(card.id))
-      setLevelCards(remaining)
+      setMovedAwayIds(ids => [...ids, ...moved.map(card => card.id)])
       onMoveCards(remaining, moved, toLevel)
       cancelSelectionMode()
     } catch (error) {
@@ -103,7 +102,8 @@ export default function LevelScreen({
 
   const handleShareSelectedItems = async (): Promise<void> => {
     try {
-      const topicId = levelCards[0].topicId
+      const topicId = levelCards[0]?.topicId
+      if (!topicId) return
       await shareCards(selectedItems, topicId, Number(currentLevelId))
     } catch {
       toast.error('Failed to share cards')

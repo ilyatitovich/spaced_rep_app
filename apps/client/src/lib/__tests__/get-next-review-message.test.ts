@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { getReviewMessage } from '../get-next-review-message'
+import { getReviewMessage } from '@/lib/get-next-review-message'
 
 function daysAgo(days: number): number {
   const d = new Date(2026, 0, 5)

@@ -97,8 +97,8 @@ async function resolveEmailUser(email: string): Promise<{
 
 export async function requestEmailOtp(input: {
   email: string
-  ipAddress?: string | null
-  userAgent?: string | null
+  ipAddress?: string | null | undefined
+  userAgent?: string | null | undefined
 }): Promise<void> {
   const ip = input.ipAddress ?? 'unknown'
 
@@ -178,8 +178,8 @@ export async function requestEmailOtp(input: {
 export async function verifyEmailOtp(input: {
   email: string
   code: string
-  ipAddress?: string | null
-  userAgent?: string | null
+  ipAddress?: string | null | undefined
+  userAgent?: string | null | undefined
 }): Promise<TokenPairResult> {
   const ip = input.ipAddress ?? 'unknown'
 

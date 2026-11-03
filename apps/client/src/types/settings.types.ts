@@ -12,22 +12,22 @@ export type SubscriptionStatus =
 export type NotificationChannel = 'push' | 'email'
 export type BillingProvider = 'none' | 'stripe' | 'lemon_squeezy'
 
-export type UserPreferences = {
+export interface UserPreferences {
   theme: ThemePreference
   language: string
   timezone: string
   updatedAt: number
-  updatedByDeviceId?: string
+  updatedByDeviceId?: string | undefined
 }
 
-export type UserLearningSettings = {
+export interface UserLearningSettings {
   weekStartsOn: number
   dailyNewCardLimit: number | null
   updatedAt: number
-  updatedByDeviceId?: string
+  updatedByDeviceId?: string | undefined
 }
 
-export type NotificationReminder = {
+export interface NotificationReminder {
   id: string
   timeLocal: string
   daysOfWeek: number
@@ -37,15 +37,15 @@ export type NotificationReminder = {
   updatedAt: number
 }
 
-export type UserNotificationSettings = {
+export interface UserNotificationSettings {
   enabled: boolean
   timezone: string
   reminders: NotificationReminder[]
   updatedAt: number
-  updatedByDeviceId?: string
+  updatedByDeviceId?: string | undefined
 }
 
-export type SubscriptionSnapshot = {
+export interface SubscriptionSnapshot {
   plan: PlanTier
   status: SubscriptionStatus
   provider: BillingProvider
@@ -56,7 +56,7 @@ export type SubscriptionSnapshot = {
   serverUpdatedAt: number
 }
 
-export type UserSettingsDocument = {
+export interface UserSettingsDocument {
   preferences: UserPreferences
   learning: UserLearningSettings
   notifications: UserNotificationSettings
@@ -65,7 +65,7 @@ export type UserSettingsDocument = {
 
 export type SettingsSection = 'preferences' | 'learning' | 'notifications'
 
-export type SettingsOutboxItem = {
+export interface SettingsOutboxItem {
   id: string
   section: SettingsSection
   payload: Record<string, unknown>

@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { CARDS_TOPIC_LEVEL_INDEX, STORES } from '../../lib/db'
-import { Card, createTopic as buildTopic, type Topic } from '../../models'
-import type { CardData } from '../../types'
+import { CARDS_TOPIC_LEVEL_INDEX, STORES } from '@/lib/db'
+import { Card, createTopic as buildTopic, type Topic } from '@/models'
+import type { CardData } from '@/types'
 
 // jsdom does not ship IDBKeyRange; services call IDBKeyRange.only().
 if (typeof globalThis.IDBKeyRange === 'undefined') {
@@ -128,6 +128,7 @@ vi.mock('@/lib/db', async importOriginal => {
               if (rows.has(key)) return idbErrorRequest('ConstraintError')
               if (name === STORES.TOPICS && value.title != null) {
                 for (const row of rows.values()) {
+                  // oxlint-disable-next-line sonarjs/nested-control-flow
                   if ((row as Topic).title === value.title) {
                     return idbErrorRequest('ConstraintError')
                   }

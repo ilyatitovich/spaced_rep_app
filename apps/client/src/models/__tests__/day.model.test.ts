@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { Day } from '../day.model'
+import { Day } from '@/models/day.model'
 
 function levelsOn(pivot: Date, date: Date): number[] {
   const day = new Day(date.getTime())

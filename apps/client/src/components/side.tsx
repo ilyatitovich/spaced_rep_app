@@ -84,20 +84,20 @@ function revealLastBlock(root: HTMLElement) {
   }
 }
 
-export type SideHandle = {
+export interface SideHandle {
   getBlocks: () => SideBlock[]
   reset: () => void
   focusFirstText: () => void
   focusLastText: () => void
 }
 
-type SideProps = {
+interface SideProps {
   data: CardSideData
-  isEditable?: boolean
-  isVisible?: boolean
-  handleFocus?: FocusEventHandler<HTMLElement>
-  handleBlur?: FocusEventHandler<HTMLElement>
-  onChange?: (blocks: SideBlock[], side: SideName) => void
+  isEditable?: boolean | undefined
+  isVisible?: boolean | undefined
+  handleFocus?: FocusEventHandler<HTMLElement> | undefined
+  handleBlur?: FocusEventHandler<HTMLElement> | undefined
+  onChange?: ((blocks: SideBlock[], side: SideName) => void) | undefined
 }
 
 export default forwardRef(function Side(

@@ -2,7 +2,7 @@ import { BackButton, Header, Screen } from '@/components'
 import { ABOUT_FOOTER, ABOUT_SECTIONS } from '@/lib/about-content'
 import { SettingsGroup } from './settings-ui'
 
-type SectionAboutProps = {
+interface SectionAboutProps {
   isOpen: boolean
 }
 

@@ -29,7 +29,7 @@ export function useOnline(): boolean {
 // on unmount or when dependencies change (cancelled flag + abort on timeout).
 // ---------------------------------------------------------------------------
 
-export type UseOnlineVerifiedOptions = {
+export interface UseOnlineVerifiedOptions {
   /** Same-origin URL to ping. Cross-origin will hit CORS restrictions. */
   pingUrl?: string
   /** Time between verification checks while browser reports online, ms. */

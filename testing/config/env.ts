@@ -18,7 +18,7 @@ export function loadTestEnv(): void {
   loaded = true
 }
 
-export type TestEnv = {
+export interface TestEnv {
   nodeEnv: 'test'
   databaseUrl: string
   redisUrl: string

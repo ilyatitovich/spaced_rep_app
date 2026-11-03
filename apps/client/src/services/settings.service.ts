@@ -335,6 +335,7 @@ export async function flushSettingsOutbox(): Promise<void> {
 
     for (const item of items) {
       try {
+        // oxlint-disable-next-line sonarjs/nested-control-flow
         if (item.section === 'preferences') {
           const canonical = await settingsBackend.patchPreferences(
             item.payload as Parameters<
@@ -345,7 +346,7 @@ export async function flushSettingsOutbox(): Promise<void> {
           // Prefer newer local edits made while this request was in flight
           await writePreferences(
             currentOwnerKey,
-            mergePreferences(local, canonical, deviceId)
+            mergeByLww(local, canonical, deviceId)
           )
         } else if (item.section === 'learning') {
           const canonical = await settingsBackend.patchLearning(
@@ -354,7 +355,7 @@ export async function flushSettingsOutbox(): Promise<void> {
           const local = (await readDoc(currentOwnerKey)).learning
           await writeLearning(
             currentOwnerKey,
-            mergeLearning(local, canonical, deviceId)
+            mergeByLww(local, canonical, deviceId)
           )
         } else if (item.section === 'notifications') {
           const canonical = await settingsBackend.patchNotifications(
@@ -369,6 +370,7 @@ export async function flushSettingsOutbox(): Promise<void> {
           )
         }
         // Newer enqueue while in-flight keeps its row (same id, new opId)
+        // oxlint-disable-next-line sonarjs/nested-control-flow
         if (!(await removeOutboxIfUnchanged(item))) pendingAfterFlush = true
       } catch {
         await bumpOutbox(item)
@@ -412,26 +414,9 @@ export async function bootstrapLocalSettings(): Promise<UserSettingsDocument> {
   return doc
 }
 
-function mergePreferences(
-  local: UserPreferences,
-  remote: UserPreferences,
-  deviceId: string
-): UserPreferences {
-  return shouldApplySettingsLww(
-    local.updatedAt,
-    local.updatedByDeviceId,
-    remote.updatedAt,
-    remote.updatedByDeviceId ?? deviceId
-  )
-    ? remote
-    : local
-}
-
-function mergeLearning(
-  local: UserLearningSettings,
-  remote: UserLearningSettings,
-  deviceId: string
-): UserLearningSettings {
+function mergeByLww<
+  T extends { updatedAt: number; updatedByDeviceId?: string | undefined }
+>(local: T, remote: T, deviceId: string): T {
   return shouldApplySettingsLww(
     local.updatedAt,
     local.updatedByDeviceId,
@@ -506,12 +491,12 @@ export async function pullAndMergeSettings(userId: string): Promise<void> {
 
   const baseLocal = hasUserPrefs ? userDoc : localDoc
 
-  const preferences = mergePreferences(
+  const preferences = mergeByLww(
     baseLocal.preferences,
     remote.preferences,
     deviceId
   )
-  const learning = mergeLearning(baseLocal.learning, remote.learning, deviceId)
+  const learning = mergeByLww(baseLocal.learning, remote.learning, deviceId)
   const notifications = mergeNotifications(
     baseLocal.notifications,
     remote.notifications,

@@ -54,7 +54,7 @@ export function coalesceQueuedOperation(
   return incoming
 }
 
-type QueueItem = {
+interface QueueItem {
   id: string
   opId: string
   table: SyncTable
@@ -65,7 +65,7 @@ type QueueItem = {
   nextRetryAt: number
 }
 
-type FailedOp = {
+interface FailedOp {
   opId: string
   table: SyncTable
   recordId: string
@@ -85,7 +85,7 @@ export type SyncStatus =
 
 export type SyncConnection = 'idle' | 'ws' | 'http' | 'offline'
 
-export type SyncState = {
+export interface SyncState {
   status: SyncStatus
   lastSyncedAt: number | null
   connection: SyncConnection
@@ -119,6 +119,10 @@ let state: SyncState = {
 }
 let triggerTimer: ReturnType<typeof setTimeout> | null = null
 let syncMutex: Promise<void> | null = null
+/** A syncAll was requested while one was running — run another pass after it. */
+let pendingSyncAll = false
+/** In-flight sign-out wipe; initialSync waits on it so a fast re-login can't race it. */
+let pendingClear: Promise<void> | null = null
 let realtime: SyncRealtimeHandle | null = null
 
 const listeners = new Set<(state: SyncState) => void>()
@@ -235,7 +239,9 @@ async function getLocalRecord<T>(
   )
 }
 
-async function getAllLocal<T>(table: SyncTable): Promise<T[]> {
+async function getAllLocal<T>(
+  table: SyncTable | typeof STORES.SYNC_QUEUE
+): Promise<T[]> {
   return withTransaction(table, 'readonly', stores =>
     promisify<T[]>(stores[table].getAll())
   )
@@ -347,7 +353,7 @@ function backoffMs(attempts: number): number {
   return Math.min(300_000, 1000 * 2 ** attempts) + Math.random() * 1000
 }
 
-export type SyncEnqueueOp = {
+export interface SyncEnqueueOp {
   table: SyncTable
   recordId: string
   operation: SyncOperation
@@ -377,7 +383,9 @@ async function coalesceAndPutQueueItem(
 
   let opId: string = crypto.randomUUID()
   let createdAt = Date.now()
-  if (existing?.operation === next) {
+  // Reuse opId only if that op can't be mid-push — an ack for it would otherwise
+  // delete this replacement row.
+  if (existing?.operation === next && !inFlightOpIds.has(existing.opId)) {
     opId = existing.opId
     createdAt = existing.createdAt
   }
@@ -457,6 +465,15 @@ async function removeQueueItem(id: string): Promise<void> {
   })
 }
 
+/** Remove only if the row still carries `opId` — a newer edit/delete may have replaced it mid-push. */
+async function removeQueueItemIfOp(item: QueueItem): Promise<void> {
+  await withTransaction(STORES.SYNC_QUEUE, 'readwrite', async stores => {
+    const store = stores[STORES.SYNC_QUEUE]
+    const current = await promisify<QueueItem | undefined>(store.get(item.id))
+    if (current?.opId === item.opId) await promisify(store.delete(item.id))
+  })
+}
+
 async function bumpQueueAttempts(item: QueueItem): Promise<void> {
   const next: QueueItem = {
     ...item,
@@ -464,7 +481,10 @@ async function bumpQueueAttempts(item: QueueItem): Promise<void> {
     nextRetryAt: Date.now() + backoffMs(item.attempts + 1)
   }
   await withTransaction(STORES.SYNC_QUEUE, 'readwrite', async stores => {
-    await promisify(stores[STORES.SYNC_QUEUE].put(next))
+    const store = stores[STORES.SYNC_QUEUE]
+    const current = await promisify<QueueItem | undefined>(store.get(item.id))
+    if (current?.opId !== item.opId) return // replaced mid-push
+    await promisify(store.put(next))
   })
 }
 
@@ -529,6 +549,7 @@ function recordToCard(record: CardRecord, data: CardRow['data']): Card {
   })
 }
 
+// oxlint-disable-next-line sonarjs/cognitive-complexity
 async function buildMutations(items: QueueItem[]): Promise<{
   mutations: Mutation[]
   items: QueueItem[]
@@ -613,13 +634,13 @@ async function applyPushAck(ack: PushAck, items: QueueItem[]): Promise<void> {
 
   for (const opId of ack.acceptedOpIds) {
     const item = byOpId.get(opId)
-    if (item) await removeQueueItem(item.id)
+    if (item) await removeQueueItemIfOp(item)
   }
 
   for (const conflict of ack.conflicts) {
     await applyTopicConflict(conflict)
     const item = [...byOpId.values()].find(i => i.recordId === conflict.topicId)
-    if (item) await removeQueueItem(item.id)
+    if (item) await removeQueueItemIfOp(item)
   }
 
   const failed = await loadFailedOps()
@@ -636,7 +657,7 @@ async function applyPushAck(ack: PushAck, items: QueueItem[]): Promise<void> {
         message: rejected.message,
         at: Date.now()
       })
-      await removeQueueItem(item.id)
+      await removeQueueItemIfOp(item)
     } else {
       await bumpQueueAttempts(item)
     }
@@ -664,6 +685,7 @@ async function applyTopicConflict(
 }
 
 /** Shared incoming pipeline for HTTP pull, bootstrap/reconcile, and WS onDelta. */
+// oxlint-disable-next-line sonarjs/cognitive-complexity
 export async function applyPullDelta(delta: PullDelta): Promise<void> {
   // Hydrate + verify all owned media before any local write or watermark bump.
   const hydratedCardData = await hydrateIncomingCardData(
@@ -679,15 +701,21 @@ export async function applyPullDelta(delta: PullDelta): Promise<void> {
       const remote = record.topic
       maxUpdatedAt = Math.max(maxUpdatedAt, remote.updatedAt)
 
+      const local = await getLocalRecord<Topic>(STORES.TOPICS, remote.id)
+
       if (remote.deletedAt) {
-        await deleteLocalTopic(remote.id)
-        didMutateLocal = true
+        // Tombstone is LWW too: a newer local edit survives an older delete.
+        // oxlint-disable-next-line sonarjs/nested-control-flow
+        if (local && shouldApplyRemote(local.updatedAt, remote.updatedAt)) {
+          await deleteLocalTopic(remote.id)
+          didMutateLocal = true
+        }
         continue
       }
 
-      const local = await getLocalRecord<Topic>(STORES.TOPICS, remote.id)
       if (shouldApplyRemote(local?.updatedAt, remote.updatedAt)) {
         // Handle local title unique constraint: rename local clash if needed
+        // oxlint-disable-next-line sonarjs/nested-control-flow
         try {
           await putLocal(STORES.TOPICS, recordToTopic(remote))
         } catch (err) {
@@ -707,15 +735,20 @@ export async function applyPullDelta(delta: PullDelta): Promise<void> {
       const remote = record.card
       maxUpdatedAt = Math.max(maxUpdatedAt, remote.updatedAt)
 
+      const local = await getLocalRecord<Card>(STORES.CARDS, remote.id)
+
       if (remote.deletedAt) {
-        await deleteLocalCard(remote.id)
-        didMutateLocal = true
+        // oxlint-disable-next-line sonarjs/nested-control-flow
+        if (local && shouldApplyRemote(local.updatedAt, remote.updatedAt)) {
+          await deleteLocalCard(remote.id)
+          didMutateLocal = true
+        }
         continue
       }
 
-      const local = await getLocalRecord<Card>(STORES.CARDS, remote.id)
       if (shouldApplyRemote(local?.updatedAt, remote.updatedAt)) {
         const data = hydratedCardData.get(remote.id)
+        // oxlint-disable-next-line sonarjs/nested-control-flow
         if (data === undefined) {
           throw new Error(`Missing hydrated card data for ${remote.id}`)
         }
@@ -728,26 +761,27 @@ export async function applyPullDelta(delta: PullDelta): Promise<void> {
     }
   }
 
-  if (delta.watermark) {
-    await setMeta('lastPulledAt', delta.watermark)
-  } else if (maxUpdatedAt > 0) {
-    await setMeta('lastPulledAt', new Date(maxUpdatedAt).toISOString())
+  const nextWatermark = delta.watermark
+    ? delta.watermark
+    : maxUpdatedAt > 0
+      ? new Date(maxUpdatedAt).toISOString()
+      : null
+  if (nextWatermark) {
+    // Forward-only: a stale/out-of-order delta must never rewind the cursor.
+    const prev = await getMeta('lastPulledAt')
+    if (
+      prev === undefined ||
+      !(Date.parse(prev) >= Date.parse(nextWatermark))
+    ) {
+      await setMeta('lastPulledAt', nextWatermark)
+    }
   }
 
   if (didMutateLocal) emitSyncData()
 }
 
-async function advanceWatermarkFromPush(maxUpdatedAt: number): Promise<void> {
-  if (maxUpdatedAt <= 0) return
-  const prev = (await getMeta('lastPulledAt')) ?? EPOCH_ISO
-  const next = new Date(maxUpdatedAt).toISOString()
-  if (next > prev) {
-    await setMeta('lastPulledAt', next)
-    realtime?.updateResume?.(next, (await getQueue()).length)
-  }
-}
-
-/** Returns max updatedAt among accepted mutations (for watermark when skipping pull). */
+/** Returns max updatedAt among accepted mutations. */
+// oxlint-disable-next-line sonarjs/cognitive-complexity
 export async function pushChanges(deviceId: string): Promise<number> {
   if (!syncBackend) return 0
 
@@ -769,6 +803,7 @@ export async function pushChanges(deviceId: string): Promise<number> {
 
       let ack: PushAck
       if (realtime?.isActive() && realtime.pushBatch) {
+        // oxlint-disable-next-line sonarjs/nested-control-flow
         try {
           ack = await realtime.pushBatch(mutations)
           setState({ connection: 'ws' })
@@ -783,6 +818,7 @@ export async function pushChanges(deviceId: string): Promise<number> {
 
       const accepted = new Set(ack.acceptedOpIds)
       for (const m of mutations) {
+        // oxlint-disable-next-line sonarjs/nested-control-flow
         if (accepted.has(m.opId)) {
           maxAcceptedUpdatedAt = Math.max(maxAcceptedUpdatedAt, m.updatedAt)
         }
@@ -852,8 +888,8 @@ function wireRealtimeListeners(): void {
       if (wsState === 'active') {
         setState({ connection: 'ws' })
         void flushAfterConnect()
-      } else if (wsState === 'disconnected') {
-        if (state.connection === 'ws') setState({ connection: 'idle' })
+      } else if (wsState === 'disconnected' && state.connection === 'ws') {
+        setState({ connection: 'idle' })
       }
     },
     onTokenExpired: () => {
@@ -916,52 +952,108 @@ export async function syncAll(_userId: string): Promise<void> {
   }
 
   if (syncMutex) {
+    // Edits made while a run is in flight may have missed its push — rerun after.
+    pendingSyncAll = true
     return syncMutex
   }
 
-  return withSyncMutex(async () => {
-    setState({ status: 'syncing', lastError: null })
+  return withSyncMutex(runSyncAllPasses)
+}
 
-    try {
-      const deviceId = await getDeviceId()
-      setState({ deviceId })
+/** Loop push+pull while another syncAll was requested during the run. */
+async function runSyncAllPasses(): Promise<void> {
+  do {
+    pendingSyncAll = false
+    await runSyncAllOnce()
+  } while (pendingSyncAll && syncEntitled && currentUserId)
+  pendingSyncAll = false
+}
 
-      const lastSyncAt = await getMeta(LAST_SYNC_AT_KEY)
-      if (
-        lastSyncAt !== undefined &&
-        Date.now() - Number(lastSyncAt) > ACTIVE_WINDOW_MS
-      ) {
-        await reconcile()
-      }
+async function runSyncAllOnce(): Promise<void> {
+  setState({ status: 'syncing', lastError: null })
 
-      const maxPushedAt = await pushChanges(deviceId)
-      // After a push, HTTP pull only echoed our own records (LWW no-op). Advance
-      // watermark locally instead. Remotes: WS onDelta, or idle HTTP pull when
-      // the queue was empty.
-      await advanceWatermarkFromPush(maxPushedAt)
-      if (!realtime?.isActive() && maxPushedAt === 0) {
-        await pullChanges(deviceId)
-      }
+  try {
+    const deviceId = await getDeviceId()
+    setState({ deviceId })
 
-      await setMeta(LAST_SYNC_AT_KEY, String(Date.now()))
-      setState({
-        status: 'idle',
-        lastSyncedAt: Date.now(),
-        queueDepth: (await getQueue()).length
-      })
-
-      if (realtime && !realtime.isActive()) {
-        await connectRealtime()
-      }
-    } catch (error) {
-      console.error('Sync failed:', error)
-      if (handleSyncAccessError(error)) return
-      setState({
-        status: 'error',
-        lastError: error instanceof Error ? error.message : 'Sync failed'
-      })
+    const lastSyncAt = await getMeta(LAST_SYNC_AT_KEY)
+    if (
+      lastSyncAt !== undefined &&
+      Date.now() - Number(lastSyncAt) > ACTIVE_WINDOW_MS
+    ) {
+      await reconcile()
     }
-  })
+
+    await pushChanges(deviceId)
+    // Always pull after push: the server may have kept a different (winning)
+    // row for something we just pushed. Watermark only moves forward.
+    await pullChanges(deviceId)
+
+    await setMeta(LAST_SYNC_AT_KEY, String(Date.now()))
+    setState({
+      status: 'idle',
+      lastSyncedAt: Date.now(),
+      queueDepth: (await getQueue()).length
+    })
+
+    if (realtime && !realtime.isActive()) {
+      await connectRealtime()
+    }
+  } catch (error) {
+    console.error('Sync failed:', error)
+    if (handleSyncAccessError(error)) {
+      pendingSyncAll = false
+      return
+    }
+    setState({
+      status: 'error',
+      lastError: error instanceof Error ? error.message : 'Sync failed'
+    })
+  }
+}
+
+/** Wipe local study data + queue (sign-out / account switch). Keeps deviceId. */
+export async function clearLocalSyncData(): Promise<void> {
+  await withTransaction(
+    [STORES.TOPICS, STORES.CARDS, STORES.SYNC_QUEUE, STORES.SYNC_META],
+    'readwrite',
+    async stores => {
+      await promisify(stores[STORES.TOPICS].clear())
+      await promisify(stores[STORES.CARDS].clear())
+      await promisify(stores[STORES.SYNC_QUEUE].clear())
+
+      const meta = stores[STORES.SYNC_META]
+      const rows = await promisify<{ key: string }[]>(meta.getAll())
+      for (const row of rows) {
+        if (row.key !== DEVICE_ID_KEY) await promisify(meta.delete(row.key))
+      }
+      await promisify(meta.put({ key: 'lastPulledAt', value: EPOCH_ISO }))
+    }
+  )
+  setState({ queueDepth: 0, failedOps: [] })
+  emitSyncData()
+}
+
+/** Test-only: drop module-level sync state so tests don't leak into each other. */
+export function __resetSyncServiceForTests(): void {
+  syncMutex = null
+  pendingSyncAll = false
+  pendingClear = null
+  syncEntitled = false
+  currentUserId = null
+  realtime = null
+  if (triggerTimer) clearTimeout(triggerTimer)
+  triggerTimer = null
+  inFlightOpIds.clear()
+  state = {
+    status: 'idle',
+    lastSyncedAt: null,
+    connection: 'idle',
+    queueDepth: 0,
+    deviceId: null,
+    lastError: null,
+    failedOps: []
+  }
 }
 
 async function migrateLocalToCloud(): Promise<void> {
@@ -979,10 +1071,20 @@ async function migrateLocalToCloud(): Promise<void> {
 }
 
 export function setSyncUser(userId: string | null): void {
+  const wasSignedIn = currentUserId !== null
   if (currentUserId !== userId) syncEntitled = false
   currentUserId = userId
   if (!userId) {
     realtime?.disconnect()
+    // Only wipe on a real sign-out; the initial signed-out render must not
+    // erase guest data.
+    if (wasSignedIn) {
+      pendingClear = clearLocalSyncData()
+        .catch(err => console.error('Sign-out local wipe failed:', err))
+        .finally(() => {
+          pendingClear = null
+        })
+    }
     setState({
       status: 'idle',
       connection: 'idle',
@@ -1021,9 +1123,17 @@ export async function initialSync(userId: string): Promise<void> {
   return withSyncMutex(async () => {
     wireRealtimeListeners()
 
+    if (pendingClear) await pendingClear
+
     const migratedUserId = await getMeta('migratedUserId')
     if (migratedUserId !== userId) {
-      await migrateLocalToCloud()
+      if (migratedUserId === undefined) {
+        // Guest data from before first sign-in: adopt into this account.
+        await migrateLocalToCloud()
+      } else {
+        // Another account's data lives here — never upload it as this user's.
+        await clearLocalSyncData()
+      }
       await setMeta('migratedUserId', userId)
     }
 
@@ -1057,6 +1167,9 @@ export async function initialSync(userId: string): Promise<void> {
     }
 
     await connectRealtime()
+
+    // A syncAll arrived mid-initialSync (single-flight): honour it now.
+    if (pendingSyncAll) await runSyncAllPasses()
   })
 }
 

@@ -5,7 +5,7 @@ export function removeLastSearchParam(prev: URLSearchParams): URLSearchParams {
   if (keys.length === 0) return params
 
   const lastKey = keys[keys.length - 1]
-  params.delete(lastKey)
+  if (lastKey !== undefined) params.delete(lastKey)
 
   return params
 }

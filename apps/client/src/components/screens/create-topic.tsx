@@ -8,7 +8,7 @@ import { TITLE_MAX_LENGTH } from '@/lib'
 import { createTopic } from '@/services'
 import { getNextUpdateDate, setStartWeek, type Topic } from '@/models'
 
-type CreateTopicProps = {
+interface CreateTopicProps {
   isOpen: boolean
   onCreate: (topic: Topic) => void
 }

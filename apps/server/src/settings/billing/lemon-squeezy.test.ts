@@ -42,7 +42,8 @@ describe('Lemon Squeezy client', () => {
       expiresAt: new Date('2026-09-17T10:00:00.000Z')
     })
 
-    const request = JSON.parse(fetch.mock.calls[0][1].body)
+    const init = fetch.mock.calls[0]?.[1]
+    const request = JSON.parse(String(init?.body ?? ''))
     expect(request.data.attributes).toEqual(
       expect.objectContaining({
         product_options: {

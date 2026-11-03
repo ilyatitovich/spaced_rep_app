@@ -6,7 +6,7 @@ import {
   type AuthTokens
 } from '../helpers/auth/session.js'
 
-type AuthFixtures = {
+interface AuthFixtures {
   testUser: AuthTokens
   authenticatedPage: Page
 }

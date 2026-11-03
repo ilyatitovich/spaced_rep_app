@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import Checkbox from '../checkbox'
+import Checkbox from '@/components/ui/checkbox'
 
 describe('Checkbox', () => {
   it('renders the label and reflects checked state', () => {

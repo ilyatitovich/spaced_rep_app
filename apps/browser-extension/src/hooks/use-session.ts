@@ -1,9 +1,9 @@
 import { useCallback, useState } from 'react'
 
-import { APP_URL } from '../lib/app-url'
-import { getSession, signOut as signOutSession } from '../lib/auth'
-import { hasPro } from '../services/sync.service'
-import type { ExtensionSession } from '../types'
+import { APP_URL } from '@ext/lib/app-url'
+import { getSession, signOut as signOutSession } from '@ext/lib/auth'
+import { hasPro } from '@ext/services/sync.service'
+import type { ExtensionSession } from '@ext/types'
 
 export function useSession() {
   const [session, setSession] = useState<ExtensionSession | null>(null)

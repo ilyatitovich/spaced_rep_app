@@ -2,17 +2,25 @@ import type { CodeLang } from '@/lib'
 
 export type SideName = 'front' | 'back'
 
-export type MediaDBRecord = { buffer: ArrayBuffer; type: string }
+export interface MediaDBRecord {
+  buffer: ArrayBuffer
+  type: string
+}
 
 /** Remote Anki img URL kept on the card until cached on open. */
-export type RemoteImageContent = { src: string }
+export interface RemoteImageContent {
+  src: string
+}
 
 export type ImageContent = MediaDBRecord | RemoteImageContent
 
-export type ImageBase64Record = { buffer: string; type: string }
+export interface ImageBase64Record {
+  buffer: string
+  type: string
+}
 
 /** Code snippet (legacy exclusive side content, or `type: 'code'` block). */
-export type CodeBlock = {
+export interface CodeBlock {
   lang: CodeLang
   code: string
 }
@@ -35,29 +43,29 @@ export type SideBlock =
   | { type: 'image'; content: ImageContent }
   | { type: 'audio'; content: MediaDBRecord }
 
-export type CardSideData = {
+export interface CardSideData {
   side: SideName
   blocks: SideBlock[]
 }
 
-export type CardData = {
+export interface CardData {
   front: CardSideData
   back: CardSideData
 }
 
 /** Exclusive text|image|code side stored before the blocks migration. */
-export type LegacyCardSideData = {
+export interface LegacyCardSideData {
   side: SideName
   type: SideContentType
   content: SideContent
 }
 
-export type LegacyCardData = {
+export interface LegacyCardData {
   front: LegacyCardSideData
   back: LegacyCardSideData
 }
 
-export type CardHandle = {
+export interface CardHandle {
   getContent: () => CardData
   resetContent: () => void
   focusContent: (side: SideName, which?: 'first' | 'last') => void

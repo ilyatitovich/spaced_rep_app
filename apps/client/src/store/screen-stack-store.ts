@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-type ScreenStackStore = {
+interface ScreenStackStore {
   stack: string[]
   push: (id: string) => void
   pop: (id: string) => void

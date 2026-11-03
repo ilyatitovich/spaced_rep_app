@@ -11,26 +11,26 @@ import { env } from '../config/env.js'
 
 export const PRESIGN_EXPIRES_IN_SECONDS = 5 * 60
 
-export type R2StorageConfig = {
+export interface R2StorageConfig {
   bucket: string
   region: string
   endpoint: string
   /** Hostname used when signing browser-facing URLs (MinIO localhost). */
-  presignEndpoint?: string
+  presignEndpoint?: string | undefined
   forcePathStyle: boolean
   accessKeyId: string
   secretAccessKey: string
-  presignExpiresInSeconds?: number
+  presignExpiresInSeconds?: number | undefined
 }
 
-export type ObjectHead = {
+export interface ObjectHead {
   contentLength: number | undefined
   contentType: string | undefined
   /** Base64 SHA-256 digest when the store returned checksum metadata. */
   checksumSHA256: string | undefined
 }
 
-export type PresignedPut = {
+export interface PresignedPut {
   url: string
   headers: {
     'content-type': string
@@ -38,7 +38,7 @@ export type PresignedPut = {
   }
 }
 
-export type R2Storage = {
+export interface R2Storage {
   bucket: string
   objectKey: (userId: string, hashHex: string) => string
   headObject: (key: string) => Promise<ObjectHead | null>

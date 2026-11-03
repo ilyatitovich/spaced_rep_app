@@ -1,4 +1,6 @@
 coverage/
+.stryker-tmp/
+reports/
 dist/
 dev-dist/
 playwright-report/

@@ -7,7 +7,7 @@ const { send, getSignedUrl } = vi.hoisted(() => ({
 
 vi.mock('@aws-sdk/client-s3', () => {
   class NotFound extends Error {
-    name = 'NotFound'
+    override name = 'NotFound'
   }
   class S3Client {
     send = send
@@ -63,7 +63,8 @@ describe('r2-storage', () => {
 
   it('returns null when HeadObject is missing', async () => {
     const { NotFound } = await import('@aws-sdk/client-s3')
-    send.mockRejectedValueOnce(new NotFound('missing'))
+    const Missing = NotFound as unknown as new (message: string) => Error
+    send.mockRejectedValueOnce(new Missing('missing'))
     const storage = createR2Storage({
       bucket: 'spaced-rep-media',
       region: 'us-east-1',
@@ -109,7 +110,8 @@ describe('r2-storage', () => {
         unhoistableHeaders: new Set(['x-amz-checksum-sha256'])
       })
     )
-    expect(getSignedUrl.mock.calls[0][1].input).toEqual(
+    const signed = getSignedUrl.mock.calls[0]?.[1]
+    expect(signed?.input).toEqual(
       expect.objectContaining({
         Bucket: 'spaced-rep-media',
         Key: 'user/hash',

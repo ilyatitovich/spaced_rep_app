@@ -107,16 +107,20 @@ export async function updateCard(card: Card): Promise<void> {
 
 export async function deleteCardById(cardId: string): Promise<void> {
   const previous = await getCardById(cardId)
-  await withTransaction([STORES.CARDS], 'readwrite', stores => {
-    return new Promise<void>((resolve, reject) => {
-      const req = stores[STORES.CARDS].delete(cardId)
-      req.onsuccess = () => resolve()
-      req.onerror = () => reject(req.error)
-    })
-  })
+  // Local delete + queue op in one transaction: never a row without its op (or vice versa).
+  await withTransaction(
+    [STORES.CARDS, STORES.SYNC_QUEUE],
+    'readwrite',
+    async stores => {
+      await promisifyRequest(stores[STORES.CARDS].delete(cardId))
+      await putSyncQueueOps(stores[STORES.SYNC_QUEUE], [
+        { table: STORES.CARDS, recordId: cardId, operation: 'delete' }
+      ])
+    }
+  )
 
   if (previous) await recordCardMediaDelete(previous)
-  await enqueueSync(STORES.CARDS, cardId, 'delete')
+  await refreshSyncQueueDepth()
   triggerSync()
 }
 

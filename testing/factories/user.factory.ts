@@ -2,7 +2,7 @@ import { faker } from '@faker-js/faker'
 import type { User } from '../../apps/server/src/generated/prisma/client.js'
 import { getTestPrisma } from '../db/prisma.js'
 
-export type UserBuildInput = {
+export interface UserBuildInput {
   email: string
   emailVerifiedAt: Date | null
 }

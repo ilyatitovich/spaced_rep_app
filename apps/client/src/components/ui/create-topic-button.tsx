@@ -1,6 +1,6 @@
 import Button from './button'
 
-type CreateTopicButtonProps = {
+interface CreateTopicButtonProps {
   isHidden: boolean
   onClick: () => void
 }

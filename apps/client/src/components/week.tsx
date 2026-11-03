@@ -3,7 +3,7 @@ import { Check, X } from 'lucide-react'
 import { getToday } from '@/lib'
 import { Day } from '@/models'
 
-type WeekProps = {
+interface WeekProps {
   week: Array<Day | null>
 }
 

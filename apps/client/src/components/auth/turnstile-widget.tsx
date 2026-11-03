@@ -4,7 +4,7 @@ const SCRIPT_ID = 'cf-turnstile-script'
 const SCRIPT_SRC =
   'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'
 
-type TurnstileApi = {
+interface TurnstileApi {
   render: (
     el: HTMLElement,
     options: {
@@ -43,7 +43,7 @@ function loadTurnstileScript(): Promise<void> {
   })
 }
 
-type TurnstileWidgetProps = {
+interface TurnstileWidgetProps {
   onToken: (token: string | null) => void
 }
 

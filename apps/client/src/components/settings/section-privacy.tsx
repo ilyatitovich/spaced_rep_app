@@ -2,7 +2,7 @@ import { BackButton, Header, Screen } from '@/components'
 import { useAuth } from '@/contexts'
 import { SettingsActionRow, SettingsGroup } from './settings-ui'
 
-type SectionPrivacyProps = {
+interface SectionPrivacyProps {
   isOpen: boolean
 }
 
