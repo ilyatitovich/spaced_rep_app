@@ -37,7 +37,7 @@ blob-report/
 .pnpm-store
 *.txt
 
-.cursor/plans/*
+.cursor
 
 # Prisma generated client
 apps/server/src/generated/

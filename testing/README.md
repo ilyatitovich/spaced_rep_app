@@ -38,9 +38,9 @@ pnpm exec playwright install
 
 ```bash
 pnpm test                 # all Vitest projects (unit + integration)
-pnpm test:unit            # unit only (no DB)
+pnpm test:unit            # unit only (no DB): client, server, sync-protocol, sync-client, browser-extension, testing
 pnpm test:integration     # server API + DB/Redis
-pnpm test:coverage        # Vitest with V8 coverage report
+pnpm test:coverage        # Vitest with V8 coverage report (no percentage gate)
 pnpm test:watch           # Vitest watch mode
 
 pnpm test:e2e             # Playwright (chromium, firefox, webkit)
@@ -59,10 +59,12 @@ pnpm exec vitest run --project client
 pnpm exec vitest run --project server
 pnpm exec vitest run --project server-integration
 pnpm exec vitest run --project sync-protocol
+pnpm exec vitest run --project sync-client
+pnpm exec vitest run --project browser-extension
 pnpm exec vitest run --project testing
 ```
 
-Filter Playwright by browser:
+Filter Playwright by browser (CI uses Chromium only):
 
 ```bash
 pnpm test:e2e --project=chromium
@@ -85,13 +87,15 @@ testing/                     # shared helpers, factories, fixtures, setup
 e2e/
   fixtures.ts                # default { test, expect } for specs
   tests/
-    smoke/                   # app-loads.spec.ts
+    smoke/                   # app-loads.spec.ts (topics home)
     auth/                    # future OTP / OAuth specs
     passkeys/                # future WebAuthn specs
 apps/client/**/*.test.ts(x)  # client unit tests
 apps/server/**/*.test.ts     # server unit tests
 apps/server/**/*.integration.test.ts
+apps/browser-extension/**/*.test.ts
 packages/sync-protocol/**/*.test.ts
+packages/sync-client/**/*.test.ts
 ```
 
 ## Naming conventions
@@ -175,9 +179,9 @@ Faker is seeded (`42`) in integration setup for deterministic data.
 
 `[.github/workflows/tests.yml](../.github/workflows/tests.yml)` runs three parallel jobs on push to `main` and on PRs:
 
-1. **Unit** — coverage artifact
-2. **Integration** — Postgres 17 + Redis 7 service containers
-3. **E2E** — same services + Playwright browsers (cached) + report artifacts
+1. **Unit** — `pnpm test:unit --coverage` (client, server, sync-protocol, sync-client, browser-extension, testing). Uploads the V8 HTML/LCOV report as an artifact. No coverage percentage gate.
+2. **Integration** — Postgres 17 + Redis 7 service containers; `pnpm test:integration`
+3. **E2E** — same services + Chromium only (`pnpm test:e2e --project=chromium`); Playwright report artifacts. Firefox and WebKit stay in `playwright.config.ts` for local runs.
 
 CI remaps compose ports (`5433→5432`, `6380→6379`) to the Actions service host ports.
 

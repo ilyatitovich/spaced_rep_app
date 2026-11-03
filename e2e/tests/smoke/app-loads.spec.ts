@@ -1,14 +1,15 @@
 import { test, expect } from '../../fixtures.js'
 
 test.describe('app smoke', () => {
-  test('loads the start screen', async ({ page }) => {
+  test('loads the topics home', async ({ page }) => {
     await page.goto('/')
 
+    await expect(page.getByText('Topics', { exact: true })).toBeVisible()
     await expect(
-      page.getByRole('img', { name: 'SpacedRepApp Logo' })
+      page.getByText('No topics found.').or(page.getByRole('list'))
     ).toBeVisible()
     await expect(
-      page.getByRole('button', { name: 'Start Local App' })
+      page.getByRole('button', { name: 'Create topic' })
     ).toBeVisible()
   })
 })
