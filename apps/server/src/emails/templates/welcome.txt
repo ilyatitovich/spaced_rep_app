@@ -1,0 +1,8 @@
+Welcome to {{brand.appName}}
+
+Thanks for creating an account. I built {{brand.appName}} so spaced repetition is easy enough to use every day.
+
+If something feels off, or you have an idea, email me at {{founder.email}} or open an issue on GitHub:
+{{founder.githubUrl}}
+
+{{founder.name}}

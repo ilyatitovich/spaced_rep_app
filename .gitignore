@@ -36,6 +36,7 @@ test-results/
 blob-report/
 .pnpm-store
 *.txt
+!apps/server/src/emails/templates/*.txt
 
 .cursor
 

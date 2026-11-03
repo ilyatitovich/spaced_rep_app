@@ -1,0 +1,13 @@
+{{brand.appName}} — Your login code
+
+Hi there,
+
+Use the code below to sign in to {{brand.appName}}. We sent it to {{{maskedTo}}}.
+
+{{{code}}}
+
+This code expires in {{minutesLabel}}. For your security, never share it with anyone.
+
+If you didn't request this code, you can safely ignore this email. Someone may have entered your address by mistake.
+
+— The {{brand.appName}} team

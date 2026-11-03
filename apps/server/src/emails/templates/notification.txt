@@ -1,0 +1,9 @@
+{{brand.appName}} — {{title}}
+
+{{{body}}}
+{{#if url}}
+
+{{{url}}}
+{{/if}}
+
+— The {{brand.appName}} team

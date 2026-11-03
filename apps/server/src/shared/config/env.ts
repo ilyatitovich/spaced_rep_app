@@ -8,6 +8,12 @@ const rootDir = path.resolve(
   '../..'
 )
 dotenv.config({ path: path.join(rootDir, '.env') })
+// CI / fresh clones have no apps/server/src/.env — fall back to committed test stubs.
+if (!process.env.DATABASE_URL) {
+  dotenv.config({
+    path: path.resolve(rootDir, '../../../.env.test.example')
+  })
+}
 
 const envSchema = z.object({
   NODE_ENV: z

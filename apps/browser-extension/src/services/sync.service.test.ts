@@ -149,6 +149,7 @@ describe('buildOutboxMutations', () => {
       weekJson: '[null,null,null,null,null,null,null]',
       nextUpdateDate: 2_000,
       updatedAt: 1_000,
+      isArchived: false,
       deletedAt: null
     })
   })
