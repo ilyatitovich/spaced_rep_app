@@ -58,8 +58,13 @@ const {
   syncAll
 } = await import('../sync.service')
 const { deleteCardById } = await import('../card.services')
-const { __resetStudyMemoryForTests, hydrateStudyMemory } =
-  await import('../study-memory')
+const {
+  __resetStudyMemoryForTests,
+  getCardFromMemory,
+  getCardsByTopicFromMemory,
+  getTopicFromMemory,
+  hydrateStudyMemory
+} = await import('../study-memory')
 
 function deferred<T>() {
   let resolve!: (value: T) => void
@@ -110,6 +115,31 @@ function remoteCard(
       deletedAt: overrides.deletedAt ?? null
     }
   }
+}
+
+function remoteTopic(
+  id: string,
+  overrides: { updatedAt: number; deletedAt?: number | null; title?: string }
+) {
+  return {
+    topic: {
+      id,
+      title: overrides.title ?? 'Remote',
+      pivot: 0,
+      weekJson: '[]',
+      nextUpdateDate: 0,
+      isArchived: false,
+      updatedAt: overrides.updatedAt,
+      deletedAt: overrides.deletedAt ?? null
+    }
+  }
+}
+
+function deltaOf(
+  records: PullDelta['records'],
+  watermark = '2024-06-01T00:00:00.000Z'
+): PullDelta {
+  return { records, watermark, more: false }
 }
 
 function queueRow(table_: string, recordId: string) {
@@ -381,6 +411,257 @@ describe('tombstone LWW on pull', () => {
     })
 
     expect(table(STORES.TOPICS).has(topic.id)).toBe(true)
+  })
+})
+
+describe('tombstone then newer upsert restores', () => {
+  it('restores a card deleted by a tombstone when a newer upsert arrives', async () => {
+    const card = await seedCard(5_000)
+
+    await applyPullDelta(
+      deltaOf([remoteCard(card.id, { updatedAt: 6_000, deletedAt: 6_000 })])
+    )
+    expect(table(STORES.CARDS).has(card.id)).toBe(false)
+
+    await applyPullDelta(
+      deltaOf(
+        [remoteCard(card.id, { updatedAt: 7_000, front: 'restored' })],
+        '2024-06-02T00:00:00.000Z'
+      )
+    )
+
+    const restored = table(STORES.CARDS).get(card.id) as Card
+    expect(restored.updatedAt).toBe(7_000)
+    expect(JSON.stringify(restored.data)).toContain('restored')
+  })
+
+  it('restores a topic deleted by a tombstone when a newer upsert arrives', async () => {
+    const topic = await seedTopic('Spanish', 5_000)
+
+    await applyPullDelta(
+      deltaOf([remoteTopic(topic.id, { updatedAt: 6_000, deletedAt: 6_000 })])
+    )
+    expect(table(STORES.TOPICS).has(topic.id)).toBe(false)
+
+    await applyPullDelta(
+      deltaOf(
+        [remoteTopic(topic.id, { updatedAt: 7_000, title: 'Spanish v2' })],
+        '2024-06-02T00:00:00.000Z'
+      )
+    )
+
+    const restored = table(STORES.TOPICS).get(topic.id) as Topic
+    expect(restored.title).toBe('Spanish v2')
+    expect(restored.updatedAt).toBe(7_000)
+  })
+
+  it('applies a newer remote upsert, ignores an older and an equal one', async () => {
+    const card = await seedCard(5_000)
+    const stored = () => table(STORES.CARDS).get(card.id) as Card
+
+    await applyPullDelta(
+      deltaOf([remoteCard(card.id, { updatedAt: 4_000, front: 'older' })])
+    )
+    expect(stored().updatedAt).toBe(5_000)
+
+    await applyPullDelta(
+      deltaOf([remoteCard(card.id, { updatedAt: 5_000, front: 'equal' })])
+    )
+    expect(JSON.stringify(stored().data)).not.toContain('equal')
+
+    await applyPullDelta(
+      deltaOf([remoteCard(card.id, { updatedAt: 6_000, front: 'newer' })])
+    )
+    expect(stored().updatedAt).toBe(6_000)
+    expect(JSON.stringify(stored().data)).toContain('newer')
+  })
+})
+
+describe('topic tombstone cascades to its cards', () => {
+  async function seedTopicWithCards(topicUpdatedAt: number) {
+    const topic = await seedTopic('Spanish', topicUpdatedAt)
+    const cards = [0, 1].map(i => {
+      const card = new Card(textCardData(`Q${i}`, `A${i}`), topic.id, 0)
+      card.updatedAt = 1_000
+      table(STORES.CARDS).set(card.id, card)
+      return card
+    })
+    const other = new Card(textCardData('Other', 'Other'), 'topic-other', 0)
+    other.updatedAt = 1_000
+    table(STORES.CARDS).set(other.id, other)
+    await hydrateStudyMemory()
+    return { topic, cards, other }
+  }
+
+  it('removes the topic and only its cards from the store and memory', async () => {
+    const { topic, cards, other } = await seedTopicWithCards(5_000)
+
+    await applyPullDelta(
+      deltaOf([remoteTopic(topic.id, { updatedAt: 6_000, deletedAt: 6_000 })])
+    )
+
+    expect(table(STORES.TOPICS).has(topic.id)).toBe(false)
+    for (const card of cards) {
+      expect(table(STORES.CARDS).has(card.id)).toBe(false)
+    }
+    expect(table(STORES.CARDS).has(other.id)).toBe(true)
+    expect(getCardsByTopicFromMemory(topic.id)).toEqual([])
+    expect(getCardFromMemory(other.id)).toBeDefined()
+  })
+
+  it('keeps the topic and its cards when the local topic is newer than the tombstone', async () => {
+    const { topic, cards } = await seedTopicWithCards(5_000)
+
+    await applyPullDelta(
+      deltaOf([remoteTopic(topic.id, { updatedAt: 3_000, deletedAt: 3_000 })])
+    )
+
+    expect(table(STORES.TOPICS).has(topic.id)).toBe(true)
+    for (const card of cards)
+      expect(table(STORES.CARDS).has(card.id)).toBe(true)
+  })
+})
+
+describe('topic conflict in a push ack', () => {
+  it('renames the local topic to the server title and clears its queue row', async () => {
+    const topic = await seedTopic('Biology', 1_000)
+    await enqueueSync(STORES.TOPICS, topic.id, 'upsert')
+    pushMock.mockImplementationOnce(async () => ({
+      acceptedOpIds: [],
+      rejected: [],
+      conflicts: [
+        {
+          topicId: topic.id,
+          oldTitle: 'Biology',
+          newTitle: 'Biology (2)',
+          reason: 'duplicate_title',
+          updatedAt: 9_000
+        }
+      ]
+    }))
+
+    await pushChanges('device-1')
+
+    const stored = table(STORES.TOPICS).get(topic.id) as Topic
+    expect(stored.title).toBe('Biology (2)')
+    expect(stored.updatedAt).toBe(9_000)
+    expect(getTopicFromMemory(topic.id)?.title).toBe('Biology (2)')
+    expect(queueRow(STORES.TOPICS, topic.id)).toBeUndefined()
+    expect(pushMock).toHaveBeenCalledOnce()
+  })
+
+  it('ignores a conflict for a topic that no longer exists locally', async () => {
+    await enqueueSync(STORES.TOPICS, 'gone-topic', 'delete')
+    pushMock.mockImplementationOnce(async () => ({
+      acceptedOpIds: [],
+      rejected: [],
+      conflicts: [
+        {
+          topicId: 'gone-topic',
+          oldTitle: 'X',
+          newTitle: 'X (2)',
+          reason: 'duplicate_title',
+          updatedAt: 9_000
+        }
+      ]
+    }))
+
+    await pushChanges('device-1')
+
+    expect(table(STORES.TOPICS).size).toBe(0)
+    expect(table(STORES.SYNC_QUEUE).size).toBe(0)
+  })
+})
+
+describe('reconcile after the 30-day gap', () => {
+  const DAY_MS = 24 * 60 * 60 * 1000
+  const BOOTSTRAP_WATERMARK = '2024-07-01T00:00:00.000Z'
+
+  function startSync(): Promise<void> {
+    setSyncUser('user-a')
+    setSyncEntitlement(true)
+    return syncAll('user-a')
+  }
+
+  beforeEach(() => {
+    pushMock.mockImplementation(async input => acceptAll(input))
+    pullMock.mockResolvedValue(emptyDelta('2024-05-01T00:00:00.000Z'))
+  })
+
+  it('bootstraps from epoch before pushing when the last sync is older than 30 days', async () => {
+    seedMeta('lastSyncAt', String(Date.now() - 31 * DAY_MS))
+    seedMeta('lastPulledAt', '2024-06-01T00:00:00.000Z')
+    const topic = await seedTopic('Offline edit')
+    await enqueueSync(STORES.TOPICS, topic.id, 'upsert')
+    const order: string[] = []
+    bootstrapMock.mockImplementationOnce(async () => {
+      order.push('bootstrap')
+      return {
+        records: [remoteCard('card-boot', { updatedAt: 2_000 })],
+        watermark: BOOTSTRAP_WATERMARK,
+        more: false
+      } satisfies PullDelta
+    })
+    pushMock.mockImplementation(async input => {
+      order.push('push')
+      return acceptAll(input)
+    })
+
+    await startSync()
+
+    expect(bootstrapMock).toHaveBeenCalledOnce()
+    expect(bootstrapMock.mock.calls[0]![0]).toMatchObject({
+      deviceId: 'device-1',
+      lastPulledAt: EPOCH_ISO,
+      pendingOpCount: 1
+    })
+    expect(order).toEqual(['bootstrap', 'push'])
+    expect(table(STORES.CARDS).has('card-boot')).toBe(true)
+    expect(metaValue('lastPulledAt')).toBe(BOOTSTRAP_WATERMARK)
+  })
+
+  it('keeps pulling from the bootstrap watermark while the bootstrap reports more', async () => {
+    seedMeta('lastSyncAt', String(Date.now() - 45 * DAY_MS))
+    bootstrapMock.mockResolvedValueOnce({
+      records: [remoteCard('card-boot-1', { updatedAt: 2_000 })],
+      watermark: BOOTSTRAP_WATERMARK,
+      more: true
+    })
+    pullMock.mockResolvedValueOnce({
+      records: [remoteCard('card-boot-2', { updatedAt: 3_000 })],
+      watermark: '2024-07-02T00:00:00.000Z',
+      more: false
+    })
+
+    await startSync()
+
+    expect(pullMock.mock.calls[0]![0].since).toBe(BOOTSTRAP_WATERMARK)
+    expect(table(STORES.CARDS).has('card-boot-1')).toBe(true)
+    expect(table(STORES.CARDS).has('card-boot-2')).toBe(true)
+  })
+
+  it.each([
+    ['synced within 30 days', () => String(Date.now() - 29 * DAY_MS)],
+    ['never synced before', () => undefined]
+  ])('does not bootstrap when %s', async (_name, lastSyncAt) => {
+    const value = lastSyncAt()
+    if (value !== undefined) seedMeta('lastSyncAt', value)
+
+    await startSync()
+
+    expect(bootstrapMock).not.toHaveBeenCalled()
+    expect(pullMock).toHaveBeenCalled()
+  })
+
+  it('records a fresh lastSyncAt after reconciling so the next run skips bootstrap', async () => {
+    seedMeta('lastSyncAt', String(Date.now() - 31 * DAY_MS))
+    bootstrapMock.mockResolvedValueOnce(emptyDelta(BOOTSTRAP_WATERMARK))
+
+    await startSync()
+    await syncAll('user-a')
+
+    expect(bootstrapMock).toHaveBeenCalledOnce()
+    expect(Date.now() - Number(metaValue('lastSyncAt'))).toBeLessThan(DAY_MS)
   })
 })
 

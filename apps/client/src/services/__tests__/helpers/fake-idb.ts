@@ -35,6 +35,48 @@ export function keyOf(value: { id?: string; key?: string }): string {
   return value.key ?? value.id ?? ''
 }
 
+// jsdom does not ship IDBKeyRange; services call IDBKeyRange.only().
+if (typeof globalThis.IDBKeyRange === 'undefined') {
+  globalThis.IDBKeyRange = {
+    only: (value: IDBValidKey) => ({ lower: value, upper: value })
+  } as unknown as typeof IDBKeyRange
+}
+
+/** Equality-only index: `openCursor(IDBKeyRange.only(v))` over rows where `row[field] === v`. */
+function fakeIndex(
+  rows: Map<string, unknown>,
+  field: string
+): Pick<IDBIndex, 'openCursor'> {
+  return {
+    openCursor: (range?: IDBValidKey | IDBKeyRange | null) => {
+      const wanted = (range as IDBKeyRange | undefined)?.lower
+      const matches = [...rows.entries()].filter(
+        ([, row]) => (row as Record<string, unknown>)[field] === wanted
+      )
+      let position = 0
+      const request = {
+        result: null as unknown,
+        error: null as DOMException | null,
+        onsuccess: null as (() => void) | null,
+        onerror: null as (() => void) | null
+      }
+      const step = () => {
+        const entry = matches[position++]
+        request.result = entry
+          ? {
+              value: entry[1],
+              delete: () => rows.delete(entry[0]),
+              continue: () => queueMicrotask(step)
+            }
+          : null
+        request.onsuccess?.()
+      }
+      queueMicrotask(step)
+      return request as unknown as IDBRequest<IDBCursorWithValue | null>
+    }
+  }
+}
+
 function fakeObjectStore(rows: Map<string, unknown>): IDBObjectStore {
   const put = (value: { id?: string; key?: string }) => {
     const key = keyOf(value)
@@ -42,6 +84,7 @@ function fakeObjectStore(rows: Map<string, unknown>): IDBObjectStore {
     return idbRequest(key)
   }
   return {
+    index: (name: string) => fakeIndex(rows, name),
     get: (key: IDBValidKey) => idbRequest(rows.get(String(key))),
     getAll: () => idbRequest([...rows.values()]),
     put,
