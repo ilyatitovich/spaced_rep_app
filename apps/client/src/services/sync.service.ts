@@ -35,6 +35,22 @@ import { ApiError } from '@/lib/api'
 import type { MediaDBRecord } from '@spaced-rep/sync-protocol'
 import type { WsConnectionState } from './sync-ws.manager'
 import { httpSyncMediaApi } from './sync-http.client'
+import {
+  clearStudyMemory,
+  deleteCardFromMemory,
+  deleteTopicFromMemory,
+  emitStudyData,
+  getAllCardsFromMemory,
+  getAllTopicsFromMemory,
+  getCardFromMemory,
+  getCardsByTopicFromMemory,
+  getTopicFromMemory,
+  putCardInMemory,
+  putTopicInMemory,
+  restoreCardInMemory,
+  restoreTopicInMemory,
+  subscribeStudyData
+} from './study-memory'
 
 type SyncTable = typeof STORES.TOPICS | typeof STORES.CARDS
 type SyncOperation = 'upsert' | 'delete'
@@ -126,7 +142,6 @@ let pendingClear: Promise<void> | null = null
 let realtime: SyncRealtimeHandle | null = null
 
 const listeners = new Set<(state: SyncState) => void>()
-const dataListeners = new Set<() => void>()
 
 function withSyncMutex(fn: () => Promise<void>): Promise<void> {
   if (syncMutex) return syncMutex
@@ -215,12 +230,11 @@ export function getSyncState(): SyncState {
 }
 
 export function subscribeSyncData(listener: () => void): () => void {
-  dataListeners.add(listener)
-  return () => dataListeners.delete(listener)
+  return subscribeStudyData(listener)
 }
 
 function emitSyncData(): void {
-  dataListeners.forEach(listener => listener())
+  emitStudyData()
 }
 
 function promisify<T>(request: IDBRequest<T>): Promise<T> {
@@ -234,77 +248,115 @@ async function getLocalRecord<T>(
   table: SyncTable,
   id: string
 ): Promise<T | undefined> {
-  return withTransaction(table, 'readonly', stores =>
-    promisify<T>(stores[table].get(id))
-  )
+  if (table === STORES.TOPICS) {
+    return getTopicFromMemory(id) as T | undefined
+  }
+  return getCardFromMemory(id) as T | undefined
 }
 
 async function getAllLocal<T>(
   table: SyncTable | typeof STORES.SYNC_QUEUE
 ): Promise<T[]> {
+  if (table === STORES.TOPICS) {
+    return getAllTopicsFromMemory() as T[]
+  }
+  if (table === STORES.CARDS) {
+    return getAllCardsFromMemory() as T[]
+  }
   return withTransaction(table, 'readonly', stores =>
     promisify<T[]>(stores[table].getAll())
   )
 }
 
+// The apply helpers below update memory, then IndexedDB, and roll memory back on
+// failure. They do not emit: the caller (applyPullDelta) emits once per batch.
 async function putLocal(table: SyncTable, value: Topic | Card): Promise<void> {
   if (table === STORES.CARDS) {
-    const previous = await getLocalRecord<Card>(STORES.CARDS, value.id)
-    await withTransaction(table, 'readwrite', async stores => {
-      await promisify(stores[table].put(value))
-    })
-    await recordCardMediaUpsert(previous, value as Card)
+    const card = value as Card
+    const previous = putCardInMemory(card)
+    try {
+      await withTransaction(table, 'readwrite', async stores => {
+        await promisify(stores[table].put(card))
+      })
+    } catch (error) {
+      restoreCardInMemory(card.id, previous)
+      throw error
+    }
+    await recordCardMediaUpsert(previous, card)
     return
   }
-  await withTransaction(table, 'readwrite', async stores => {
-    await promisify(stores[table].put(value))
-  })
+
+  const topic = value as Topic
+  const previous = putTopicInMemory(topic)
+  try {
+    await withTransaction(table, 'readwrite', async stores => {
+      await promisify(stores[table].put(topic))
+    })
+  } catch (error) {
+    restoreTopicInMemory(topic.id, previous)
+    throw error
+  }
 }
 
 async function deleteLocalTopic(topicId: string): Promise<void> {
+  const previousCards = getCardsByTopicFromMemory(topicId)
+  const previousTopic = deleteTopicFromMemory(topicId)
+  for (const card of previousCards) deleteCardFromMemory(card.id)
+
   let mediaDelta: EmbeddedCardMedia = {
     bytes: 0,
     images: 0,
     audio: 0
   }
-  await withTransaction(
-    [STORES.TOPICS, STORES.CARDS],
-    'readwrite',
-    async stores => {
-      await promisify(stores[STORES.TOPICS].delete(topicId))
+  try {
+    await withTransaction(
+      [STORES.TOPICS, STORES.CARDS],
+      'readwrite',
+      async stores => {
+        await promisify(stores[STORES.TOPICS].delete(topicId))
 
-      const index = stores[STORES.CARDS].index('topicId')
-      const cursorRequest = index.openCursor(IDBKeyRange.only(topicId))
+        const index = stores[STORES.CARDS].index('topicId')
+        const cursorRequest = index.openCursor(IDBKeyRange.only(topicId))
 
-      await new Promise<void>((resolve, reject) => {
-        cursorRequest.onsuccess = () => {
-          const cursor = cursorRequest.result
-          if (cursor) {
-            mediaDelta = addEmbeddedMedia(
-              mediaDelta,
-              subEmbeddedMedia(
-                { bytes: 0, images: 0, audio: 0 },
-                sumEmbeddedCardMedia(cursor.value as Card)
+        await new Promise<void>((resolve, reject) => {
+          cursorRequest.onsuccess = () => {
+            const cursor = cursorRequest.result
+            if (cursor) {
+              mediaDelta = addEmbeddedMedia(
+                mediaDelta,
+                subEmbeddedMedia(
+                  { bytes: 0, images: 0, audio: 0 },
+                  sumEmbeddedCardMedia(cursor.value as Card)
+                )
               )
-            )
-            cursor.delete()
-            cursor.continue()
-          } else {
-            resolve()
+              cursor.delete()
+              cursor.continue()
+            } else {
+              resolve()
+            }
           }
-        }
-        cursorRequest.onerror = () => reject(cursorRequest.error)
-      })
-    }
-  )
+          cursorRequest.onerror = () => reject(cursorRequest.error)
+        })
+      }
+    )
+  } catch (error) {
+    restoreTopicInMemory(topicId, previousTopic)
+    for (const card of previousCards) restoreCardInMemory(card.id, card)
+    throw error
+  }
   await adjustCardMediaStats(mediaDelta)
 }
 
 async function deleteLocalCard(cardId: string): Promise<void> {
-  const previous = await getLocalRecord<Card>(STORES.CARDS, cardId)
-  await withTransaction(STORES.CARDS, 'readwrite', async stores => {
-    await promisify(stores[STORES.CARDS].delete(cardId))
-  })
+  const previous = deleteCardFromMemory(cardId)
+  try {
+    await withTransaction(STORES.CARDS, 'readwrite', async stores => {
+      await promisify(stores[STORES.CARDS].delete(cardId))
+    })
+  } catch (error) {
+    restoreCardInMemory(cardId, previous)
+    throw error
+  }
   if (previous) await recordCardMediaDelete(previous)
 }
 
@@ -685,15 +737,28 @@ async function applyTopicConflict(
 }
 
 /** Shared incoming pipeline for HTTP pull, bootstrap/reconcile, and WS onDelta. */
-// oxlint-disable-next-line sonarjs/cognitive-complexity
 export async function applyPullDelta(delta: PullDelta): Promise<void> {
+  const progress = { mutated: false }
+  try {
+    await applyPullDeltaRecords(delta, progress)
+  } finally {
+    // One notification per batch, also when a later record fails after earlier
+    // ones were already committed.
+    if (progress.mutated) emitSyncData()
+  }
+}
+
+// oxlint-disable-next-line sonarjs/cognitive-complexity
+async function applyPullDeltaRecords(
+  delta: PullDelta,
+  progress: { mutated: boolean }
+): Promise<void> {
   // Hydrate + verify all owned media before any local write or watermark bump.
   const hydratedCardData = await hydrateIncomingCardData(
     delta,
     httpSyncMediaApi
   )
 
-  let didMutateLocal = false
   let maxUpdatedAt = 0
 
   for (const record of delta.records) {
@@ -708,7 +773,7 @@ export async function applyPullDelta(delta: PullDelta): Promise<void> {
         // oxlint-disable-next-line sonarjs/nested-control-flow
         if (local && shouldApplyRemote(local.updatedAt, remote.updatedAt)) {
           await deleteLocalTopic(remote.id)
-          didMutateLocal = true
+          progress.mutated = true
         }
         continue
       }
@@ -727,7 +792,7 @@ export async function applyPullDelta(delta: PullDelta): Promise<void> {
             throw err
           }
         }
-        didMutateLocal = true
+        progress.mutated = true
       }
     }
 
@@ -741,7 +806,7 @@ export async function applyPullDelta(delta: PullDelta): Promise<void> {
         // oxlint-disable-next-line sonarjs/nested-control-flow
         if (local && shouldApplyRemote(local.updatedAt, remote.updatedAt)) {
           await deleteLocalCard(remote.id)
-          didMutateLocal = true
+          progress.mutated = true
         }
         continue
       }
@@ -756,7 +821,7 @@ export async function applyPullDelta(delta: PullDelta): Promise<void> {
           STORES.CARDS,
           recordToCard(remote, data as CardRow['data'])
         )
-        didMutateLocal = true
+        progress.mutated = true
       }
     }
   }
@@ -776,8 +841,6 @@ export async function applyPullDelta(delta: PullDelta): Promise<void> {
       await setMeta('lastPulledAt', nextWatermark)
     }
   }
-
-  if (didMutateLocal) emitSyncData()
 }
 
 /** Returns max updatedAt among accepted mutations. */
@@ -1014,24 +1077,36 @@ async function runSyncAllOnce(): Promise<void> {
 
 /** Wipe local study data + queue (sign-out / account switch). Keeps deviceId. */
 export async function clearLocalSyncData(): Promise<void> {
-  await withTransaction(
-    [STORES.TOPICS, STORES.CARDS, STORES.SYNC_QUEUE, STORES.SYNC_META],
-    'readwrite',
-    async stores => {
-      await promisify(stores[STORES.TOPICS].clear())
-      await promisify(stores[STORES.CARDS].clear())
-      await promisify(stores[STORES.SYNC_QUEUE].clear())
-
-      const meta = stores[STORES.SYNC_META]
-      const rows = await promisify<{ key: string }[]>(meta.getAll())
-      for (const row of rows) {
-        if (row.key !== DEVICE_ID_KEY) await promisify(meta.delete(row.key))
-      }
-      await promisify(meta.put({ key: 'lastPulledAt', value: EPOCH_ISO }))
-    }
-  )
-  setState({ queueDepth: 0, failedOps: [] })
+  const snap = {
+    topics: getAllTopicsFromMemory(),
+    cards: getAllCardsFromMemory()
+  }
+  clearStudyMemory()
   emitSyncData()
+  try {
+    await withTransaction(
+      [STORES.TOPICS, STORES.CARDS, STORES.SYNC_QUEUE, STORES.SYNC_META],
+      'readwrite',
+      async stores => {
+        await promisify(stores[STORES.TOPICS].clear())
+        await promisify(stores[STORES.CARDS].clear())
+        await promisify(stores[STORES.SYNC_QUEUE].clear())
+
+        const meta = stores[STORES.SYNC_META]
+        const rows = await promisify<{ key: string }[]>(meta.getAll())
+        for (const row of rows) {
+          if (row.key !== DEVICE_ID_KEY) await promisify(meta.delete(row.key))
+        }
+        await promisify(meta.put({ key: 'lastPulledAt', value: EPOCH_ISO }))
+      }
+    )
+  } catch (error) {
+    for (const topic of snap.topics) putTopicInMemory(topic)
+    for (const card of snap.cards) putCardInMemory(card)
+    emitSyncData()
+    throw error
+  }
+  setState({ queueDepth: 0, failedOps: [] })
 }
 
 /** Test-only: drop module-level sync state so tests don't leak into each other. */

@@ -19,8 +19,8 @@ function promisifyRequest<T>(request: IDBRequest<T>): Promise<T> {
 /** Sum embedded image/audio buffers on a card (skips remote `{ src }` images). */
 export function sumEmbeddedCardMedia(card: {
   data?: {
-    front?: { blocks?: unknown[] }
-    back?: { blocks?: unknown[] }
+    front?: { side?: string; blocks?: unknown[] }
+    back?: { side?: string; blocks?: unknown[] }
   }
 }): EmbeddedCardMedia {
   let bytes = 0

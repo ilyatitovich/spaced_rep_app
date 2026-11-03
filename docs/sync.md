@@ -4,8 +4,8 @@ Short reference for how multi-device sync works today. Whole-record **last-write
 
 ## Model
 
-- **Local-first.** IndexedDB (`spacedRepApp` v6) is the runtime source of truth. The Express API is optional (`VITE_API_URL`).
-- **Outbox.** Mutating services write IndexedDB, then enqueue into `sync_queue` (key `` `${table}:${recordId}` `` so edits coalesce), then debounce-trigger `syncAll`.
+- **Local-first.** In-memory maps are the runtime lookup for topics and cards. IndexedDB (`spacedRepApp` v6) is the durable cache (hydrated on bootstrap). The Express API is optional (`VITE_API_URL`).
+- **Outbox.** Mutating services update memory, then IndexedDB, then enqueue into `sync_queue` (key `` `${table}:${recordId}` `` so edits coalesce), then debounce-trigger `syncAll`.
 - **Push then pull.** `syncAll` pushes up to 50 ops / ~700 KB, then pulls deltas since `lastPulledAt`. A WebSocket can deliver fanout; HTTP pull remains the fallback.
 - **Watermark.** Server pull returns a `watermark`. The client advances `lastPulledAt` forward only (never rewinds). Callers keep requesting while `more` is true.
 - **Tombstones.** Server soft-deletes (`deleted_at`). Clients hard-delete locally when a remote tombstone wins LWW. Physical purge waits until active devices have caught up (30-day active window).

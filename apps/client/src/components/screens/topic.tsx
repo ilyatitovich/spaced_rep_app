@@ -50,19 +50,24 @@ export default function TopicScreen({
   const cardId = searchParams.get('cardId') ?? ''
   const isSettingsOpen = searchParams.get('topicSettings') === 'true'
 
-  const fetchTopic = useCallback(async (): Promise<void> => {
-    try {
-      const { topic, levelCounts } = await getTopicById(topicId)
-      setTopic(topic)
-      setLevelCounts(levelCounts)
-      const contentEl = contentRef.current
-      if (contentEl) {
-        contentEl.scrollTop = 0
+  // Data events (local edits, sync pulls) refresh in place; only a topic change
+  // or leaving test mode scrolls back to the top.
+  const fetchTopic = useCallback(
+    async (resetScroll = false): Promise<void> => {
+      try {
+        const { topic, levelCounts } = await getTopicById(topicId)
+        setTopic(topic)
+        setLevelCounts(levelCounts)
+        const contentEl = contentRef.current
+        if (resetScroll && contentEl) {
+          contentEl.scrollTop = 0
+        }
+      } catch (error) {
+        console.error('Failed to fetch topic:', error)
       }
-    } catch (error) {
-      console.error('Failed to fetch topic:', error)
-    }
-  }, [topicId])
+    },
+    [topicId]
+  )
 
   const fetchLevelCards = useCallback(async (): Promise<void> => {
     if (!topicId || !levelId) {
@@ -80,7 +85,7 @@ export default function TopicScreen({
   useEffect(() => {
     if (!topicId) return
 
-    fetchTopic()
+    void fetchTopic(true)
   }, [topicId, isTest, fetchTopic])
 
   useEffect(() => {

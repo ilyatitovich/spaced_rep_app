@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import NotFoundPage from '@/pages/not-found'
 import RouteErrorPage from '@/pages/route-error'
 
-function Boom() {
+function Boom(): ReactNode {
   throw new Error('route crash')
 }
 

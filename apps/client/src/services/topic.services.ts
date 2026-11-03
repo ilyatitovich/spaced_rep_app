@@ -7,7 +7,6 @@ import {
 import {
   withTransaction,
   STORES,
-  CARDS_TOPIC_LEVEL_INDEX,
   LEVELS,
   shareFile,
   promisifyRequest,
@@ -23,10 +22,30 @@ import {
 import { encodeCardData } from '@/lib/sync-serialize'
 import { Topic, Card, updateWeek, reactivateTopic } from '@/models'
 import type { ExportedFile } from '@/types'
+import {
+  deleteCardFromMemory,
+  deleteTopicFromMemory,
+  emitStudyData,
+  findTopicByTitle,
+  getAllTopicsFromMemory,
+  getCardsByTopicFromMemory,
+  getTopicFromMemory,
+  putCardInMemory,
+  putTopicInMemory,
+  restoreTopicInMemory
+} from './study-memory'
 
 const DELETE_CHUNK = 50
 
 export async function createTopic(topic: Topic): Promise<void> {
+  if (findTopicByTitle(topic.title)) {
+    throw new Error(
+      `A topic with the title "${topic.title}" already exists. Topic title must be unique.`
+    )
+  }
+
+  const previous = putTopicInMemory(topic)
+  emitStudyData()
   try {
     await withTransaction(STORES.TOPICS, 'readwrite', async stores => {
       await new Promise((resolve, reject) => {
@@ -35,9 +54,9 @@ export async function createTopic(topic: Topic): Promise<void> {
         request.onerror = () => reject(request.error)
       })
     })
-    await enqueueSync(STORES.TOPICS, topic.id, 'upsert')
-    triggerSync()
   } catch (error) {
+    restoreTopicInMemory(topic.id, previous)
+    emitStudyData()
     if ((error as Error).name === 'ConstraintError') {
       throw new Error(
         `A topic with the title "${topic.title}" already exists. Topic title must be unique.`
@@ -46,27 +65,13 @@ export async function createTopic(topic: Topic): Promise<void> {
     console.error('Failed to save topic:', error)
     throw error
   }
+
+  await enqueueSync(STORES.TOPICS, topic.id, 'upsert')
+  triggerSync()
 }
 
 export async function getAllTopics(): Promise<Topic[]> {
-  const topics = await withTransaction(
-    STORES.TOPICS,
-    'readonly',
-    async stores => {
-      return new Promise<Topic[]>((resolve, reject) => {
-        const request = stores[STORES.TOPICS].getAll()
-
-        request.onsuccess = () => {
-          resolve(request.result as Topic[])
-        }
-
-        request.onerror = () => {
-          reject(request.error ?? new Error('Failed to fetch topics'))
-        }
-      })
-    }
-  )
-
+  const topics = getAllTopicsFromMemory()
   const updated: Topic[] = []
 
   for (const topic of topics) {
@@ -86,62 +91,28 @@ export async function getAllTopics(): Promise<Topic[]> {
 export async function getTopicById(
   topicId: string
 ): Promise<{ topic: Topic; levelCounts: Record<number, number> }> {
-  return withTransaction(
-    [STORES.TOPICS, STORES.CARDS],
-    'readonly',
-    async stores => {
-      const topicStore = stores[STORES.TOPICS]
-      const cardStore = stores[STORES.CARDS]
+  const topic = getTopicFromMemory(topicId)
+  if (!topic) {
+    throw new Error(`Topic with ID ${topicId} not found`)
+  }
 
-      const topicRequest = topicStore.get(topicId)
-
-      const topic = await new Promise<Topic | undefined>((resolve, reject) => {
-        topicRequest.onsuccess = () => resolve(topicRequest.result)
-        topicRequest.onerror = () =>
-          reject(topicRequest.error ?? new Error('Failed to fetch topic'))
-      })
-
-      if (!topic) {
-        throw new Error(`Topic with ID ${topicId} not found`)
-      }
-
-      const levelIndex = cardStore.index(CARDS_TOPIC_LEVEL_INDEX)
-      const levelCounts: Record<number, number> = {}
-
-      await Promise.all(
-        LEVELS.map(
-          level =>
-            new Promise<void>((resolve, reject) => {
-              const req = levelIndex.count(IDBKeyRange.only([topicId, level]))
-              req.onsuccess = () => {
-                levelCounts[level] = req.result
-                resolve()
-              }
-              req.onerror = () =>
-                reject(
-                  req.error ??
-                    new Error(`Failed to count cards at level ${level}`)
-                )
-            })
-        )
-      )
-
-      return { topic, levelCounts }
-    }
+  const levelCounts: Record<number, number> = Object.fromEntries(
+    LEVELS.map(level => [level, 0])
   )
+  for (const card of getCardsByTopicFromMemory(topicId)) {
+    if (card.level in levelCounts) {
+      levelCounts[card.level] = (levelCounts[card.level] ?? 0) + 1
+    }
+  }
+
+  return { topic, levelCounts }
 }
 
 export async function deleteTopic(topicId: string): Promise<void> {
-  const cards = await withTransaction(
-    STORES.CARDS,
-    'readonly',
-    async stores => {
-      const index = stores[STORES.CARDS].index('topicId')
-      return promisifyRequest<Card[]>(
-        index.getAll(IDBKeyRange.only(topicId)) as IDBRequest<Card[]>
-      )
-    }
-  )
+  const previousCards = getCardsByTopicFromMemory(topicId)
+  const previousTopic = deleteTopicFromMemory(topicId)
+  for (const card of previousCards) deleteCardFromMemory(card.id)
+  emitStudyData()
 
   let mediaDelta: EmbeddedCardMedia = {
     bytes: 0,
@@ -149,63 +120,70 @@ export async function deleteTopic(topicId: string): Promise<void> {
     audio: 0
   }
 
-  for (let i = 0; i < cards.length; i += DELETE_CHUNK) {
-    const slice = cards.slice(i, i + DELETE_CHUNK)
+  try {
+    for (let i = 0; i < previousCards.length; i += DELETE_CHUNK) {
+      const slice = previousCards.slice(i, i + DELETE_CHUNK)
 
-    const chunkDelta = await withTransaction(
-      [STORES.CARDS, STORES.SYNC_QUEUE],
+      const chunkDelta = await withTransaction(
+        [STORES.CARDS, STORES.SYNC_QUEUE],
+        'readwrite',
+        async stores => {
+          let delta: EmbeddedCardMedia = {
+            bytes: 0,
+            images: 0,
+            audio: 0
+          }
+          const deletedIds: string[] = []
+
+          for (const card of slice) {
+            await promisifyRequest(stores[STORES.CARDS].delete(card.id))
+            deletedIds.push(card.id)
+            delta = addEmbeddedMedia(
+              delta,
+              subEmbeddedMedia(
+                { bytes: 0, images: 0, audio: 0 },
+                sumEmbeddedCardMedia(card)
+              )
+            )
+          }
+
+          await putSyncQueueOps(
+            stores[STORES.SYNC_QUEUE],
+            deletedIds.map(recordId => ({
+              table: STORES.CARDS,
+              recordId,
+              operation: 'delete' as const
+            }))
+          )
+
+          return delta
+        }
+      )
+
+      mediaDelta = addEmbeddedMedia(mediaDelta, chunkDelta)
+      if (i + DELETE_CHUNK < previousCards.length) await yieldToMain()
+    }
+
+    await withTransaction(
+      [STORES.TOPICS, STORES.SYNC_QUEUE],
       'readwrite',
       async stores => {
-        let delta: EmbeddedCardMedia = {
-          bytes: 0,
-          images: 0,
-          audio: 0
-        }
-        const deletedIds: string[] = []
-
-        for (const card of slice) {
-          await promisifyRequest(stores[STORES.CARDS].delete(card.id))
-          deletedIds.push(card.id)
-          delta = addEmbeddedMedia(
-            delta,
-            subEmbeddedMedia(
-              { bytes: 0, images: 0, audio: 0 },
-              sumEmbeddedCardMedia(card)
-            )
-          )
-        }
-
-        await putSyncQueueOps(
-          stores[STORES.SYNC_QUEUE],
-          deletedIds.map(recordId => ({
-            table: STORES.CARDS,
-            recordId,
-            operation: 'delete' as const
-          }))
-        )
-
-        return delta
+        await promisifyRequest(stores[STORES.TOPICS].delete(topicId))
+        await putSyncQueueOps(stores[STORES.SYNC_QUEUE], [
+          {
+            table: STORES.TOPICS,
+            recordId: topicId,
+            operation: 'delete'
+          }
+        ])
       }
     )
-
-    mediaDelta = addEmbeddedMedia(mediaDelta, chunkDelta)
-    if (i + DELETE_CHUNK < cards.length) await yieldToMain()
+  } catch (error) {
+    restoreTopicInMemory(topicId, previousTopic)
+    for (const card of previousCards) putCardInMemory(card)
+    emitStudyData()
+    throw error
   }
-
-  await withTransaction(
-    [STORES.TOPICS, STORES.SYNC_QUEUE],
-    'readwrite',
-    async stores => {
-      await promisifyRequest(stores[STORES.TOPICS].delete(topicId))
-      await putSyncQueueOps(stores[STORES.SYNC_QUEUE], [
-        {
-          table: STORES.TOPICS,
-          recordId: topicId,
-          operation: 'delete'
-        }
-      ])
-    }
-  )
 
   await adjustCardMediaStats(mediaDelta)
   await refreshSyncQueueDepth()
@@ -214,25 +192,35 @@ export async function deleteTopic(topicId: string): Promise<void> {
 
 async function persistTopics(topics: Topic[]): Promise<void> {
   const now = Date.now()
-  topics.forEach(topic => {
+  const previous = topics.map(topic => {
     topic.updatedAt = now
+    return { id: topic.id, previous: putTopicInMemory(topic) }
   })
+  emitStudyData()
 
-  await withTransaction([STORES.TOPICS], 'readwrite', async stores => {
-    const store = stores[STORES.TOPICS]
+  try {
+    await withTransaction([STORES.TOPICS], 'readwrite', async stores => {
+      const store = stores[STORES.TOPICS]
 
-    await Promise.all(
-      topics.map(
-        topic =>
-          new Promise<void>((resolve, reject) => {
-            const request = store.put(topic)
-            request.onsuccess = () => resolve()
-            request.onerror = () =>
-              reject(request.error ?? new Error('Failed to update topic'))
-          })
+      await Promise.all(
+        topics.map(
+          topic =>
+            new Promise<void>((resolve, reject) => {
+              const request = store.put(topic)
+              request.onsuccess = () => resolve()
+              request.onerror = () =>
+                reject(request.error ?? new Error('Failed to update topic'))
+            })
+        )
       )
-    )
-  })
+    })
+  } catch (error) {
+    for (const entry of previous) {
+      restoreTopicInMemory(entry.id, entry.previous)
+    }
+    emitStudyData()
+    throw error
+  }
 
   for (const topic of topics) {
     await enqueueSync(STORES.TOPICS, topic.id, 'upsert')
@@ -263,59 +251,35 @@ export function unarchiveTopics(topics: Topic[]): Promise<void> {
 }
 
 export async function exportTopic(topicId: string): Promise<ExportedFile> {
-  return withTransaction(
-    [STORES.TOPICS, STORES.CARDS],
-    'readonly',
-    async stores => {
-      const topicStore = stores[STORES.TOPICS]
-      const cardStore = stores[STORES.CARDS]
+  const topic = getTopicFromMemory(topicId)
+  if (!topic) {
+    throw new Error(`Topic with ID ${topicId} not found`)
+  }
 
-      const topicRequest = topicStore.get(topicId)
+  const cards = getCardsByTopicFromMemory(topicId)
+  const processedCards = cards.map((card: Card) => ({
+    ...card,
+    data: encodeCardData(card.data)
+  }))
 
-      const topic = await new Promise<Topic | undefined>((resolve, reject) => {
-        topicRequest.onsuccess = () => resolve(topicRequest.result)
-        topicRequest.onerror = () =>
-          reject(topicRequest.error ?? new Error('Failed to fetch topic'))
-      })
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    topic: {
+      id: topic.id,
+      title: topic.title,
+      pivot: topic.pivot
+    },
+    cards: processedCards
+  }
 
-      if (!topic) {
-        throw new Error(`Topic with ID ${topicId} not found`)
-      }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    type: 'application/json'
+  })
 
-      const cardsIndex = cardStore.index('topicId')
-      const cardsRequest = cardsIndex.getAll(IDBKeyRange.only(topicId))
-
-      const cards = await new Promise<Card[]>((resolve, reject) => {
-        cardsRequest.onsuccess = () => resolve(cardsRequest.result)
-        cardsRequest.onerror = () =>
-          reject(cardsRequest.error ?? new Error('Failed to fetch cards'))
-      })
-
-      const processedCards = cards.map((card: Card) => ({
-        ...card,
-        data: encodeCardData(card.data)
-      }))
-
-      const payload = {
-        exportedAt: new Date().toISOString(),
-        topic: {
-          id: topic.id,
-          title: topic.title,
-          pivot: topic.pivot
-        },
-        cards: processedCards
-      }
-
-      const blob = new Blob([JSON.stringify(payload, null, 2)], {
-        type: 'application/json'
-      })
-
-      return {
-        blob,
-        fileName: `topic-${topic.title}-${topic.id}-${payload.exportedAt}.json`
-      }
-    }
-  )
+  return {
+    blob,
+    fileName: `topic-${topic.title}-${topic.id}-${payload.exportedAt}.json`
+  }
 }
 
 export async function shareTopic(topic: Topic): Promise<void> {

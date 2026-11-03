@@ -15,58 +15,45 @@ import {
   adjustCardMediaStats,
   type EmbeddedCardMedia
 } from '@/lib/card-media-stats'
-import { withTransaction, STORES, CARDS_TOPIC_LEVEL_INDEX } from '@/lib/db'
+import { withTransaction, STORES } from '@/lib/db'
 import { normalizeCardData } from '@/lib/normalize-card'
 import { parseImportJson } from '@/lib/parse-import-json'
 import { getJsonFile, shareFile } from '@/lib/share'
 import { decodeCardData } from '@/lib/sync-serialize'
 import { Card } from '@/models'
 import { getTopicById } from './topic.services'
+import {
+  deleteCardFromMemory,
+  emitStudyData,
+  getAllCardsFromMemory,
+  getCardFromMemory,
+  getCardsByTopicAndLevelFromMemory,
+  putCardInMemory,
+  restoreCardInMemory
+} from './study-memory'
 
 const IMPORT_CHUNK = 50
+const NO_MEDIA: EmbeddedCardMedia = { bytes: 0, images: 0, audio: 0 }
 
-async function getCardById(cardId: string): Promise<Card | undefined> {
-  return withTransaction(STORES.CARDS, 'readonly', stores =>
-    promisifyRequest<Card | undefined>(
-      stores[STORES.CARDS].get(cardId) as IDBRequest<Card | undefined>
-    )
-  )
-}
-
-async function getCardsByIds(cardIds: string[]): Promise<Card[]> {
-  return withTransaction([STORES.CARDS], 'readonly', async stores => {
-    const store = stores[STORES.CARDS]
-
-    const cards = await Promise.all(
-      cardIds.map(id => promisifyRequest<Card | undefined>(store.get(id)))
-    )
-
-    return cards.filter((card): card is Card => card !== undefined)
-  })
+function getCardsByIds(cardIds: string[]): Card[] {
+  return cardIds
+    .map(id => getCardFromMemory(id))
+    .filter((card): card is Card => card !== undefined)
 }
 
 export async function getCardsByTopicAndLevel(
   topicId: string,
   level: number
 ): Promise<Card[]> {
-  return withTransaction([STORES.CARDS], 'readonly', async stores => {
-    const index = stores[STORES.CARDS].index(CARDS_TOPIC_LEVEL_INDEX)
-    const request = index.getAll(IDBKeyRange.only([topicId, level]))
-
-    const cards = await new Promise<Card[]>((resolve, reject) => {
-      request.onsuccess = () => resolve(request.result as Card[])
-      request.onerror = () =>
-        reject(request.error ?? new Error('Failed to fetch cards by level'))
-    })
-
-    return cards.map(card => ({
-      ...card,
-      data: normalizeCardData(card.data)
-    }))
-  })
+  return getCardsByTopicAndLevelFromMemory(topicId, level).map(card => ({
+    ...card,
+    data: normalizeCardData(card.data)
+  }))
 }
 
 export async function createCard(card: Card): Promise<void> {
+  const previous = putCardInMemory(card)
+  emitStudyData()
   try {
     await withTransaction(STORES.CARDS, 'readwrite', async stores => {
       await new Promise((resolve, reject) => {
@@ -75,27 +62,36 @@ export async function createCard(card: Card): Promise<void> {
         request.onerror = () => reject(request.error)
       })
     })
-    await recordCardMediaUpsert(undefined, card)
-    await enqueueSync(STORES.CARDS, card.id, 'upsert')
-    triggerSync()
   } catch (error) {
+    restoreCardInMemory(card.id, previous)
+    emitStudyData()
     console.error('Failed to save card:', error)
     throw error
   }
+
+  await recordCardMediaUpsert(undefined, card)
+  await enqueueSync(STORES.CARDS, card.id, 'upsert')
+  triggerSync()
 }
 
 export async function updateCard(card: Card): Promise<void> {
   try {
     card.updatedAt = Date.now()
-    const previous = await getCardById(card.id)
-
-    await withTransaction([STORES.CARDS], 'readwrite', async stores => {
-      await new Promise<void>((resolve, reject) => {
-        const request = stores[STORES.CARDS].put(card)
-        request.onsuccess = () => resolve()
-        request.onerror = () => reject(request.error)
+    const previous = putCardInMemory(card)
+    emitStudyData()
+    try {
+      await withTransaction([STORES.CARDS], 'readwrite', async stores => {
+        await new Promise<void>((resolve, reject) => {
+          const request = stores[STORES.CARDS].put(card)
+          request.onsuccess = () => resolve()
+          request.onerror = () => reject(request.error)
+        })
       })
-    })
+    } catch (error) {
+      restoreCardInMemory(card.id, previous)
+      emitStudyData()
+      throw error
+    }
     await recordCardMediaUpsert(previous, card)
     await enqueueSync(STORES.CARDS, card.id, 'upsert')
     triggerSync()
@@ -106,84 +102,106 @@ export async function updateCard(card: Card): Promise<void> {
 }
 
 export async function deleteCardById(cardId: string): Promise<void> {
-  const previous = await getCardById(cardId)
-  // Local delete + queue op in one transaction: never a row without its op (or vice versa).
-  await withTransaction(
-    [STORES.CARDS, STORES.SYNC_QUEUE],
-    'readwrite',
-    async stores => {
-      await promisifyRequest(stores[STORES.CARDS].delete(cardId))
-      await putSyncQueueOps(stores[STORES.SYNC_QUEUE], [
-        { table: STORES.CARDS, recordId: cardId, operation: 'delete' }
-      ])
-    }
-  )
+  const previous = deleteCardFromMemory(cardId)
+  emitStudyData()
+  try {
+    // Local delete + queue op in one transaction: never a row without its op (or vice versa).
+    await withTransaction(
+      [STORES.CARDS, STORES.SYNC_QUEUE],
+      'readwrite',
+      async stores => {
+        await promisifyRequest(stores[STORES.CARDS].delete(cardId))
+        await putSyncQueueOps(stores[STORES.SYNC_QUEUE], [
+          { table: STORES.CARDS, recordId: cardId, operation: 'delete' }
+        ])
+      }
+    )
+  } catch (error) {
+    restoreCardInMemory(cardId, previous)
+    emitStudyData()
+    throw error
+  }
 
   if (previous) await recordCardMediaDelete(previous)
   await refreshSyncQueueDepth()
   triggerSync()
 }
 
+/** Deletes one chunk (rows + queue ops in one transaction). Returns the media freed. */
+async function deleteCardsChunk(
+  ids: string[],
+  previousById: Map<string, Card | undefined>
+): Promise<EmbeddedCardMedia> {
+  return withTransaction(
+    [STORES.CARDS, STORES.SYNC_QUEUE],
+    'readwrite',
+    async stores => {
+      let delta = NO_MEDIA
+      const deletedIds: string[] = []
+
+      for (const id of ids) {
+        await promisifyRequest(stores[STORES.CARDS].delete(id))
+        const card = previousById.get(id)
+        if (!card) continue
+        deletedIds.push(id)
+        delta = addEmbeddedMedia(
+          delta,
+          subEmbeddedMedia(NO_MEDIA, sumEmbeddedCardMedia(card))
+        )
+      }
+
+      await putSyncQueueOps(
+        stores[STORES.SYNC_QUEUE],
+        deletedIds.map(recordId => ({
+          table: STORES.CARDS,
+          recordId,
+          operation: 'delete' as const
+        }))
+      )
+
+      return delta
+    }
+  )
+}
+
 export async function deleteCardsBulk(cardIds: string[]): Promise<void> {
   if (cardIds.length === 0) return
 
-  let mediaDelta: EmbeddedCardMedia = {
-    bytes: 0,
-    images: 0,
-    audio: 0
+  const previousById = new Map<string, Card | undefined>()
+  for (const id of cardIds) {
+    previousById.set(id, deleteCardFromMemory(id))
   }
+  emitStudyData()
 
-  for (let i = 0; i < cardIds.length; i += IMPORT_CHUNK) {
-    const slice = cardIds.slice(i, i + IMPORT_CHUNK)
+  let mediaDelta = NO_MEDIA
 
-    const chunkDelta = await withTransaction(
-      [STORES.CARDS, STORES.SYNC_QUEUE],
-      'readwrite',
-      async stores => {
-        let delta: EmbeddedCardMedia = {
-          bytes: 0,
-          images: 0,
-          audio: 0
-        }
-        const deletedIds: string[] = []
-
-        for (const id of slice) {
-          const card = await promisifyRequest<Card | undefined>(
-            stores[STORES.CARDS].get(id) as IDBRequest<Card | undefined>
-          )
-          await promisifyRequest(stores[STORES.CARDS].delete(id))
-          if (card) {
-            deletedIds.push(id)
-            delta = addEmbeddedMedia(
-              delta,
-              subEmbeddedMedia(
-                { bytes: 0, images: 0, audio: 0 },
-                sumEmbeddedCardMedia(card)
-              )
-            )
-          }
-        }
-
-        await putSyncQueueOps(
-          stores[STORES.SYNC_QUEUE],
-          deletedIds.map(recordId => ({
-            table: STORES.CARDS,
-            recordId,
-            operation: 'delete' as const
-          }))
-        )
-
-        return delta
-      }
-    )
-
-    mediaDelta = addEmbeddedMedia(mediaDelta, chunkDelta)
-    if (i + IMPORT_CHUNK < cardIds.length) await yieldToMain()
+  try {
+    for (let i = 0; i < cardIds.length; i += IMPORT_CHUNK) {
+      const slice = cardIds.slice(i, i + IMPORT_CHUNK)
+      const chunkDelta = await deleteCardsChunk(slice, previousById)
+      mediaDelta = addEmbeddedMedia(mediaDelta, chunkDelta)
+      if (i + IMPORT_CHUNK < cardIds.length) await yieldToMain()
+    }
+  } catch (error) {
+    for (const [id, previous] of previousById) {
+      restoreCardInMemory(id, previous)
+    }
+    emitStudyData()
+    throw error
   }
 
   await adjustCardMediaStats(mediaDelta)
   await refreshSyncQueueDepth()
   triggerSync()
+}
+
+/** Puts every card in one transaction; rejects on the first failed write. */
+function putAllCards(cards: Card[]): Promise<void> {
+  return withTransaction([STORES.CARDS], 'readwrite', async stores => {
+    for (const card of cards) {
+      await promisifyRequest(stores[STORES.CARDS].put(card))
+    }
+  })
 }
 
 export async function updateCardsLevelBulk(
@@ -193,29 +211,22 @@ export async function updateCardsLevelBulk(
   if (cards.length === 0) return
 
   const now = Date.now()
-  for (const card of cards) {
+  const previous = cards.map(card => {
     card.level = level
     card.updatedAt = now
-  }
-
-  await withTransaction([STORES.CARDS], 'readwrite', async stores => {
-    return new Promise<void>((resolve, reject) => {
-      let remaining = cards.length
-
-      for (const card of cards) {
-        const req = stores[STORES.CARDS].put(card)
-
-        req.onerror = () => {
-          reject(req.error ?? new Error(`Failed to update card ${card.id}`))
-        }
-
-        req.onsuccess = () => {
-          remaining -= 1
-          if (remaining === 0) resolve()
-        }
-      }
-    })
+    return { id: card.id, previous: putCardInMemory(card) }
   })
+  emitStudyData()
+
+  try {
+    await putAllCards(cards)
+  } catch (error) {
+    for (const entry of previous) {
+      restoreCardInMemory(entry.id, entry.previous)
+    }
+    emitStudyData()
+    throw error
+  }
 
   await enqueueSyncBulk(
     cards.map(card => ({
@@ -227,101 +238,127 @@ export async function updateCardsLevelBulk(
   triggerSync()
 }
 
-export async function migrateCardsToNewSchema(): Promise<void> {
-  return withTransaction([STORES.CARDS], 'readwrite', async stores => {
-    return new Promise<void>((resolve, reject) => {
-      const request = stores[STORES.CARDS].getAll() as IDBRequest<Card[]>
-
-      request.onsuccess = () => {
-        const oldCards = request.result
-
-        let remaining = oldCards.length
-        if (remaining === 0) {
-          resolve()
-          return
-        }
-
-        for (let card of oldCards) {
-          card = {
-            ...card,
-            updatedAt: Date.now(),
-            data: normalizeCardData({
-              front: {
-                type: 'text',
-                side: 'front',
-                content:
-                  typeof card.data.front === 'string'
-                    ? card.data.front
-                    : ((card.data.front as { content?: unknown })?.content ??
-                      '')
-              },
-              back: {
-                type: 'text',
-                side: 'back',
-                content:
-                  typeof card.data.back === 'string'
-                    ? card.data.back
-                    : ((card.data.back as { content?: unknown })?.content ?? '')
-              }
-            })
-          }
-
-          const req = stores[STORES.CARDS].put(card)
-
-          req.onerror = () => {
-            reject(req.error ?? new Error(`Failed to update card ${card.id}`))
-          }
-
-          req.onsuccess = () => {
-            remaining -= 1
-            if (remaining === 0) resolve()
-          }
-        }
+function toNewSchema(card: Card): Card {
+  return {
+    ...card,
+    updatedAt: Date.now(),
+    data: normalizeCardData({
+      front: {
+        type: 'text',
+        side: 'front',
+        content:
+          typeof card.data.front === 'string'
+            ? card.data.front
+            : ((card.data.front as { content?: unknown })?.content ?? '')
+      },
+      back: {
+        type: 'text',
+        side: 'back',
+        content:
+          typeof card.data.back === 'string'
+            ? card.data.back
+            : ((card.data.back as { content?: unknown })?.content ?? '')
       }
     })
-  })
+  }
 }
 
-async function persistImportedCards(
+export async function migrateCardsToNewSchema(): Promise<void> {
+  const updated = getAllCardsFromMemory().map(toNewSchema)
+  if (updated.length === 0) return
+
+  const previous = updated.map(card => ({
+    id: card.id,
+    previous: putCardInMemory(card)
+  }))
+  emitStudyData()
+
+  try {
+    await putAllCards(updated)
+  } catch (error) {
+    for (const entry of previous) {
+      restoreCardInMemory(entry.id, entry.previous)
+    }
+    emitStudyData()
+    throw error
+  }
+}
+
+/**
+ * Writes one chunk: memory first, then IndexedDB. A card whose write fails is
+ * skipped and restored; if the transaction itself fails the whole chunk is rolled
+ * back and the error is rethrown.
+ */
+async function putCardsChunk(
+  slice: Card[]
+): Promise<{ importedIds: string[]; mediaDelta: EmbeddedCardMedia }> {
+  const previousById = new Map(
+    slice.map(card => [card.id, getCardFromMemory(card.id)])
+  )
+  for (const card of slice) putCardInMemory(card)
+
+  const importedIds: string[] = []
+  let mediaDelta = NO_MEDIA
+
+  try {
+    await withTransaction([STORES.CARDS], 'readwrite', async stores => {
+      for (const card of slice) {
+        try {
+          await promisifyRequest(stores[STORES.CARDS].put(card))
+        } catch (reason) {
+          console.warn('Failed to import card:', card.id, reason)
+          restoreCardInMemory(card.id, previousById.get(card.id))
+          continue
+        }
+        importedIds.push(card.id)
+        const previous = previousById.get(card.id)
+        mediaDelta = addEmbeddedMedia(
+          mediaDelta,
+          subEmbeddedMedia(
+            sumEmbeddedCardMedia(card),
+            previous ? sumEmbeddedCardMedia(previous) : NO_MEDIA
+          )
+        )
+      }
+    })
+  } catch (error) {
+    for (const [id, previous] of previousById) {
+      restoreCardInMemory(id, previous)
+    }
+    throw error
+  }
+
+  return { importedIds, mediaDelta }
+}
+
+interface ChunkHooks {
+  prepare?: ((slice: Card[]) => void) | undefined
+  onProgress?: ((done: number, total: number) => void) | undefined
+}
+
+/** Persists cards in chunks, notifies the UI once at the end, enqueues sync. */
+async function persistCardsInChunks(
   cards: Card[],
-  onProgress?: (done: number, total: number) => void
+  { prepare, onProgress }: ChunkHooks = {}
 ): Promise<number> {
   const importedIds: string[] = []
   const total = cards.length
-  let mediaDelta: EmbeddedCardMedia = {
-    bytes: 0,
-    images: 0,
-    audio: 0
-  }
+  let mediaDelta = NO_MEDIA
 
-  for (let i = 0; i < cards.length; i += IMPORT_CHUNK) {
-    const slice = cards.slice(i, i + IMPORT_CHUNK)
+  try {
+    for (let i = 0; i < cards.length; i += IMPORT_CHUNK) {
+      const slice = cards.slice(i, i + IMPORT_CHUNK)
+      prepare?.(slice)
 
-    await withTransaction([STORES.CARDS], 'readwrite', async stores => {
-      for (const card of slice) {
-        const previous = await promisifyRequest<Card | undefined>(
-          stores[STORES.CARDS].get(card.id) as IDBRequest<Card | undefined>
-        )
-        try {
-          await promisifyRequest(stores[STORES.CARDS].put(card))
-          importedIds.push(card.id)
-          mediaDelta = addEmbeddedMedia(
-            mediaDelta,
-            subEmbeddedMedia(
-              sumEmbeddedCardMedia(card),
-              previous
-                ? sumEmbeddedCardMedia(previous)
-                : { bytes: 0, images: 0, audio: 0 }
-            )
-          )
-        } catch (reason) {
-          console.warn('Failed to import card:', card.id, reason)
-        }
-      }
-    })
+      const chunk = await putCardsChunk(slice)
+      importedIds.push(...chunk.importedIds)
+      mediaDelta = addEmbeddedMedia(mediaDelta, chunk.mediaDelta)
 
-    onProgress?.(Math.min(i + slice.length, total), total)
-    if (i + IMPORT_CHUNK < cards.length) await yieldToMain()
+      onProgress?.(Math.min(i + slice.length, total), total)
+      if (i + IMPORT_CHUNK < cards.length) await yieldToMain()
+    }
+  } finally {
+    emitStudyData()
   }
 
   await adjustCardMediaStats(mediaDelta)
@@ -364,7 +401,7 @@ export async function importCards(
     data: normalizeCardData(decodeCardData(card.data))
   }))
 
-  return persistImportedCards(cardsToImport)
+  return persistCardsInChunks(cardsToImport)
 }
 
 export type AnkiImportProgress =
@@ -390,61 +427,10 @@ export async function importAnkiApkg(
   }
 
   // Sanitize each chunk on main, then persist — one monotonic Saving n/total.
-  const importedIds: string[] = []
-  const total = cards.length
-  let mediaDelta: EmbeddedCardMedia = {
-    bytes: 0,
-    images: 0,
-    audio: 0
-  }
-
-  for (let i = 0; i < cards.length; i += IMPORT_CHUNK) {
-    const slice = cards.slice(i, i + IMPORT_CHUNK)
-    for (const card of slice) sanitizeImportedCard(card)
-
-    await withTransaction([STORES.CARDS], 'readwrite', async stores => {
-      for (const card of slice) {
-        const previous = await promisifyRequest<Card | undefined>(
-          stores[STORES.CARDS].get(card.id) as IDBRequest<Card | undefined>
-        )
-        try {
-          await promisifyRequest(stores[STORES.CARDS].put(card))
-          importedIds.push(card.id)
-          mediaDelta = addEmbeddedMedia(
-            mediaDelta,
-            subEmbeddedMedia(
-              sumEmbeddedCardMedia(card),
-              previous
-                ? sumEmbeddedCardMedia(previous)
-                : { bytes: 0, images: 0, audio: 0 }
-            )
-          )
-        } catch (reason) {
-          console.warn('Failed to import card:', card.id, reason)
-        }
-      }
-    })
-
-    onProgress?.({
-      phase: 'saving',
-      done: Math.min(i + slice.length, total),
-      total
-    })
-    if (i + IMPORT_CHUNK < cards.length) await yieldToMain()
-  }
-
-  await adjustCardMediaStats(mediaDelta)
-
-  await enqueueSyncBulk(
-    importedIds.map(id => ({
-      table: STORES.CARDS,
-      recordId: id,
-      operation: 'upsert' as const
-    }))
-  )
-  triggerSync()
-
-  return importedIds.length
+  return persistCardsInChunks(cards, {
+    prepare: slice => slice.forEach(card => sanitizeImportedCard(card)),
+    onProgress: (done, total) => onProgress?.({ phase: 'saving', done, total })
+  })
 }
 
 export async function shareCards(
@@ -455,7 +441,7 @@ export async function shareCards(
   try {
     const topic = await getTopicById(topicId)
     if (!topic) throw new Error('Topic not found')
-    const cards = await getCardsByIds(cardIds)
+    const cards = getCardsByIds(cardIds)
     const fileName = `topic-${topic.topic.title}-level-${level}-${new Date().toISOString()}.json`
     const file = getJsonFile(cards, fileName)
     await shareFile(file, 'Cards')

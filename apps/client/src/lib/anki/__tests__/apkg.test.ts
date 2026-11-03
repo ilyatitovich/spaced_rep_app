@@ -173,22 +173,26 @@ describe('parseApkg + apkgToCards', () => {
 
     const parsed = await parseApkg(apkg)
     expect(parsed.notes).toHaveLength(1)
-    expect(parsed.notes[0].fieldNames).toEqual(['Front', 'Back'])
+    const [note] = parsed.notes
+    if (!note) throw new Error('expected one parsed note')
+    expect(note.fieldNames).toEqual(['Front', 'Back'])
     expect(parsed.mediaByName.get('photo.png')?.type).toBe('image/png')
     expect(parsed.mediaByName.get('clip.mp3')?.type).toBe('audio/mpeg')
 
     const cards = apkgToCards(parsed, 'topic-1')
     expect(cards).toHaveLength(1)
-    expect(cards[0].topicId).toBe('topic-1')
-    expect(cards[0].level).toBe(0)
-    expect(cards[0].id).toMatch(
+    const [card] = cards
+    if (!card) throw new Error('expected one card')
+    expect(card.topicId).toBe('topic-1')
+    expect(card.level).toBe(0)
+    expect(card.id).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
     )
 
     const data = noteFieldsToCardData(
-      parsed.notes[0].fields,
+      note.fields,
       parsed.mediaByName,
-      parsed.notes[0].fieldNames
+      note.fieldNames
     )
     expect(data.front.blocks[0]).toMatchObject({ type: 'text' })
     expect(data.front.blocks.some(b => b.type === 'image')).toBe(true)

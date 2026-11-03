@@ -189,11 +189,14 @@ vi.mock('@/lib/anki/run-anki-import-worker', () => ({
   runAnkiImportWorker: (...args: unknown[]) => runAnkiImportWorkerMock(...args)
 }))
 
-const { createTopic, deleteTopic, getAllTopics, getTopicById } =
+const { createTopic, deleteTopic, getAllTopics, getTopicById, updateTopic } =
   await import('../topic.services')
 const { getCardsByTopicAndLevel, importAnkiApkg, importCards } =
   await import('../card.services')
 const { importAppData } = await import('../backup.services')
+const { __resetStudyMemoryForTests, getTopicFromMemory, hydrateStudyMemory } =
+  await import('../study-memory')
+const { withTransaction } = await import('../../lib/db')
 
 function textCardData(front: string, back: string): CardData {
   return {
@@ -208,26 +211,29 @@ function textCardData(front: string, back: string): CardData {
   }
 }
 
-function seedTopic(title = 'Spanish'): Topic {
+async function seedTopic(title = 'Spanish'): Promise<Topic> {
   const topic = buildTopic(title)
   table(STORES.TOPICS).set(topic.id, topic)
+  await hydrateStudyMemory()
   return topic
 }
 
-function seedCard(
+async function seedCard(
   topicId: string,
   level: number,
   overrides: Partial<Card> = {}
-): Card {
+): Promise<Card> {
   const card = new Card(textCardData('Q', 'A'), topicId, level)
   Object.assign(card, overrides)
   table(STORES.CARDS).set(card.id, card)
+  await hydrateStudyMemory()
   return card
 }
 
 describe('local data services', () => {
   beforeEach(() => {
     memory.clear()
+    __resetStudyMemoryForTests()
     enqueueSyncMock.mockReset()
     enqueueSyncBulkMock.mockReset()
     putSyncQueueOpsMock.mockReset()
@@ -252,11 +258,67 @@ describe('local data services', () => {
     })
   })
 
+  describe('memory rollback when the IndexedDB write fails', () => {
+    it('createTopic leaves nothing behind and enqueues nothing', async () => {
+      vi.mocked(withTransaction).mockRejectedValueOnce(
+        new DOMException('quota', 'QuotaExceededError')
+      )
+      const topic = buildTopic('Rollback me')
+
+      await expect(createTopic(topic)).rejects.toThrow()
+      expect(getTopicFromMemory(topic.id)).toBeUndefined()
+      expect(enqueueSyncMock).not.toHaveBeenCalled()
+    })
+
+    it('updateTopic restores the previous value after an in-place edit', async () => {
+      const seeded = await seedTopic('Edit me')
+      const editable = (await getAllTopics()).find(t => t.id === seeded.id)
+      if (!editable) throw new Error('expected seeded topic')
+
+      editable.title = 'Edited'
+      vi.mocked(withTransaction).mockRejectedValueOnce(
+        new Error('write failed')
+      )
+
+      await expect(updateTopic(editable)).rejects.toThrow('write failed')
+      expect(getTopicFromMemory(seeded.id)?.title).toBe('Edit me')
+      expect(enqueueSyncMock).not.toHaveBeenCalled()
+    })
+
+    it('deleteTopic restores the topic and its cards', async () => {
+      const topic = await seedTopic('Keep me')
+      await seedCard(topic.id, 1)
+      vi.mocked(withTransaction).mockRejectedValueOnce(
+        new Error('write failed')
+      )
+
+      await expect(deleteTopic(topic.id)).rejects.toThrow('write failed')
+      expect(getTopicFromMemory(topic.id)).toBeDefined()
+      expect(await getCardsByTopicAndLevel(topic.id, 1)).toHaveLength(1)
+    })
+  })
+
+  describe('getTopicById', () => {
+    it('counts cards per level from memory', async () => {
+      const topic = await seedTopic('Counts')
+      await seedCard(topic.id, 1)
+      await seedCard(topic.id, 1)
+      await seedCard(topic.id, 4)
+      await seedCard(crypto.randomUUID(), 1)
+
+      const { levelCounts } = await getTopicById(topic.id)
+
+      expect(levelCounts[1]).toBe(2)
+      expect(levelCounts[4]).toBe(1)
+      expect(levelCounts[0]).toBe(0)
+    })
+  })
+
   describe('deleteTopic', () => {
     it('removes the topic, every card, and queues a delete for each', async () => {
-      const topic = seedTopic('To delete')
-      const cardA = seedCard(topic.id, 1)
-      const cardB = seedCard(topic.id, 3)
+      const topic = await seedTopic('To delete')
+      const cardA = await seedCard(topic.id, 1)
+      const cardB = await seedCard(topic.id, 3)
 
       await deleteTopic(topic.id)
 
@@ -293,9 +355,9 @@ describe('local data services', () => {
 
   describe('importCards', () => {
     it('keeps a numeric level, rewrites topicId, and overwrites the same id', async () => {
-      const topic = seedTopic()
+      const topic = await seedTopic()
       const cardId = crypto.randomUUID()
-      seedCard(topic.id, 1, {
+      await seedCard(topic.id, 1, {
         id: cardId,
         data: textCardData('old front', 'old back')
       })
@@ -318,7 +380,10 @@ describe('local data services', () => {
 
       expect(count).toBe(1)
       expect(await getCardsByTopicAndLevel(topic.id, 1)).toEqual([])
-      const [card] = await getCardsByTopicAndLevel(topic.id, 5)
+      const cardsAt5 = await getCardsByTopicAndLevel(topic.id, 5)
+      expect(cardsAt5).toHaveLength(1)
+      const card = cardsAt5[0]
+      if (!card) throw new Error('expected imported card')
       expect(card.id).toBe(cardId)
       expect(card.topicId).toBe(topic.id)
       expect(card.level).toBe(5)
@@ -329,14 +394,17 @@ describe('local data services', () => {
     })
 
     it('throws when cards is missing and writes nothing', async () => {
-      const topic = seedTopic()
-      const existing = seedCard(topic.id, 2)
+      const topic = await seedTopic()
+      const existing = await seedCard(topic.id, 2)
 
       await expect(
         importCards(JSON.stringify({ topic: {} }), topic.id)
       ).rejects.toThrow('Invalid import file: missing or invalid cards[]')
 
-      const [card] = await getCardsByTopicAndLevel(topic.id, 2)
+      const cardsAt2 = await getCardsByTopicAndLevel(topic.id, 2)
+      expect(cardsAt2).toHaveLength(1)
+      const card = cardsAt2[0]
+      if (!card) throw new Error('expected existing card')
       expect(card.id).toBe(existing.id)
       expect(table(STORES.CARDS).size).toBe(1)
     })
@@ -344,7 +412,7 @@ describe('local data services', () => {
 
   describe('importAnkiApkg', () => {
     it('saves worker cards at level 0 through importAnkiApkg', async () => {
-      const topic = seedTopic()
+      const topic = await seedTopic()
       const ankiCardId = crypto.randomUUID()
       runAnkiImportWorkerMock.mockResolvedValue([
         {
@@ -364,7 +432,10 @@ describe('local data services', () => {
 
       expect(count).toBe(1)
       expect(runAnkiImportWorkerMock).toHaveBeenCalledOnce()
-      const [card] = await getCardsByTopicAndLevel(topic.id, 0)
+      const cardsAt0 = await getCardsByTopicAndLevel(topic.id, 0)
+      expect(cardsAt0).toHaveLength(1)
+      const card = cardsAt0[0]
+      if (!card) throw new Error('expected anki card')
       expect(card.id).toBe(ankiCardId)
       expect(card.level).toBe(0)
       expect(card.topicId).toBe(topic.id)
@@ -373,7 +444,7 @@ describe('local data services', () => {
 
   describe('importAppData', () => {
     it('merges: keeps existing, renames title clash, remaps non-UUID ids, returns file counts', async () => {
-      const existing = seedTopic('Spanish')
+      const existing = await seedTopic('Spanish')
       const importTopicUuid = crypto.randomUUID()
       const remappedLegacyId = 'legacy-nanoid-topic'
       const remappedCardId = 'legacy-nanoid-card'
@@ -431,7 +502,10 @@ describe('local data services', () => {
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
       )
 
-      const [card] = await getCardsByTopicAndLevel(french!.id, 2)
+      const frenchCards = await getCardsByTopicAndLevel(french!.id, 2)
+      expect(frenchCards).toHaveLength(1)
+      const card = frenchCards[0]
+      if (!card) throw new Error('expected french card')
       expect(card.topicId).toBe(french!.id)
       expect(card.id).not.toBe(remappedCardId)
       expect(card.data.front.blocks[0]).toMatchObject({

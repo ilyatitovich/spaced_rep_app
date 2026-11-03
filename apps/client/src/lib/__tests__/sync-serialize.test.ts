@@ -1,5 +1,15 @@
 import { decodeCardData, encodeCardData } from '@/lib/sync-serialize'
-import type { CardData, LegacyCardData } from '@/types'
+import type { CardData, LegacyCardData, SideBlock } from '@/types'
+
+function blockAt(
+  data: CardData,
+  side: 'front' | 'back',
+  index: number
+): SideBlock {
+  const block = data[side].blocks[index]
+  if (!block) throw new Error(`Missing ${side} block ${index}`)
+  return block
+}
 
 function bytes(values: number[]): ArrayBuffer {
   const buffer = new ArrayBuffer(values.length)
@@ -42,8 +52,8 @@ describe('encodeCardData / decodeCardData', () => {
     }
 
     const encoded = encodeCardData(data) as CardData
-    const imageBlock = encoded.front.blocks[1]
-    const audioBlock = encoded.back.blocks[0]
+    const imageBlock = blockAt(encoded, 'front', 1)
+    const audioBlock = blockAt(encoded, 'back', 0)
 
     expect(imageBlock.type).toBe('image')
     expect(audioBlock.type).toBe('audio')
@@ -57,8 +67,8 @@ describe('encodeCardData / decodeCardData', () => {
     }
 
     const decoded = decodeCardData(encoded) as CardData
-    const decodedImage = decoded.front.blocks[1]
-    const decodedAudio = decoded.back.blocks[0]
+    const decodedImage = blockAt(decoded, 'front', 1)
+    const decodedAudio = blockAt(decoded, 'back', 0)
 
     expect(decoded.front.blocks[0]).toEqual({ type: 'text', html: '<p>Q</p>' })
     expect(decodedImage.type).toBe('image')

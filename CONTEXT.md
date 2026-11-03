@@ -1,6 +1,6 @@
 # Project Overview
 
-**Spaced Repetition** is a mobile-first, offline-capable Progressive Web App for memorizing information via spaced repetition. Users create **topics**, add flashcards (**cards**) with text / image / code / audio blocks, and review them on a weekly, level-based schedule. The app is **local-first**: IndexedDB is the runtime source of truth; an optional Express backend (`VITE_API_URL`) syncs data for authenticated Pro users. Without `VITE_API_URL`, the app runs fully local.
+**Spaced Repetition** is a mobile-first, offline-capable Progressive Web App for memorizing information via spaced repetition. Users create **topics**, add flashcards (**cards**) with text / image / code / audio blocks, and review them on a weekly, level-based schedule. The app is **local-first**: an in-memory lookup of topics and cards is the runtime source of truth; IndexedDB is the durable cache hydrated on bootstrap. An optional Express backend (`VITE_API_URL`) syncs data for authenticated Pro users. Without `VITE_API_URL`, the app runs fully local.
 
 Monorepo layout: `apps/client` (Vite PWA), `apps/server` (Express + Prisma + Redis), `apps/browser-extension`, `packages/sync-protocol`, `packages/sync-client`. Client ports live under `apps/client/src/providers` (`auth` / `sync` / `settings`).
 
@@ -15,11 +15,11 @@ Layered, local-first client architecture with a one-directional dependency flow:
 ```
 models / types      (domain entities + content shapes)
       ↓
-lib/db.ts           (IndexedDB access: STORES, withTransaction)
+lib/db.ts           (IndexedDB cache: STORES, withTransaction)
 lib/sync-serialize  (model ↔ row mapping, LWW comparator)
 providers/          (AuthPort / SyncPort / SettingsPort → Express API)
       ↓
-services/           (CRUD + sync engine; the only writers of persistence)
+services/           (CRUD + sync; study-memory maps; only writers of persistence)
       ↓
 store/ (Zustand)    (topics list, settings, screen stack)
 contexts/           (Auth + Sync cross-cutting infra)
@@ -30,7 +30,8 @@ pages / components  (UI; reads from store, contexts, or services)
 Major building blocks:
 
 - **Domain** (`src/models`, `src/types`) — entities and scheduling; no I/O.
-- **Persistence** (`src/lib/db.ts`) — IndexedDB database `spacedRepApp` **v6**.
+- **Study memory** (`src/services/study-memory.ts`) — in-memory topic/card maps; UI and sync read here.
+- **Persistence** (`src/lib/db.ts`) — IndexedDB database `spacedRepApp` **v6** (durable cache).
 - **Providers** (`src/providers`) — Express ports when `VITE_API_URL` is set; otherwise local-only.
 - **Services** (`src/services`) — CRUD, sync orchestration, settings, backup, push.
 - **State** (`src/store`) — Zustand: topics, settings, screen stack.
@@ -79,13 +80,15 @@ _Confidence: High_
 **Write path (local-first):**
 
 1. UI or store action calls a **service**.
-2. Service writes IndexedDB via `withTransaction`.
+2. Service updates in-memory maps and notifies listeners, then writes IndexedDB via `withTransaction` (rolls memory back on cache failure).
 3. If signed in and `VITE_API_URL` is set, `enqueueSync` then `triggerSync()` (1500 ms debounce).
 4. `syncAll`: **push** outbox, then **pull** deltas (unless realtime already covered the pull).
 
+**Bootstrap:** `main.tsx` awaits `bootstrapLocalSettings()` and `hydrateStudyMemory()` (IDB → maps) before first paint. If hydration fails the app shows the error screen instead of an empty library; a settings failure falls back to defaults. Memory hands out isolated copies (topics are cloned on read and write, cards are shallow-cloned on write), so callers can edit freely and a failed IndexedDB write rolls back to the true previous value.
+
 **Sync engine** — see [docs/sync.md](docs/sync.md). Summary: outbox coalesce by `` `${table}:${recordId}` ``, LWW on `updatedAt`, tombstones applied only when remote wins, `lastPulledAt` moves forward only, Pro device cap of 3.
 
-**Reactive UI:** Zustand topics store subscribes to `subscribeSyncData()` and refreshes after pulls. Open topic/card screens fetch via services into local state and are not auto-refreshed by remote pulls.
+**Reactive UI:** Zustand topics store and open screens subscribe to `subscribeSyncData()` / study-memory notifies and refresh from memory-backed getters.
 
 **Auth-driven sync:** `AuthProvider` calls `setSyncUser` / `initialSync` on user change. `SyncProvider` syncs on online / visibility.
 
@@ -101,8 +104,9 @@ _Confidence: High_
 
 # Persistence
 
-- IndexedDB `spacedRepApp`, version **6**. Stores: `topics`, `cards`, `sync_queue`, `sync_meta`, user preference/learning/notification settings, `notification_reminders`, `subscription_cache`, `settings_outbox`, `media_cache`.
-- `withTransaction` is the single IndexedDB entry point.
+- **Runtime lookup:** in-memory `Map`s for topics and cards (`study-memory.ts`).
+- **Durable cache:** IndexedDB `spacedRepApp`, version **6**. Stores: `topics`, `cards`, `sync_queue`, `sync_meta`, user preference/learning/notification settings, `notification_reminders`, `subscription_cache`, `settings_outbox`, `media_cache`.
+- `withTransaction` is the single IndexedDB entry point (queue/meta/settings/media still read IDB directly).
 - Local deletes are hard; cloud deletes are soft tombstones; pulled tombstones that win LWW become local hard deletes.
 - Cloud schema: `apps/server/prisma`.
 

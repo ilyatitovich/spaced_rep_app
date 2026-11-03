@@ -121,6 +121,8 @@ const {
   syncAll
 } = await import('../sync.service')
 const { deleteCardById } = await import('../card.services')
+const { __resetStudyMemoryForTests, hydrateStudyMemory } =
+  await import('../study-memory')
 
 const EPOCH_ISO = new Date(0).toISOString()
 
@@ -151,17 +153,19 @@ function textCardData(front: string, back: string): CardData {
   }
 }
 
-function seedCard(updatedAt = 1_000): Card {
+async function seedCard(updatedAt = 1_000): Promise<Card> {
   const card = new Card(textCardData('Q', 'A'), 'topic-1', 0)
   card.updatedAt = updatedAt
   table(STORES.CARDS).set(card.id, card)
+  await hydrateStudyMemory()
   return card
 }
 
-function seedTopic(title: string, updatedAt = 1_000): Topic {
+async function seedTopic(title: string, updatedAt = 1_000): Promise<Topic> {
   const topic = buildTopic(title)
   topic.updatedAt = updatedAt
   table(STORES.TOPICS).set(topic.id, topic)
+  await hydrateStudyMemory()
   return topic
 }
 
@@ -214,6 +218,7 @@ function queueRow(table_: string, recordId: string) {
 
 beforeEach(() => {
   memory.clear()
+  __resetStudyMemoryForTests()
   for (const m of [
     pushMock,
     pullMock,
@@ -237,6 +242,7 @@ beforeEach(() => {
 
 afterEach(() => {
   __resetSyncServiceForTests()
+  __resetStudyMemoryForTests()
   vi.restoreAllMocks()
 })
 
@@ -251,7 +257,7 @@ describe('queue coalescing', () => {
   })
 
   it('in-flight ack of an upsert does not drop a delete that replaced it', async () => {
-    const card = seedCard()
+    const card = await seedCard()
     await enqueueSync(STORES.CARDS, card.id, 'upsert')
 
     const firstAck = deferred<PushAck>()
@@ -278,7 +284,7 @@ describe('queue coalescing', () => {
   })
 
   it('in-flight ack of an upsert does not drop a newer edit (new opId minted)', async () => {
-    const card = seedCard()
+    const card = await seedCard()
     await enqueueSync(STORES.CARDS, card.id, 'upsert')
 
     const firstAck = deferred<PushAck>()
@@ -315,7 +321,7 @@ describe('pull watermark and post-push pull', () => {
   })
 
   it('syncAll pulls after a push so a server-winning row is learned', async () => {
-    const card = seedCard(1_000)
+    const card = await seedCard(1_000)
     await enqueueSync(STORES.CARDS, card.id, 'upsert')
     pushMock.mockImplementation(async input => acceptAll(input))
     pullMock.mockResolvedValue({
@@ -338,7 +344,7 @@ describe('pull watermark and post-push pull', () => {
 
 describe('tombstone LWW on pull', () => {
   it('keeps a local card that is newer than the remote tombstone', async () => {
-    const card = seedCard(5_000)
+    const card = await seedCard(5_000)
 
     await applyPullDelta({
       records: [remoteCard(card.id, { updatedAt: 3_000, deletedAt: 3_000 })],
@@ -350,7 +356,7 @@ describe('tombstone LWW on pull', () => {
   })
 
   it('deletes a local card when the remote tombstone is newer', async () => {
-    const card = seedCard(5_000)
+    const card = await seedCard(5_000)
 
     await applyPullDelta({
       records: [remoteCard(card.id, { updatedAt: 6_000, deletedAt: 6_000 })],
@@ -362,7 +368,7 @@ describe('tombstone LWW on pull', () => {
   })
 
   it('keeps a local topic that is newer than the remote tombstone', async () => {
-    const topic = seedTopic('Spanish', 5_000)
+    const topic = await seedTopic('Spanish', 5_000)
 
     await applyPullDelta({
       records: [
@@ -397,8 +403,8 @@ describe('account isolation', () => {
   it("initialSync for user B does not enqueue or push user A's data", async () => {
     seedMeta('migratedUserId', 'user-a')
     seedMeta('lastPulledAt', '2024-06-01T00:00:00.000Z')
-    const topic = seedTopic('A topic')
-    const card = seedCard()
+    const topic = await seedTopic('A topic')
+    const card = await seedCard()
     await enqueueSync(STORES.TOPICS, topic.id, 'upsert')
     await enqueueSync(STORES.CARDS, card.id, 'upsert')
 
@@ -420,7 +426,7 @@ describe('account isolation', () => {
   })
 
   it('initialSync migrates guest data on first sign-in (no migratedUserId)', async () => {
-    const topic = seedTopic('Guest topic')
+    const topic = await seedTopic('Guest topic')
     bootstrapMock.mockResolvedValue(emptyDelta())
     pushMock.mockImplementation(async input => acceptAll(input))
 
@@ -437,8 +443,8 @@ describe('account isolation', () => {
     setSyncUser('user-a')
     seedMeta('lastPulledAt', '2024-06-01T00:00:00.000Z')
     seedMeta('migratedUserId', 'user-a')
-    const topic = seedTopic('A topic')
-    const card = seedCard()
+    const topic = await seedTopic('A topic')
+    const card = await seedCard()
     await enqueueSync(STORES.CARDS, card.id, 'upsert')
 
     setSyncUser(null)
@@ -452,7 +458,7 @@ describe('account isolation', () => {
   })
 
   it('initial signed-out state does not wipe guest data', async () => {
-    const card = seedCard()
+    const card = await seedCard()
 
     setSyncUser(null)
     await Promise.resolve()
@@ -469,7 +475,7 @@ describe('account isolation', () => {
 
 describe('syncAll concurrency', () => {
   it('a syncAll requested mid-run reruns and pushes edits made during the run', async () => {
-    const first = seedCard()
+    const first = await seedCard()
     await enqueueSync(STORES.CARDS, first.id, 'upsert')
 
     const pullGate = deferred<PullDelta>()
@@ -483,7 +489,7 @@ describe('syncAll concurrency', () => {
     await vi.waitFor(() => expect(pullMock).toHaveBeenCalledTimes(1))
 
     // Edit lands after the first run's push already drained the queue.
-    const second = seedCard()
+    const second = await seedCard()
     await enqueueSync(STORES.CARDS, second.id, 'upsert')
     const run2 = syncAll('user-a')
 
@@ -498,7 +504,7 @@ describe('syncAll concurrency', () => {
 
 describe('deleteCardById atomicity', () => {
   it('deletes the card and queues a delete op in one transaction', async () => {
-    const card = seedCard()
+    const card = await seedCard()
     vi.mocked(withTransaction).mockClear()
 
     await deleteCardById(card.id)

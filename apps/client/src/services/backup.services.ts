@@ -2,6 +2,7 @@ import { enqueueSync, triggerSync } from './sync.service'
 import {
   normalizeCardData,
   parseImportJson,
+  promisifyRequest,
   withTransaction,
   STORES
 } from '@/lib'
@@ -15,6 +16,17 @@ import {
 import { decodeCardData, encodeCardData } from '@/lib/sync-serialize'
 import { Card, Topic } from '@/models'
 import type { ExportedFile } from '@/types'
+import {
+  emitStudyData,
+  getAllCardsFromMemory,
+  getAllTopicsFromMemory,
+  getCardFromMemory,
+  getTopicFromMemory,
+  putCardInMemory,
+  putTopicInMemory,
+  restoreCardInMemory,
+  restoreTopicInMemory
+} from './study-memory'
 
 const BACKUP_VERSION = 1
 const UUID_RE =
@@ -25,53 +37,33 @@ function ensureUuid(id: string): string {
 }
 
 export async function exportAppData(): Promise<ExportedFile> {
-  return withTransaction(
-    [STORES.TOPICS, STORES.CARDS],
-    'readonly',
-    async stores => {
-      const topics = await new Promise<Topic[]>((resolve, reject) => {
-        const request = stores[STORES.TOPICS].getAll()
-        request.onsuccess = () => resolve(request.result as Topic[])
-        request.onerror = () =>
-          reject(request.error ?? new Error('Failed to fetch topics'))
-      })
+  const topics = getAllTopicsFromMemory()
+  const cards = getAllCardsFromMemory()
 
-      const cards = await new Promise<Card[]>((resolve, reject) => {
-        const request = stores[STORES.CARDS].getAll()
-        request.onsuccess = () => resolve(request.result as Card[])
-        request.onerror = () =>
-          reject(request.error ?? new Error('Failed to fetch cards'))
-      })
+  const processedCards = cards.map(card => ({
+    ...card,
+    data: encodeCardData(card.data)
+  }))
 
-      const processedCards = cards.map(card => ({
-        ...card,
-        data: encodeCardData(card.data)
-      }))
+  const exportedAt = new Date().toISOString()
+  const payload = {
+    version: BACKUP_VERSION,
+    exportedAt,
+    topics,
+    cards: processedCards
+  }
 
-      const exportedAt = new Date().toISOString()
-      const payload = {
-        version: BACKUP_VERSION,
-        exportedAt,
-        topics,
-        cards: processedCards
-      }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    type: 'application/json'
+  })
 
-      const blob = new Blob([JSON.stringify(payload, null, 2)], {
-        type: 'application/json'
-      })
-
-      return {
-        blob,
-        fileName: `spaced-rep-backup-${exportedAt}.json`
-      }
-    }
-  )
+  return {
+    blob,
+    fileName: `spaced-rep-backup-${exportedAt}.json`
+  }
 }
 
-export async function importAppData(
-  source: File | string
-): Promise<{ topics: number; cards: number }> {
-  const text = typeof source === 'string' ? source : await source.text()
+function parseBackup(text: string): { topics: Topic[]; cards: Card[] } {
   let data: { topics?: Topic[]; cards?: Card[] }
 
   try {
@@ -86,18 +78,53 @@ export async function importAppData(
 
   // Old nanoid IDs are remapped to UUIDs so sync can upsert into Postgres.
   const topicIdMap = new Map<string, string>()
-  const topics = (data.topics as Topic[]).map(topic => {
+  const topics = data.topics.map(topic => {
     const id = ensureUuid(topic.id)
     if (id !== topic.id) topicIdMap.set(topic.id, id)
     return id === topic.id ? topic : { ...topic, id }
   })
 
-  const cards = (data.cards as Card[]).map(card => ({
+  const cards = data.cards.map(card => ({
     ...card,
     id: ensureUuid(card.id),
     topicId: topicIdMap.get(card.topicId) ?? card.topicId,
     data: normalizeCardData(decodeCardData(card.data))
   }))
+
+  return { topics, cards }
+}
+
+// Title has a unique index: a title used by a different local topic id would
+// abort the put. Rename on clash so a merge import stays non-destructive.
+function renameTitleClashes(topics: Topic[]): void {
+  const titleToId = new Map(getAllTopicsFromMemory().map(t => [t.title, t.id]))
+
+  for (const topic of topics) {
+    const owner = titleToId.get(topic.title)
+    if (owner && owner !== topic.id) {
+      topic.title = `${topic.title} (imported ${topic.id.slice(0, 4)})`
+    }
+    titleToId.set(topic.title, topic.id)
+  }
+}
+
+export async function importAppData(
+  source: File | string
+): Promise<{ topics: number; cards: number }> {
+  const text = typeof source === 'string' ? source : await source.text()
+  const { topics, cards } = parseBackup(text)
+  renameTitleClashes(topics)
+
+  const previousTopics = new Map(
+    topics.map(topic => [topic.id, getTopicFromMemory(topic.id)])
+  )
+  const previousCards = new Map(
+    cards.map(card => [card.id, getCardFromMemory(card.id)])
+  )
+
+  for (const topic of topics) putTopicInMemory(topic)
+  for (const card of cards) putCardInMemory(card)
+  emitStudyData()
 
   const importedTopicIds: string[] = []
   const importedCardIds: string[] = []
@@ -107,64 +134,42 @@ export async function importAppData(
     audio: 0
   }
 
-  await withTransaction(
-    [STORES.TOPICS, STORES.CARDS],
-    'readwrite',
-    async stores => {
-      // Title has a unique index: a title used by a different local topic id
-      // would abort the put. Pre-read local titles and rename on clash so a
-      // merge import stays non-destructive.
-      const existing = await new Promise<Topic[]>((resolve, reject) => {
-        const request = stores[STORES.TOPICS].getAll()
-        request.onsuccess = () => resolve(request.result as Topic[])
-        request.onerror = () =>
-          reject(request.error ?? new Error('Failed to read topics'))
-      })
-
-      const titleToId = new Map(existing.map(t => [t.title, t.id]))
-
-      const putRequest = (store: IDBObjectStore, value: unknown) =>
-        new Promise<void>((resolve, reject) => {
-          const req = store.put(value)
-          req.onsuccess = () => resolve()
-          req.onerror = () => reject(req.error)
-        })
-
-      const getCard = (id: string) =>
-        new Promise<Card | undefined>((resolve, reject) => {
-          const req = stores[STORES.CARDS].get(id) as IDBRequest<
-            Card | undefined
-          >
-          req.onsuccess = () => resolve(req.result)
-          req.onerror = () => reject(req.error)
-        })
-
-      for (const topic of topics) {
-        const owner = titleToId.get(topic.title)
-        if (owner && owner !== topic.id) {
-          topic.title = `${topic.title} (imported ${topic.id.slice(0, 4)})`
+  try {
+    await withTransaction(
+      [STORES.TOPICS, STORES.CARDS],
+      'readwrite',
+      async stores => {
+        for (const topic of topics) {
+          await promisifyRequest(stores[STORES.TOPICS].put(topic))
+          importedTopicIds.push(topic.id)
         }
-        titleToId.set(topic.title, topic.id)
-        await putRequest(stores[STORES.TOPICS], topic)
-        importedTopicIds.push(topic.id)
-      }
 
-      for (const card of cards) {
-        const previous = await getCard(card.id)
-        await putRequest(stores[STORES.CARDS], card)
-        importedCardIds.push(card.id)
-        mediaDelta = addEmbeddedMedia(
-          mediaDelta,
-          subEmbeddedMedia(
-            sumEmbeddedCardMedia(card),
-            previous
-              ? sumEmbeddedCardMedia(previous)
-              : { bytes: 0, images: 0, audio: 0 }
+        for (const card of cards) {
+          const previous = previousCards.get(card.id)
+          await promisifyRequest(stores[STORES.CARDS].put(card))
+          importedCardIds.push(card.id)
+          mediaDelta = addEmbeddedMedia(
+            mediaDelta,
+            subEmbeddedMedia(
+              sumEmbeddedCardMedia(card),
+              previous
+                ? sumEmbeddedCardMedia(previous)
+                : { bytes: 0, images: 0, audio: 0 }
+            )
           )
-        )
+        }
       }
+    )
+  } catch (error) {
+    for (const [id, previous] of previousTopics) {
+      restoreTopicInMemory(id, previous)
     }
-  )
+    for (const [id, previous] of previousCards) {
+      restoreCardInMemory(id, previous)
+    }
+    emitStudyData()
+    throw error
+  }
 
   await adjustCardMediaStats(mediaDelta)
 

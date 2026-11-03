@@ -1,16 +1,7 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "./tsconfig.app.json",
   "compilerOptions": {
-    "lib": ["ES2023", "DOM", "DOM.Iterable", "WebWorker"],
-    "useDefineForClassFields": true,
-    "paths": {
-      "@/*": ["./src/*"]
-    },
-    "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "jsx": "react-jsx",
-    "noUncheckedSideEffectImports": true
+    "types": ["vite/client", "vitest/globals"]
   },
-  "include": ["src"],
-  "exclude": ["src/**/__tests__/**", "src/**/*.test.ts", "src/**/*.test.tsx"]
+  "exclude": []
 }

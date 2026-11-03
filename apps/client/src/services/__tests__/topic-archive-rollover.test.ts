@@ -84,10 +84,13 @@ vi.mock('@/services/sync.service', async importOriginal => {
 })
 
 const { getAllTopics } = await import('../topic.services')
+const { __resetStudyMemoryForTests, hydrateStudyMemory } =
+  await import('../study-memory')
 
 describe('getAllTopics archive rollover', () => {
   beforeEach(() => {
     memory.clear()
+    __resetStudyMemoryForTests()
     enqueueSyncMock.mockReset()
     triggerSyncMock.mockReset()
   })
@@ -105,13 +108,14 @@ describe('getAllTopics archive rollover', () => {
     const weekBefore = archived.week
 
     table(STORES.TOPICS).set(archived.id, archived)
+    await hydrateStudyMemory()
 
     const topics = await getAllTopics()
     const result = topics.find(t => t.id === archived.id) as Topic
 
     expect(result.nextUpdateDate).toBe(archived.nextUpdateDate)
     expect(result.pivot).toBe(pivotBefore)
-    expect(result.week).toBe(weekBefore)
+    expect(result.week).toEqual(weekBefore)
     expect(result.updatedAt).toBe(1_700_000_000_000)
     expect(enqueueSyncMock).not.toHaveBeenCalled()
     expect(triggerSyncMock).not.toHaveBeenCalled()
@@ -130,6 +134,7 @@ describe('getAllTopics archive rollover', () => {
     active.updatedAt = 1_700_000_000_000
 
     table(STORES.TOPICS).set(active.id, active)
+    await hydrateStudyMemory()
 
     const topics = await getAllTopics()
     const result = topics.find(t => t.id === active.id) as Topic

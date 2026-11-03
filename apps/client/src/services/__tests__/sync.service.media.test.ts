@@ -106,6 +106,8 @@ vi.mock('../sync-http.client', () => ({
 const { applyPullDelta, pushChanges, enqueueSync } =
   await import('../sync.service')
 const { withTransaction } = await import('../../lib/db')
+const { __resetStudyMemoryForTests, hydrateStudyMemory } =
+  await import('../study-memory')
 
 function bytes(values: number[]): ArrayBuffer {
   const buffer = new ArrayBuffer(values.length)
@@ -117,12 +119,14 @@ function seedMeta(key: string, value: string): void {
   table(STORES.SYNC_META).set(key, { key, value })
 }
 
-function seedCard(card: Card): void {
+async function seedCard(card: Card): Promise<void> {
   table(STORES.CARDS).set(card.id, card)
+  await hydrateStudyMemory()
 }
 
 beforeEach(() => {
   memory.clear()
+  __resetStudyMemoryForTests()
   pushMock.mockReset()
   pullMock.mockReset()
   uploadOwnedMediaMock.mockReset()
@@ -132,6 +136,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  __resetStudyMemoryForTests()
   vi.clearAllMocks()
 })
 
@@ -229,7 +234,7 @@ describe('pushChanges media ordering', () => {
   it('uploads owned media before pushBatch and keeps queue on upload failure', async () => {
     const buffer = bytes([9, 8, 7, 6])
     const hash = await sha256Hex(buffer)
-    seedCard({
+    await seedCard({
       id: 'card-1',
       topicId: 'topic-1',
       level: 0,
@@ -256,7 +261,7 @@ describe('pushChanges media ordering', () => {
 
   it('calls pushBatch only after uploadOwnedMedia resolves', async () => {
     const buffer = bytes([4, 5])
-    seedCard({
+    await seedCard({
       id: 'card-2',
       topicId: 'topic-1',
       level: 0,
