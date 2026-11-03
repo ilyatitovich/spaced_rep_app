@@ -272,29 +272,7 @@ export class SyncWsManager {
         this.lastServerPingAt = Date.now()
         break
       case 'error':
-        console.error('WS sync error:', envelope.error)
-        if (envelope.error.code === 'TOKEN_EXPIRED') {
-          this.listeners.onTokenExpired?.()
-          this.ws?.close(4001, 'token expired')
-        } else if (envelope.error.code === 'DEVICE_REVOKED') {
-          this.intentionalClose = true
-          this.listeners.onDeviceRevoked?.()
-          this.ws?.close(4004, 'device_revoked')
-        } else if (envelope.error.code === 'PROTOCOL_MISMATCH') {
-          this.intentionalClose = true
-          this.listeners.onProtocolMismatch?.()
-          this.ws?.close(4002, 'protocol mismatch')
-        } else if (
-          envelope.error.code === 'PLAN_REQUIRED' ||
-          envelope.error.code === 'DEVICE_LIMIT'
-        ) {
-          this.intentionalClose = true
-          this.listeners.onPlanRequired?.()
-          this.ws?.close(
-            envelope.error.code === 'PLAN_REQUIRED' ? 4003 : 4004,
-            envelope.error.code.toLowerCase()
-          )
-        }
+        this.onServerError(envelope.error, envelope.correlationId)
         break
       case 'gracefulClose':
         this.intentionalClose = false
@@ -302,6 +280,43 @@ export class SyncWsManager {
         break
       default:
         break
+    }
+  }
+
+  private onServerError(
+    error: { code: string; message: string; retryable: boolean },
+    correlationId: string | undefined
+  ): void {
+    console.error('WS sync error:', error)
+    // An error that answers a push settles it now instead of after 30s.
+    const failed = correlationId
+      ? this.pendingAcks.get(correlationId)
+      : undefined
+    if (failed && correlationId) {
+      this.pendingAcks.delete(correlationId)
+      failed.reject(new Error(error.code))
+    }
+    if (error.code === 'TOKEN_EXPIRED') {
+      this.listeners.onTokenExpired?.()
+      this.ws?.close(4001, 'token expired')
+    } else if (error.code === 'DEVICE_REVOKED') {
+      this.intentionalClose = true
+      this.listeners.onDeviceRevoked?.()
+      this.ws?.close(4004, 'device_revoked')
+    } else if (error.code === 'PROTOCOL_MISMATCH') {
+      this.intentionalClose = true
+      this.listeners.onProtocolMismatch?.()
+      this.ws?.close(4002, 'protocol mismatch')
+    } else if (
+      error.code === 'PLAN_REQUIRED' ||
+      error.code === 'DEVICE_LIMIT'
+    ) {
+      this.intentionalClose = true
+      this.listeners.onPlanRequired?.()
+      this.ws?.close(
+        error.code === 'PLAN_REQUIRED' ? 4003 : 4004,
+        error.code.toLowerCase()
+      )
     }
   }
 

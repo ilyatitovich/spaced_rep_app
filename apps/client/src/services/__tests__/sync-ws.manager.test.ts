@@ -297,6 +297,34 @@ describe('pushBatch', () => {
     expect(await outcome).toBe('WebSocket closed')
   })
 
+  it('rejects a push right away when the server answers it with an error', async () => {
+    vi.useFakeTimers()
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const socket = await connectActive(manager)
+
+    const result = manager.pushBatch([mutation])
+    const outcome = rejectionMessage(result)
+    await vi.advanceTimersByTimeAsync(0)
+    const sent = socket.sentEnvelopes('pushBatch')[0]
+
+    socket.receive(
+      serverEnvelope(
+        {
+          kind: 'error',
+          error: {
+            code: 'RATE_LIMITED',
+            message: 'Sync rate limit exceeded',
+            retryable: true
+          }
+        },
+        { correlationId: sent?.messageId }
+      )
+    )
+
+    // No 30s wait: the caller falls back to HTTP immediately.
+    expect(await outcome).toBe('RATE_LIMITED')
+  })
+
   it('holds the send while the socket buffer is above the high-water mark', async () => {
     vi.useFakeTimers()
     const socket = await connectActive(manager)

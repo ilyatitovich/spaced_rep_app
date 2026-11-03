@@ -9,6 +9,7 @@ import {
 } from '@spaced-rep/sync-protocol'
 import { verifyAccessToken } from '../auth/services/index.js'
 import { prisma } from '../shared/lib/prisma.js'
+import { TooManyRequestsError } from '../shared/lib/errors.js'
 import { logger } from '../shared/lib/logger.js'
 import {
   assertPlan,
@@ -16,6 +17,7 @@ import {
 } from '../settings/services/plan.service.js'
 import { applyPushBatch, pullChanges, reportDevice } from './sync.service.js'
 import { startFanoutSubscriber, subscribeFanout } from './fanout.service.js'
+import { enforcePushRateLimit } from './push-rate-limit.js'
 
 interface Conn {
   ws: WebSocket
@@ -27,6 +29,16 @@ interface Conn {
 }
 
 const connections = new Map<string, Conn>() // key: `${userId}:${deviceId}`
+
+/**
+ * Unregister `conn` only if it is still the registered one. A replaced socket
+ * closes after its successor registered under the same key; deleting by key
+ * would silently drop the live connection.
+ */
+function forget(conn: Conn): void {
+  const key = connKey(conn.userId, conn.deviceId)
+  if (connections.get(key) === conn) connections.delete(key)
+}
 
 function connKey(userId: string, deviceId: string): string {
   return `${userId}:${deviceId}`
@@ -83,6 +95,37 @@ function denySession(conn: Pick<Conn, 'ws' | 'deviceId'>): void {
     }
   })
   conn.ws.close(4001, 'unauthorized')
+}
+
+/** Answers one request with an error frame; the socket stays open. */
+function replyError(
+  conn: Pick<Conn, 'ws' | 'deviceId'>,
+  correlationId: string,
+  error: { code: string; message: string; retryable: boolean }
+): void {
+  send(conn.ws, {
+    version: PROTOCOL_VERSION,
+    messageId: createEnvelopeId(),
+    correlationId,
+    deviceId: conn.deviceId,
+    sentAt: Date.now(),
+    kind: 'error',
+    error
+  })
+}
+
+/** Denies and closes the socket when `err` is a device-registry refusal. */
+function denyIfDeviceError(
+  conn: Pick<Conn, 'ws' | 'deviceId'>,
+  err: unknown
+): boolean {
+  const code =
+    err instanceof Error && 'code' in err && typeof err.code === 'string'
+      ? err.code
+      : null
+  if (code !== 'DEVICE_LIMIT' && code !== 'DEVICE_REVOKED') return false
+  denyDevice(conn, code, err instanceof Error ? err.message : code)
+  return true
 }
 
 /** Session still usable: not revoked, not expired, account exists and is enabled. */
@@ -208,16 +251,7 @@ async function handleMessage(conn: Conn, data: string): Promise<void> {
           userAgent: conn.userAgent
         })
       } catch (err) {
-        const message =
-          err instanceof Error ? err.message : 'Device registration failed'
-        const code =
-          err instanceof Error && 'code' in err && typeof err.code === 'string'
-            ? err.code
-            : null
-        if (code === 'DEVICE_LIMIT' || code === 'DEVICE_REVOKED') {
-          denyDevice(conn, code, message)
-          return
-        }
+        if (denyIfDeviceError(conn, err)) return
         throw err
       }
 
@@ -259,9 +293,38 @@ async function handleMessage(conn: Conn, data: string): Promise<void> {
       break
     }
     case 'pushBatch': {
+      // Same gates as POST /sync/push: a known device, the device cap, and the
+      // per-user push budget. Never trust the envelope's own deviceId.
+      if (!conn.deviceId) {
+        replyError(conn, envelope.messageId, {
+          code: 'HELLO_REQUIRED',
+          message: 'Send hello before pushing',
+          retryable: false
+        })
+        return
+      }
+      try {
+        await enforcePushRateLimit(conn.userId)
+        await reportDevice({
+          userId: conn.userId,
+          deviceId: conn.deviceId,
+          userAgent: conn.userAgent
+        })
+      } catch (err) {
+        if (err instanceof TooManyRequestsError) {
+          replyError(conn, envelope.messageId, {
+            code: 'RATE_LIMITED',
+            message: err.message,
+            retryable: true
+          })
+          return
+        }
+        if (denyIfDeviceError(conn, err)) return
+        throw err
+      }
       const ack = await applyPushBatch({
         userId: conn.userId,
-        deviceId: conn.deviceId || envelope.deviceId,
+        deviceId: conn.deviceId,
         mutations: envelope.pushBatch.mutations
       })
       send(conn.ws, {
@@ -447,9 +510,7 @@ export function createSyncWss(server: HttpServer): WebSocketServer {
     ws.on('close', () => {
       void authorized.then(conn => {
         if (!conn) return
-        if (conn.deviceId) {
-          connections.delete(connKey(conn.userId, conn.deviceId))
-        }
+        if (conn.deviceId) forget(conn)
         logger.info(
           { userId: conn.userId, deviceId: conn.deviceId },
           'ws.disconnect'

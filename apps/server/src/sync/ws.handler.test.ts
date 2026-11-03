@@ -8,6 +8,7 @@ import {
   encodeEnvelope
 } from '@spaced-rep/sync-protocol'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { TooManyRequestsError } from '../shared/lib/errors.js'
 
 const verifyAccessToken = vi.fn()
 vi.mock('../auth/services/index.js', () => ({ verifyAccessToken }))
@@ -29,11 +30,14 @@ vi.mock('../settings/services/plan.service.js', () => ({
 
 const reportDevice = vi.fn()
 const pullChanges = vi.fn()
+const applyPushBatch = vi.fn()
 vi.mock('./sync.service.js', () => ({
-  applyPushBatch: vi.fn(),
+  applyPushBatch,
   pullChanges,
   reportDevice
 }))
+const enforcePushRateLimit = vi.fn()
+vi.mock('./push-rate-limit.js', () => ({ enforcePushRateLimit }))
 vi.mock('./fanout.service.js', () => ({
   startFanoutSubscriber: vi.fn().mockResolvedValue(undefined),
   subscribeFanout: vi.fn()
@@ -53,6 +57,12 @@ describe('sync websocket entitlement', () => {
     prisma.session.findFirst.mockResolvedValue({ id: 'session-1' })
     assertPlan.mockResolvedValue(undefined)
     reportDevice.mockResolvedValue(undefined)
+    enforcePushRateLimit.mockResolvedValue(undefined)
+    applyPushBatch.mockResolvedValue({
+      acceptedOpIds: [],
+      rejected: [],
+      conflicts: []
+    })
     pullChanges.mockResolvedValue({
       records: [],
       watermark: new Date(0).toISOString(),
@@ -224,5 +234,179 @@ describe('sync websocket entitlement', () => {
     expect(code).toBe(4004)
 
     wss.close()
+  })
+  describe('push over the socket', () => {
+    const deviceId = '11111111-1111-4111-8111-111111111111'
+
+    async function listen() {
+      const server = createServer()
+      servers.push(server)
+      const wss = createSyncWss(server)
+      server.listen(0)
+      await once(server, 'listening')
+      const address = server.address()
+      if (!address || typeof address === 'string') throw new Error('No address')
+      return { wss, port: address.port }
+    }
+
+    const sockets: WebSocket[] = []
+
+    afterEach(() => {
+      for (const ws of sockets.splice(0)) ws.terminate()
+    })
+
+    function frames(ws: WebSocket) {
+      const received: ReturnType<typeof decodeEnvelope>[] = []
+      ws.on('message', data => received.push(decodeEnvelope(data.toString())))
+      return received
+    }
+
+    async function open(port: number) {
+      const ws = new WebSocket(`ws://127.0.0.1:${port}/sync/ws`, {
+        headers: { Authorization: 'Bearer token' }
+      })
+      sockets.push(ws)
+      const received = frames(ws)
+      await once(ws, 'open')
+      await vi.waitFor(() => expect(assertPlan).toHaveBeenCalled())
+      return { ws, received }
+    }
+
+    const base = () => ({
+      version: PROTOCOL_VERSION,
+      messageId: createEnvelopeId(),
+      deviceId,
+      sentAt: Date.now()
+    })
+
+    const hello = () =>
+      encodeEnvelope({
+        ...base(),
+        kind: 'hello',
+        hello: {
+          lastPulledAt: new Date(0).toISOString(),
+          pendingOpCount: 0,
+          protocolVersion: PROTOCOL_VERSION
+        }
+      })
+
+    const push = (messageId = createEnvelopeId()) =>
+      encodeEnvelope({
+        ...base(),
+        messageId,
+        kind: 'pushBatch',
+        pushBatch: { mutations: [] }
+      })
+
+    it('rejects a push from a socket that never said hello', async () => {
+      const { wss, port } = await listen()
+      const { ws, received } = await open(port)
+      const messageId = createEnvelopeId()
+
+      ws.send(push(messageId))
+
+      await vi.waitFor(() => expect(received).toHaveLength(1))
+      expect(received[0]).toMatchObject({
+        kind: 'error',
+        correlationId: messageId,
+        error: { code: 'HELLO_REQUIRED', retryable: false }
+      })
+      expect(reportDevice).not.toHaveBeenCalled()
+      expect(applyPushBatch).not.toHaveBeenCalled()
+      wss.close()
+    })
+
+    it('checks the device before applying a push', async () => {
+      const { wss, port } = await listen()
+      const { ws, received } = await open(port)
+      ws.send(hello())
+      await vi.waitFor(() => expect(received).toHaveLength(1))
+      reportDevice.mockClear()
+
+      ws.send(push())
+
+      await vi.waitFor(() => expect(received).toHaveLength(2))
+      expect(received[1]?.kind).toBe('pushAck')
+      expect(reportDevice).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: 'user-1', deviceId })
+      )
+      expect(reportDevice.mock.invocationCallOrder[0]!).toBeLessThan(
+        applyPushBatch.mock.invocationCallOrder[0]!
+      )
+      wss.close()
+    })
+
+    it.each([
+      ['DEVICE_REVOKED', 4004],
+      ['DEVICE_LIMIT', 4004]
+    ])(
+      'refuses a push and closes when the device check says %s',
+      async (code, closeCode) => {
+        const { wss, port } = await listen()
+        const { ws, received } = await open(port)
+        ws.send(hello())
+        await vi.waitFor(() => expect(received).toHaveLength(1))
+        reportDevice.mockRejectedValueOnce(
+          Object.assign(new Error(code), { code })
+        )
+
+        ws.send(push())
+
+        const [closed] = await once(ws, 'close')
+        expect(closed).toBe(closeCode)
+        expect(received.at(-1)).toMatchObject({
+          kind: 'error',
+          error: { code, retryable: false }
+        })
+        expect(applyPushBatch).not.toHaveBeenCalled()
+        wss.close()
+      }
+    )
+
+    it('answers a rate-limited push with a retryable error and keeps the socket', async () => {
+      const { wss, port } = await listen()
+      const { ws, received } = await open(port)
+      ws.send(hello())
+      await vi.waitFor(() => expect(received).toHaveLength(1))
+      enforcePushRateLimit.mockRejectedValueOnce(
+        new TooManyRequestsError('Sync rate limit exceeded')
+      )
+      const messageId = createEnvelopeId()
+
+      ws.send(push(messageId))
+
+      await vi.waitFor(() => expect(received).toHaveLength(2))
+      expect(received[1]).toMatchObject({
+        kind: 'error',
+        correlationId: messageId,
+        error: { code: 'RATE_LIMITED', retryable: true }
+      })
+      expect(enforcePushRateLimit).toHaveBeenCalledWith('user-1')
+      expect(applyPushBatch).not.toHaveBeenCalled()
+      expect(ws.readyState).toBe(WebSocket.OPEN)
+      wss.close()
+    })
+
+    it('still revokes a device whose earlier socket was replaced', async () => {
+      const { wss, port } = await listen()
+      const first = await open(port)
+      first.ws.send(hello())
+      await vi.waitFor(() => expect(first.received).toHaveLength(1))
+      const second = await open(port)
+      second.ws.send(hello())
+      await vi.waitFor(() => expect(second.received).toHaveLength(1))
+      // The replaced socket's close handler must not unregister its successor.
+      await vi.waitFor(() => expect(first.ws.readyState).toBe(WebSocket.CLOSED))
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      disconnectSyncDevice('user-1', deviceId)
+
+      await vi.waitFor(() => expect(second.received).toHaveLength(2))
+      expect(second.received[1]).toMatchObject({
+        kind: 'error',
+        error: { code: 'DEVICE_REVOKED' }
+      })
+      wss.close()
+    })
   })
 })

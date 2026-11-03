@@ -46,6 +46,11 @@ export async function publishFanout(input: {
   }
 }
 
+function createSubscriber() {
+  return getRedis().duplicate()
+}
+
+let subscriber: ReturnType<typeof createSubscriber> | null = null
 let subscriberStarted = false
 
 export async function startFanoutSubscriber(
@@ -62,7 +67,14 @@ export async function startFanoutSubscriber(
     const redis = getRedis()
     if (!redis.isOpen) await redis.connect()
 
-    const sub = redis.duplicate()
+    const sub = createSubscriber()
+    subscriber = sub
+    // Without a listener, a Redis blip is an uncaught 'error' event and
+    // server.ts exits on uncaughtException. node-redis reconnects by itself and
+    // re-subscribes the pattern, so logging is all that is needed.
+    sub.on('error', err => {
+      logger.error({ err }, 'sync.fanout subscriber error')
+    })
     await sub.connect()
     await sub.pSubscribe('sync:user:*', (message, ch) => {
       const userId = ch.replace('sync:user:', '')
@@ -79,5 +91,19 @@ export async function startFanoutSubscriber(
     logger.info('sync.fanout redis subscriber started')
   } catch (err) {
     logger.warn({ err }, 'sync.fanout subscriber failed to start')
+  }
+}
+
+/** Close the subscriber connection (shutdown). Safe to call when not started. */
+export async function stopFanoutSubscriber(): Promise<void> {
+  const sub = subscriber
+  subscriber = null
+  subscriberStarted = false
+  if (!sub) return
+  try {
+    if (sub.isOpen) await sub.quit()
+  } catch (err) {
+    logger.warn({ err }, 'sync.fanout subscriber close failed')
+    sub.destroy()
   }
 }

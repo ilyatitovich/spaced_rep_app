@@ -5,7 +5,6 @@ import {
   createEnvelopeId,
   type SyncEnvelope
 } from '@spaced-rep/sync-protocol'
-import { enforceRateLimit } from '../../shared/lib/redis.js'
 import { BadRequestError } from '../../shared/lib/errors.js'
 import { parseBody, sendData } from '../../shared/lib/http.js'
 import { assertPlan } from '../../settings/services/plan.service.js'
@@ -19,6 +18,7 @@ import {
   reportDevice,
   revokeSyncDevice
 } from '../sync.service.js'
+import { enforcePushRateLimit } from '../push-rate-limit.js'
 import { disconnectSyncDevice } from '../ws.handler.js'
 
 function requireAuthUser(req: Request): { userId: string } {
@@ -58,13 +58,7 @@ export async function pushHandler(
   try {
     const { userId } = requireAuthUser(req)
     await assertPlan(userId, 'PRO')
-    await enforceRateLimit({
-      key: `sync:push:${userId}`,
-      // Burst drain after sign-in can need many batches (50 ops each).
-      limit: 500,
-      windowSeconds: 60,
-      message: 'Sync rate limit exceeded'
-    })
+    await enforcePushRateLimit(userId)
 
     const envelope = parseBody(SyncEnvelopeSchema, req.body)
     if (envelope.kind !== 'pushBatch') {

@@ -12,6 +12,7 @@ import {
   startBillingReconciler,
   stopBillingReconciler
 } from './settings/billing/billing.service.js'
+import { stopFanoutSubscriber } from './sync/fanout.service.js'
 import { broadcastGracefulShutdown, createSyncWss } from './sync/ws.handler.js'
 
 const app = createApp()
@@ -46,6 +47,7 @@ function shutdown(signal: string) {
 
   void closeHttp
     .then(async () => {
+      await stopFanoutSubscriber()
       const redis = getRedis()
       if (redis.isOpen) await redis.quit()
       await disconnectPrisma()
