@@ -6,7 +6,7 @@ test.describe('app smoke', () => {
 
     await expect(page.getByText('Topics', { exact: true })).toBeVisible()
     await expect(
-      page.getByText('No topics found.').or(page.getByRole('list'))
+      page.getByText('No topics yet.').or(page.getByRole('list'))
     ).toBeVisible()
     await expect(
       page.getByRole('button', { name: 'Create topic' })

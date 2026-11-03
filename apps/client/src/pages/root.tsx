@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router'
 
-import { PwaModal, ProUpgradeOnSignIn } from '@/components'
+import { DesktopFrame, PwaModal, ProUpgradeOnSignIn } from '@/components'
 import { useKeyboardManager } from '@/hooks'
 
 export default function Root() {
@@ -8,6 +8,7 @@ export default function Root() {
 
   return (
     <>
+      <DesktopFrame />
       <Outlet />
       <PwaModal />
       <ProUpgradeOnSignIn />

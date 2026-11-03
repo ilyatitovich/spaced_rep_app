@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { MemoryRouter, useSearchParams } from 'react-router'
+import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import ProUpgradeModal from '@/components/modals/pro-upgrade-modal'
@@ -20,11 +20,6 @@ vi.mock('@/store', () => ({
   }
 }))
 
-function SearchProbe() {
-  const [params] = useSearchParams()
-  return <div data-testid="qs">{params.toString()}</div>
-}
-
 function PromptHost() {
   const [, setTick] = useState(0)
   return (
@@ -33,13 +28,12 @@ function PromptHost() {
         refresh
       </button>
       <ProUpgradeOnSignIn />
-      <SearchProbe />
     </MemoryRouter>
   )
 }
 
 function isUpgradeModalOpen() {
-  const heading = screen.getByRole('heading', { name: 'Upgrade to Pro' })
+  const heading = screen.getByRole('heading', { name: 'Cloud sync needs Pro' })
   return !heading
     .closest('[data-screen]')
     ?.classList.contains('pointer-events-none')
@@ -55,7 +49,15 @@ function signIn(id: string) {
 }
 
 describe('ProUpgradeModal', () => {
-  it('skips or upgrades through the public buttons', () => {
+  it('closes through Continue when checkout is hidden', () => {
+    const onClose = vi.fn()
+    render(<ProUpgradeModal isOpen onClose={onClose} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('skips or upgrades when onUpgrade is provided', () => {
     const onClose = vi.fn()
     const onUpgrade = vi.fn()
     render(<ProUpgradeModal isOpen onClose={onClose} onUpgrade={onUpgrade} />)
@@ -95,10 +97,8 @@ describe('ProUpgradeOnSignIn', () => {
       expect(isUpgradeModalOpen()).toBe(true)
     })
 
-    fireEvent.click(screen.getByRole('button', { name: 'Upgrade' }))
-    expect(screen.getByTestId('qs')).toHaveTextContent(
-      'settings=true&subscription=true'
-    )
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
+    expect(isUpgradeModalOpen()).toBe(false)
   })
 
   it('does not prompt after sign-in when the user is Pro', async () => {

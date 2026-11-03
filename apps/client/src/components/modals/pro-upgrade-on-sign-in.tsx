@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router'
 
 import ProUpgradeModal from './pro-upgrade-modal'
 import { useAuth } from '@/contexts'
@@ -7,7 +6,6 @@ import { useSettingsStore } from '@/store'
 
 export default function ProUpgradeOnSignIn() {
   const { user } = useAuth()
-  const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false)
   const previousUserId = useRef<string | null | undefined>(undefined)
 
@@ -32,13 +30,5 @@ export default function ProUpgradeOnSignIn() {
     }
   }, [user?.id])
 
-  return (
-    <ProUpgradeModal
-      isOpen={isOpen}
-      onClose={() => setIsOpen(false)}
-      onUpgrade={() => {
-        void navigate('/?settings=true&subscription=true')
-      }}
-    />
-  )
+  return <ProUpgradeModal isOpen={isOpen} onClose={() => setIsOpen(false)} />
 }

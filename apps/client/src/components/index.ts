@@ -19,3 +19,4 @@ export { default as TextBlockEditor } from './content/text-block/text-block-edit
 export { default as TextFormatToolbar } from './content/text-block/text-format-toolbar'
 export { default as QrCode } from './ui/qrcode'
 export { default as Logo } from './ui/logo'
+export { default as DesktopFrame } from './desktop-frame'

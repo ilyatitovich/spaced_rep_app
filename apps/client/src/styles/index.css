@@ -376,6 +376,78 @@ body {
   border-radius: 0.75rem;
 }
 
+/* Desktop chrome: phone column stays centered; aside sits to its left. */
+.desktop-frame {
+  display: none;
+}
+
+@media (min-width: 960px) {
+  body {
+    background:
+      radial-gradient(
+        ellipse 80% 60% at 20% 20%,
+        color-mix(in srgb, var(--color-background-accent) 55%, transparent),
+        transparent 60%
+      ),
+      radial-gradient(
+        ellipse 70% 50% at 90% 80%,
+        color-mix(in srgb, var(--color-background-tertiary) 80%, transparent),
+        transparent 55%
+      ),
+      var(--color-background-secondary);
+  }
+
+  #root,
+  [data-screen] {
+    box-shadow:
+      0 0 0 1px var(--color-border-muted),
+      0 24px 48px var(--color-shadow);
+  }
+
+  .desktop-frame {
+    display: block;
+    position: fixed;
+    z-index: 1;
+    left: max(1.25rem, calc(50% - 320px - 20rem));
+    top: 50%;
+    transform: translateY(-50%);
+    width: 17rem;
+    max-width: calc(50% - 340px);
+    pointer-events: none;
+    color: var(--color-foreground);
+  }
+
+  .desktop-frame__brand {
+    font-family: var(--font-card), system-ui, sans-serif;
+    font-size: 1.75rem;
+    line-height: 1.15;
+    margin: 0 0 0.75rem;
+  }
+
+  .desktop-frame__lede {
+    margin: 0 0 1.25rem;
+    font-size: 0.95rem;
+    line-height: 1.45;
+    color: var(--color-foreground-muted);
+  }
+
+  .desktop-frame__install-title {
+    margin: 0 0 0.4rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-foreground-subtle);
+  }
+
+  .desktop-frame__install-body {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.45;
+    color: var(--color-foreground-muted);
+  }
+}
+
 button,
 select {
   cursor: pointer;

@@ -142,9 +142,15 @@ export default function HomePage() {
             <Spinner />
           ) : topics.length === 0 ? (
             <div className="h-full flex items-center justify-center">
-              <div className="text-center text-foreground-muted">
-                <p>No topics found.</p>
-                <p>Click the + button to create one!</p>
+              <div className="text-center text-foreground-muted px-6">
+                {searchQuery.trim() ? (
+                  <p>No topics match your search.</p>
+                ) : (
+                  <>
+                    <p>No topics yet.</p>
+                    <p>Tap + to create one.</p>
+                  </>
+                )}
               </div>
             </div>
           ) : (

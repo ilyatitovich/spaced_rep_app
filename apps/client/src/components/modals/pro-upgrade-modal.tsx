@@ -4,7 +4,8 @@ import Button from '@/components/ui/button'
 interface ProUpgradeModalProps {
   isOpen: boolean
   onClose: () => void
-  onUpgrade: () => void
+  /** When set, show Skip / Upgrade (e.g. browser extension). Omitted during unpaid web beta. */
+  onUpgrade?: () => void
 }
 
 export default function ProUpgradeModal({
@@ -12,6 +13,20 @@ export default function ProUpgradeModal({
   onClose,
   onUpgrade
 }: ProUpgradeModalProps) {
+  if (!onUpgrade) {
+    return (
+      <Modal isOpen={isOpen} onClose={onClose} title="Cloud sync needs Pro">
+        <p className="text-foreground-muted text-center mb-6">
+          Paid checkout is not open during this unpaid beta. Keep studying
+          locally, or use a beta Pro grant if you have one.
+        </p>
+        <Button variant="primary" className="w-full" onClick={onClose}>
+          Continue
+        </Button>
+      </Modal>
+    )
+  }
+
   const handleUpgrade = () => {
     onUpgrade()
     onClose()

@@ -6,12 +6,12 @@ export function levelLabel(level: number): string {
 
 const levelDescription: Record<string, string> = {
   0: 'Cards with only one side are served as drafts. You can also move cards to drafts if you are not ready to review them.',
-  1: 'New cards are added to level 1. When you review a card, and get it right, it moves up one level. When you review a card, and get it wrong, it moved back to level 1.',
-  2: `When you review a card, and get it right, it moves up one level. When you review a card, and get it wrong, it moved back to level 1.`,
+  1: 'New cards are added to level 1. When you review a card and get it right, it moves up one level. When you get it wrong, it moves back to level 1.',
+  2: 'When you review a card and get it right, it moves up one level. When you get it wrong, it moves back to level 1.',
   general:
-    'When you review a card, and get it right, it moves up one level. When you review a card, and get it wrong, it moved back to level 1.',
-  7: 'When you review a card, and get it right, it moves to finished cards. When you review a card, and get it wrong, it moved back to level 1.',
-  8: 'When you have moved a card through all 7 levels they ara marked as finished. Finished cards are not shown in the test. If you want to review them again you can move them to another level.'
+    'When you review a card and get it right, it moves up one level. When you get it wrong, it moves back to level 1.',
+  7: 'When you review a card and get it right, it moves to finished cards. When you get it wrong, it moves back to level 1.',
+  8: 'When you have moved a card through all 7 levels they are marked as finished. Finished cards are not shown in the test. If you want to review them again you can move them to another level.'
 }
 
 export function getLevelDescription(levelId: string): string {
