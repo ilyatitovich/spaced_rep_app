@@ -2,75 +2,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { STORES } from '@/lib/db'
 import { createTopic, setStartWeek, type Topic } from '@/models'
+import { memory, table } from './helpers/fake-idb'
 
-const memory = new Map<string, Map<string, unknown>>()
 const enqueueSyncMock = vi.fn()
 const triggerSyncMock = vi.fn()
 
-function table(name: string): Map<string, unknown> {
-  let rows = memory.get(name)
-  if (!rows) {
-    rows = new Map()
-    memory.set(name, rows)
-  }
-  return rows
-}
-
-function idbRequest<T>(result: T): IDBRequest<T> {
-  const request = {
-    result,
-    error: null as DOMException | null,
-    onsuccess: null as ((this: IDBRequest<T>, ev: Event) => void) | null,
-    onerror: null as ((this: IDBRequest<T>, ev: Event) => void) | null
-  }
-  queueMicrotask(() => {
-    request.onsuccess?.call(request as IDBRequest<T>, {} as Event)
-  })
-  return request as IDBRequest<T>
-}
-
-function keyOf(value: { id?: string; key?: string }): string {
-  return value.key ?? value.id ?? ''
-}
-
-vi.mock('@/lib/db', async importOriginal => {
-  const actual = await importOriginal<typeof import('../../lib/db')>()
-  return {
-    ...actual,
-    withTransaction: vi.fn(
-      async (
-        storeNames: string[] | string,
-        _mode: IDBTransactionMode,
-        callback: (stores: Record<string, IDBObjectStore>) => Promise<unknown>
-      ) => {
-        const names = Array.isArray(storeNames) ? storeNames : [storeNames]
-        const stores: Record<string, IDBObjectStore> = {}
-        for (const name of names) {
-          const rows = table(name)
-          stores[name] = {
-            get: (key: IDBValidKey) => idbRequest(rows.get(String(key))),
-            getAll: () => idbRequest([...rows.values()]),
-            put: (value: { id?: string; key?: string }) => {
-              const key = keyOf(value)
-              rows.set(key, value)
-              return idbRequest(key)
-            },
-            add: (value: { id?: string; key?: string }) => {
-              const key = keyOf(value)
-              rows.set(key, value)
-              return idbRequest(key)
-            },
-            delete: (key: IDBValidKey) => {
-              rows.delete(String(key))
-              return idbRequest(undefined)
-            }
-          } as unknown as IDBObjectStore
-        }
-        return callback(stores)
-      }
-    )
-  }
-})
+vi.mock('@/lib/db', async () =>
+  (await import('./helpers/fake-idb')).fakeDbModule()
+)
 
 vi.mock('@/services/sync.service', async importOriginal => {
   const actual = await importOriginal<typeof import('../sync.service')>()

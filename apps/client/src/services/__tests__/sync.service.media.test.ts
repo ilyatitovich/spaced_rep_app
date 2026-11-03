@@ -2,106 +2,40 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { STORES } from '@/lib/db'
 import type { Card } from '@/models'
 import { sha256Hex } from '@spaced-rep/sync-protocol'
+import { memory, table } from './helpers/fake-idb'
+import { seedMeta } from './helpers/sync-fixtures'
 
 const pushMock = vi.fn()
 const pullMock = vi.fn()
 const uploadOwnedMediaMock = vi.fn()
 const hydrateIncomingCardDataMock = vi.fn()
 
-const memory = new Map<string, Map<string, unknown>>()
+vi.mock('@/lib/db', async () =>
+  (await import('./helpers/fake-idb')).fakeDbModule()
+)
 
-function table(name: string): Map<string, unknown> {
-  let rows = memory.get(name)
-  if (!rows) {
-    rows = new Map()
-    memory.set(name, rows)
-  }
-  return rows
-}
+vi.mock('@/lib/card-media-stats', async () =>
+  (await import('./helpers/sync-mocks')).cardMediaStatsModule()
+)
 
-function idbRequest<T>(result: T): IDBRequest<T> {
-  const request = {
-    result,
-    error: null as DOMException | null,
-    onsuccess: null as ((this: IDBRequest<T>, ev: Event) => void) | null,
-    onerror: null as ((this: IDBRequest<T>, ev: Event) => void) | null
-  }
-  queueMicrotask(() => {
-    request.onsuccess?.call(request as IDBRequest<T>, {} as Event)
+vi.mock('@/providers', async () =>
+  (await import('./helpers/sync-mocks')).providersModule({
+    push: pushMock,
+    pull: pullMock,
+    bootstrap: vi.fn()
   })
-  return request as IDBRequest<T>
-}
+)
 
-function keyOf(value: { id?: string; key?: string }): string {
-  return value.key ?? value.id ?? ''
-}
+vi.mock('@/lib/sync-media', async () =>
+  (await import('./helpers/sync-mocks')).syncMediaModule({
+    uploadOwnedMedia: uploadOwnedMediaMock,
+    hydrateIncomingCardData: hydrateIncomingCardDataMock
+  })
+)
 
-vi.mock('@/lib/db', async importOriginal => {
-  const actual = await importOriginal<typeof import('../../lib/db')>()
-  return {
-    ...actual,
-    withTransaction: vi.fn(
-      async (
-        storeNames: string[] | string,
-        _mode: IDBTransactionMode,
-        callback: (stores: Record<string, IDBObjectStore>) => Promise<unknown>
-      ) => {
-        const names = Array.isArray(storeNames) ? storeNames : [storeNames]
-        const stores: Record<string, IDBObjectStore> = {}
-        for (const name of names) {
-          const rows = table(name)
-          stores[name] = {
-            get: (key: IDBValidKey) => idbRequest(rows.get(String(key))),
-            getAll: () => idbRequest([...rows.values()]),
-            put: (value: { id?: string; key?: string }) => {
-              const key = keyOf(value)
-              rows.set(key, value)
-              return idbRequest(key)
-            },
-            delete: (key: IDBValidKey) => {
-              rows.delete(String(key))
-              return idbRequest(undefined)
-            }
-          } as unknown as IDBObjectStore
-        }
-        return callback(stores)
-      }
-    )
-  }
-})
-
-vi.mock('@/lib/card-media-stats', () => ({
-  adjustCardMediaStats: vi.fn(),
-  addEmbeddedMedia: vi.fn(),
-  recordCardMediaDelete: vi.fn(),
-  recordCardMediaUpsert: vi.fn(),
-  sumEmbeddedCardMedia: vi.fn(() => ({ bytes: 0, images: 0, audio: 0 })),
-  subEmbeddedMedia: vi.fn()
-}))
-
-vi.mock('@/providers', () => ({
-  isBackendConfigured: () => true,
-  sync: {
-    push: (...args: unknown[]) => pushMock(...args),
-    pull: (...args: unknown[]) => pullMock(...args),
-    bootstrap: vi.fn(),
-    connectRealtime: undefined
-  }
-}))
-
-vi.mock('@/lib/sync-media', async importOriginal => {
-  const actual = await importOriginal<typeof import('../../lib/sync-media')>()
-  return {
-    ...actual,
-    uploadOwnedMedia: (...args: unknown[]) => uploadOwnedMediaMock(...args),
-    hydrateIncomingCardData: (...args: unknown[]) =>
-      hydrateIncomingCardDataMock(...args)
-  }
-})
-
-vi.mock('../sync-http.client', () => ({
-  httpSyncMediaApi: { planUploads: vi.fn(), planDownloads: vi.fn() }
-}))
+vi.mock('../sync-http.client', async () =>
+  (await import('./helpers/sync-mocks')).syncHttpClientModule()
+)
 
 const { applyPullDelta, pushChanges, enqueueSync } =
   await import('../sync.service')
@@ -113,10 +47,6 @@ function bytes(values: number[]): ArrayBuffer {
   const buffer = new ArrayBuffer(values.length)
   new Uint8Array(buffer).set(values)
   return buffer
-}
-
-function seedMeta(key: string, value: string): void {
-  table(STORES.SYNC_META).set(key, { key, value })
 }
 
 async function seedCard(card: Card): Promise<void> {

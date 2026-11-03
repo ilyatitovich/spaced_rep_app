@@ -3,6 +3,15 @@ import { STORES, withTransaction } from '@/lib/db'
 import { Card, createTopic as buildTopic, type Topic } from '@/models'
 import type { CardData } from '@/types'
 import type { PullDelta, PushAck } from '@spaced-rep/sync-protocol'
+import { memory, table } from './helpers/fake-idb'
+import {
+  EPOCH_ISO,
+  acceptAll,
+  emptyDelta,
+  metaValue,
+  rejectRetryable,
+  seedMeta
+} from './helpers/sync-fixtures'
 
 const pushMock = vi.fn()
 const pullMock = vi.fn()
@@ -10,104 +19,32 @@ const bootstrapMock = vi.fn()
 const uploadOwnedMediaMock = vi.fn()
 const hydrateIncomingCardDataMock = vi.fn()
 
-const memory = new Map<string, Map<string, unknown>>()
+vi.mock('@/lib/db', async () =>
+  (await import('./helpers/fake-idb')).fakeDbModule()
+)
 
-function table(name: string): Map<string, unknown> {
-  let rows = memory.get(name)
-  if (!rows) {
-    rows = new Map()
-    memory.set(name, rows)
-  }
-  return rows
-}
+vi.mock('@/lib/card-media-stats', async () =>
+  (await import('./helpers/sync-mocks')).cardMediaStatsModule()
+)
 
-function idbRequest<T>(result: T): IDBRequest<T> {
-  const request = {
-    result,
-    error: null as DOMException | null,
-    onsuccess: null as ((this: IDBRequest<T>, ev: Event) => void) | null,
-    onerror: null as ((this: IDBRequest<T>, ev: Event) => void) | null
-  }
-  queueMicrotask(() => {
-    request.onsuccess?.call(request as IDBRequest<T>, {} as Event)
+vi.mock('@/providers', async () =>
+  (await import('./helpers/sync-mocks')).providersModule({
+    push: pushMock,
+    pull: pullMock,
+    bootstrap: bootstrapMock
   })
-  return request as IDBRequest<T>
-}
+)
 
-function keyOf(value: { id?: string; key?: string }): string {
-  return value.key ?? value.id ?? ''
-}
+vi.mock('@/lib/sync-media', async () =>
+  (await import('./helpers/sync-mocks')).syncMediaModule({
+    uploadOwnedMedia: uploadOwnedMediaMock,
+    hydrateIncomingCardData: hydrateIncomingCardDataMock
+  })
+)
 
-vi.mock('@/lib/db', async importOriginal => {
-  const actual = await importOriginal<typeof import('../../lib/db')>()
-  return {
-    ...actual,
-    withTransaction: vi.fn(
-      async (
-        storeNames: string[] | string,
-        _mode: IDBTransactionMode,
-        callback: (stores: Record<string, IDBObjectStore>) => Promise<unknown>
-      ) => {
-        const names = Array.isArray(storeNames) ? storeNames : [storeNames]
-        const stores: Record<string, IDBObjectStore> = {}
-        for (const name of names) {
-          const rows = table(name)
-          stores[name] = {
-            get: (key: IDBValidKey) => idbRequest(rows.get(String(key))),
-            getAll: () => idbRequest([...rows.values()]),
-            put: (value: { id?: string; key?: string }) => {
-              const key = keyOf(value)
-              rows.set(key, value)
-              return idbRequest(key)
-            },
-            delete: (key: IDBValidKey) => {
-              rows.delete(String(key))
-              return idbRequest(undefined)
-            },
-            clear: () => {
-              rows.clear()
-              return idbRequest(undefined)
-            }
-          } as unknown as IDBObjectStore
-        }
-        return callback(stores)
-      }
-    )
-  }
-})
-
-vi.mock('@/lib/card-media-stats', () => ({
-  adjustCardMediaStats: vi.fn(),
-  addEmbeddedMedia: vi.fn(),
-  recordCardMediaDelete: vi.fn(),
-  recordCardMediaUpsert: vi.fn(),
-  sumEmbeddedCardMedia: vi.fn(() => ({ bytes: 0, images: 0, audio: 0 })),
-  subEmbeddedMedia: vi.fn()
-}))
-
-vi.mock('@/providers', () => ({
-  isBackendConfigured: () => true,
-  sync: {
-    push: (...args: unknown[]) => pushMock(...args),
-    pull: (...args: unknown[]) => pullMock(...args),
-    bootstrap: (...args: unknown[]) => bootstrapMock(...args),
-    connectRealtime: undefined
-  }
-}))
-
-vi.mock('@/lib/sync-media', async importOriginal => {
-  const actual = await importOriginal<typeof import('../../lib/sync-media')>()
-  return {
-    ...actual,
-    uploadOwnedMedia: (...args: unknown[]) => uploadOwnedMediaMock(...args),
-    hydrateIncomingCardData: (...args: unknown[]) =>
-      hydrateIncomingCardDataMock(...args)
-  }
-})
-
-vi.mock('../sync-http.client', () => ({
-  httpSyncMediaApi: { planUploads: vi.fn(), planDownloads: vi.fn() }
-}))
+vi.mock('../sync-http.client', async () =>
+  (await import('./helpers/sync-mocks')).syncHttpClientModule()
+)
 
 const {
   __resetSyncServiceForTests,
@@ -124,23 +61,12 @@ const { deleteCardById } = await import('../card.services')
 const { __resetStudyMemoryForTests, hydrateStudyMemory } =
   await import('../study-memory')
 
-const EPOCH_ISO = new Date(0).toISOString()
-
 function deferred<T>() {
   let resolve!: (value: T) => void
   const promise = new Promise<T>(r => {
     resolve = r
   })
   return { promise, resolve }
-}
-
-function seedMeta(key: string, value: string): void {
-  table(STORES.SYNC_META).set(key, { key, value })
-}
-
-function metaValue(key: string): string | undefined {
-  return (table(STORES.SYNC_META).get(key) as { value: string } | undefined)
-    ?.value
 }
 
 function textCardData(front: string, back: string): CardData {
@@ -167,31 +93,6 @@ async function seedTopic(title: string, updatedAt = 1_000): Promise<Topic> {
   table(STORES.TOPICS).set(topic.id, topic)
   await hydrateStudyMemory()
   return topic
-}
-
-function emptyDelta(watermark = '2024-06-01T00:00:00.000Z'): PullDelta {
-  return { records: [], watermark, more: false }
-}
-
-function acceptAll(input: { mutations: { opId: string }[] }): PushAck {
-  return {
-    acceptedOpIds: input.mutations.map(m => m.opId),
-    rejected: [],
-    conflicts: []
-  }
-}
-
-function rejectRetryable(input: { mutations: { opId: string }[] }): PushAck {
-  return {
-    acceptedOpIds: [],
-    rejected: input.mutations.map(m => ({
-      opId: m.opId,
-      code: 'TRANSIENT',
-      message: 'try later',
-      retryable: true
-    })),
-    conflicts: []
-  }
 }
 
 function remoteCard(
