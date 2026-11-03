@@ -87,9 +87,12 @@ testing/                     # shared helpers, factories, fixtures, setup
   setup/                     # Vitest + Playwright global/setup hooks
 e2e/
   fixtures.ts                # default { test, expect } for specs
+  helpers/                   # shared Playwright journey helpers
   tests/
     smoke/                   # app-loads.spec.ts (topics home)
-    auth/                    # future OTP / OAuth specs
+    study/                   # guest study journey
+    auth/                    # email OTP sign-in (Passkey / Google later)
+    sync/                    # two-device create/delete
     passkeys/                # future WebAuthn specs
 apps/client/**/*.test.ts(x)  # client unit tests
 apps/server/**/*.test.ts     # server unit tests
@@ -142,11 +145,11 @@ describe('GET /health', () => {
 2. Import `{ test, expect }` from `e2e/fixtures.ts` (or auth/webauthn fixture modules when needed).
 3. Viewports are mobile-sized (`390×844`) because the app gates desktop widths >640px.
 
-Auth / Passkey helpers are ready but unused by specs yet:
+Auth helpers used by Chromium journeys:
 
-- Email OTP: `testing/helpers/auth/email-otp.ts`
-- Sessions / storageState: `testing/helpers/auth/session.ts`, `storage-state.ts`
-- Virtual WebAuthn: `testing/helpers/webauthn/virtual-authenticator.ts` (Playwright ≥ 1.61)
+- Email OTP: `testing/helpers/auth/email-otp.ts` (OTP sign-in reads Redis after the UI requests a code)
+- Sessions / storageState / Pro grant: `session.ts`, `storage-state.ts`, `billing/grant-pro.ts` (two-device sync)
+- Virtual WebAuthn: `testing/helpers/webauthn/virtual-authenticator.ts` (Playwright ≥ 1.61; specs not written yet)
 
 ### Factories
 

@@ -88,7 +88,9 @@ export default defineConfig({
       env: {
         ...process.env,
         VITE_API_URL: serverUrl,
-        VITE_TURNSTILE_SITE_KEY: '1x00000000000000000000AA'
+        VITE_TURNSTILE_SITE_KEY: '1x00000000000000000000AA',
+        // Keep SW registration off in e2e so the update sheet does not steal clicks.
+        VITE_PWA_DEV: 'false'
       }
     }
   ]

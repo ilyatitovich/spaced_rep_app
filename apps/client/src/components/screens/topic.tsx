@@ -158,6 +158,7 @@ export default function TopicScreen({
           <BackButton />
           <span>{topic?.title}</span>
           <Button
+            ariaLabel="Topic settings"
             onClick={() =>
               setSearchParams(prev => {
                 const params = new URLSearchParams(prev)

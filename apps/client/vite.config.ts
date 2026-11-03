@@ -8,6 +8,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 import svgr from 'vite-plugin-svgr'
 
 const isDev = process.env.NODE_ENV === 'development'
+const pwaDevEnabled = isDev && process.env.VITE_PWA_DEV !== 'false'
 const sentryAuthToken = process.env.SENTRY_AUTH_TOKEN
 
 const pwaOptions: Partial<VitePWAOptions> = {
@@ -68,7 +69,7 @@ const pwaOptions: Partial<VitePWAOptions> = {
   },
 
   devOptions: {
-    enabled: isDev,
+    enabled: pwaDevEnabled,
     type: 'module'
   }
 }

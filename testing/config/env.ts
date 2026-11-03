@@ -9,11 +9,12 @@ export function getRepoRoot(): string {
   return repoRoot
 }
 
-/** Load `.env.test` from the repo root and force NODE_ENV=test. Idempotent. */
+/** Load `.env.test`, then fill any gaps from `.env.test.example`. Idempotent. */
 export function loadTestEnv(): void {
   if (loaded) return
 
   dotenv.config({ path: path.join(repoRoot, '.env.test') })
+  dotenv.config({ path: path.join(repoRoot, '.env.test.example') })
   process.env.NODE_ENV = 'test'
   loaded = true
 }

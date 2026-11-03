@@ -17,14 +17,23 @@ export interface AuthTokens {
 export async function createSessionForUser(input?: {
   email?: string
   authMethod?: AuthMethod
+  /** Reuse an existing user (e.g. second device session). */
+  userId?: string
 }): Promise<AuthTokens> {
+  const { createSessionWithTokens } =
+    await import('../../../apps/server/src/auth/services/session.service.js')
+
+  if (input?.userId) {
+    return createSessionWithTokens({
+      userId: input.userId,
+      authMethod: input.authMethod ?? AuthMethod.EMAIL_OTP
+    })
+  }
+
   const user = await userFactory.create({
     ...(input?.email !== undefined ? { email: input.email } : {}),
     emailVerifiedAt: new Date()
   })
-
-  const { createSessionWithTokens } =
-    await import('../../../apps/server/src/auth/services/session.service.js')
 
   return createSessionWithTokens({
     userId: user.id,

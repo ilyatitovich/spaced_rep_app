@@ -43,6 +43,7 @@ export {
   createStorageState,
   writeStorageStateFile
 } from './helpers/auth/storage-state.js'
+export { grantProPlan } from './helpers/billing/grant-pro.js'
 export {
   installVirtualAuthenticator,
   seedPasskey,
