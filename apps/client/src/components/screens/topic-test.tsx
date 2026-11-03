@@ -12,11 +12,13 @@ import {
 } from '@/components'
 import { useShortcuts } from '@/hooks'
 import {
+  completeStudyDay,
   flipRules,
   getToday,
   getTopScreen,
+  gradeCard,
   gradeRules,
-  isAnotherDay
+  selectDueCards
 } from '@/lib'
 import { Card as CardModel, Topic } from '@/models'
 import { getCardsByTopicAndLevel, updateCard, updateTopic } from '@/services'
@@ -67,7 +69,7 @@ export default function TestScreen({ isOpen, topic }: TestScreenProps) {
   useEffect(() => {
     async function setTopic(): Promise<void> {
       try {
-        topic.week[getToday()]!.isDone = true
+        completeStudyDay(topic.week[getToday()]!)
         await updateTopic(topic)
       } catch (error) {
         console.error(error)
@@ -85,13 +87,9 @@ export default function TestScreen({ isOpen, topic }: TestScreenProps) {
       const currentCard = cards.shift()
       if (!currentCard) return
 
-      if (isCorrect) {
-        currentCard.level += 1
-      } else {
-        currentCard.level = 1
-      }
-
-      currentCard.reviewDate = Date.now()
+      const graded = gradeCard(currentCard.level, isCorrect, Date.now())
+      currentCard.level = graded.level
+      currentCard.reviewDate = graded.reviewDate
 
       await updateCard(currentCard)
 
@@ -112,9 +110,7 @@ export default function TestScreen({ isOpen, topic }: TestScreenProps) {
       const byLevel = await Promise.all(
         todayLevels.map(level => getCardsByTopicAndLevel(topic.id, level))
       )
-      const testCards = byLevel
-        .flat()
-        .filter(card => !card.reviewDate || isAnotherDay(card.reviewDate))
+      const testCards = selectDueCards(byLevel.flat(), todayLevels, Date.now())
       setCards(testCards)
       totalCardsRef.current = testCards.length
     })()
