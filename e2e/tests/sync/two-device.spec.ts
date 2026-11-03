@@ -5,6 +5,7 @@ import { createStorageState } from '../../../testing/helpers/auth/storage-state.
 import {
   clearModalHitTargets,
   createTopicFromHome,
+  deleteTopicInSettings,
   domClick,
   openAccountSettings,
   topBack,
@@ -63,14 +64,7 @@ test.describe('two-device sync', () => {
         pageA.getByRole('button', { name: `Go to topic: ${title}` })
       )
       await domClick(pageA.getByRole('button', { name: 'Topic settings' }))
-      await domClick(pageA.getByRole('button', { name: 'Delete' }))
-      await expect(
-        pageA.getByRole('heading', { name: 'Delete topic?' })
-      ).toBeVisible()
-      // Confirm sheet Delete (dangerSoft) — not the settings footer Delete.
-      await domClick(
-        pageA.getByRole('button', { name: 'Delete', exact: true }).last()
-      )
+      await deleteTopicInSettings(pageA)
 
       await expect(
         pageA.getByRole('button', { name: `Go to topic: ${title}` })

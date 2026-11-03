@@ -157,6 +157,28 @@ describe('queue coalescing', () => {
     expect(table(STORES.SYNC_QUEUE).size).toBe(0)
   })
 
+  it('stamps a queued delete with when it happened, not when it is pushed', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    try {
+      vi.setSystemTime(10_000)
+      await enqueueSync(STORES.CARDS, 'card-1', 'delete')
+
+      // Offline for a while: another device edits the card in the meantime,
+      // so a push-time stamp would let this older delete win LWW.
+      vi.setSystemTime(20_000)
+      pushMock.mockImplementationOnce(async input => acceptAll(input))
+      await pushChanges('device-1')
+
+      expect(pushMock.mock.calls[0]![0].mutations[0]).toMatchObject({
+        operation: 'delete',
+        recordId: 'card-1',
+        updatedAt: 10_000
+      })
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('in-flight ack of an upsert does not drop a delete that replaced it', async () => {
     const card = await seedCard()
     await enqueueSync(STORES.CARDS, card.id, 'upsert')

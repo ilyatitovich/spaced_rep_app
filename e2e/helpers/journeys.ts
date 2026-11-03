@@ -189,4 +189,73 @@ export async function waitForTopicGoneFromHome(
     .toBe(0)
 }
 
+/** `data-topic-id` of a topic row on the home screen. */
+export async function topicIdOnHome(
+  page: Page,
+  title: string
+): Promise<string> {
+  const topicId = await page
+    .getByRole('button', { name: `Go to topic: ${title}` })
+    .getAttribute('data-topic-id')
+  if (!topicId) {
+    throw new Error(`Missing data-topic-id for topic "${title}"`)
+  }
+  return topicId
+}
+
+/**
+ * Load the topic settings screen via URL. Needs a connection, so call it
+ * before taking the device offline (a reload would fail offline).
+ */
+export async function gotoTopicSettings(
+  page: Page,
+  topicId: string
+): Promise<void> {
+  await page.goto(`/?topicId=${encodeURIComponent(topicId)}&topicSettings=true`)
+  await clearModalHitTargets(page)
+  await expect(page.getByRole('button', { name: 'Save title' })).toBeVisible()
+}
+
+/**
+ * Rename the topic on the open topic settings screen. Works offline: it only
+ * touches local state and enqueues the edit.
+ */
+export async function renameTopicInSettings(
+  page: Page,
+  newTitle: string
+): Promise<void> {
+  // Create-topic also has a `#title` input; scope to the form with "Save title".
+  const form = page.locator('form', {
+    has: page.getByRole('button', { name: 'Save title' })
+  })
+  await form.locator('#title').fill(newTitle)
+  const save = page.getByRole('button', { name: 'Save title' })
+  // The button stays disabled until React has seen the new value.
+  await expect(save).toBeEnabled()
+  await domClick(save)
+  await expect(page.getByText('Title updated!')).toBeVisible()
+}
+
+/** Delete the topic from its open topic settings screen. */
+export async function deleteTopicInSettings(page: Page): Promise<void> {
+  // Skip the disabled card-selection Delete on the topic screen underneath.
+  await domClick(
+    page.getByRole('button', { name: 'Delete', disabled: false }).first()
+  )
+  await expect(
+    page.getByRole('heading', { name: 'Delete topic?' })
+  ).toBeVisible()
+  // Confirm sheet Delete (dangerSoft) — not the settings footer Delete.
+  await domClick(
+    page.getByRole('button', { name: 'Delete', exact: true }).last()
+  )
+}
+
+/** Open Account → Data & Sync directly (the status row lives there). */
+export async function gotoDataSync(page: Page): Promise<void> {
+  await page.goto('/?settings=true&data=true')
+  await clearModalHitTargets(page)
+  await expect(page.getByText('Last synced', { exact: true })).toBeVisible()
+}
+
 export { domClick, topBack }

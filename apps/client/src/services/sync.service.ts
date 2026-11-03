@@ -639,7 +639,9 @@ async function buildMutations(items: QueueItem[]): Promise<{
     }
 
     if (item.operation === 'delete') {
-      if (!tryAdd(item, base)) break
+      // LWW needs when the delete happened, not when it was flushed: an offline
+      // delete must not beat edits other devices made after it.
+      if (!tryAdd(item, { ...base, updatedAt: item.createdAt })) break
       continue
     }
 
