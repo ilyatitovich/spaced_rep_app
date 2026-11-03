@@ -1,15 +1,13 @@
-# Passkey / WebAuthn e2e specs will live here.
+# Passkey e2e
 
-# Use helpers from:
+- [`passkey.spec.ts`](passkey.spec.ts) — registers a passkey from Settings → Passkeys with Playwright's virtual authenticator, signs out, and signs back in with only the passkey; a removed passkey is rejected (401) and no session is created.
 
-# - testing/helpers/webauthn/virtual-authenticator.ts
+Skipped on WebKit: Playwright's Linux WebKit has no WebAuthn, and the app reports passkeys as unsupported there.
 
-# - testing/helpers/webauthn/passkey-storage.ts
+Helpers:
 
-# - testing/fixtures/webauthn.fixture.ts
+- `testing/helpers/webauthn/virtual-authenticator.ts`
+- `testing/helpers/webauthn/passkey-storage.ts`
+- `testing/fixtures/webauthn.fixture.ts`
 
-#
-
-# Playwright >= 1.61 provides BrowserContext.credentials for virtual authenticators
-
-# across Chromium, Firefox, and WebKit.
+Playwright >= 1.61 provides `BrowserContext.credentials` for virtual authenticators.

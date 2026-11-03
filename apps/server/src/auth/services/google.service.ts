@@ -51,7 +51,15 @@ export async function exchangeGoogleCode(input: {
     throw new BadGatewayError('Failed to reach Google token endpoint')
   }
 
-  const body = (await response.json()) as GoogleTokenResponse
+  let body: GoogleTokenResponse
+  try {
+    body = (await response.json()) as GoogleTokenResponse
+  } catch {
+    // e.g. an HTML error page from a gateway in front of Google.
+    throw new BadGatewayError(
+      'Google token endpoint returned an invalid response'
+    )
+  }
 
   if (!response.ok || !body.id_token) {
     const message =

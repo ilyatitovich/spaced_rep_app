@@ -18,6 +18,15 @@ interface TokenResponse {
   user: { id: string; email: string }
 }
 
+class AuthRequestError extends Error {
+  constructor(
+    message: string,
+    readonly status: number
+  ) {
+    super(message)
+  }
+}
+
 async function post<T>(path: string, body: unknown): Promise<T> {
   const response = await fetch(`${API_URL}${path}`, {
     method: 'POST',
@@ -29,7 +38,10 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     error?: { message?: string }
   }
   if (!response.ok || !payload.data) {
-    throw new Error(payload.error?.message ?? 'Authentication failed')
+    throw new AuthRequestError(
+      payload.error?.message ?? 'Authentication failed',
+      response.status
+    )
   }
   return payload.data
 }
@@ -109,9 +121,17 @@ export async function freshSession(): Promise<ExtensionSession | null> {
         })
       )
     )
-  } catch {
-    await chrome.storage.local.remove(SESSION_KEY)
-    return null
+  } catch (error) {
+    // Only an explicit rejection means the refresh token is dead. Offline,
+    // 5xx and gateway errors say nothing about it: keep the session.
+    if (
+      error instanceof AuthRequestError &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      await chrome.storage.local.remove(SESSION_KEY)
+      return null
+    }
+    return session
   }
 }
 

@@ -44,6 +44,11 @@ export class ApiError extends Error {
   }
 }
 
+/** The server understood the request and refused the credentials. */
+function isAuthRejection(err: unknown): boolean {
+  return err instanceof ApiError && (err.status === 401 || err.status === 403)
+}
+
 function sessionFromTokenResponse(data: AuthTokenResponse): AuthSession {
   return {
     accessToken: data.accessToken,
@@ -190,9 +195,15 @@ export function ensureFreshSession(): Promise<AuthSession | null> {
 
     try {
       return await refreshAuthSession(current.refreshToken)
-    } catch {
-      clearAuthSession()
-      return null
+    } catch (err) {
+      // Only an explicit rejection means the refresh token is dead. Offline,
+      // 5xx and gateway errors say nothing about it: keep the session so the
+      // user is not signed out by a flaky network.
+      if (isAuthRejection(err)) {
+        clearAuthSession()
+        return null
+      }
+      return current
     }
   })().finally(() => {
     refreshInFlight = null

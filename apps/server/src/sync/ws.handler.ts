@@ -69,6 +69,46 @@ function denyDevice(
   conn.ws.close(4004, code.toLowerCase())
 }
 
+function denySession(conn: Pick<Conn, 'ws' | 'deviceId'>): void {
+  send(conn.ws, {
+    version: PROTOCOL_VERSION,
+    messageId: createEnvelopeId(),
+    deviceId: conn.deviceId,
+    sentAt: Date.now(),
+    kind: 'error',
+    error: {
+      code: 'TOKEN_EXPIRED',
+      message: 'Unauthorized',
+      retryable: true
+    }
+  })
+  conn.ws.close(4001, 'unauthorized')
+}
+
+/** Session still usable: not revoked, not expired, account exists and is enabled. */
+const liveSessionWhere = (now: Date) => ({
+  revokedAt: null,
+  expiresAt: { gt: now },
+  user: { disabledAt: null }
+})
+
+async function isSessionLive(
+  sessionId: string,
+  userId: string
+): Promise<boolean> {
+  const session = await prisma.session.findFirst({
+    where: { id: sessionId, userId, ...liveSessionWhere(new Date()) },
+    select: { id: true }
+  })
+  return session !== null
+}
+
+async function hasLiveSession(conn: Conn): Promise<boolean> {
+  if (await isSessionLive(conn.sessionId, conn.userId)) return true
+  denySession(conn)
+  return false
+}
+
 async function hasSyncEntitlement(conn: Conn): Promise<boolean> {
   try {
     await assertPlan(conn.userId, 'PRO')
@@ -102,16 +142,7 @@ async function authenticateUpgrade(
 
   try {
     const payload = await verifyAccessToken(token)
-    const session = await prisma.session.findFirst({
-      where: {
-        id: payload.sessionId,
-        userId: payload.userId,
-        revokedAt: null,
-        expiresAt: { gt: new Date() }
-      },
-      select: { id: true }
-    })
-    if (!session) return null
+    if (!(await isSessionLive(payload.sessionId, payload.userId))) return null
     return { userId: payload.userId, sessionId: payload.sessionId }
   } catch {
     return null
@@ -143,7 +174,7 @@ async function handleMessage(conn: Conn, data: string): Promise<void> {
     (envelope.kind === 'hello' ||
       envelope.kind === 'pushBatch' ||
       envelope.kind === 'pullRequest') &&
-    !(await hasSyncEntitlement(conn))
+    (!(await hasLiveSession(conn)) || !(await hasSyncEntitlement(conn)))
   ) {
     return
   }
@@ -285,6 +316,35 @@ async function handleMessage(conn: Conn, data: string): Promise<void> {
   }
 }
 
+/** Authenticate and entitle a new socket; resolves null after denying it. */
+async function authorizeConnection(
+  ws: WebSocket,
+  req: IncomingMessage
+): Promise<Conn | null> {
+  const auth = await authenticateUpgrade(req)
+  if (!auth) {
+    denySession({ ws, deviceId: '' })
+    return null
+  }
+
+  try {
+    await assertPlan(auth.userId, 'PRO')
+  } catch {
+    denyPlan({ ws, deviceId: '' })
+    return null
+  }
+
+  logger.info({ userId: auth.userId }, 'ws.connect')
+  return {
+    ws,
+    userId: auth.userId,
+    deviceId: '',
+    sessionId: auth.sessionId,
+    userAgent: req.headers['user-agent'] ?? null,
+    lastPongAt: Date.now()
+  }
+}
+
 export function createSyncWss(server: HttpServer): WebSocketServer {
   const wss = new WebSocketServer({
     server,
@@ -314,6 +374,14 @@ export function createSyncWss(server: HttpServer): WebSocketServer {
     void (async () => {
       const now = new Date()
       const userIds = [...new Set([...connections.values()].map(c => c.userId))]
+      const liveSessions = await prisma.session.findMany({
+        where: {
+          id: { in: [...connections.values()].map(c => c.sessionId) },
+          ...liveSessionWhere(now)
+        },
+        select: { id: true }
+      })
+      const liveSessionIds = new Set(liveSessions.map(row => row.id))
       const subscriptions = await prisma.subscription.findMany({
         where: { userId: { in: userIds } },
         select: { userId: true, plan: true, status: true, endsAt: true }
@@ -327,6 +395,11 @@ export function createSyncWss(server: HttpServer): WebSocketServer {
       )
 
       for (const [key, conn] of connections) {
+        if (!liveSessionIds.has(conn.sessionId)) {
+          denySession(conn)
+          connections.delete(key)
+          continue
+        }
         if (!entitledUsers.has(conn.userId)) {
           denyPlan(conn)
           connections.delete(key)
@@ -351,58 +424,29 @@ export function createSyncWss(server: HttpServer): WebSocketServer {
   heartbeat.unref()
 
   wss.on('connection', (ws, req) => {
-    void (async () => {
-      const auth = await authenticateUpgrade(req)
-      if (!auth) {
-        send(ws, {
-          version: PROTOCOL_VERSION,
-          messageId: createEnvelopeId(),
-          deviceId: '',
-          sentAt: Date.now(),
-          kind: 'error',
-          error: {
-            code: 'TOKEN_EXPIRED',
-            message: 'Unauthorized',
-            retryable: true
-          }
-        })
-        ws.close(4001, 'unauthorized')
-        return
-      }
+    // The client sends `hello` as soon as the socket opens, before the async
+    // auth below finishes. Frames wait on `authorized` instead of being lost.
+    const authorized = authorizeConnection(ws, req)
 
-      try {
-        await assertPlan(auth.userId, 'PRO')
-      } catch {
-        denyPlan({ ws, deviceId: '' })
-        return
-      }
-
-      const conn: Conn = {
-        ws,
-        userId: auth.userId,
-        deviceId: '',
-        sessionId: auth.sessionId,
-        userAgent: req.headers['user-agent'] ?? null,
-        lastPongAt: Date.now()
-      }
-
-      logger.info({ userId: auth.userId }, 'ws.connect')
-
-      ws.on('message', data => {
-        const text =
-          typeof data === 'string'
-            ? data
-            : Buffer.isBuffer(data)
-              ? data.toString('utf8')
-              : Array.isArray(data)
-                ? Buffer.concat(data).toString('utf8')
-                : Buffer.from(data).toString('utf8')
-        void handleMessage(conn, text).catch(err => {
+    ws.on('message', data => {
+      const text =
+        typeof data === 'string'
+          ? data
+          : Buffer.isBuffer(data)
+            ? data.toString('utf8')
+            : Array.isArray(data)
+              ? Buffer.concat(data).toString('utf8')
+              : Buffer.from(data).toString('utf8')
+      void authorized
+        .then(conn => (conn ? handleMessage(conn, text) : undefined))
+        .catch(err => {
           logger.error({ err }, 'ws.message handler error')
         })
-      })
+    })
 
-      ws.on('close', () => {
+    ws.on('close', () => {
+      void authorized.then(conn => {
+        if (!conn) return
         if (conn.deviceId) {
           connections.delete(connKey(conn.userId, conn.deviceId))
         }
@@ -411,11 +455,11 @@ export function createSyncWss(server: HttpServer): WebSocketServer {
           'ws.disconnect'
         )
       })
+    })
 
-      ws.on('error', err => {
-        logger.error({ err, userId: conn.userId }, 'ws.error')
-      })
-    })()
+    ws.on('error', err => {
+      logger.error({ err }, 'ws.error')
+    })
   })
 
   wss.on('close', () => clearInterval(heartbeat))

@@ -1,5 +1,11 @@
 import { startAuthentication } from '@simplewebauthn/browser'
-import { getSession, signInWithPasskey, signOut, verifyEmailOtp } from './auth'
+import {
+  freshSession,
+  getSession,
+  signInWithPasskey,
+  signOut,
+  verifyEmailOtp
+} from './auth'
 
 vi.mock('@simplewebauthn/browser', () => ({
   startAuthentication: vi.fn()
@@ -102,4 +108,105 @@ it('revokes the refresh session on sign-out then clears storage', async () => {
     Authorization: 'Bearer access'
   })
   expect(await getSession()).toBeNull()
+})
+
+describe('freshSession', () => {
+  const expired = {
+    accessToken: 'old-access',
+    refreshToken: 'old-refresh',
+    expiresAt: Date.now() - 1000,
+    user: { id: 'user-1', email: 'a@b.com' }
+  }
+
+  function jsonResponse(status: number, body: unknown) {
+    return new Response(JSON.stringify(body), {
+      status,
+      headers: { 'Content-Type': 'application/json' }
+    })
+  }
+
+  beforeEach(() => {
+    values['auth.session'] = { ...expired }
+  })
+
+  it('returns the stored session without a request while the token is valid', async () => {
+    const valid = { ...expired, expiresAt: Date.now() + 10 * 60_000 }
+    values['auth.session'] = valid
+    const fetchMock = vi.fn()
+    globalThis.fetch = fetchMock as unknown as typeof fetch
+
+    expect(await freshSession()).toEqual(valid)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('stores the rotated session on a successful refresh', async () => {
+    globalThis.fetch = (async () =>
+      jsonResponse(200, {
+        data: {
+          accessToken: 'new-access',
+          refreshToken: 'new-refresh',
+          expiresIn: 900,
+          user: { id: 'user-1', email: 'a@b.com' }
+        }
+      })) as typeof fetch
+
+    const session = await freshSession()
+
+    expect(session?.accessToken).toBe('new-access')
+    expect((await getSession())?.refreshToken).toBe('new-refresh')
+  })
+
+  describe('keeps the stored session when the refresh could not be judged', () => {
+    it('on a network error (offline)', async () => {
+      globalThis.fetch = (async () => {
+        throw new TypeError('Failed to fetch')
+      }) as typeof fetch
+
+      await freshSession()
+
+      expect(await getSession()).toEqual(expired)
+    })
+
+    it.each([500, 502, 503])('on a %i from the server', async status => {
+      globalThis.fetch = (async () =>
+        jsonResponse(status, {
+          error: { message: 'Internal server error' }
+        })) as typeof fetch
+
+      await freshSession()
+
+      expect(await getSession()).toEqual(expired)
+    })
+
+    it('on a non-JSON gateway error page', async () => {
+      globalThis.fetch = (async () =>
+        new Response('<html>Bad Gateway</html>', {
+          status: 502
+        })) as typeof fetch
+
+      await freshSession()
+
+      expect(await getSession()).toEqual(expired)
+    })
+
+    it('and returns that session so callers can retry later', async () => {
+      globalThis.fetch = (async () => {
+        throw new TypeError('Failed to fetch')
+      }) as typeof fetch
+
+      expect(await freshSession()).toEqual(expired)
+    })
+  })
+
+  describe('clears the stored session when the server rejects the refresh token', () => {
+    it.each([401, 403])('on a %i', async status => {
+      globalThis.fetch = (async () =>
+        jsonResponse(status, {
+          error: { message: 'Invalid refresh token' }
+        })) as typeof fetch
+
+      expect(await freshSession()).toBeNull()
+      expect(await getSession()).toBeNull()
+    })
+  })
 })

@@ -32,6 +32,8 @@ import {
 
 const HOUR = 60 * 60
 const VERIFY_FAILED = 'Passkey verification failed'
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export interface PasskeySummary {
   id: string
@@ -211,15 +213,8 @@ export async function verifyRegister(input: {
     userId: input.userId
   })
 
-  let verification
-  try {
-    verification = await verifyRegistration({
-      response: input.credential,
-      expectedChallenge: challengeRow.challenge,
-      origin: input.origin
-    })
-  } catch {
-    await prisma.securityEvent.create({
+  const recordRegisterFailure = () =>
+    prisma.securityEvent.create({
       data: {
         userId: input.userId,
         type: SecurityEventType.PASSKEY_ASSERT_FAILED,
@@ -228,10 +223,21 @@ export async function verifyRegister(input: {
         metadata: { stage: 'register' }
       }
     })
+
+  let verification
+  try {
+    verification = await verifyRegistration({
+      response: input.credential,
+      expectedChallenge: challengeRow.challenge,
+      origin: input.origin
+    })
+  } catch {
+    await recordRegisterFailure()
     throw new BadRequestError(VERIFY_FAILED, 'PASSKEY_VERIFY_FAILED')
   }
 
   if (!verification.verified || !verification.registrationInfo) {
+    await recordRegisterFailure()
     throw new BadRequestError(VERIFY_FAILED, 'PASSKEY_VERIFY_FAILED')
   }
 
@@ -413,6 +419,17 @@ export async function verifyLogin(input: {
     throw new ForbiddenError('Account disabled')
   }
 
+  const recordLoginFailure = () =>
+    prisma.securityEvent.create({
+      data: {
+        userId: passkey.userId,
+        type: SecurityEventType.PASSKEY_ASSERT_FAILED,
+        ipAddress: input.ipAddress ?? null,
+        userAgent: input.userAgent ?? null,
+        metadata: { reason: 'verify_failed' }
+      }
+    })
+
   let verification
   try {
     verification = await verifyAuthentication({
@@ -428,15 +445,7 @@ export async function verifyLogin(input: {
     })
   } catch (err) {
     const message = err instanceof Error ? err.message.toLowerCase() : ''
-    await prisma.securityEvent.create({
-      data: {
-        userId: passkey.userId,
-        type: SecurityEventType.PASSKEY_ASSERT_FAILED,
-        ipAddress: input.ipAddress ?? null,
-        userAgent: input.userAgent ?? null,
-        metadata: { reason: 'verify_failed' }
-      }
-    })
+    await recordLoginFailure()
     if (message.includes('counter')) {
       throw new UnauthorizedError(
         'Passkey counter invalid',
@@ -447,6 +456,7 @@ export async function verifyLogin(input: {
   }
 
   if (!verification.verified) {
+    await recordLoginFailure()
     throw new BadRequestError(VERIFY_FAILED, 'PASSKEY_VERIFY_FAILED')
   }
 
@@ -534,6 +544,11 @@ export async function revokePasskey(input: {
   ipAddress?: string | null | undefined
   userAgent?: string | null | undefined
 }): Promise<{ ok: true }> {
+  // `passkeys.id` is a uuid column: any other shape would make Postgres throw.
+  if (!UUID_PATTERN.test(input.passkeyId)) {
+    throw new NotFoundError('Passkey not found')
+  }
+
   const existing = await prisma.passkey.findFirst({
     where: {
       id: input.passkeyId,
@@ -555,10 +570,10 @@ export async function revokePasskey(input: {
   await prisma.securityEvent.create({
     data: {
       userId: input.userId,
-      type: SecurityEventType.PASSKEY_REGISTERED,
+      type: SecurityEventType.PASSKEY_REVOKED,
       ipAddress: input.ipAddress ?? null,
       userAgent: input.userAgent ?? null,
-      metadata: { action: 'revoked', passkeyId: existing.id }
+      metadata: { passkeyId: existing.id }
     }
   })
 

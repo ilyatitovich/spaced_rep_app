@@ -58,10 +58,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let cancelled = false
 
     async function bootstrap() {
-      const fresh = await auth!.refreshSession()
-      if (!cancelled) {
-        setSession(fresh)
-        setIsLoading(false)
+      try {
+        const fresh = await auth!.refreshSession()
+        if (!cancelled) setSession(fresh)
+      } catch {
+        // Refresh could not run at all: keep the stored session rather than
+        // signing the user out or leaving the app on its loading screen.
+      } finally {
+        if (!cancelled) setIsLoading(false)
       }
     }
 
@@ -154,12 +158,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         completeOnboarding()
       },
       signOut: async () => {
-        if (auth) {
-          await auth.logout()
-        } else {
-          clearAuthSession()
+        try {
+          if (auth) {
+            await auth.logout()
+          } else {
+            clearAuthSession()
+          }
+        } finally {
+          // Signing out must always take effect locally, even if the
+          // adapter fails.
+          setSession(null)
         }
-        setSession(null)
       },
       completeGoogleLogin: (next: AuthSession) => {
         setSession(next)

@@ -97,6 +97,39 @@ export async function createSessionWithTokens(
   }
 }
 
+class RotationLostError extends Error {}
+
+interface RotationMeta {
+  ipAddress?: string | null | undefined
+  userAgent?: string | null | undefined
+}
+
+async function revokeSessionForReuse(
+  existing: { sessionId: string; session: { userId: string } },
+  meta?: RotationMeta
+): Promise<never> {
+  await prisma.$transaction(async tx => {
+    await tx.session.update({
+      where: { id: existing.sessionId },
+      data: { revokedAt: new Date() }
+    })
+    await tx.refreshToken.updateMany({
+      where: { sessionId: existing.sessionId, revokedAt: null },
+      data: { revokedAt: new Date() }
+    })
+    await tx.securityEvent.create({
+      data: {
+        userId: existing.session.userId,
+        sessionId: existing.sessionId,
+        type: SecurityEventType.REFRESH_REUSE_DETECTED,
+        ipAddress: meta?.ipAddress ?? null,
+        userAgent: meta?.userAgent ?? null
+      }
+    })
+  })
+  throw new UnauthorizedError('Refresh token reuse detected', 'REFRESH_REUSE')
+}
+
 export async function rotateRefreshToken(
   rawRefreshToken: string,
   meta?: {
@@ -122,27 +155,15 @@ export async function rotateRefreshToken(
     throw new UnauthorizedError('Invalid refresh token')
   }
 
-  if (existing.revokedAt || existing.replacedByTokenId) {
-    await prisma.$transaction(async tx => {
-      await tx.session.update({
-        where: { id: existing.sessionId },
-        data: { revokedAt: new Date() }
-      })
-      await tx.refreshToken.updateMany({
-        where: { sessionId: existing.sessionId, revokedAt: null },
-        data: { revokedAt: new Date() }
-      })
-      await tx.securityEvent.create({
-        data: {
-          userId: existing.session.userId,
-          sessionId: existing.sessionId,
-          type: SecurityEventType.REFRESH_REUSE_DETECTED,
-          ipAddress: meta?.ipAddress ?? null,
-          userAgent: meta?.userAgent ?? null
-        }
-      })
-    })
-    throw new UnauthorizedError('Refresh token reuse detected', 'REFRESH_REUSE')
+  // A token that was already rotated is being replayed: treat as theft.
+  if (existing.replacedByTokenId) {
+    await revokeSessionForReuse(existing, meta)
+  }
+
+  // Revoked without being rotated: logout (or an earlier reuse detection)
+  // killed the whole session. That is a plain rejection, not a new reuse.
+  if (existing.revokedAt) {
+    throw new UnauthorizedError('Session revoked or expired')
   }
 
   if (existing.expiresAt <= new Date()) {
@@ -160,43 +181,51 @@ export async function rotateRefreshToken(
   const newRawRefresh = createRefreshToken()
   const refreshExpiresAt = secondsFromNow(env.REFRESH_TOKEN_TTL_SECONDS)
 
-  const newToken = await prisma.$transaction(async tx => {
-    const created = await tx.refreshToken.create({
-      data: {
-        sessionId: existing.sessionId,
-        tokenHash: hashToken(newRawRefresh),
-        expiresAt: refreshExpiresAt
-      },
-      select: { id: true }
-    })
+  try {
+    await prisma.$transaction(async tx => {
+      const created = await tx.refreshToken.create({
+        data: {
+          sessionId: existing.sessionId,
+          tokenHash: hashToken(newRawRefresh),
+          expiresAt: refreshExpiresAt
+        },
+        select: { id: true }
+      })
 
-    await tx.refreshToken.update({
-      where: { id: existing.id },
-      data: {
-        revokedAt: new Date(),
-        replacedByTokenId: created.id
+      // Compare-and-swap: only the first request to retire this token wins.
+      // Concurrent rotations block on the row lock, then re-check the filter.
+      const retired = await tx.refreshToken.updateMany({
+        where: { id: existing.id, revokedAt: null, replacedByTokenId: null },
+        data: { revokedAt: new Date(), replacedByTokenId: created.id }
+      })
+      if (retired.count !== 1) {
+        // Throwing rolls back `created`, so a loser leaves no live token.
+        throw new RotationLostError()
       }
+
+      await tx.session.update({
+        where: { id: existing.sessionId },
+        data: { lastActiveAt: new Date() }
+      })
+
+      await tx.securityEvent.create({
+        data: {
+          userId: existing.session.userId,
+          sessionId: existing.sessionId,
+          type: SecurityEventType.REFRESH_SUCCEEDED,
+          ipAddress: meta?.ipAddress ?? null,
+          userAgent: meta?.userAgent ?? null
+        }
+      })
     })
-
-    await tx.session.update({
-      where: { id: existing.sessionId },
-      data: { lastActiveAt: new Date() }
-    })
-
-    await tx.securityEvent.create({
-      data: {
-        userId: existing.session.userId,
-        sessionId: existing.sessionId,
-        type: SecurityEventType.REFRESH_SUCCEEDED,
-        ipAddress: meta?.ipAddress ?? null,
-        userAgent: meta?.userAgent ?? null
-      }
-    })
-
-    return created
-  })
-
-  void newToken
+  } catch (err) {
+    // Lost the race against a parallel use of the same token: same outcome
+    // as a sequential replay.
+    if (err instanceof RotationLostError) {
+      await revokeSessionForReuse(existing, meta)
+    }
+    throw err
+  }
 
   const accessToken = await signAccessToken({
     userId: existing.session.userId,

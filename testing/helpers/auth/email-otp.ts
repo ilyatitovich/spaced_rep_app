@@ -37,6 +37,20 @@ export async function readOtpFromRedis(email: string): Promise<string> {
   }
 }
 
+/** Drop the resend cooldown so a test can request another code immediately. */
+export async function clearOtpCooldown(email: string): Promise<void> {
+  loadTestEnv()
+  const { redisUrl } = getTestEnv()
+  const client = createClient({ url: redisUrl })
+  await client.connect()
+
+  try {
+    await client.del(`otp:cooldown:${email}`)
+  } finally {
+    await client.quit()
+  }
+}
+
 export async function verifyEmailOtp(
   email: string,
   code: string
