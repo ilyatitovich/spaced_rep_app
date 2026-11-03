@@ -50,6 +50,16 @@ Containers log JSON to stdout (`pino` + `pino-http`, Authorization redacted, `x-
 
 Deploy the PWA to Vercel with `VITE_API_URL=https://<api-host>`. Keep Lemon checkout UI closed; set `BETA_OPEN_PRO=true` on the API to grant Pro during the beta.
 
+### Security headers
+
+The root `vercel.json` sets the CSP, HSTS, `nosniff`, referrer and permissions policies, and the cache headers (`no-cache` for `sw.js`, `index.html`, the manifest; `immutable` for `/assets/*`). Vercel ignores `public/_headers`, so do not add one. `testing/security/vercel-headers.test.ts` guards the policy.
+
+`script-src` allows only `'self'` and Cloudflare Turnstile. `connect-src` allows any `https:`/`wss:` origin because the API host, Sentry ingest host and presigned R2 URLs are not known at static-config time. Once those hosts are fixed, replace `https: wss:` with the explicit origins to limit where an injected script could send data. After deploying, check the headers on the preview URL: `curl -sI https://<preview-host>/ | grep -i -E 'content-security|strict-transport|x-content-type|referrer|permissions'`, then load the app with the browser console open and confirm there are no CSP violations (sign-in with Turnstile, an image card, Anki import).
+
+### Dependency hygiene
+
+CI runs `pnpm audit:prod` (fails on high or critical advisories in production dependencies) and Dependabot opens weekly update PRs. Transitive floors live under `overrides` in `pnpm-workspace.yaml`; drop an entry once its parent ships a patched range.
+
 ## CI smoke test
 
 CI builds the production image and boots it against throwaway Postgres and Redis (`infra/smoke/boot-image.sh`): it runs `prisma migrate deploy`, starts the server with `NODE_ENV=production` and asserts `/health` is `ok`. Run it locally with the same script.

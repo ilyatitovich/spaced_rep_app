@@ -92,6 +92,21 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+  audit:
+    name: Dependency audit
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Initialize Node.js & dependencies
+        uses: ./.github/actions/init-node
+
+      - name: Fail on high or critical advisories in production dependencies
+        run: pnpm audit:prod
+
   knip:
     name: Knip
     permissions:
