@@ -21,11 +21,11 @@ Duplicate topic titles on import/migrate are renamed on the server to `"{title} 
 
 ## Key files
 
-| Area | Path |
-| ---- | ---- |
-| Client engine | `apps/client/src/services/sync.service.ts` |
-| HTTP / WS | `apps/client/src/services/sync-http.client.ts`, `sync-ws.manager.ts` |
-| LWW helpers | `apps/client/src/lib/sync-serialize.ts` |
-| Server apply / pull | `apps/server/src/sync/sync.service.ts` |
-| Tombstone purge | `apps/server/src/sync/conflict.service.ts` |
-| Protocol packages | `packages/sync-protocol`, `packages/sync-client` |
+| Area                | Path                                                                 |
+| ------------------- | -------------------------------------------------------------------- |
+| Client engine       | `apps/client/src/services/sync.service.ts`                           |
+| HTTP / WS           | `apps/client/src/services/sync-http.client.ts`, `sync-ws.manager.ts` |
+| LWW helpers         | `apps/client/src/lib/sync-serialize.ts`                              |
+| Server apply / pull | `apps/server/src/sync/sync.service.ts`                               |
+| Tombstone purge     | `apps/server/src/sync/conflict.service.ts`                           |
+| Protocol packages   | `packages/sync-protocol`, `packages/sync-client`                     |

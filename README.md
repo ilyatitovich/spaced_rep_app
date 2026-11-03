@@ -17,12 +17,12 @@ Sync model (outbox, last-write-wins, tombstones, 3-device cap): **[docs/sync.md]
 
 ## Tech stack
 
-| Layer | Stack |
-| ----- | ----- |
+| Layer  | Stack                                                                       |
+| ------ | --------------------------------------------------------------------------- |
 | Client | React 18, React Router 7, Zustand, Tailwind CSS v4, Vite, `vite-plugin-pwa` |
-| Server | Express 5, Prisma 7, PostgreSQL 17, Redis 7 |
-| Shared | `packages/sync-protocol`, `packages/sync-client` |
-| Tests | Vitest 5, Playwright, Stryker |
+| Server | Express 5, Prisma 7, PostgreSQL 17, Redis 7                                 |
+| Shared | `packages/sync-protocol`, `packages/sync-client`                            |
+| Tests  | Vitest 5, Playwright, Stryker                                               |
 
 Requires **Node 24.18** and **pnpm 12.3** (see `.node-version` and `packageManager` in `package.json`).
 

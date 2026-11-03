@@ -45,22 +45,22 @@ _Confidence: High_
 
 Paths below are under `apps/client/` unless noted.
 
-| Path | Purpose |
-| ---- | ------- |
-| `src/models/` | Domain: `topic.model.ts`, `card.model.ts` (`Card` class), `day.model.ts` (review-level scheduling). |
-| `src/types/` | Content/shape types (`card.types.ts` blocks model), settings, auth, files. |
-| `src/lib/` | IndexedDB (`db.ts`), sync serialize/media helpers, API helpers, formatting, search, etc. |
-| `src/services/` | Topics, cards, sync (`sync.service.ts`, HTTP/WS clients), settings, backup, push. |
-| `src/store/` | Zustand: `topics-store`, `settings-store`, `screen-stack-store`. |
-| `src/contexts/` | `auth-context.tsx`, `sync-context.tsx`. |
-| `src/providers/` | Backend ports (`auth` / `sync` / `settings`) when `VITE_API_URL` is set. |
-| `src/hooks/` | `use-online`, `use-is-mobile`, font size, tap, keyboard manager, etc. |
-| `src/pages/` | `root.tsx` (outlet + PWA/Pro prompts), `home.tsx`, OAuth callback, 404 / route error. |
-| `src/components/` | `ui/` primitives, `screens/` overlays, `wrappers/` layout shells, domain components. |
-| `src/styles/` | `index.css` — Tailwind v4 + `@theme` tokens; `#root` capped at 640px. |
-| `apps/server/` | Express API, Prisma, Redis, billing, auth, sync apply/pull. |
-| `packages/sync-*` | Shared protocol and client transport. |
-| `e2e/`, `testing/` | Playwright specs and shared Vitest/Playwright helpers. |
+| Path               | Purpose                                                                                             |
+| ------------------ | --------------------------------------------------------------------------------------------------- |
+| `src/models/`      | Domain: `topic.model.ts`, `card.model.ts` (`Card` class), `day.model.ts` (review-level scheduling). |
+| `src/types/`       | Content/shape types (`card.types.ts` blocks model), settings, auth, files.                          |
+| `src/lib/`         | IndexedDB (`db.ts`), sync serialize/media helpers, API helpers, formatting, search, etc.            |
+| `src/services/`    | Topics, cards, sync (`sync.service.ts`, HTTP/WS clients), settings, backup, push.                   |
+| `src/store/`       | Zustand: `topics-store`, `settings-store`, `screen-stack-store`.                                    |
+| `src/contexts/`    | `auth-context.tsx`, `sync-context.tsx`.                                                             |
+| `src/providers/`   | Backend ports (`auth` / `sync` / `settings`) when `VITE_API_URL` is set.                            |
+| `src/hooks/`       | `use-online`, `use-is-mobile`, font size, tap, keyboard manager, etc.                               |
+| `src/pages/`       | `root.tsx` (outlet + PWA/Pro prompts), `home.tsx`, OAuth callback, 404 / route error.               |
+| `src/components/`  | `ui/` primitives, `screens/` overlays, `wrappers/` layout shells, domain components.                |
+| `src/styles/`      | `index.css` — Tailwind v4 + `@theme` tokens; `#root` capped at 640px.                               |
+| `apps/server/`     | Express API, Prisma, Redis, billing, auth, sync apply/pull.                                         |
+| `packages/sync-*`  | Shared protocol and client transport.                                                               |
+| `e2e/`, `testing/` | Playwright specs and shared Vitest/Playwright helpers.                                              |
 
 _Confidence: High_
 
