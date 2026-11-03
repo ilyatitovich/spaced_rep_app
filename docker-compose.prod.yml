@@ -81,7 +81,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      BETA_OPEN_PRO: ${BETA_OPEN_PRO:-true}
+      BETA_OPEN_PRO: ${BETA_OPEN_PRO:-false}
     depends_on:
       migrate:
         condition: service_completed_successfully

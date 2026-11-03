@@ -11,17 +11,24 @@ Single-VM API stack: Postgres, Redis (passworded), migrate-once, API, encrypted 
 
 ## Required production env
 
-| Variable                    | Notes                                                                            |
-| --------------------------- | -------------------------------------------------------------------------------- |
-| `NODE_ENV=production`       | Rejects `CORS_ORIGIN=*`, `dev-only` JWT/OTP placeholders, Turnstile test secrets |
-| `CORS_ORIGIN`               | Exact web + `chrome-extension://<id>` origins (no `*`)                           |
-| `REDIS_PASSWORD`            | Also embed in `REDIS_URL=redis://:<password>@redis:6379`                         |
-| `DATABASE_URL`              | Compose hostname `postgres`                                                      |
-| `JWT_SECRET` / `OTP_PEPPER` | ≥32 chars, not the example placeholders                                          |
-| `TURNSTILE_SECRET_KEY`      | Real Cloudflare secret                                                           |
-| `BACKUP_ENCRYPTION_KEY`     | Passphrase for `openssl enc` dumps                                               |
-| `BETA_OPEN_PRO=true`        | Grants Pro without Lemon for the unpaid beta                                     |
-| `LEMONSQUEEZY_API_KEY`      | Leave empty; checkout stays closed until paid phase                              |
+| Variable                                                             | Notes                                                                                                    |
+| -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `NODE_ENV=production`                                                | Rejects `CORS_ORIGIN=*`, `dev-only` JWT/OTP placeholders, Turnstile test secrets; never loads test stubs |
+| `CORS_ORIGIN`                                                        | Exact web + `chrome-extension://<id>` origins (no `*`)                                                   |
+| `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB`                | Used by the `postgres` and `backup` services                                                             |
+| `DATABASE_URL`                                                       | Compose hostname `postgres`                                                                              |
+| `REDIS_PASSWORD`                                                     | Also embed in `REDIS_URL=redis://:<password>@redis:6379`                                                 |
+| `JWT_SECRET` / `OTP_PEPPER`                                          | ≥32 chars, not the example placeholders                                                                  |
+| `TURNSTILE_SECRET_KEY`                                               | Real Cloudflare secret                                                                                   |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` / `GOOGLE_REDIRECT_URIS` | Google OAuth web client; redirect URIs must match the deployed client                                    |
+| `RESEND_API_KEY` / `EMAIL_FROM`                                      | Email OTP delivery; `EMAIL_FROM` must be a verified sender                                               |
+| `WEBAUTHN_RP_ID` / `WEBAUTHN_RP_NAME` / `WEBAUTHN_ORIGIN`            | Passkeys: RP ID is the client host (no scheme), origin is the exact client origin                        |
+| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT`           | Web Push: `npx web-push generate-vapid-keys`; subject is a real `mailto:` or `https:` URL                |
+| `BACKUP_ENCRYPTION_KEY`                                              | Passphrase for `openssl enc` dumps                                                                       |
+| `BETA_OPEN_PRO`                                                      | Defaults to `false`. Set `true` explicitly only to grant Pro without Lemon during the unpaid beta        |
+| `LEMONSQUEEZY_API_KEY`                                               | Leave empty; checkout stays closed until paid phase                                                      |
+
+Media (`R2_*`) and `EXTENSION_REDIRECT_URIS` are optional; see `.env.example`.
 
 ## Bring up
 
@@ -41,4 +48,8 @@ Containers log JSON to stdout (`pino` + `pino-http`, Authorization redacted, `x-
 
 ## Client
 
-Deploy the PWA to Vercel with `VITE_API_URL=https://<api-host>`. Keep Lemon checkout UI closed; Pro comes from `BETA_OPEN_PRO`.
+Deploy the PWA to Vercel with `VITE_API_URL=https://<api-host>`. Keep Lemon checkout UI closed; set `BETA_OPEN_PRO=true` on the API to grant Pro during the beta.
+
+## CI smoke test
+
+CI builds the production image and boots it against throwaway Postgres and Redis (`infra/smoke/boot-image.sh`): it runs `prisma migrate deploy`, starts the server with `NODE_ENV=production` and asserts `/health` is `ok`. Run it locally with the same script.

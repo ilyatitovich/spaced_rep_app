@@ -64,6 +64,19 @@ jobs:
       - name: Build client
         run: pnpm --filter spaced_rep_pwa_client build
 
+  image-smoke:
+    name: Server image boots
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Build the production image and assert /health
+        run: infra/smoke/boot-image.sh
+
   lint:
     name: Lint
     permissions:
