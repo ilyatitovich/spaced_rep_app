@@ -102,7 +102,10 @@ services:
     logging: *default-logging
 
   backup:
-    image: postgres:17-alpine
+    # Postgres 17 client + gnupg + aws-cli; see infra/backup/Dockerfile.
+    build:
+      context: ./infra/backup
+    image: spaced_rep_backup:local
     container_name: spaced_rep_backup
     restart: unless-stopped
     environment:
@@ -110,13 +113,18 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
-      BACKUP_ENCRYPTION_KEY: ${BACKUP_ENCRYPTION_KEY}
+      BACKUP_ENCRYPTION_KEY: ${BACKUP_ENCRYPTION_KEY:?BACKUP_ENCRYPTION_KEY is required}
       BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
+      BACKUP_RETRY_SECONDS: ${BACKUP_RETRY_SECONDS:-900}
       BACKUP_KEEP_COUNT: ${BACKUP_KEEP_COUNT:-7}
+      BACKUP_HEARTBEAT_URL: ${BACKUP_HEARTBEAT_URL:-}
+      BACKUP_S3_BUCKET: ${BACKUP_S3_BUCKET:-}
+      BACKUP_S3_ENDPOINT: ${BACKUP_S3_ENDPOINT:-}
+      BACKUP_S3_ACCESS_KEY_ID: ${BACKUP_S3_ACCESS_KEY_ID:-}
+      BACKUP_S3_SECRET_ACCESS_KEY: ${BACKUP_S3_SECRET_ACCESS_KEY:-}
+      BACKUP_S3_PREFIX: ${BACKUP_S3_PREFIX:-db}
     volumes:
-      - ./infra/backup/backup-loop.sh:/scripts/backup-loop.sh:ro
       - backup_data:/backups
-    entrypoint: ['/bin/sh', '/scripts/backup-loop.sh']
     depends_on:
       postgres:
         condition: service_healthy

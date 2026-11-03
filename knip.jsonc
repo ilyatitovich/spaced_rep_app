@@ -12,7 +12,7 @@
     "duplicates"
   ],
   // `pnpm exec prisma` runs with cwd in apps/server, where the binary is installed.
-  "ignoreBinaries": ["prisma"],
+  "ignoreBinaries": ["prisma", "openssl"],
   // Kept for the auth and WebAuthn e2e suites. See e2e/fixtures.ts.
   "ignoreFiles": [
     "testing/fixtures/auth.fixture.ts",

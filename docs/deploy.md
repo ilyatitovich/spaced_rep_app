@@ -24,7 +24,8 @@ Single-VM API stack: Postgres, Redis (passworded), migrate-once, API, encrypted 
 | `RESEND_API_KEY` / `EMAIL_FROM`                                      | Email OTP delivery; `EMAIL_FROM` must be a verified sender                                               |
 | `WEBAUTHN_RP_ID` / `WEBAUTHN_RP_NAME` / `WEBAUTHN_ORIGIN`            | Passkeys: RP ID is the client host (no scheme), origin is the exact client origin                        |
 | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT`           | Web Push: `npx web-push generate-vapid-keys`; subject is a real `mailto:` or `https:` URL                |
-| `BACKUP_ENCRYPTION_KEY`                                              | Passphrase for `openssl enc` dumps                                                                       |
+| `BACKUP_ENCRYPTION_KEY`                                              | gpg passphrase for dumps. Keep a copy off the VM (see Backups)                                           |
+| `BACKUP_S3_*` / `BACKUP_HEARTBEAT_URL`                               | Offsite copy bucket and failure alert (see Backups)                                                      |
 | `BETA_OPEN_PRO`                                                      | Defaults to `false`. Set `true` explicitly only to grant Pro without Lemon during the unpaid beta        |
 | `LEMONSQUEEZY_API_KEY`                                               | Leave empty; checkout stays closed until paid phase                                                      |
 
@@ -40,7 +41,44 @@ docker compose -f docker-compose.prod.yml pull
 docker compose -f docker-compose.prod.yml up -d
 ```
 
-`migrate` runs `prisma migrate deploy` once per `up` and must succeed before `server` starts. Backups land in the `backup_data` volume as `spaced_rep_*.sql.gz.enc`.
+`migrate` runs `prisma migrate deploy` once per `up` and must succeed before `server` starts. Backups land in the `backup_data` volume as `spaced_rep_*.sql.gz.gpg` and are copied offsite (see Backups).
+
+## Backups
+
+The `backup` service (`infra/backup/`, built from its own small image) runs `backup.sh` every `BACKUP_INTERVAL_SECONDS`:
+
+1. `pg_dump`, then validate: non-trivial size, the `PostgreSQL database dump complete` trailer, at least one `CREATE TABLE`. An empty or truncated dump is discarded, never stored.
+2. gzip, then encrypt with `gpg` (AES256, integrity protected, so a modified file fails to decrypt instead of restoring garbage).
+3. Decrypt and gunzip the result once to prove the file is recoverable with the configured key.
+4. Copy to `s3://$BACKUP_S3_BUCKET/$BACKUP_S3_PREFIX/` (use a dedicated R2 bucket and a token scoped to it; add a lifecycle rule such as 90 days for retention). Local copies are pruned to `BACKUP_KEEP_COUNT`.
+5. Ping `BACKUP_HEARTBEAT_URL` on success, `<url>/fail` on any failure. Use a dead-man's-switch such as healthchecks.io with the period set to a bit more than `BACKUP_INTERVAL_SECONDS`: it also alerts when the container or the VM stops running, which an in-process alert cannot. After a failure the loop retries every `BACKUP_RETRY_SECONDS`.
+
+`BACKUP_ENCRYPTION_KEY` is the only way to read a backup. Keep a copy in a password manager that does not live on the VM. Rotating it makes older backups readable only with the old key, so record which key covers which dates.
+
+### Restore
+
+`restore.sh` decrypts a backup, refuses a target that already has tables (unless `RESTORE_FORCE=1`), applies the dump in one transaction and fails if the result has no tables or rows. Legacy `.sql.gz.enc` (openssl) backups are still accepted.
+
+```bash
+# Newest local backup into a scratch database (never point this at production by accident):
+docker compose -f docker-compose.prod.yml exec postgres createdb -U "$POSTGRES_USER" scratch
+docker compose -f docker-compose.prod.yml run --rm --no-deps \
+  -e TARGET_DATABASE_URL="postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@postgres:5432/scratch" \
+  --entrypoint sh backup /scripts/restore.sh latest
+
+# Straight from the offsite bucket (pass the s3:// URL instead of `latest`; BACKUP_S3_* must be set):
+#   ... /scripts/restore.sh s3://$BACKUP_S3_BUCKET/db/spaced_rep_<stamp>.sql.gz.gpg
+```
+
+Add `-e SOURCE_DATABASE_URL=postgresql://.../$POSTGRES_DB` to compare per-table row counts with the live database (only meaningful when it is quiet; otherwise expect small differences and read the printed counts).
+
+### Quarterly drill
+
+CI runs `infra/smoke/backup-restore.sh` on every change (seed Postgres 17, back up with the real image, restore into a scratch database, compare row counts), which proves the tooling. It cannot prove your VM and bucket, so once a quarter, and after any change to the key or the bucket:
+
+1. Restore the newest **offsite** backup (`s3://...`) into a scratch database on a different machine, using only the key from your password manager.
+2. Confirm the printed table list and row counts look plausible against production, and that `_prisma_migrations` ends at the latest migration.
+3. Drop the scratch database and note the date and the backup file used.
 
 ## Log drain
 

@@ -1,0 +1,3 @@
+#!/bin/sh
+echo "wget $*" >> "$STUB_LOG"
+exit "${STUB_WGET_EXIT:-0}"

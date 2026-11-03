@@ -1,0 +1,3 @@
+#!/bin/sh
+echo "aws $*" >> "$STUB_LOG"
+exit "${STUB_AWS_EXIT:-0}"

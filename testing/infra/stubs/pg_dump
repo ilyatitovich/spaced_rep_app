@@ -1,0 +1,9 @@
+#!/bin/sh
+# Test double: behaviour chosen by STUB_PG_DUMP, content by STUB_DUMP_FILE.
+case "${STUB_PG_DUMP:-ok}" in
+  ok) cat "$STUB_DUMP_FILE" ;;
+  empty) exit 0 ;;
+  fail) head -c 40 "$STUB_DUMP_FILE"; echo "pg_dump: connection lost" >&2; exit 1 ;;
+  truncated) grep -v 'dump complete' "$STUB_DUMP_FILE" ;;
+  notables) printf -- '-- PostgreSQL database dump\n-- PostgreSQL database dump complete\n' ;;
+esac

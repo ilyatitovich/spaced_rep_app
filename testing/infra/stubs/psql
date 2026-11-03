@@ -1,0 +1,13 @@
+#!/bin/sh
+# Test double. Answers the three kinds of query restore.sh sends.
+case "$*" in
+  *query_to_xml*) printf '%b' "${STUB_COUNTS:-users 3\ncards 4\n}" ;;
+  *"count(*) FROM information_schema"*) echo "${STUB_TARGET_TABLES:-0}" ;;
+  *)
+    # `-f <dump>`: keep a copy of what would have been applied.
+    for arg in "$@"; do
+      [ -f "$arg" ] && cp "$arg" "$STUB_APPLIED"
+    done
+    ;;
+esac
+[ -z "${STUB_PSQL_FAIL:-}" ] || exit 1
