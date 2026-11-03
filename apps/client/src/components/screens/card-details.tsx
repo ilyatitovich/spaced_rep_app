@@ -190,7 +190,9 @@ export default function CardDetailsScreen({
 
   const handleSaveCard = async (): Promise<void> => {
     const latest = readLatestCardData()
-    if (isDirty) {
+    // Recompute: text lives in TipTap until blur, so isDirty can be stale on click.
+    const dirtyNow = !isCardDataEqual(latest, savedCardDataRef.current)
+    if (dirtyNow) {
       const saved = await saveCard(card, latest)
       if (!saved) return
 
@@ -453,8 +455,11 @@ export default function CardDetailsScreen({
           <BackButton />
           <span>{isFlipped ? 'Back' : 'Front'}</span>
           {isEditable ? (
-            <Button key="save" onClick={() => handleSaveCard()}>
-              Save
+            <Button
+              key={isDirty ? 'save' : 'done'}
+              onClick={() => handleSaveCard()}
+            >
+              {isDirty ? 'Save' : 'Done'}
             </Button>
           ) : (
             <Button key="edit" onClick={() => setIsEditable(true)}>
