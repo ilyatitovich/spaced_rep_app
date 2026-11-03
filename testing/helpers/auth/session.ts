@@ -51,7 +51,7 @@ export async function refreshTokens(refreshToken: string): Promise<AuthTokens> {
     )
   }
 
-  return res.body
+  return res.body.data
 }
 
 export async function revokeSession(accessToken: string): Promise<void> {

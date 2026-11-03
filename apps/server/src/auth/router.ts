@@ -14,7 +14,8 @@ import {
   passkeyListHandler,
   passkeyDeleteHandler,
   extensionGrantHandler,
-  extensionTokenHandler
+  extensionTokenHandler,
+  deleteAccountHandler
 } from './handlers/index.js'
 
 export const authRouter = Router()
@@ -25,6 +26,7 @@ authRouter.post('/email/verify', emailVerifyHandler)
 authRouter.post('/token/refresh', refreshTokenHandler)
 authRouter.post('/logout', requireAuth, logoutHandler)
 authRouter.get('/me', requireAuth, meHandler)
+authRouter.delete('/account', requireAuth, deleteAccountHandler)
 authRouter.post('/extension/grant', requireAuth, extensionGrantHandler)
 authRouter.post('/extension/token', extensionTokenHandler)
 

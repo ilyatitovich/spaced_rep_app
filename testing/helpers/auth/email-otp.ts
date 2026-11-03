@@ -55,7 +55,7 @@ export async function verifyEmailOtp(
     )
   }
 
-  return res.body
+  return res.body.data
 }
 
 /** Full email OTP login via API — for future auth e2e/integration tests. */

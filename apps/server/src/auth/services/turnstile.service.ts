@@ -6,12 +6,21 @@ interface TurnstileResponse {
   'error-codes'?: string[]
 }
 
+function isAllowlistedExtensionOrigin(
+  origin: string | null | undefined
+): boolean {
+  return Boolean(
+    origin?.startsWith('chrome-extension://') &&
+    env.CORS_ORIGIN.includes(origin)
+  )
+}
+
 export async function verifyTurnstileToken(
   token: string,
   remoteIp?: string | null,
   origin?: string | null
 ): Promise<void> {
-  if (origin?.startsWith('chrome-extension://')) return
+  if (isAllowlistedExtensionOrigin(origin)) return
   const body = new URLSearchParams()
   body.set('secret', env.TURNSTILE_SECRET_KEY)
   body.set('response', token)

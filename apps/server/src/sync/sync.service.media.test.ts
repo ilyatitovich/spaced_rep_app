@@ -60,7 +60,8 @@ function mockStorage(): R2Storage {
     headObject: vi.fn().mockResolvedValue(null),
     putObject: vi.fn(),
     presignPut: vi.fn(),
-    presignGet: vi.fn()
+    presignGet: vi.fn(),
+    deletePrefix: vi.fn()
   }
 }
 

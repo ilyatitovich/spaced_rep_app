@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { BackButton, Header, Screen } from '@/components'
 import { useAuth } from '@/contexts'
+import { deleteAccount } from '@/lib'
 import { SettingsActionRow, SettingsGroup } from './settings-ui'
 
 interface SectionPrivacyProps {
@@ -7,7 +9,29 @@ interface SectionPrivacyProps {
 }
 
 export default function SectionPrivacy({ isOpen }: SectionPrivacyProps) {
-  const { user } = useAuth()
+  const { user, session, signOut } = useAuth()
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleDeleteAccount() {
+    const accessToken = session?.accessToken
+    if (!accessToken || busy) return
+
+    const confirmed = window.confirm(
+      'Delete your account and all synced study data? This cannot be undone.'
+    )
+    if (!confirmed) return
+
+    setBusy(true)
+    setError(null)
+    try {
+      await deleteAccount(accessToken)
+      await signOut()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not delete account')
+      setBusy(false)
+    }
+  }
 
   return (
     <Screen isOpen={isOpen}>
@@ -29,20 +53,19 @@ export default function SectionPrivacy({ isOpen }: SectionPrivacyProps) {
 
         <SettingsGroup
           label="Your rights"
-          footer="Account deletion and data-erasure requests are coming soon."
+          footer="Deleting your account removes your cloud data and media. Local data on this device is cleared on sign-out."
         >
           <SettingsActionRow
-            label="Delete account"
-            onClick={() => {}}
-            disabled={!user}
+            label={busy ? 'Deleting…' : 'Delete account'}
+            onClick={() => void handleDeleteAccount()}
+            disabled={!user || busy}
             destructive
           />
-          <SettingsActionRow
-            label="Request data erasure"
-            onClick={() => {}}
-            disabled={!user}
-            destructive
-          />
+          {error ? (
+            <p className="px-4 text-sm text-destructive" role="alert">
+              {error}
+            </p>
+          ) : null}
         </SettingsGroup>
       </div>
     </Screen>

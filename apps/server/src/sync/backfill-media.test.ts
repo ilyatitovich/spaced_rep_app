@@ -30,6 +30,7 @@ function mockStorage(overrides: Partial<R2Storage> = {}): R2Storage {
     putObject: vi.fn().mockResolvedValue(undefined),
     presignPut: vi.fn(),
     presignGet: vi.fn(),
+    deletePrefix: vi.fn(),
     ...overrides
   }
 }

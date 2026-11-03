@@ -27,6 +27,7 @@ function mockStorage(overrides: Partial<R2Storage> = {}): R2Storage {
       }
     }),
     presignGet: vi.fn().mockResolvedValue('https://r2.test/get'),
+    deletePrefix: vi.fn(),
     ...overrides
   }
 }

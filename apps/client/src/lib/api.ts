@@ -151,6 +151,24 @@ export async function logoutAuthSession(accessToken: string): Promise<void> {
   }
 }
 
+export async function deleteAccount(accessToken: string): Promise<void> {
+  if (!apiUrl) {
+    throw new ApiError(0, API_URL_MISSING)
+  }
+
+  const response = await fetch(`${apiUrl}/auth/account`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${accessToken}` }
+  })
+
+  if (response.status === 204) {
+    clearAuthSession()
+    return
+  }
+
+  await parseJson(response)
+}
+
 export async function fetchMe(
   accessToken: string
 ): Promise<{ user: AuthUser }> {

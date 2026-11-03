@@ -35,6 +35,20 @@ vi.mock('@aws-sdk/client-s3', () => {
       constructor(input: unknown) {
         this.input = input
       }
+    },
+    ListObjectsV2Command: class {
+      input: unknown
+      _tag = 'ListObjectsV2'
+      constructor(input: unknown) {
+        this.input = input
+      }
+    },
+    DeleteObjectsCommand: class {
+      input: unknown
+      _tag = 'DeleteObjects'
+      constructor(input: unknown) {
+        this.input = input
+      }
     }
   }
 })

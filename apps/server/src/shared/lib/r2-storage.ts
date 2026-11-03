@@ -1,6 +1,8 @@
 import {
+  DeleteObjectsCommand,
   GetObjectCommand,
   HeadObjectCommand,
+  ListObjectsV2Command,
   NotFound,
   PutObjectCommand,
   S3Client,
@@ -54,6 +56,8 @@ export interface R2Storage {
     checksumSHA256Hex: string
   }) => Promise<PresignedPut>
   presignGet: (key: string) => Promise<string>
+  /** Delete every object under `prefix` (e.g. `{userId}/`). */
+  deletePrefix: (prefix: string) => Promise<void>
 }
 
 /** Lowercase hex SHA-256 → base64 digest for `x-amz-checksum-sha256`. */
@@ -166,6 +170,36 @@ export function createR2Storage(config: R2StorageConfig): R2Storage {
         }),
         { expiresIn }
       )
+    },
+
+    async deletePrefix(prefix) {
+      let continuationToken: string | undefined
+      do {
+        const listed = await apiClient.send(
+          new ListObjectsV2Command({
+            Bucket: config.bucket,
+            Prefix: prefix,
+            ContinuationToken: continuationToken
+          })
+        )
+        const keys = (listed.Contents ?? [])
+          .map(obj => obj.Key)
+          .filter((key): key is string => Boolean(key))
+        if (keys.length > 0) {
+          await apiClient.send(
+            new DeleteObjectsCommand({
+              Bucket: config.bucket,
+              Delete: {
+                Objects: keys.map(Key => ({ Key })),
+                Quiet: true
+              }
+            })
+          )
+        }
+        continuationToken = listed.IsTruncated
+          ? listed.NextContinuationToken
+          : undefined
+      } while (continuationToken)
     }
   }
 }

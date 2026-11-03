@@ -1,5 +1,9 @@
 import type { NextFunction, Request, Response } from 'express'
-import { UnauthorizedError } from '../lib/errors.js'
+import {
+  ForbiddenError,
+  NotFoundError,
+  UnauthorizedError
+} from '../lib/errors.js'
 import { prisma } from '../lib/prisma.js'
 import { verifyAccessToken } from '../../auth/services/index.js'
 
@@ -28,11 +32,25 @@ export async function requireAuth(
         revokedAt: null,
         expiresAt: { gt: new Date() }
       },
-      select: { id: true }
+      select: {
+        id: true,
+        user: { select: { disabledAt: true } }
+      }
     })
 
     if (!session) {
+      const user = await prisma.user.findUnique({
+        where: { id: payload.userId },
+        select: { id: true }
+      })
+      if (!user) {
+        throw new NotFoundError('Account not found')
+      }
       throw new UnauthorizedError('Session revoked or expired')
+    }
+
+    if (session.user.disabledAt) {
+      throw new ForbiddenError('Account disabled')
     }
 
     req.auth = { userId: payload.userId, sessionId: payload.sessionId }
