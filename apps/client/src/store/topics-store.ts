@@ -66,7 +66,11 @@ export const useTopicsStore = create<TopicsStore>((set, get) => ({
     }
   },
   addTopic: (topic: Topic) =>
-    set(state => applyFilters([topic, ...state.allTopics], state.searchQuery)),
+    set(state => {
+      // createTopic emits study data → refreshTopics may already have this id.
+      if (state.allTopics.some(t => t.id === topic.id)) return state
+      return applyFilters([topic, ...state.allTopics], state.searchQuery)
+    }),
   updateTopic: async (topic: Topic) => {
     await updateTopic(topic)
     set(state =>

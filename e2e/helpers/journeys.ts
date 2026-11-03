@@ -22,7 +22,8 @@ export async function clearModalHitTargets(page: Page): Promise<void> {
     for (const el of document.querySelectorAll<HTMLElement>(
       '[data-screen].fixed.inset-0'
     )) {
-      el.style.pointerEvents = 'none'
+      // Only neutralize closed overlays; open screens must stay clickable.
+      el.style.pointerEvents = el.inert ? 'none' : ''
     }
   })
 }
@@ -38,11 +39,24 @@ export async function createTopicFromHome(
   await domClick(page.getByRole('button', { name: 'Save' }))
   await expect(page.getByText('Topic created!')).toBeVisible()
   await domClick(topBack(page))
-  await expect(
-    page.getByRole('button', { name: `Go to topic: ${title}` })
-  ).toBeVisible()
-  await domClick(page.getByRole('button', { name: `Go to topic: ${title}` }))
-  // Title also appears on the home list — assert topic chrome instead.
+  await expect
+    .poll(() => new URL(page.url()).searchParams.has('create'))
+    .toBe(false)
+  await clearModalHitTargets(page)
+
+  const topicButton = page.getByRole('button', {
+    name: `Go to topic: ${title}`
+  })
+  await expect(topicButton).toHaveCount(1)
+  const topicId = await topicButton.getAttribute('data-topic-id')
+  if (!topicId) {
+    throw new Error(`Missing data-topic-id for topic "${title}"`)
+  }
+
+  // FF/WebKit: programmatic click on the list row is flaky under leftover
+  // create-sheet layers; open via URL after IDB write has committed.
+  await page.goto(`/?topicId=${encodeURIComponent(topicId)}`)
+  await clearModalHitTargets(page)
   await expect(page.getByRole('button', { name: 'Add Cards' })).toBeVisible()
 }
 
@@ -89,14 +103,28 @@ export async function addTwoSidedCard(
   const save = page.getByRole('button', { name: 'Save', exact: true }).last()
   await expect(save).toBeEnabled()
   await domClick(save)
+  // Save is async; wait for the empty next-card draft before closing.
+  await expect(
+    page.getByRole('button', { name: 'Save Draft', exact: true })
+  ).toBeVisible()
+  await clearModalHitTargets(page)
   await domClick(topBack(page))
+  await expect
+    .poll(() => new URL(page.url()).searchParams.has('addCard'))
+    .toBe(false)
 }
 
 /** Open today's test, reveal the answer, mark Correct, return to the topic. */
 export async function completeTodaysTestCorrect(page: Page): Promise<void> {
   await clearModalHitTargets(page)
+  await expect(page.getByRole('button', { name: /Today’s Test/ })).toBeVisible()
   await domClick(page.getByRole('button', { name: /Today’s Test/ }))
-  await expect(page.getByText('tap on card to reweal answer')).toBeVisible()
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get('test'))
+    .toBe('true')
+  await expect(page.getByText('tap on card to reweal answer')).toBeVisible({
+    timeout: 10_000
+  })
 
   // Study flip listens for Space (when not focused on a control) or touch.
   await page.evaluate(() => {

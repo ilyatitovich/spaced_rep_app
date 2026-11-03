@@ -186,55 +186,7 @@ async function applyTopicUpsert(input: {
 
   const data = topicRecordToDb(topic, input.userId)
 
-  try {
-    await db.topic.upsert({
-      where: { id: topic.id },
-      create: data,
-      update: {
-        title: data.title,
-        pivot: data.pivot,
-        week: data.week,
-        nextUpdateDate: data.nextUpdateDate,
-        isArchived: data.isArchived ?? false,
-        updatedAt: data.updatedAt,
-        deletedAt: null
-      }
-    })
-  } catch (err) {
-    // Unique title collision — resolve then retry
-    const conflict = await resolveTopicTitleConflict({
-      userId: input.userId,
-      incomingId: topic.id,
-      incomingTitle: topic.title,
-      incomingUpdatedAt: new Date(topic.updatedAt),
-      incomingDeviceId: input.deviceId,
-      db
-    })
-
-    if (!conflict) throw err
-
-    // After rename of loser, upsert again with possibly adjusted title
-    const title =
-      conflict.topicId === topic.id ? conflict.newTitle : topic.title
-
-    await db.topic.upsert({
-      where: { id: topic.id },
-      create: { ...data, title },
-      update: {
-        title,
-        pivot: data.pivot,
-        week: data.week,
-        nextUpdateDate: data.nextUpdateDate,
-        isArchived: data.isArchived ?? false,
-        updatedAt: data.updatedAt,
-        deletedAt: null
-      }
-    })
-
-    return { conflict }
-  }
-
-  // Proactive check: another live topic may already hold this title
+  // Resolve before write — a unique violation aborts the surrounding Postgres tx.
   const conflict = await resolveTopicTitleConflict({
     userId: input.userId,
     incomingId: topic.id,
@@ -242,6 +194,22 @@ async function applyTopicUpsert(input: {
     incomingUpdatedAt: new Date(topic.updatedAt),
     incomingDeviceId: input.deviceId,
     db
+  })
+  const title =
+    conflict && conflict.topicId === topic.id ? conflict.newTitle : data.title
+
+  await db.topic.upsert({
+    where: { id: topic.id },
+    create: { ...data, title },
+    update: {
+      title,
+      pivot: data.pivot,
+      week: data.week,
+      nextUpdateDate: data.nextUpdateDate,
+      isArchived: data.isArchived ?? false,
+      updatedAt: data.updatedAt,
+      deletedAt: null
+    }
   })
 
   return { conflict }

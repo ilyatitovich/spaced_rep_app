@@ -38,6 +38,7 @@ export default function TopicItem({
         isSelectionMode && isSelected ? 'ring-2 ring-primary' : ''
       }`}
       aria-label={`Go to topic: ${topic.title}`}
+      data-topic-id={topic.id}
       onClick={handleClick}
     >
       <div className="flex flex-col gap-1.5 text-left w-3/4">

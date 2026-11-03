@@ -455,6 +455,96 @@ describe('applyPushBatch ownership and op marking', () => {
   })
 })
 
+describe('applyPushBatch topic title conflict', () => {
+  it('renames the losing topic and fans out topicConflictResolved', async () => {
+    const user = await userFactory.create()
+    const deviceA = crypto.randomUUID()
+    const deviceB = crypto.randomUUID()
+    const topicA = crypto.randomUUID()
+    const topicB = crypto.randomUUID()
+    const title = 'Shared'
+
+    await applyPushBatch({
+      userId: user.id,
+      deviceId: deviceA,
+      mutations: [
+        topicUpsert({
+          id: topicA,
+          title,
+          updatedAt: BASE,
+          deviceId: deviceA
+        })
+      ]
+    })
+    vi.mocked(publishFanout).mockClear()
+
+    const ack = await applyPushBatch({
+      userId: user.id,
+      deviceId: deviceB,
+      mutations: [
+        topicUpsert({
+          id: topicB,
+          title,
+          updatedAt: BASE + 1000,
+          deviceId: deviceB
+        })
+      ]
+    })
+
+    const shortId = topicA.slice(0, 4)
+    const renamed = `${title} (${shortId})`
+    expect(ack.conflicts).toEqual([
+      expect.objectContaining({
+        topicId: topicA,
+        oldTitle: title,
+        newTitle: renamed,
+        reason: 'duplicate_title'
+      })
+    ])
+
+    const conflictFanout = vi
+      .mocked(publishFanout)
+      .mock.calls.map(call => call[0])
+      .find(arg => arg.envelope.kind === 'topicConflictResolved')
+    expect(conflictFanout?.envelope).toEqual(
+      expect.objectContaining({
+        kind: 'topicConflictResolved',
+        topicConflictResolved: expect.objectContaining({
+          topicId: topicA,
+          oldTitle: title,
+          newTitle: renamed,
+          reason: 'duplicate_title'
+        })
+      })
+    )
+
+    const deltaFanout = vi
+      .mocked(publishFanout)
+      .mock.calls.map(call => call[0])
+      .find(arg => arg.envelope.kind === 'pullDelta')
+    expect(deltaFanout?.excludeDeviceId).toBe(deviceB)
+    const fanoutTopics =
+      deltaFanout?.envelope.kind === 'pullDelta'
+        ? deltaFanout.envelope.pullDelta.records
+            .map(r => r.topic)
+            .filter(t => t != null)
+        : []
+    expect(fanoutTopics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: topicA, title: renamed }),
+        expect.objectContaining({ id: topicB, title })
+      ])
+    )
+
+    const { records } = await pullChanges({ userId: user.id, since: EPOCH_ISO })
+    const byId = new Map(
+      records.flatMap(r => (r.topic ? [[r.topic.id, r.topic] as const] : []))
+    )
+    expect(byId.get(topicA)?.title).toBe(renamed)
+    expect(byId.get(topicB)?.title).toBe(title)
+  })
+})
+
 describe('tombstone purge with lagging device', () => {
   it('keeps an old tombstone until every active device has pulled past it', async () => {
     const user = await userFactory.create()
