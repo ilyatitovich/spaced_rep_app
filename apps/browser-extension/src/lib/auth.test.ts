@@ -85,7 +85,7 @@ it('revokes the refresh session on sign-out then clears storage', async () => {
     user: { id: 'user-1', email: 'a@b.com' }
   }
 
-  const calls: Array<{ url: string; init?: RequestInit }> = []
+  const calls: Array<{ url: string; init?: RequestInit | undefined }> = []
   globalThis.fetch = (async (input, init) => {
     calls.push({ url: String(input), init })
     return new Response(JSON.stringify({ data: { ok: true } }), {
