@@ -143,7 +143,7 @@ describe('GET /health', () => {
 
 1. Add a `*.spec.ts` under `e2e/tests/<area>/`.
 2. Import `{ test, expect }` from `e2e/fixtures.ts` (or auth/webauthn fixture modules when needed).
-3. Viewports are mobile-sized (`390×844`) because the app gates desktop widths >640px.
+3. Viewports are mobile-sized (`390×844`) to match the phone-column layout (`#root` max-width 640px).
 
 Auth helpers used by Chromium journeys:
 
@@ -181,12 +181,15 @@ Faker is seeded (`42`) in integration setup for deterministic data.
 
 ## CI
 
-`[.github/workflows/tests.yml](../.github/workflows/tests.yml)` runs four parallel jobs on push to `main` and on PRs:
+`[.github/workflows/tests.yml](../.github/workflows/tests.yml)` runs parallel jobs on push to `main` and on PRs:
 
-1. **Unit** — `pnpm test:unit --coverage` (client, server, sync-protocol, sync-client, browser-extension, testing). Uploads the V8 HTML/LCOV report as an artifact. No coverage percentage gate.
-2. **Integration** — Postgres 17 + Redis 7 service containers; `pnpm test:integration`
-3. **E2E** — same services + Chromium only (`pnpm test:e2e --project=chromium`); Playwright report artifacts. Firefox and WebKit stay in `playwright.config.ts` for local runs.
-4. **Duplication** — `pnpm jscpd` (fails above 5% duplicated lines)
+1. **Typecheck** — `pnpm prisma:generate` then `pnpm typecheck`
+2. **Lint** — `pnpm lint` (oxlint)
+3. **Knip** — unused files and dependencies
+4. **Unit** — `pnpm test:unit --coverage` (client, server, sync-protocol, sync-client, browser-extension, testing). Uploads the V8 HTML/LCOV report as an artifact. No coverage percentage gate.
+5. **Integration** — Postgres 17 + Redis 7 service containers; `pnpm test:integration`
+6. **E2E** — same services + Chromium only (`pnpm test:e2e --project=chromium`); Playwright report artifacts. Firefox and WebKit stay in `playwright.config.ts` for local runs.
+7. **Duplication** — `pnpm jscpd` (fails above 5% duplicated lines)
 
 CI remaps compose ports (`5433→5432`, `6380→6379`) to the Actions service host ports.
 

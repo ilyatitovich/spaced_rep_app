@@ -1,53 +1,39 @@
-# 📚 Spaced Repetition App
+# Spaced Repetition App
 
-A lightweight and mobile-friendly **spaced repetition learning app** designed to help you remember anything efficiently.
+Local-first spaced repetition PWA: topics, rich flashcards, weekly levels, optional cloud sync.
 
-This project focuses on **fast UX**, **offline support via IndexedDB**, and a clean UI.
+Inspired by [Nicky Case’s explanation of spaced repetition](https://ncase.me/remember/).
 
-## 🚀 Features
+## Features
 
-- **Spaced repetition algorithm** based on week-by-week review logic
-- **Mobile-first UI** with smooth transitions and gestures
-- **Instant offline storage** using IndexedDB
-- Create, edit, and delete topics and flashcards
-- Flashcards supports text, images, and code snippets
-- Portable JSON-based backup and restore system for data migration between devices
+- Weekly level-based review schedule
+- Offline IndexedDB storage (source of truth)
+- Text, image, code, and audio card blocks
+- Anki import and JSON backup / restore
+- Optional Express sync for signed-in Pro accounts (email OTP, Google, passkeys)
+- PWA install / update prompts
 
-## 🛠️ Tech Stack
+Sync model (outbox, last-write-wins, tombstones, 3-device cap): **[docs/sync.md](docs/sync.md)**. Architecture notes: **[CONTEXT.md](CONTEXT.md)**.
 
-**Frontend**
+## Tech stack
 
-- **React 18** – UI framework
-- **React Router 7** – navigation & URL state
-- **Motion (Framer Motion v2 API)** – animations
-- **Lucide-React** – icons
-- **React Hot Toast** – notifications
-- **TailwindCSS** – styling
+| Layer | Stack |
+| ----- | ----- |
+| Client | React 18, React Router 7, Zustand, Tailwind CSS v4, Vite, `vite-plugin-pwa` |
+| Server | Express 5, Prisma 7, PostgreSQL 17, Redis 7 |
+| Shared | `packages/sync-protocol`, `packages/sync-client` |
+| Tests | Vitest 5, Playwright, Stryker |
 
-**Backend**
+Requires **Node 24.18** and **pnpm 12.3** (see `.node-version` and `packageManager` in `package.json`).
 
-- **Express 5** – HTTP API (`apps/server`)
-- **Prisma 7** – PostgreSQL ORM
-- **PostgreSQL 17** + **Redis 7** via Docker Compose
-
-**Storage**
-
-- IndexedDB (custom wrapper + transactions) on the client
-
-## 💡 Inspiration
-
-The core concept is inspired by [Nicky Case’s interactive explanation of spaced repetition](https://ncase.me/remember/)
-
-The goal of this app is to bring that idea into a **practical, everyday tool**.
-
-## 🏗️ Local Development
+## Local development
 
 ```bash
 pnpm install
 pnpm dev
 ```
 
-The app runs on `http://localhost:5173`.
+Client: `http://localhost:5173`.
 
 ### Docker (Postgres + Redis + server)
 
@@ -57,61 +43,39 @@ cp apps/server/src/.env.example apps/server/src/.env
 pnpm docker:up
 ```
 
-- Compose `DATABASE_URL` uses hostname `postgres` (Docker network).
-- Local Prisma CLI / host-side server use `localhost:5433` (see `apps/server/src/.env.example`).
+- Compose `DATABASE_URL` uses hostname `postgres`.
+- Host-side Prisma / server use `localhost:5433` (see `apps/server/src/.env.example`).
 
 ### Prisma
 
-Required env var: **`DATABASE_URL`** (see `.env.example` and `apps/server/src/.env.example`).
-
 ```bash
-# Generate the Prisma Client (also runs on server package postinstall)
 pnpm prisma:generate
-
-# Create / apply migrations in development (interactive)
-pnpm prisma:migrate
-
-# Apply existing migrations (CI / production — does not auto-run on app start)
-pnpm prisma:migrate:deploy
-
-# Browse data
+pnpm prisma:migrate          # development
+pnpm prisma:migrate:deploy   # CI / production
 pnpm prisma:studio
 ```
 
-Or from `apps/server`:
+## Testing
 
-```bash
-pnpm prisma:generate
-pnpm prisma:migrate
-pnpm prisma:migrate:deploy
-pnpm prisma:studio
-```
-
-Import the shared client in server code:
-
-```ts
-import { prisma } from './shared/lib/prisma.js'
-```
-
-## 🧪 Testing
-
-Vitest (unit + integration) and Playwright (e2e). See **[testing/README.md](testing/README.md)** for setup, commands, and conventions.
+See **[testing/README.md](testing/README.md)** for setup, factories, and conventions.
 
 ```bash
 pnpm test:unit
 pnpm test:integration   # needs Docker + spaced_rep_test DB
-pnpm test:e2e
+pnpm test:e2e           # Playwright; CI uses --project=chromium
 pnpm test:mutation      # Stryker; unit projects only
 ```
 
-Linting uses **oxlint** (see [docs/oxlint-migration.md](docs/oxlint-migration.md)). Pre-commit hooks run via Husky.
-
 ```bash
-pnpm lint
+pnpm typecheck
+pnpm lint               # oxlint
 pnpm format:check
+pnpm knip
 pnpm jscpd
 ```
 
-## 📝 License
+CI (`.github/workflows/tests.yml`) runs typecheck, lint, knip, unit tests with a V8 coverage artifact, integration tests, Chromium e2e, and jscpd on push to `main` and on pull requests. Coverage is uploaded; there is no percentage gate.
 
-MIT — feel free to use and modify.
+## License
+
+MIT
