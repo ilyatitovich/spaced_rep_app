@@ -340,6 +340,74 @@ describe('pull watermark and post-push pull', () => {
     expect(stored.updatedAt).toBe(5_000)
     expect(metaValue('lastPulledAt')).toBe('2024-06-01T00:00:00.000Z')
   })
+
+  it('syncAll keeps pulling while more is true and applies every page', async () => {
+    const page1Watermark = '2024-06-01T00:00:00.000Z'
+    const page2Watermark = '2024-06-02T00:00:00.000Z'
+    const page3Watermark = '2024-06-03T00:00:00.000Z'
+    const page1Cards = Array.from({ length: 40 }, (_, i) =>
+      remoteCard(`card-p1-${i}`, { updatedAt: 1_000 + i, front: `p1-${i}` })
+    )
+    const page2Cards = Array.from({ length: 40 }, (_, i) =>
+      remoteCard(`card-p2-${i}`, { updatedAt: 2_000 + i, front: `p2-${i}` })
+    )
+    const page3Cards = Array.from({ length: 20 }, (_, i) =>
+      remoteCard(`card-p3-${i}`, { updatedAt: 3_000 + i, front: `p3-${i}` })
+    )
+
+    pushMock.mockResolvedValue({
+      acceptedOpIds: [],
+      rejected: [],
+      conflicts: []
+    })
+    pullMock
+      .mockResolvedValueOnce({
+        records: [
+          {
+            topic: {
+              id: 'topic-1',
+              title: 'Imported',
+              pivot: 0,
+              weekJson: '[]',
+              nextUpdateDate: 0,
+              updatedAt: 900,
+              deletedAt: null
+            }
+          },
+          ...page1Cards
+        ],
+        watermark: page1Watermark,
+        more: true
+      })
+      .mockResolvedValueOnce({
+        records: page2Cards,
+        watermark: page2Watermark,
+        more: true
+      })
+      .mockResolvedValueOnce({
+        records: page3Cards,
+        watermark: page3Watermark,
+        more: false
+      })
+
+    setSyncUser('user-a')
+    setSyncEntitlement(true)
+    await syncAll('user-a')
+
+    expect(pullMock).toHaveBeenCalledTimes(3)
+    expect(pullMock.mock.calls[0]![0].since).toBe(EPOCH_ISO)
+    expect(pullMock.mock.calls[1]![0].since).toBe(page1Watermark)
+    expect(pullMock.mock.calls[2]![0].since).toBe(page2Watermark)
+
+    expect(table(STORES.TOPICS).get('topic-1')).toBeDefined()
+    for (const page of [page1Cards, page2Cards, page3Cards]) {
+      for (const record of page) {
+        expect(table(STORES.CARDS).get(record.card.id)).toBeDefined()
+      }
+    }
+    expect(table(STORES.CARDS).size).toBe(100)
+    expect(metaValue('lastPulledAt')).toBe(page3Watermark)
+  })
 })
 
 describe('tombstone LWW on pull', () => {

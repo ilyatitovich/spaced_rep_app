@@ -909,9 +909,13 @@ export async function pushChanges(deviceId: string): Promise<number> {
 
 async function pullChanges(deviceId: string): Promise<void> {
   if (!syncBackend) return
-  const lastPulledAt = (await getMeta('lastPulledAt')) ?? EPOCH_ISO
-  const delta = await syncBackend.pull({ deviceId, since: lastPulledAt })
-  await applyPullDelta(delta)
+  let since = (await getMeta('lastPulledAt')) ?? EPOCH_ISO
+  for (;;) {
+    const delta = await syncBackend.pull({ deviceId, since })
+    await applyPullDelta(delta)
+    if (!delta.more) return
+    since = delta.watermark || ((await getMeta('lastPulledAt')) ?? since)
+  }
 }
 
 async function reconcile(): Promise<void> {
@@ -923,6 +927,7 @@ async function reconcile(): Promise<void> {
     pendingOpCount: (await getQueue()).length
   })
   await applyPullDelta(delta)
+  if (delta.more) await pullChanges(deviceId)
 }
 
 function wireRealtimeListeners(): void {
@@ -1224,6 +1229,7 @@ export async function initialSync(userId: string): Promise<void> {
         pendingOpCount: (await getQueue()).length
       })
       await applyPullDelta(delta)
+      if (delta.more) await pullChanges(deviceId)
       await pushChanges(deviceId)
       await setMeta(LAST_SYNC_AT_KEY, String(Date.now()))
       setState({
@@ -1276,6 +1282,7 @@ export async function reconnectRevokedDevice(): Promise<void> {
         pendingOpCount: (await getQueue()).length
       })
       await applyPullDelta(delta)
+      if (delta.more) await pullChanges(deviceId)
       await pushChanges(deviceId)
       await setMeta(LAST_SYNC_AT_KEY, String(Date.now()))
       setState({
