@@ -23,7 +23,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:unit": "vitest run --project client --project server --project sync-protocol --project sync-client --project browser-extension --project testing",
+    "test:unit": "vitest run --project client --project server --project sync-protocol --project sync-client --project testing",
     "test:integration": "vitest run --project server-integration",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
