@@ -245,6 +245,12 @@ describe('checkReferencedMedia', () => {
     setMediaStorageForTests(null)
   })
 
+  it('skips storage when there are no refs', async () => {
+    await expect(
+      checkReferencedMedia({ userId: 'user-1', refs: [] })
+    ).resolves.toEqual(new Map())
+  })
+
   it('maps missing and integrity failures with retryable codes', async () => {
     const storage = mockStorage({
       headObject: vi.fn(async (key: string) => {

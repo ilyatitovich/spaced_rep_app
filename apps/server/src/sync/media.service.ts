@@ -357,6 +357,8 @@ export async function checkReferencedMedia(input: {
   refs: WireMediaRef[]
 }): Promise<Map<string, MediaRefError>> {
   const errors = new Map<string, MediaRefError>()
+  if (input.refs.length === 0) return errors
+
   const storage = getStorage()
 
   for (const ref of input.refs) {
