@@ -16,7 +16,13 @@ import {
 import { completeOnboarding } from '@/lib/onboarding'
 import { auth, isBackendConfigured } from '@/providers'
 import type { AuthCapabilities } from '@/providers'
-import { initialSync, setSyncEntitlement, setSyncUser } from '@/services'
+import {
+  flushPendingChanges,
+  initialSync,
+  setSyncEntitlement,
+  setSyncUser
+} from '@/services'
+import { UnsyncedChangesError } from '@/lib/auth-errors'
 import { useSettingsStore } from '@/store/settings-store'
 
 interface AuthContextValue {
@@ -29,7 +35,12 @@ interface AuthContextValue {
   signInWithPasskey: () => Promise<void>
   sendEmailOtp: (email: string, turnstileToken: string) => Promise<void>
   verifyEmailOtp: (email: string, token: string) => Promise<void>
-  signOut: () => Promise<void>
+  /**
+   * Pushes queued changes first and rejects with `UnsyncedChangesError` if any
+   * remain, because sign-out wipes this device's data. Pass `discardUnsynced`
+   * once the user has agreed to lose them.
+   */
+  signOut: (options?: { discardUnsynced?: boolean }) => Promise<void>
   /** Used by OAuth callback route after exchanging the code (custom provider). */
   completeGoogleLogin: (session: AuthSession) => void
 }
@@ -157,7 +168,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(next)
         completeOnboarding()
       },
-      signOut: async () => {
+      signOut: async ({ discardUnsynced = false } = {}) => {
+        // Must run before logout: the push needs the session being dropped.
+        if (userId && !discardUnsynced) {
+          const pending = await flushPendingChanges()
+          if (pending > 0) throw new UnsyncedChangesError(pending)
+        }
         try {
           if (auth) {
             await auth.logout()
@@ -175,7 +191,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         completeOnboarding()
       }
     }
-  }, [session, user, isLoading])
+  }, [session, user, userId, isLoading])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

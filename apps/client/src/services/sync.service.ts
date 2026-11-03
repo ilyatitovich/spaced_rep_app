@@ -121,6 +121,10 @@ const MAX_PUSH_BATCH = 50
 /** Server HTTP/WS payload limit is 1mb; leave headroom for the envelope wrapper. */
 const MAX_PUSH_BYTES = 700_000
 const MAX_ATTEMPTS = 10
+/** How long sign-out waits to push the outbox before asking the user. */
+const SIGN_OUT_FLUSH_TIMEOUT_MS = 10_000
+/** How long the wipe waits for the old account's run before wiping anyway. */
+const WIPE_WAIT_RUN_MS = 10_000
 
 let currentUserId: string | null = null
 let syncEntitled = false
@@ -149,6 +153,24 @@ function withSyncMutex(fn: () => Promise<void>): Promise<void> {
     syncMutex = null
   })
   return syncMutex
+}
+
+/** Resolves when `promise` settles or after `ms`, whichever is first. Never rejects. */
+async function settleWithin(
+  promise: Promise<unknown>,
+  ms: number
+): Promise<void> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  try {
+    await Promise.race([
+      promise.catch(() => undefined),
+      new Promise<void>(resolve => {
+        timer = setTimeout(resolve, ms)
+      })
+    ])
+  } finally {
+    clearTimeout(timer)
+  }
 }
 
 function setState(next: Partial<SyncState>): void {
@@ -1021,6 +1043,12 @@ export async function syncAll(_userId: string): Promise<void> {
     return
   }
 
+  if (pendingClear) {
+    // The previous account is still being wiped; syncing now would mix the two.
+    await pendingClear
+    if (!syncEntitled || !currentUserId) return
+  }
+
   if (syncMutex) {
     // Edits made while a run is in flight may have missed its push — rerun after.
     pendingSyncAll = true
@@ -1152,21 +1180,43 @@ async function migrateLocalToCloud(): Promise<void> {
   }
 }
 
+/**
+ * Wipe the account we just left, after its in-flight run ends. Wiping under a
+ * running sync lets a late pull re-seed the store with that account's rows,
+ * which the next sign-in would then adopt as guest data.
+ */
+function scheduleAccountWipe(): void {
+  const previousWipe = pendingClear ?? Promise.resolve()
+  const wipe: Promise<void> = (async () => {
+    await previousWipe
+    if (syncMutex) await settleWithin(syncMutex, WIPE_WAIT_RUN_MS)
+    await clearLocalSyncData()
+  })()
+    .catch(err => console.error('Account wipe failed:', err))
+    .finally(() => {
+      if (pendingClear === wipe) pendingClear = null
+    })
+  pendingClear = wipe
+}
+
 export function setSyncUser(userId: string | null): void {
-  const wasSignedIn = currentUserId !== null
-  if (currentUserId !== userId) syncEntitled = false
-  currentUserId = userId
-  if (!userId) {
+  const previousUserId = currentUserId
+  const changed = previousUserId !== userId
+  if (changed) {
+    syncEntitled = false
+    pendingSyncAll = false
+    if (triggerTimer) clearTimeout(triggerTimer)
+    triggerTimer = null
+    // The socket is authenticated as the old account.
     realtime?.disconnect()
-    // Only wipe on a real sign-out; the initial signed-out render must not
-    // erase guest data.
-    if (wasSignedIn) {
-      pendingClear = clearLocalSyncData()
-        .catch(err => console.error('Sign-out local wipe failed:', err))
-        .finally(() => {
-          pendingClear = null
-        })
-    }
+  }
+  currentUserId = userId
+
+  // Leaving an account (sign-out or direct switch) wipes it. The initial
+  // signed-out render must not erase guest data, so null -> X never wipes.
+  if (changed && previousUserId !== null) scheduleAccountWipe()
+
+  if (!userId) {
     setState({
       status: 'idle',
       connection: 'idle',
@@ -1179,6 +1229,20 @@ export function setSyncUser(userId: string | null): void {
     void getDeviceId().then(id => setState({ deviceId: id }))
     void getQueue().then(q => setState({ queueDepth: q.length }))
   }
+}
+
+/**
+ * Best-effort push of the outbox before the session is dropped. Returns how
+ * many queued changes are still unsynced (offline, not entitled, rejected or
+ * timed out) so the caller can warn before they are wiped.
+ */
+export async function flushPendingChanges(
+  timeoutMs = SIGN_OUT_FLUSH_TIMEOUT_MS
+): Promise<number> {
+  if (currentUserId && syncEntitled && isBackendConfigured() && syncBackend) {
+    await settleWithin(syncAll(currentUserId), timeoutMs)
+  }
+  return (await getQueue()).length
 }
 
 export function setSyncEntitlement(entitled: boolean): boolean {
@@ -1198,14 +1262,19 @@ export async function initialSync(userId: string): Promise<void> {
     return
   }
 
+  // Before the single-flight check: the previous account's run may still hold
+  // the mutex, and joining it would swallow this call.
+  if (pendingClear) {
+    await pendingClear
+    if (!syncEntitled || currentUserId !== userId) return
+  }
+
   if (syncMutex) {
     return syncMutex
   }
 
   return withSyncMutex(async () => {
     wireRealtimeListeners()
-
-    if (pendingClear) await pendingClear
 
     const migratedUserId = await getMeta('migratedUserId')
     if (migratedUserId !== userId) {

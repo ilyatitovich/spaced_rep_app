@@ -19,6 +19,7 @@ import toast from 'react-hot-toast'
 import { Avatar, BackButton, Header, Screen, Spinner } from '@/components'
 import { useAuth, useSync } from '@/contexts'
 import { usePwaUpdate } from '@/hooks'
+import { UnsyncedChangesError } from '@/lib'
 import { useSettingsStore } from '@/store'
 import type { PlanTier } from '@/types/settings.types'
 import {
@@ -95,6 +96,20 @@ export default function SettingsScreen({ isOpen }: SettingsScreenProps) {
       prev.set('auth', 'true')
       return new URLSearchParams(prev)
     })
+  }
+
+  const handleSignOut = async () => {
+    try {
+      await signOut()
+    } catch (error) {
+      // Any other failure still signed this device out locally.
+      if (!(error instanceof UnsyncedChangesError)) return
+      const changes = `${error.pendingCount} change${error.pendingCount === 1 ? '' : 's'}`
+      const confirmed = window.confirm(
+        `${changes} on this device haven’t synced yet and will be lost if you sign out. Sign out anyway?`
+      )
+      if (confirmed) await signOut({ discardUnsynced: true }).catch(() => {})
+    }
   }
 
   const handleUpdateRow = () => {
@@ -220,7 +235,7 @@ export default function SettingsScreen({ isOpen }: SettingsScreenProps) {
                     <SettingsActionRow
                       icon={<LogOut size={18} />}
                       label="Sign out"
-                      onClick={() => void signOut()}
+                      onClick={() => void handleSignOut()}
                       destructive
                     />
                   ) : (

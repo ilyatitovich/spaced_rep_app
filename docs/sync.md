@@ -19,6 +19,15 @@ When two devices edit the same topic or card, the **entire winning record** repl
 
 Duplicate topic titles on import/migrate are renamed on the server to `"{title} ({shortId})"`.
 
+## Sign-out and account switch
+
+Sign-out wipes this device's topics, cards, outbox and watermark (the device id survives), so it never loses or leaks data silently:
+
+1. `signOut()` first calls `flushPendingChanges()`, which pushes the outbox (bounded to 10 s). If anything is still queued (offline, not Pro, rejected, timed out) it throws `UnsyncedChangesError`; the UI asks the user and retries with `{ discardUnsynced: true }`.
+2. After logout, `setSyncUser(null)` disconnects the socket, stops new runs and wipes only after the in-flight run ends. Wiping under a running pull would let it re-seed the store with that account's rows, which the next sign-in would adopt as guest data.
+3. Switching directly from account A to B (no sign-out) cannot flush, because A's credentials are gone. A's unsynced edits are dropped, never uploaded as B's. `initialSync(B)` waits for that wipe instead of joining A's run.
+4. `migratedUserId` stays a second line of defence: if a wipe failed, rows owned by another account are cleared on the next sign-in rather than adopted.
+
 ## Key files
 
 | Area                | Path                                                                 |

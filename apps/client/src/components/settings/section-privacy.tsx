@@ -26,7 +26,8 @@ export default function SectionPrivacy({ isOpen }: SectionPrivacyProps) {
     setError(null)
     try {
       await deleteAccount(accessToken)
-      await signOut()
+      // The account is gone server-side; there is nothing left to sync to.
+      await signOut({ discardUnsynced: true })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not delete account')
       setBusy(false)

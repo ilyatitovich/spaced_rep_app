@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { AuthProvider, useAuth } from '@/contexts/auth-context'
 import { getAuthSession, setAuthSession } from '@/lib/auth-storage'
 import type { AuthSession } from '@/lib/auth-storage'
+import { UnsyncedChangesError } from '@/lib/auth-errors'
 import type { AuthPort } from '@/providers'
 
 const h = vi.hoisted(() => ({
@@ -22,6 +23,7 @@ const h = vi.hoisted(() => ({
   // Like the real one: reports whether sync should start for this entitlement.
   setSyncEntitlement: vi.fn((entitled: boolean) => entitled),
   setSyncUser: vi.fn(),
+  flushPendingChanges: vi.fn(async () => 0),
   ensurePushSubscription: vi.fn(async () => {})
 }))
 
@@ -35,7 +37,8 @@ vi.mock('@/providers', () => ({
 vi.mock('@/services', () => ({
   initialSync: h.initialSync,
   setSyncEntitlement: h.setSyncEntitlement,
-  setSyncUser: h.setSyncUser
+  setSyncUser: h.setSyncUser,
+  flushPendingChanges: h.flushPendingChanges
 }))
 vi.mock('@/services/push.service', () => ({
   ensurePushSubscription: h.ensurePushSubscription
@@ -104,6 +107,7 @@ beforeEach(() => {
   h.listeners.clear()
   h.configured = true
   h.settings.hasPlan.mockReturnValue(false)
+  h.flushPendingChanges.mockResolvedValue(0)
   h.settings.pullRemote.mockImplementation(async () => {})
   makeAuth()
 })
@@ -361,6 +365,64 @@ describe('signing out', () => {
 
     expect(h.auth?.logout).toHaveBeenCalledTimes(1)
     expect(result.current.session).toBeNull()
+  })
+
+  it('pushes unsynced changes before the session is dropped', async () => {
+    setAuthSession(alice)
+    const order: string[] = []
+    h.flushPendingChanges.mockImplementation(async () => {
+      order.push('flush')
+      return 0
+    })
+    makeAuth({
+      logout: vi.fn(async () => {
+        order.push('logout')
+      })
+    })
+    const { result } = await mountSettled()
+
+    await act(() => result.current.signOut())
+
+    expect(order).toEqual(['flush', 'logout'])
+  })
+
+  it('refuses to sign out while changes are unsynced, keeping the session and data', async () => {
+    setAuthSession(alice)
+    h.flushPendingChanges.mockResolvedValue(3)
+    const { result } = await mountSettled()
+    vi.mocked(h.setSyncUser).mockClear()
+
+    const attempt = act(() => result.current.signOut())
+
+    await expect(attempt).rejects.toMatchObject({
+      name: 'UnsyncedChangesError',
+      pendingCount: 3
+    })
+    await expect(attempt).rejects.toBeInstanceOf(UnsyncedChangesError)
+    expect(h.auth?.logout).not.toHaveBeenCalled()
+    expect(result.current.user).toEqual(alice.user)
+    expect(h.setSyncUser).not.toHaveBeenCalledWith(null)
+  })
+
+  it('signs out anyway once the user agreed to discard unsynced changes', async () => {
+    setAuthSession(alice)
+    h.flushPendingChanges.mockResolvedValue(3)
+    const { result } = await mountSettled()
+
+    await act(() => result.current.signOut({ discardUnsynced: true }))
+
+    expect(h.flushPendingChanges).not.toHaveBeenCalled()
+    expect(h.auth?.logout).toHaveBeenCalledTimes(1)
+    expect(result.current.session).toBeNull()
+  })
+
+  it('does not look at the outbox when nobody is signed in', async () => {
+    h.flushPendingChanges.mockResolvedValue(5)
+    const { result } = await mountSettled()
+
+    await act(() => result.current.signOut())
+
+    expect(h.flushPendingChanges).not.toHaveBeenCalled()
   })
 
   it('clears the stored session itself when no backend is configured', async () => {

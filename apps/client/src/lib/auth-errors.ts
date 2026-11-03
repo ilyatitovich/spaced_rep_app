@@ -1,5 +1,18 @@
 import { ApiError } from './api'
 
+/** Sign-out was refused because queued changes could not be pushed first. */
+export class UnsyncedChangesError extends Error {
+  readonly pendingCount: number
+
+  constructor(pendingCount: number) {
+    super(
+      `${pendingCount} change${pendingCount === 1 ? '' : 's'} not synced yet`
+    )
+    this.name = 'UnsyncedChangesError'
+    this.pendingCount = pendingCount
+  }
+}
+
 export function getAuthErrorMessage(error: unknown): string {
   if (!(error instanceof Error)) {
     return 'Something went wrong. Please try again.'
