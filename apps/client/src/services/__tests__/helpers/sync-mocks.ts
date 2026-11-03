@@ -13,16 +13,25 @@ interface BackendMocks {
   push: (...args: unknown[]) => unknown
   pull: (...args: unknown[]) => unknown
   bootstrap: (...args: unknown[]) => unknown
+  /** Provide to enable the realtime (WebSocket) branch of the sync engine. */
+  connectRealtime?: (...args: unknown[]) => unknown
 }
 
-export function providersModule({ push, pull, bootstrap }: BackendMocks) {
+export function providersModule({
+  push,
+  pull,
+  bootstrap,
+  connectRealtime
+}: BackendMocks) {
   return {
     isBackendConfigured: () => true,
     sync: {
       push: (...args: unknown[]) => push(...args),
       pull: (...args: unknown[]) => pull(...args),
       bootstrap: (...args: unknown[]) => bootstrap(...args),
-      connectRealtime: undefined
+      connectRealtime: connectRealtime
+        ? (...args: unknown[]) => connectRealtime(...args)
+        : undefined
     }
   }
 }
