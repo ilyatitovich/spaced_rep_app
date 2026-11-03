@@ -34,6 +34,36 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+  format:
+    name: Format
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Initialize Node.js & dependencies
+        uses: ./.github/actions/init-node
+
+      - name: Check formatting
+        run: pnpm format:check
+
+  build:
+    name: Build client
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Initialize Node.js & dependencies
+        uses: ./.github/actions/init-node
+
+      - name: Build client
+        run: pnpm --filter spaced_rep_pwa_client build
+
   lint:
     name: Lint
     permissions:

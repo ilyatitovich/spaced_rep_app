@@ -7,7 +7,7 @@
     "dev": "pnpm --parallel --filter=./apps/* dev",
     "build": "pnpm -r build",
     "vercel-build": "pnpm --filter spaced_rep_pwa_client build",
-    "typecheck": "pnpm -r typecheck",
+    "typecheck": "pnpm -r typecheck && pnpm test:testing:typecheck",
     "lint": "oxlint .",
     "lint:fix": "oxlint --fix .",
     "knip": "knip",

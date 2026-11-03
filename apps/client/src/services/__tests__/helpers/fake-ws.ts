@@ -28,7 +28,7 @@ export class FakeWebSocket {
   readyState: number = FakeWebSocket.CONNECTING
   bufferedAmount = 0
   sent: string[] = []
-  closeCalls: { code?: number; reason?: string }[] = []
+  closeCalls: { code?: number | undefined; reason?: string | undefined }[] = []
   onopen: (() => void) | null = null
   onmessage: ((event: { data: unknown }) => void) | null = null
   onclose: CloseListener | null = null
@@ -119,7 +119,10 @@ type ServerPayload =
 /** Server → client envelope with valid metadata. */
 export function serverEnvelope(
   payload: ServerPayload,
-  meta: { messageId?: string; correlationId?: string } = {}
+  meta: {
+    messageId?: string | undefined
+    correlationId?: string | undefined
+  } = {}
 ): SyncEnvelope {
   return {
     version: PROTOCOL_VERSION,
