@@ -1,8 +1,11 @@
+import { Prisma } from '../generated/prisma/client.js'
 import { prisma } from '../shared/lib/prisma.js'
 import { logger } from '../shared/lib/logger.js'
 import type { TopicConflictResolved } from '@spaced-rep/sync-protocol'
 
 const ACTIVE_WINDOW_MS = 30 * 24 * 60 * 60 * 1000
+
+type Db = Prisma.TransactionClient | typeof prisma
 
 /**
  * Server-side unique-title disambiguation (plan §4b approach C).
@@ -14,8 +17,10 @@ export async function resolveTopicTitleConflict(input: {
   incomingTitle: string
   incomingUpdatedAt: Date
   incomingDeviceId: string
+  db?: Db
 }): Promise<TopicConflictResolved | null> {
-  const existing = await prisma.topic.findFirst({
+  const db = input.db ?? prisma
+  const existing = await db.topic.findFirst({
     where: {
       userId: input.userId,
       title: input.incomingTitle,
@@ -42,12 +47,12 @@ export async function resolveTopicTitleConflict(input: {
   const updatedAt = new Date()
 
   // Only update DB when the loser already exists (incoming may not be inserted yet).
-  const loserExists = await prisma.topic.findUnique({
+  const loserExists = await db.topic.findUnique({
     where: { id: loserId },
     select: { id: true }
   })
   if (loserExists) {
-    await prisma.topic.update({
+    await db.topic.update({
       where: { id: loserId },
       data: { title: newTitle, updatedAt }
     })

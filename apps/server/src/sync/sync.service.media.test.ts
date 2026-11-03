@@ -6,6 +6,23 @@ const HASH = 'c'.repeat(64)
 
 vi.mock('../shared/lib/prisma.js', () => ({
   prisma: {
+    $transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) =>
+      fn({
+        card: {
+          findUnique: vi.fn(),
+          upsert: vi.fn(),
+          delete: vi.fn(),
+          update: vi.fn()
+        },
+        topic: {
+          findUnique: vi.fn(),
+          upsert: vi.fn(),
+          delete: vi.fn(),
+          update: vi.fn()
+        },
+        syncOperation: { upsert: vi.fn() }
+      })
+    ),
     card: {
       findUnique: vi.fn(),
       upsert: vi.fn(),
@@ -28,6 +45,7 @@ vi.mock('./conflict.service.js', async importOriginal => ({
 vi.mock('./fanout.service.js', () => ({ publishFanout: vi.fn() }))
 vi.mock('./idempotency.service.js', () => ({
   markOpApplied: vi.fn(),
+  cacheOpApplied: vi.fn(),
   pruneAppliedOps: vi.fn(),
   wasOpApplied: vi.fn().mockResolvedValue(false)
 }))

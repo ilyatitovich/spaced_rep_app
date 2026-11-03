@@ -1,9 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Mutation } from '@spaced-rep/sync-protocol'
 
 import { bootstrap, applyPushBatch, pullChanges } from './sync.service.js'
 import { publishFanout } from './fanout.service.js'
 import { wasOpApplied } from './idempotency.service.js'
+import { prisma } from '../shared/lib/prisma.js'
 import {
   cardFactory,
   getTestPrisma,
@@ -115,6 +116,10 @@ async function pullAll(userId: string, limit: number) {
 
 beforeEach(() => {
   vi.mocked(publishFanout).mockClear()
+})
+
+afterEach(() => {
+  vi.restoreAllMocks()
 })
 
 describe('pullChanges single cursor', () => {
@@ -327,6 +332,55 @@ describe('applyPushBatch idempotency', () => {
     )
     expect(next.acceptedOpIds).toEqual([newOpId])
     expect(JSON.parse((await cardBody())!.dataJson)).toEqual({ body: 'two' })
+  })
+})
+
+describe('applyPushBatch apply + idempotency atomicity', () => {
+  it('leaves neither the row nor the idempotency mark when the mark cannot commit', async () => {
+    const user = await userFactory.create()
+    const deviceId = crypto.randomUUID()
+    const topic = await topicFactory.create({
+      userId: user.id,
+      updatedAt: new Date(BASE)
+    })
+    const cardId = crypto.randomUUID()
+    const opId = crypto.randomUUID()
+    const markBoom = new Error('idempotency write failed')
+    // Cover both paths: pre-fix uses prisma.syncOperation; post-fix uses tx.
+    vi.spyOn(prisma.syncOperation, 'upsert').mockRejectedValueOnce(markBoom)
+    const originalTransaction = prisma.$transaction.bind(prisma)
+    vi.spyOn(prisma, '$transaction').mockImplementation(((
+      arg: Parameters<typeof prisma.$transaction>[0],
+      options?: Parameters<typeof prisma.$transaction>[1]
+    ) => {
+      if (typeof arg !== 'function') {
+        return originalTransaction(arg, options)
+      }
+      return originalTransaction(async tx => {
+        vi.spyOn(tx.syncOperation, 'upsert').mockRejectedValueOnce(markBoom)
+        return arg(tx)
+      }, options)
+    }) as typeof prisma.$transaction)
+
+    const ack = await applyPushBatch({
+      userId: user.id,
+      deviceId,
+      mutations: [
+        cardUpsert({
+          id: cardId,
+          topicId: topic.id,
+          updatedAt: BASE + 1000,
+          deviceId,
+          opId
+        })
+      ]
+    })
+
+    expect(ack.acceptedOpIds).toHaveLength(0)
+    expect(ack.rejected.map(r => r.opId)).toEqual([opId])
+    expect(await wasOpApplied(user.id, opId)).toBe(false)
+    const { records } = await pullChanges({ userId: user.id, since: EPOCH_ISO })
+    expect(records.some(r => r.card?.id === cardId)).toBe(false)
   })
 })
 

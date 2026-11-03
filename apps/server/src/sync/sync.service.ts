@@ -9,6 +9,7 @@ import {
   type SyncRecord,
   type TopicConflictResolved
 } from '@spaced-rep/sync-protocol'
+import { Prisma } from '../generated/prisma/client.js'
 import { prisma } from '../shared/lib/prisma.js'
 import { logger } from '../shared/lib/logger.js'
 import {
@@ -24,12 +25,14 @@ import {
   resolveTopicTitleConflict
 } from './conflict.service.js'
 import {
+  cacheOpApplied,
   markOpApplied,
   pruneAppliedOps,
   wasOpApplied
 } from './idempotency.service.js'
 
 const RECORD_NOT_OWNED = 'Record not owned by user'
+type Db = Prisma.TransactionClient
 import { publishFanout } from './fanout.service.js'
 import {
   cardRecordToDb,
@@ -151,7 +154,9 @@ async function applyTopicUpsert(input: {
   userId: string
   deviceId: string
   mutation: Mutation
+  db: Db
 }): Promise<{ conflict: TopicConflictResolved | null }> {
+  const { db } = input
   const topic = input.mutation.topic
   if (!topic) {
     throw new BadRequestError(
@@ -160,7 +165,7 @@ async function applyTopicUpsert(input: {
     )
   }
 
-  const existing = await prisma.topic.findUnique({ where: { id: topic.id } })
+  const existing = await db.topic.findUnique({ where: { id: topic.id } })
   if (existing && existing.userId !== input.userId) {
     throw new BadRequestError(RECORD_NOT_OWNED, 'FORBIDDEN')
   }
@@ -182,7 +187,7 @@ async function applyTopicUpsert(input: {
   const data = topicRecordToDb(topic, input.userId)
 
   try {
-    await prisma.topic.upsert({
+    await db.topic.upsert({
       where: { id: topic.id },
       create: data,
       update: {
@@ -202,7 +207,8 @@ async function applyTopicUpsert(input: {
       incomingId: topic.id,
       incomingTitle: topic.title,
       incomingUpdatedAt: new Date(topic.updatedAt),
-      incomingDeviceId: input.deviceId
+      incomingDeviceId: input.deviceId,
+      db
     })
 
     if (!conflict) throw err
@@ -211,7 +217,7 @@ async function applyTopicUpsert(input: {
     const title =
       conflict.topicId === topic.id ? conflict.newTitle : topic.title
 
-    await prisma.topic.upsert({
+    await db.topic.upsert({
       where: { id: topic.id },
       create: { ...data, title },
       update: {
@@ -234,7 +240,8 @@ async function applyTopicUpsert(input: {
     incomingId: topic.id,
     incomingTitle: topic.title,
     incomingUpdatedAt: new Date(topic.updatedAt),
-    incomingDeviceId: input.deviceId
+    incomingDeviceId: input.deviceId,
+    db
   })
 
   return { conflict }
@@ -244,13 +251,15 @@ async function applyCardUpsert(input: {
   userId: string
   deviceId: string
   mutation: Mutation
+  db: Db
 }): Promise<void> {
+  const { db } = input
   const card = input.mutation.card
   if (!card) {
     throw new BadRequestError('Card upsert missing payload', 'VALIDATION_ERROR')
   }
 
-  const topic = await prisma.topic.findUnique({
+  const topic = await db.topic.findUnique({
     where: { id: card.topicId },
     select: { userId: true }
   })
@@ -258,7 +267,7 @@ async function applyCardUpsert(input: {
     throw new BadRequestError('Topic not owned by user', 'FORBIDDEN')
   }
 
-  const existing = await prisma.card.findUnique({ where: { id: card.id } })
+  const existing = await db.card.findUnique({ where: { id: card.id } })
   if (existing && existing.userId !== input.userId) {
     throw new BadRequestError(RECORD_NOT_OWNED, 'FORBIDDEN')
   }
@@ -278,7 +287,7 @@ async function applyCardUpsert(input: {
   }
 
   const data = cardRecordToDb(card, input.userId)
-  await prisma.card.upsert({
+  await db.card.upsert({
     where: { id: card.id },
     create: data,
     update: {
@@ -297,23 +306,23 @@ async function applyDelete(input: {
   deviceId: string
   mutation: Mutation
   hardDelete: boolean
+  db: Db
 }): Promise<void> {
+  const { db } = input
   const { table, recordId, updatedAt } = input.mutation
   const now = new Date(updatedAt || Date.now())
 
   if (table === 'topics') {
-    const existing = await prisma.topic.findUnique({ where: { id: recordId } })
+    const existing = await db.topic.findUnique({ where: { id: recordId } })
     if (!existing) return
     if (existing.userId !== input.userId) {
       throw new BadRequestError(RECORD_NOT_OWNED, 'FORBIDDEN')
     }
     if (existing.updatedAt.getTime() > now.getTime()) return
     if (input.hardDelete) {
-      await prisma.topic
-        .delete({ where: { id: recordId } })
-        .catch(() => undefined)
+      await db.topic.delete({ where: { id: recordId } }).catch(() => undefined)
     } else {
-      await prisma.topic.update({
+      await db.topic.update({
         where: { id: recordId },
         data: { deletedAt: now, updatedAt: now }
       })
@@ -321,32 +330,247 @@ async function applyDelete(input: {
     return
   }
 
-  const existing = await prisma.card.findUnique({ where: { id: recordId } })
+  const existing = await db.card.findUnique({ where: { id: recordId } })
   if (!existing) return
   if (existing.userId !== input.userId) {
     throw new BadRequestError(RECORD_NOT_OWNED, 'FORBIDDEN')
   }
   if (existing.updatedAt.getTime() > now.getTime()) return
   if (input.hardDelete) {
-    await prisma.card.delete({ where: { id: recordId } }).catch(() => undefined)
+    await db.card.delete({ where: { id: recordId } }).catch(() => undefined)
   } else {
-    await prisma.card.update({
+    await db.card.update({
       where: { id: recordId },
       data: { deletedAt: now, updatedAt: now }
     })
   }
 }
 
-// oxlint-disable-next-line sonarjs/cognitive-complexity
+/** Media checks stay outside the tx — they are network/R2, not Postgres. */
+async function assertCardMediaReady(
+  mutation: Mutation,
+  batchMediaError: MediaRefError | null,
+  mediaErrorsByHash: Map<string, MediaRefError>
+): Promise<void> {
+  if (mutation.operation !== 'upsert' || mutation.table !== 'cards') return
+  if (batchMediaError) throw batchMediaError
+  if (!mutation.card) return
+  const mediaError = await mediaErrorForCardData(
+    mutation.card.dataJson,
+    mediaErrorsByHash
+  )
+  if (mediaError) throw mediaError
+}
+
+async function applyMutationWithMark(input: {
+  userId: string
+  deviceId: string
+  mutation: Mutation
+  hardDelete: boolean
+}): Promise<TopicConflictResolved | null> {
+  const { userId, deviceId, mutation, hardDelete } = input
+  let conflict: TopicConflictResolved | null = null
+
+  await prisma.$transaction(async tx => {
+    if (mutation.operation === 'delete') {
+      await applyDelete({ userId, deviceId, mutation, hardDelete, db: tx })
+    } else if (mutation.table === 'topics') {
+      const result = await applyTopicUpsert({
+        userId,
+        deviceId,
+        mutation,
+        db: tx
+      })
+      conflict = result.conflict
+    } else {
+      await applyCardUpsert({ userId, deviceId, mutation, db: tx })
+    }
+
+    await markOpApplied({ userId, opId: mutation.opId, deviceId, db: tx })
+  })
+
+  return conflict
+}
+
+function rejectedOpFromError(opId: string, err: unknown): RejectedOp {
+  const message = err instanceof Error ? err.message : 'Unknown error'
+  if (err instanceof MediaRefError) {
+    return {
+      opId,
+      code: err.code,
+      message,
+      retryable: err.retryable
+    }
+  }
+  return { opId, code: 'APPLY_FAILED', message, retryable: true }
+}
+
+async function loadBatchMediaErrors(
+  userId: string,
+  mutations: Mutation[]
+): Promise<{
+  batchMediaError: MediaRefError | null
+  mediaErrorsByHash: Map<string, MediaRefError>
+}> {
+  const { refs, error: batchMediaError } =
+    await collectBatchMediaRefs(mutations)
+  if (batchMediaError != null) {
+    return { batchMediaError, mediaErrorsByHash: new Map() }
+  }
+  return {
+    batchMediaError: null,
+    mediaErrorsByHash: await checkReferencedMedia({ userId, refs })
+  }
+}
+
+async function applyOrderedMutations(input: {
+  userId: string
+  deviceId: string
+  ordered: Mutation[]
+  hardDelete: boolean
+  batchMediaError: MediaRefError | null
+  mediaErrorsByHash: Map<string, MediaRefError>
+}): Promise<{
+  acceptedOpIds: string[]
+  rejected: RejectedOp[]
+  conflicts: TopicConflictResolved[]
+}> {
+  const acceptedOpIds: string[] = []
+  const rejected: RejectedOp[] = []
+  const conflicts: TopicConflictResolved[] = []
+
+  for (const mutation of input.ordered) {
+    try {
+      if (await wasOpApplied(input.userId, mutation.opId)) {
+        acceptedOpIds.push(mutation.opId)
+        continue
+      }
+
+      await assertCardMediaReady(
+        mutation,
+        input.batchMediaError,
+        input.mediaErrorsByHash
+      )
+      const conflict = await applyMutationWithMark({
+        userId: input.userId,
+        deviceId: input.deviceId,
+        mutation,
+        hardDelete: input.hardDelete
+      })
+      await cacheOpApplied(input.userId, mutation.opId)
+      if (conflict) conflicts.push(conflict)
+      acceptedOpIds.push(mutation.opId)
+    } catch (err) {
+      logger.error(
+        { err, opId: mutation.opId, userId: input.userId },
+        'sync.push mutation failed'
+      )
+      rejected.push(rejectedOpFromError(mutation.opId, err))
+    }
+  }
+
+  return { acceptedOpIds, rejected, conflicts }
+}
+
+function fanoutRecordForMutation(mutation: Mutation): SyncRecord | null {
+  if (mutation.operation === 'upsert') {
+    if (mutation.topic) return { topic: mutation.topic }
+    if (mutation.card) return { card: mutation.card }
+    return null
+  }
+  if (mutation.table === 'topics') {
+    return {
+      topic: {
+        id: mutation.recordId,
+        title: '',
+        pivot: 0,
+        weekJson: '[]',
+        nextUpdateDate: 0,
+        isArchived: false,
+        updatedAt: mutation.updatedAt,
+        deletedAt: mutation.updatedAt
+      }
+    }
+  }
+  return {
+    card: {
+      id: mutation.recordId,
+      topicId: '',
+      level: 0,
+      dataJson: '{}',
+      updatedAt: mutation.updatedAt,
+      deletedAt: mutation.updatedAt
+    }
+  }
+}
+
+async function buildFanoutRecords(
+  ordered: Mutation[],
+  acceptedOpIds: string[],
+  conflicts: TopicConflictResolved[]
+): Promise<SyncRecord[]> {
+  const accepted = new Set(acceptedOpIds)
+  const records: SyncRecord[] = []
+  for (const mutation of ordered) {
+    if (!accepted.has(mutation.opId)) continue
+    const record = fanoutRecordForMutation(mutation)
+    if (record) records.push(record)
+  }
+  for (const c of conflicts) {
+    const row = await prisma.topic.findUnique({ where: { id: c.topicId } })
+    if (row) records.push({ topic: dbTopicToRecord(row) })
+  }
+  return records
+}
+
+async function publishPushFanout(input: {
+  userId: string
+  deviceId: string
+  records: SyncRecord[]
+  conflicts: TopicConflictResolved[]
+}): Promise<void> {
+  if (input.records.length === 0) return
+
+  const envelope: SyncEnvelope = {
+    version: PROTOCOL_VERSION,
+    messageId: createEnvelopeId(),
+    deviceId: input.deviceId,
+    sentAt: Date.now(),
+    kind: 'pullDelta',
+    pullDelta: {
+      records: input.records,
+      watermark: new Date(
+        Math.max(...input.records.map(r => (r.topic ?? r.card)?.updatedAt ?? 0))
+      ).toISOString(),
+      more: false
+    }
+  }
+  await publishFanout({
+    userId: input.userId,
+    envelope,
+    excludeDeviceId: input.deviceId
+  })
+
+  for (const c of input.conflicts) {
+    await publishFanout({
+      userId: input.userId,
+      envelope: {
+        version: PROTOCOL_VERSION,
+        messageId: createEnvelopeId(),
+        deviceId: input.deviceId,
+        sentAt: Date.now(),
+        kind: 'topicConflictResolved',
+        topicConflictResolved: c
+      }
+    })
+  }
+}
+
 export async function applyPushBatch(input: {
   userId: string
   deviceId: string
   mutations: Mutation[]
 }): Promise<PushAck> {
-  const acceptedOpIds: string[] = []
-  const rejected: RejectedOp[] = []
-  const conflicts: TopicConflictResolved[] = []
-
   const otherActive = await countOtherActiveDevices(
     input.userId,
     input.deviceId
@@ -358,165 +582,32 @@ export async function applyPushBatch(input: {
   const deletes = input.mutations.filter(m => m.operation === 'delete')
   const ordered = [...upserts, ...deletes]
 
-  const { refs: mediaRefs, error: batchMediaError } =
-    await collectBatchMediaRefs(input.mutations)
-  const mediaErrorsByHash =
-    batchMediaError == null
-      ? await checkReferencedMedia({
-          userId: input.userId,
-          refs: mediaRefs
-        })
-      : new Map<string, MediaRefError>()
-
-  for (const mutation of ordered) {
-    try {
-      if (await wasOpApplied(input.userId, mutation.opId)) {
-        acceptedOpIds.push(mutation.opId)
-        continue
-      }
-
-      if (mutation.operation === 'upsert') {
-        // oxlint-disable-next-line sonarjs/nested-control-flow
-        if (mutation.table === 'topics') {
-          const result = await applyTopicUpsert({
-            userId: input.userId,
-            deviceId: input.deviceId,
-            mutation
-          })
-          if (result.conflict) conflicts.push(result.conflict)
-        } else {
-          if (batchMediaError) throw batchMediaError
-          if (mutation.card) {
-            const mediaError = await mediaErrorForCardData(
-              mutation.card.dataJson,
-              mediaErrorsByHash
-            )
-            if (mediaError) throw mediaError
-          }
-          await applyCardUpsert({
-            userId: input.userId,
-            deviceId: input.deviceId,
-            mutation
-          })
-        }
-      } else {
-        await applyDelete({
-          userId: input.userId,
-          deviceId: input.deviceId,
-          mutation,
-          hardDelete
-        })
-      }
-
-      await markOpApplied({
-        userId: input.userId,
-        opId: mutation.opId,
-        deviceId: input.deviceId
-      })
-      acceptedOpIds.push(mutation.opId)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error'
-      logger.error(
-        { err, opId: mutation.opId, userId: input.userId },
-        'sync.push mutation failed'
-      )
-      if (err instanceof MediaRefError) {
-        rejected.push({
-          opId: mutation.opId,
-          code: err.code,
-          message,
-          retryable: err.retryable
-        })
-      } else {
-        rejected.push({
-          opId: mutation.opId,
-          code: 'APPLY_FAILED',
-          message,
-          retryable: true
-        })
-      }
-    }
-  }
+  const { batchMediaError, mediaErrorsByHash } = await loadBatchMediaErrors(
+    input.userId,
+    input.mutations
+  )
+  const { acceptedOpIds, rejected, conflicts } = await applyOrderedMutations({
+    userId: input.userId,
+    deviceId: input.deviceId,
+    ordered,
+    hardDelete,
+    batchMediaError,
+    mediaErrorsByHash
+  })
 
   await pruneAppliedOps(input.userId)
 
-  // Narrow fanout: rebuild delta from accepted mutations' records
-  const fanoutRecords: SyncRecord[] = []
-  for (const mutation of ordered) {
-    if (!acceptedOpIds.includes(mutation.opId)) continue
-    if (mutation.operation === 'upsert') {
-      if (mutation.topic) fanoutRecords.push({ topic: mutation.topic })
-      if (mutation.card) fanoutRecords.push({ card: mutation.card })
-    } else if (mutation.table === 'topics') {
-      fanoutRecords.push({
-        topic: {
-          id: mutation.recordId,
-          title: '',
-          pivot: 0,
-          weekJson: '[]',
-          nextUpdateDate: 0,
-          isArchived: false,
-          updatedAt: mutation.updatedAt,
-          deletedAt: mutation.updatedAt
-        }
-      })
-    } else {
-      fanoutRecords.push({
-        card: {
-          id: mutation.recordId,
-          topicId: '',
-          level: 0,
-          dataJson: '{}',
-          updatedAt: mutation.updatedAt,
-          deletedAt: mutation.updatedAt
-        }
-      })
-    }
-  }
-
-  // Include conflict renames in fanout
-  for (const c of conflicts) {
-    const row = await prisma.topic.findUnique({ where: { id: c.topicId } })
-    if (row) fanoutRecords.push({ topic: dbTopicToRecord(row) })
-  }
-
-  if (fanoutRecords.length > 0) {
-    const envelope: SyncEnvelope = {
-      version: PROTOCOL_VERSION,
-      messageId: createEnvelopeId(),
-      deviceId: input.deviceId,
-      sentAt: Date.now(),
-      kind: 'pullDelta',
-      pullDelta: {
-        records: fanoutRecords,
-        watermark: new Date(
-          Math.max(
-            ...fanoutRecords.map(r => (r.topic ?? r.card)?.updatedAt ?? 0)
-          )
-        ).toISOString(),
-        more: false
-      }
-    }
-    await publishFanout({
-      userId: input.userId,
-      envelope,
-      excludeDeviceId: input.deviceId
-    })
-
-    for (const c of conflicts) {
-      await publishFanout({
-        userId: input.userId,
-        envelope: {
-          version: PROTOCOL_VERSION,
-          messageId: createEnvelopeId(),
-          deviceId: input.deviceId,
-          sentAt: Date.now(),
-          kind: 'topicConflictResolved',
-          topicConflictResolved: c
-        }
-      })
-    }
-  }
+  const fanoutRecords = await buildFanoutRecords(
+    ordered,
+    acceptedOpIds,
+    conflicts
+  )
+  await publishPushFanout({
+    userId: input.userId,
+    deviceId: input.deviceId,
+    records: fanoutRecords,
+    conflicts
+  })
 
   logger.info(
     {
