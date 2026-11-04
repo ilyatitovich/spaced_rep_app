@@ -88,9 +88,21 @@
     color: var(--color-foreground);
     background-color: var(--color-background);
     background-image:
-      radial-gradient(ellipse 90% 55% at 85% -5%, rgb(124 58 237 / 0.14), transparent 55%),
-      radial-gradient(ellipse 60% 45% at 5% 15%, rgb(243 232 255 / 0.9), transparent 50%),
-      radial-gradient(ellipse 50% 35% at 50% 100%, rgb(124 58 237 / 0.06), transparent 55%);
+      radial-gradient(
+        ellipse 90% 55% at 85% -5%,
+        rgb(124 58 237 / 0.14),
+        transparent 55%
+      ),
+      radial-gradient(
+        ellipse 60% 45% at 5% 15%,
+        rgb(243 232 255 / 0.9),
+        transparent 50%
+      ),
+      radial-gradient(
+        ellipse 50% 35% at 50% 100%,
+        rgb(124 58 237 / 0.06),
+        transparent 55%
+      );
     background-attachment: fixed;
   }
 

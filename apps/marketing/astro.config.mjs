@@ -7,7 +7,7 @@ import mdx from '@astrojs/mdx'
 export default defineConfig({
   output: 'static',
   vite: {
-    plugins: [tailwindcss()],
+    plugins: [tailwindcss()]
   },
-  integrations: [mdx()],
+  integrations: [mdx()]
 })

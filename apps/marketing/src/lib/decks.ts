@@ -22,7 +22,7 @@ export function getAllDecks(): Deck[] {
 }
 
 export function getDeck(slug: string): Deck | undefined {
-  return decks.find((deck) => deck.slug === slug)
+  return decks.find(deck => deck.slug === slug)
 }
 
 export function deckCardCount(deck: Deck): number {
