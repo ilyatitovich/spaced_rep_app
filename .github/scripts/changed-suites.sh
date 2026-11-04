@@ -24,7 +24,16 @@ changed() {
   if [ "$run_all" = true ]; then
     return 0
   fi
-  [ -n "$(git diff --name-only "$base" "$tip" -- "$@")" ]
+
+  local files
+
+  if ! files=$(git diff --name-only --no-renames "$base" "$tip" -- "$@"); then
+    echo "Failed to determine changed files; running every suite" >&2
+    run_all=true
+    return 0
+  fi
+
+  [ -n "$files" ]
 }
 
 emit() {
@@ -36,7 +45,7 @@ emit() {
 
 if [ "$run_all" = false ]; then
   echo "Changed files:"
-  git diff --name-only "$base" "$tip"
+  git diff --name-only "$base" "$tip" || true
 fi
 
 # Workflow, install, and toolchain edits can affect every Node suite and the image.
