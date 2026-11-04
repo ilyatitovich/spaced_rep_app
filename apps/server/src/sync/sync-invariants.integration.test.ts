@@ -1,7 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { Mutation } from '@spaced-rep/sync-protocol'
+import { INITIAL_CURSOR, type Mutation } from '@spaced-rep/sync-protocol'
 
-import { bootstrap, applyPushBatch, pullChanges } from './sync.service.js'
+import { readFileSync } from 'node:fs'
+import {
+  bootstrap,
+  applyPushBatch,
+  finishSyncCycle,
+  pullChanges
+} from './sync.service.js'
+import { MAX_FUTURE_SKEW_MS } from './seq.js'
 import { publishFanout } from './fanout.service.js'
 import { wasOpApplied } from './idempotency.service.js'
 import { prisma } from '../shared/lib/prisma.js'
@@ -16,7 +23,6 @@ vi.mock('./fanout.service.js', () => ({
   publishFanout: vi.fn(async () => undefined)
 }))
 
-const EPOCH_ISO = new Date(0).toISOString()
 const BASE = 1_700_000_000_000
 const DAY = 24 * 60 * 60 * 1000
 
@@ -90,10 +96,10 @@ function deleteMutation(input: {
   }
 }
 
-async function addActiveDevice(userId: string, lastPulledAt = new Date(0)) {
+async function addActiveDevice(userId: string, lastPulledSeq = 0n) {
   const id = crypto.randomUUID()
   await getTestPrisma().syncDevice.create({
-    data: { id, userId, lastPulledAt, lastSeenAt: new Date() }
+    data: { id, userId, lastPulledSeq, lastSeenAt: new Date() }
   })
   return id
 }
@@ -101,7 +107,7 @@ async function addActiveDevice(userId: string, lastPulledAt = new Date(0)) {
 async function pullAll(userId: string, limit: number) {
   const topicIds: string[] = []
   const cardIds: string[] = []
-  let since = EPOCH_ISO
+  let since = INITIAL_CURSOR
   for (let page = 0; page < 50; page++) {
     const delta = await pullChanges({ userId, since, limit })
     for (const r of delta.records) {
@@ -146,12 +152,13 @@ describe('pullChanges single cursor', () => {
 
     const first = await pullChanges({
       userId: user.id,
-      since: EPOCH_ISO,
+      since: INITIAL_CURSOR,
       limit: 2
     })
     expect(first.more).toBe(true)
     expect(first.records).toHaveLength(2)
-    expect(first.watermark).toBe(new Date(BASE + 1000).toISOString())
+    // Topics were seeded first, so they hold server sequences 1 and 2.
+    expect(first.watermark).toBe('2')
 
     const all = await pullAll(user.id, 2)
     expect(new Set(all.topicIds)).toEqual(new Set(topics.map(t => t.id)))
@@ -222,10 +229,7 @@ describe('pullChanges single cursor', () => {
     ).toEqual([theirs.id, theirCard.id].sort())
   })
 
-  it('does not return a stale-timestamp row past an advanced cursor, but a full pull and the fanout delta carry it', async () => {
-    // Known limitation: the cursor is the client LWW timestamp, so an offline
-    // device pushing an old updatedAt is invisible to peers pulling from a
-    // newer watermark. Peers learn about it via fanout or a from-epoch pull.
+  it('delivers a late edit with an old updatedAt to a peer pulling from its advanced cursor', async () => {
     const user = await userFactory.create()
     const offlineDevice = crypto.randomUUID()
     await topicFactory.create({
@@ -234,9 +238,9 @@ describe('pullChanges single cursor', () => {
       updatedAt: new Date(BASE + 10_000)
     })
     const peerCursor = (
-      await pullChanges({ userId: user.id, since: EPOCH_ISO })
+      await pullChanges({ userId: user.id, since: INITIAL_CURSOR })
     ).watermark
-    expect(peerCursor).toBe(new Date(BASE + 10_000).toISOString())
+    expect(peerCursor).toBe('1')
 
     vi.mocked(publishFanout).mockClear()
     const staleId = crypto.randomUUID()
@@ -257,25 +261,251 @@ describe('pullChanges single cursor', () => {
       userId: user.id,
       since: peerCursor
     })
-    expect(fromPeerCursor.records).toHaveLength(0)
+    expect(fromPeerCursor.records.map(r => r.topic?.id)).toEqual([staleId])
+    expect(fromPeerCursor.watermark).toBe('2')
+    expect(fromPeerCursor.records[0]?.topic?.updatedAt).toBe(BASE + 1000)
 
-    const fromEpoch = await pullChanges({ userId: user.id, since: EPOCH_ISO })
-    expect(fromEpoch.records.map(r => r.topic?.id)).toContain(staleId)
+    const caughtUp = await pullChanges({
+      userId: user.id,
+      since: fromPeerCursor.watermark
+    })
+    expect(caughtUp.records).toHaveLength(0)
+    expect(caughtUp.watermark).toBe('2')
+  })
 
-    const envelope = vi
+  it('treats a legacy ISO cursor as a full re-pull', async () => {
+    const user = await userFactory.create()
+    const topic = await topicFactory.create({ userId: user.id })
+
+    const delta = await pullChanges({
+      userId: user.id,
+      since: new Date(BASE).toISOString()
+    })
+    expect(delta.records.map(r => r.topic?.id)).toEqual([topic.id])
+  })
+
+  it('pages in server-sequence order regardless of updatedAt', async () => {
+    const user = await userFactory.create()
+    const newerClock = await topicFactory.create({
+      userId: user.id,
+      title: 'first-in',
+      updatedAt: new Date(BASE + 9000)
+    })
+    const olderClock = await topicFactory.create({
+      userId: user.id,
+      title: 'second-in',
+      updatedAt: new Date(BASE)
+    })
+
+    const first = await pullChanges({
+      userId: user.id,
+      since: INITIAL_CURSOR,
+      limit: 1
+    })
+    expect(first.records.map(r => r.topic?.id)).toEqual([newerClock.id])
+    expect(first.more).toBe(true)
+
+    const second = await pullChanges({
+      userId: user.id,
+      since: first.watermark,
+      limit: 1
+    })
+    expect(second.records.map(r => r.topic?.id)).toEqual([olderClock.id])
+    expect(second.more).toBe(false)
+  })
+
+  it('assigns unique, gap-free sequences to concurrent pushes from different devices', async () => {
+    const user = await userFactory.create()
+    const topicId = crypto.randomUUID()
+    const devices = Array.from({ length: 6 }, () => crypto.randomUUID())
+    await applyPushBatch({
+      userId: user.id,
+      deviceId: devices[0]!,
+      mutations: [
+        topicUpsert({
+          id: topicId,
+          title: 'parent',
+          updatedAt: BASE,
+          deviceId: devices[0]!
+        })
+      ]
+    })
+
+    await Promise.all(
+      devices.map((deviceId, i) =>
+        applyPushBatch({
+          userId: user.id,
+          deviceId,
+          mutations: [
+            cardUpsert({
+              id: crypto.randomUUID(),
+              topicId,
+              updatedAt: BASE + i,
+              deviceId
+            })
+          ]
+        })
+      )
+    )
+
+    const seqs = (
+      await getTestPrisma().card.findMany({
+        where: { userId: user.id },
+        select: { serverSeq: true },
+        orderBy: { serverSeq: 'asc' }
+      })
+    ).map(c => c.serverSeq)
+    expect(seqs).toEqual([2n, 3n, 4n, 5n, 6n, 7n])
+    const owner = await getTestPrisma().user.findUniqueOrThrow({
+      where: { id: user.id }
+    })
+    expect(owner.syncSeq).toBe(7n)
+
+    const all = await pullAll(user.id, 2)
+    expect(all.cardIds).toHaveLength(6)
+  })
+
+  it('does not consume a sequence for a push that loses LWW', async () => {
+    const user = await userFactory.create()
+    const deviceId = crypto.randomUUID()
+    const topic = await topicFactory.create({
+      userId: user.id,
+      updatedAt: new Date(BASE + 10_000)
+    })
+    const cursor = (
+      await pullChanges({ userId: user.id, since: INITIAL_CURSOR })
+    ).watermark
+
+    await applyPushBatch({
+      userId: user.id,
+      deviceId,
+      mutations: [
+        topicUpsert({
+          id: topic.id,
+          title: 'older edit',
+          updatedAt: BASE,
+          deviceId
+        })
+      ]
+    })
+
+    const delta = await pullChanges({ userId: user.id, since: cursor })
+    expect(delta.records).toHaveLength(0)
+  })
+
+  it('moves a row to the head of the sequence each time it is rewritten', async () => {
+    const user = await userFactory.create()
+    const deviceId = crypto.randomUUID()
+    const topic = await topicFactory.create({
+      userId: user.id,
+      updatedAt: new Date(BASE)
+    })
+    const cursor = (
+      await pullChanges({ userId: user.id, since: INITIAL_CURSOR })
+    ).watermark
+
+    await applyPushBatch({
+      userId: user.id,
+      deviceId,
+      mutations: [
+        topicUpsert({
+          id: topic.id,
+          title: 'renamed',
+          updatedAt: BASE + 5000,
+          deviceId
+        })
+      ]
+    })
+
+    const delta = await pullChanges({ userId: user.id, since: cursor })
+    expect(delta.records.map(r => r.topic?.title)).toEqual(['renamed'])
+  })
+})
+
+describe('future-dated updatedAt clamp', () => {
+  it('clamps a far-future edit to the server clock plus skew, in storage and fanout', async () => {
+    const user = await userFactory.create()
+    const deviceId = crypto.randomUUID()
+    const topicId = crypto.randomUUID()
+    const before = Date.now()
+
+    await applyPushBatch({
+      userId: user.id,
+      deviceId,
+      mutations: [
+        topicUpsert({
+          id: topicId,
+          title: 'from the future',
+          updatedAt: before + 400 * DAY,
+          deviceId
+        })
+      ]
+    })
+
+    const after = Date.now()
+    const stored = await getTestPrisma().topic.findUniqueOrThrow({
+      where: { id: topicId }
+    })
+    expect(stored.updatedAt.getTime()).toBeGreaterThanOrEqual(
+      before + MAX_FUTURE_SKEW_MS
+    )
+    expect(stored.updatedAt.getTime()).toBeLessThanOrEqual(
+      after + MAX_FUTURE_SKEW_MS
+    )
+
+    const fanout = vi
       .mocked(publishFanout)
-      .mock.calls.map(([arg]) => arg)
-      .find(arg => arg.envelope.kind === 'pullDelta')
-    expect(envelope?.excludeDeviceId).toBe(offlineDevice)
+      .mock.calls.map(([arg]) => arg.envelope)
+      .find(e => e.kind === 'pullDelta')
     expect(
-      envelope?.envelope.kind === 'pullDelta' &&
-        envelope.envelope.pullDelta.records.map(r => r.topic?.id)
-    ).toContain(staleId)
+      fanout?.kind === 'pullDelta' && fanout.pullDelta.records[0]?.topic
+    ).toMatchObject({ updatedAt: stored.updatedAt.getTime() })
+  })
+
+  it('clamps card upserts and deletes too', async () => {
+    const user = await userFactory.create()
+    const deviceId = crypto.randomUUID()
+    await addActiveDevice(user.id)
+    const topic = await topicFactory.create({ userId: user.id })
+    const cardId = crypto.randomUUID()
+    const future = Date.now() + 400 * DAY
+
+    await applyPushBatch({
+      userId: user.id,
+      deviceId,
+      mutations: [
+        cardUpsert({
+          id: cardId,
+          topicId: topic.id,
+          updatedAt: future,
+          deviceId
+        })
+      ]
+    })
+    await applyPushBatch({
+      userId: user.id,
+      deviceId,
+      mutations: [
+        deleteMutation({
+          table: 'cards',
+          recordId: cardId,
+          updatedAt: future + DAY,
+          deviceId
+        })
+      ]
+    })
+
+    const stored = await getTestPrisma().card.findUniqueOrThrow({
+      where: { id: cardId }
+    })
+    const limit = Date.now() + MAX_FUTURE_SKEW_MS
+    expect(stored.updatedAt.getTime()).toBeLessThanOrEqual(limit)
+    expect(stored.deletedAt?.getTime()).toBeLessThanOrEqual(limit)
   })
 })
 
 describe('applyPushBatch fanout watermark', () => {
-  it('uses the max updatedAt of fanout records only', async () => {
+  it('leaves the cursor empty so a fanout delta never advances a client past unpulled rows', async () => {
     const user = await userFactory.create()
     const deviceId = crypto.randomUUID()
     await topicFactory.create({
@@ -303,7 +533,7 @@ describe('applyPushBatch fanout watermark', () => {
       .mock.calls.map(([arg]) => arg.envelope)
       .find(e => e.kind === 'pullDelta')
     expect(envelope?.kind === 'pullDelta' && envelope.pullDelta.watermark).toBe(
-      new Date(BASE + 1000).toISOString()
+      ''
     )
   })
 })
@@ -331,7 +561,10 @@ describe('applyPushBatch delete LWW', () => {
       ]
     })
 
-    const { records } = await pullChanges({ userId: user.id, since: EPOCH_ISO })
+    const { records } = await pullChanges({
+      userId: user.id,
+      since: INITIAL_CURSOR
+    })
     expect(records).toHaveLength(1)
     expect(records[0]?.topic?.deletedAt).toBeNull()
   })
@@ -362,7 +595,7 @@ describe('applyPushBatch delete LWW', () => {
         })
       ]
     })
-    let pulled = await pullChanges({ userId: user.id, since: EPOCH_ISO })
+    let pulled = await pullChanges({ userId: user.id, since: INITIAL_CURSOR })
     expect(pulled.records.find(r => r.card)?.card?.deletedAt).toBe(BASE + 2000)
 
     await applyPushBatch({
@@ -377,7 +610,7 @@ describe('applyPushBatch delete LWW', () => {
         })
       ]
     })
-    pulled = await pullChanges({ userId: user.id, since: EPOCH_ISO })
+    pulled = await pullChanges({ userId: user.id, since: INITIAL_CURSOR })
     const restored = pulled.records.find(r => r.card)?.card
     expect(restored?.deletedAt).toBeNull()
     expect(restored?.updatedAt).toBe(BASE + 3000)
@@ -399,7 +632,7 @@ describe('applyPushBatch idempotency', () => {
     const cardBody = async () => {
       const { records } = await pullChanges({
         userId: user.id,
-        since: EPOCH_ISO
+        since: INITIAL_CURSOR
       })
       return records.find(r => r.card)?.card
     }
@@ -488,7 +721,10 @@ describe('applyPushBatch edit after a lost ack', () => {
 
     expect(ack.acceptedOpIds).toEqual([secondOpId])
     expect(await wasOpApplied(user.id, secondOpId)).toBe(true)
-    const { records } = await pullChanges({ userId: user.id, since: EPOCH_ISO })
+    const { records } = await pullChanges({
+      userId: user.id,
+      since: INITIAL_CURSOR
+    })
     const stored = records.find(r => r.card)?.card
     expect(JSON.parse(stored!.dataJson)).toEqual({ body: 'after' })
     expect(stored!.updatedAt).toBe(BASE + 2000)
@@ -539,7 +775,10 @@ describe('applyPushBatch apply + idempotency atomicity', () => {
     expect(ack.acceptedOpIds).toHaveLength(0)
     expect(ack.rejected.map(r => r.opId)).toEqual([opId])
     expect(await wasOpApplied(user.id, opId)).toBe(false)
-    const { records } = await pullChanges({ userId: user.id, since: EPOCH_ISO })
+    const { records } = await pullChanges({
+      userId: user.id,
+      since: INITIAL_CURSOR
+    })
     expect(records.some(r => r.card?.id === cardId)).toBe(false)
   })
 })
@@ -569,7 +808,10 @@ describe('applyPushBatch ownership and op marking', () => {
     expect(ack.acceptedOpIds).toHaveLength(0)
     expect(ack.rejected.map(r => r.opId)).toEqual([badOp])
     expect(await wasOpApplied(user.id, badOp)).toBe(false)
-    const { records } = await pullChanges({ userId: user.id, since: EPOCH_ISO })
+    const { records } = await pullChanges({
+      userId: user.id,
+      since: INITIAL_CURSOR
+    })
     expect(records.some(r => r.card)).toBe(false)
   })
 
@@ -608,7 +850,10 @@ describe('applyPushBatch ownership and op marking', () => {
     expect(ack.rejected.map(r => r.opId)).toEqual([badOp])
     expect(await wasOpApplied(user.id, goodOp)).toBe(true)
     expect(await wasOpApplied(user.id, badOp)).toBe(false)
-    const { records } = await pullChanges({ userId: user.id, since: EPOCH_ISO })
+    const { records } = await pullChanges({
+      userId: user.id,
+      since: INITIAL_CURSOR
+    })
     expect(records.filter(r => r.card).map(r => r.card?.id)).toEqual([
       goodCardId
     ])
@@ -696,7 +941,10 @@ describe('applyPushBatch topic title conflict', () => {
       ])
     )
 
-    const { records } = await pullChanges({ userId: user.id, since: EPOCH_ISO })
+    const { records } = await pullChanges({
+      userId: user.id,
+      since: INITIAL_CURSOR
+    })
     const byId = new Map(
       records.flatMap(r => (r.topic ? [[r.topic.id, r.topic] as const] : []))
     )
@@ -737,13 +985,205 @@ describe('tombstone purge with lagging device', () => {
       await prisma.topic.findUnique({ where: { id: topic.id } })
     ).not.toBeNull()
 
+    // Device A confirms by asking for the next range; the lagging one catches up.
+    expect(
+      await prisma.topic.findUnique({ where: { id: topic.id } })
+    ).not.toBeNull()
+    await bootstrap({
+      userId: user.id,
+      deviceId: deviceA,
+      cursor: delta.watermark
+    })
+    expect(
+      await prisma.topic.findUnique({ where: { id: topic.id } })
+    ).not.toBeNull()
     await bootstrap({
       userId: user.id,
       deviceId: laggingDevice,
-      lastPulledAt: new Date(now).toISOString()
+      cursor: delta.watermark
     })
     expect(
       await prisma.topic.findUnique({ where: { id: topic.id } })
     ).toBeNull()
+  })
+
+  it('does not purge a late old-timestamp delete that a device has not pulled yet', async () => {
+    const user = await userFactory.create()
+    const pusher = crypto.randomUUID()
+    const reader = crypto.randomUUID()
+    const prisma = getTestPrisma()
+    const now = Date.now()
+    const doomed = await topicFactory.create({
+      userId: user.id,
+      title: 'doomed',
+      updatedAt: new Date(now - 50 * DAY)
+    })
+    await topicFactory.create({
+      userId: user.id,
+      title: 'recent',
+      updatedAt: new Date(now - DAY)
+    })
+
+    // Both devices have pulled everything so far; their cursors are past "recent".
+    const caughtUp = await bootstrap({ userId: user.id, deviceId: reader })
+    for (const deviceId of [reader, pusher]) {
+      await bootstrap({ userId: user.id, deviceId, cursor: caughtUp.watermark })
+    }
+
+    // An offline edit lands late with a delete stamped before the reader's
+    // newest row. Purging on timestamps would drop it before the reader sees it.
+    await applyPushBatch({
+      userId: user.id,
+      deviceId: pusher,
+      mutations: [
+        deleteMutation({
+          table: 'topics',
+          recordId: doomed.id,
+          updatedAt: now - 40 * DAY,
+          deviceId: pusher
+        })
+      ]
+    })
+    await finishSyncCycle({
+      userId: user.id,
+      deviceId: pusher,
+      cursor: caughtUp.watermark
+    })
+
+    expect(
+      await prisma.topic.findUnique({ where: { id: doomed.id } })
+    ).not.toBeNull()
+    const delta = await pullChanges({
+      userId: user.id,
+      since: caughtUp.watermark
+    })
+    expect(delta.records[0]?.topic).toMatchObject({
+      id: doomed.id,
+      deletedAt: now - 40 * DAY
+    })
+  })
+})
+
+describe('tombstone purge waits for the device to confirm', () => {
+  it('keeps a tombstone in the response that delivers it until the device sends a later cursor', async () => {
+    const user = await userFactory.create()
+    const deleter = crypto.randomUUID()
+    const reader = crypto.randomUUID()
+    const prisma = getTestPrisma()
+    const topic = await topicFactory.create({ userId: user.id })
+    const start = await bootstrap({ userId: user.id, deviceId: reader })
+    await bootstrap({
+      userId: user.id,
+      deviceId: deleter,
+      cursor: start.watermark
+    })
+    await bootstrap({
+      userId: user.id,
+      deviceId: reader,
+      cursor: start.watermark
+    })
+
+    await applyPushBatch({
+      userId: user.id,
+      deviceId: deleter,
+      mutations: [
+        deleteMutation({
+          table: 'topics',
+          recordId: topic.id,
+          updatedAt: Date.now(),
+          deviceId: deleter
+        })
+      ]
+    })
+    const deleterDelta = await bootstrap({
+      userId: user.id,
+      deviceId: deleter,
+      cursor: start.watermark
+    })
+    // The reader is handed the tombstone but has not applied it yet; it may
+    // still hold a queued edit for the row and push after a purge.
+    const readerDelta = await bootstrap({
+      userId: user.id,
+      deviceId: reader,
+      cursor: start.watermark
+    })
+    expect(readerDelta.records[0]?.topic?.deletedAt).not.toBeNull()
+    expect(
+      await prisma.topic.findUnique({ where: { id: topic.id } })
+    ).not.toBeNull()
+
+    // Both devices confirm by asking for the next range.
+    for (const deviceId of [deleter, reader]) {
+      await finishSyncCycle({
+        userId: user.id,
+        deviceId,
+        cursor: deleterDelta.watermark
+      })
+    }
+    expect(
+      await prisma.topic.findUnique({ where: { id: topic.id } })
+    ).toBeNull()
+  })
+})
+
+describe('serverSeq migration backfill', () => {
+  it('numbers existing rows per user in updatedAt order, topics before cards', async () => {
+    const prisma = getTestPrisma()
+    const user = await userFactory.create()
+    const other = await userFactory.create()
+    const topicLate = await topicFactory.create({
+      userId: user.id,
+      updatedAt: new Date(BASE + 2000),
+      serverSeq: 0n
+    })
+    const topicEarly = await topicFactory.create({
+      userId: user.id,
+      updatedAt: new Date(BASE),
+      serverSeq: 0n
+    })
+    const card = await cardFactory.create({
+      userId: user.id,
+      topicId: topicLate.id,
+      updatedAt: new Date(BASE - 5000),
+      serverSeq: 0n
+    })
+    const otherTopic = await topicFactory.create({
+      userId: other.id,
+      serverSeq: 0n
+    })
+    await prisma.user.updateMany({ data: { syncSeq: 0n } })
+
+    const migration = readFileSync(
+      new URL(
+        '../../prisma/migrations/20261103120000_server_seq_cursor/migration.sql',
+        import.meta.url
+      ),
+      'utf8'
+    )
+    const backfill = migration.slice(
+      migration.indexOf('UPDATE "topics"'),
+      migration.indexOf('DROP INDEX')
+    )
+    for (const statement of backfill.split(';').filter(s => s.trim())) {
+      await prisma.$executeRawUnsafe(statement)
+    }
+
+    const seqOf = async (kind: 'topic' | 'card', id: string) =>
+      kind === 'topic'
+        ? (await prisma.topic.findUniqueOrThrow({ where: { id } })).serverSeq
+        : (await prisma.card.findUniqueOrThrow({ where: { id } })).serverSeq
+    expect(await seqOf('topic', topicEarly.id)).toBe(1n)
+    expect(await seqOf('topic', topicLate.id)).toBe(2n)
+    expect(await seqOf('card', card.id)).toBe(3n)
+    expect(await seqOf('topic', otherTopic.id)).toBe(1n)
+    expect(
+      (await prisma.user.findUniqueOrThrow({ where: { id: user.id } })).syncSeq
+    ).toBe(3n)
+    expect(
+      (await prisma.user.findUniqueOrThrow({ where: { id: other.id } })).syncSeq
+    ).toBe(1n)
+
+    const delta = await pullChanges({ userId: user.id, since: INITIAL_CURSOR })
+    expect(delta.watermark).toBe('3')
   })
 })

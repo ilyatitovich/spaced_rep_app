@@ -185,20 +185,20 @@ describe('network failure', () => {
   })
 
   it('a pull that throws sets error, keeps the watermark and releases the mutex', async () => {
-    seedMeta('lastPulledAt', '2024-01-01T00:00:00.000Z')
+    seedMeta('lastPulledAt', '20240101')
     signInPro()
     pullMock.mockRejectedValueOnce(new TypeError('Failed to fetch'))
 
     await syncAll('user-a')
 
     expect(getSyncState().status).toBe('error')
-    expect(metaValue('lastPulledAt')).toBe('2024-01-01T00:00:00.000Z')
+    expect(metaValue('lastPulledAt')).toBe('20240101')
 
     await syncAll('user-a')
 
     expect(pullMock).toHaveBeenCalledTimes(2)
     expect(getSyncState().status).toBe('idle')
-    expect(metaValue('lastPulledAt')).toBe('2024-06-01T00:00:00.000Z')
+    expect(metaValue('lastPulledAt')).toBe('20240601')
   })
 })
 

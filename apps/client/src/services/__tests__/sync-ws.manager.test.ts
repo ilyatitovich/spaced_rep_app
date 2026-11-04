@@ -23,7 +23,7 @@ const { SyncWsManager } = await import('../sync-ws.manager')
 
 const RESUME = {
   deviceId: 'device-1',
-  lastPulledAt: '2024-01-01T00:00:00.000Z',
+  lastPulledAt: '20240101',
   pendingOpCount: 3
 }
 
@@ -168,7 +168,7 @@ describe('inbound messages', () => {
     const socket = await connectActive(manager)
     const delta = {
       records: [],
-      watermark: '2024-02-01T00:00:00.000Z',
+      watermark: '20240201',
       more: false
     }
     const conflict = {
@@ -489,7 +489,7 @@ describe('reconnect', () => {
 
   it('re-says hello with the latest resume state from updateResume', async () => {
     const first = await connectActive(manager)
-    manager.updateResume('2024-03-01T00:00:00.000Z', 0)
+    manager.updateResume('20240301', 0)
 
     first.serverClose(1006)
     await vi.advanceTimersByTimeAsync(1_000)
@@ -499,7 +499,7 @@ describe('reconnect', () => {
     expect(second.sentEnvelopes('hello')).toMatchObject([
       {
         deviceId: 'device-1',
-        hello: { lastPulledAt: '2024-03-01T00:00:00.000Z', pendingOpCount: 0 }
+        hello: { lastPulledAt: '20240301', pendingOpCount: 0 }
       }
     ])
   })

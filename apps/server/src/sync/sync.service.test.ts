@@ -53,7 +53,7 @@ describe('reportDevice', () => {
       reportDevice({
         userId: 'user-1',
         deviceId: 'device-4',
-        lastPulledAt: new Date(0).toISOString()
+        cursor: '0'
       })
     ).rejects.toMatchObject({ code: 'DEVICE_LIMIT' })
 
@@ -71,7 +71,7 @@ describe('reportDevice', () => {
     await reportDevice({
       userId: 'user-1',
       deviceId: 'device-1',
-      lastPulledAt: new Date(0).toISOString()
+      cursor: '0'
     })
 
     expect(tx.syncDevice.count).not.toHaveBeenCalled()
@@ -104,7 +104,7 @@ describe('reportDevice', () => {
     await reportDevice({
       userId: 'user-1',
       deviceId: 'device-4',
-      lastPulledAt: new Date(0).toISOString()
+      cursor: '0'
     })
 
     expect(tx.syncDevice.deleteMany).toHaveBeenCalledWith({
@@ -127,7 +127,7 @@ describe('reportDevice', () => {
       reportDevice({
         userId: 'user-1',
         deviceId: 'device-1',
-        lastPulledAt: new Date(0).toISOString()
+        cursor: '0'
       })
     ).rejects.toMatchObject({ code: 'DEVICE_REVOKED' })
   })

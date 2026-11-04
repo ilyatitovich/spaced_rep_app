@@ -5,7 +5,7 @@ import type { CardData } from '@/types'
 import type { PullDelta, PushAck } from '@spaced-rep/sync-protocol'
 import { memory, table } from './helpers/fake-idb'
 import {
-  EPOCH_ISO,
+  INITIAL_CURSOR,
   acceptAll,
   emptyDelta,
   metaValue,
@@ -137,7 +137,7 @@ function remoteTopic(
 
 function deltaOf(
   records: PullDelta['records'],
-  watermark = '2024-06-01T00:00:00.000Z'
+  watermark = '20240601'
 ): PullDelta {
   return { records, watermark, more: false }
 }
@@ -297,13 +297,40 @@ describe('queue coalescing', () => {
 
 describe('pull watermark and post-push pull', () => {
   it('applyPullDelta never moves lastPulledAt backward', async () => {
+    seedMeta('lastPulledAt', '20240601')
+
+    await applyPullDelta(emptyDelta('20240101'))
+    expect(metaValue('lastPulledAt')).toBe('20240601')
+
+    await applyPullDelta(emptyDelta('20240901'))
+    expect(metaValue('lastPulledAt')).toBe('20240901')
+  })
+
+  it('compares cursors numerically, so 10 is ahead of 9', async () => {
+    seedMeta('lastPulledAt', '9')
+
+    await applyPullDelta(emptyDelta('10'))
+
+    expect(metaValue('lastPulledAt')).toBe('10')
+  })
+
+  it('replaces a legacy ISO cursor from an older client with the first server sequence', async () => {
     seedMeta('lastPulledAt', '2024-06-01T00:00:00.000Z')
 
-    await applyPullDelta(emptyDelta('2024-01-01T00:00:00.000Z'))
-    expect(metaValue('lastPulledAt')).toBe('2024-06-01T00:00:00.000Z')
+    await applyPullDelta(emptyDelta('1'))
 
-    await applyPullDelta(emptyDelta('2024-09-01T00:00:00.000Z'))
-    expect(metaValue('lastPulledAt')).toBe('2024-09-01T00:00:00.000Z')
+    expect(metaValue('lastPulledAt')).toBe('1')
+  })
+
+  it('does not move the cursor for a fanout delta, which carries an empty one', async () => {
+    seedMeta('lastPulledAt', '5')
+
+    await applyPullDelta(
+      deltaOf([remoteTopic('topic-fanout', { updatedAt: 9_000 })], '')
+    )
+
+    expect(metaValue('lastPulledAt')).toBe('5')
+    expect(table(STORES.TOPICS).get('topic-fanout')).toBeDefined()
   })
 
   it('syncAll pulls after a push so a server-winning row is learned', async () => {
@@ -312,7 +339,7 @@ describe('pull watermark and post-push pull', () => {
     pushMock.mockImplementation(async input => acceptAll(input))
     pullMock.mockResolvedValue({
       records: [remoteCard(card.id, { updatedAt: 5_000, front: 'server' })],
-      watermark: '2024-06-01T00:00:00.000Z',
+      watermark: '20240601',
       more: false
     })
 
@@ -324,13 +351,13 @@ describe('pull watermark and post-push pull', () => {
     expect(pullMock).toHaveBeenCalledOnce()
     const stored = table(STORES.CARDS).get(card.id) as Card
     expect(stored.updatedAt).toBe(5_000)
-    expect(metaValue('lastPulledAt')).toBe('2024-06-01T00:00:00.000Z')
+    expect(metaValue('lastPulledAt')).toBe('20240601')
   })
 
   it('syncAll keeps pulling while more is true and applies every page', async () => {
-    const page1Watermark = '2024-06-01T00:00:00.000Z'
-    const page2Watermark = '2024-06-02T00:00:00.000Z'
-    const page3Watermark = '2024-06-03T00:00:00.000Z'
+    const page1Watermark = '20240601'
+    const page2Watermark = '20240602'
+    const page3Watermark = '20240603'
     const page1Cards = Array.from({ length: 40 }, (_, i) =>
       remoteCard(`card-p1-${i}`, { updatedAt: 1_000 + i, front: `p1-${i}` })
     )
@@ -381,7 +408,7 @@ describe('pull watermark and post-push pull', () => {
     await syncAll('user-a')
 
     expect(pullMock).toHaveBeenCalledTimes(3)
-    expect(pullMock.mock.calls[0]![0].since).toBe(EPOCH_ISO)
+    expect(pullMock.mock.calls[0]![0].since).toBe(INITIAL_CURSOR)
     expect(pullMock.mock.calls[1]![0].since).toBe(page1Watermark)
     expect(pullMock.mock.calls[2]![0].since).toBe(page2Watermark)
 
@@ -402,7 +429,7 @@ describe('tombstone LWW on pull', () => {
 
     await applyPullDelta({
       records: [remoteCard(card.id, { updatedAt: 3_000, deletedAt: 3_000 })],
-      watermark: '2024-06-01T00:00:00.000Z',
+      watermark: '20240601',
       more: false
     })
 
@@ -414,7 +441,7 @@ describe('tombstone LWW on pull', () => {
 
     await applyPullDelta({
       records: [remoteCard(card.id, { updatedAt: 6_000, deletedAt: 6_000 })],
-      watermark: '2024-06-01T00:00:00.000Z',
+      watermark: '20240601',
       more: false
     })
 
@@ -439,7 +466,7 @@ describe('tombstone LWW on pull', () => {
           }
         }
       ],
-      watermark: '2024-06-01T00:00:00.000Z',
+      watermark: '20240601',
       more: false
     })
 
@@ -459,7 +486,7 @@ describe('tombstone then newer upsert restores', () => {
     await applyPullDelta(
       deltaOf(
         [remoteCard(card.id, { updatedAt: 7_000, front: 'restored' })],
-        '2024-06-02T00:00:00.000Z'
+        '20240602'
       )
     )
 
@@ -479,7 +506,7 @@ describe('tombstone then newer upsert restores', () => {
     await applyPullDelta(
       deltaOf(
         [remoteTopic(topic.id, { updatedAt: 7_000, title: 'Spanish v2' })],
-        '2024-06-02T00:00:00.000Z'
+        '20240602'
       )
     )
 
@@ -608,7 +635,7 @@ describe('topic conflict in a push ack', () => {
 
 describe('reconcile after the 30-day gap', () => {
   const DAY_MS = 24 * 60 * 60 * 1000
-  const BOOTSTRAP_WATERMARK = '2024-07-01T00:00:00.000Z'
+  const BOOTSTRAP_WATERMARK = '20240701'
 
   function startSync(): Promise<void> {
     setSyncUser('user-a')
@@ -618,12 +645,12 @@ describe('reconcile after the 30-day gap', () => {
 
   beforeEach(() => {
     pushMock.mockImplementation(async input => acceptAll(input))
-    pullMock.mockResolvedValue(emptyDelta('2024-05-01T00:00:00.000Z'))
+    pullMock.mockResolvedValue(emptyDelta('20240501'))
   })
 
   it('bootstraps from epoch before pushing when the last sync is older than 30 days', async () => {
     seedMeta('lastSyncAt', String(Date.now() - 31 * DAY_MS))
-    seedMeta('lastPulledAt', '2024-06-01T00:00:00.000Z')
+    seedMeta('lastPulledAt', '20240601')
     const topic = await seedTopic('Offline edit')
     await enqueueSync(STORES.TOPICS, topic.id, 'upsert')
     const order: string[] = []
@@ -645,7 +672,7 @@ describe('reconcile after the 30-day gap', () => {
     expect(bootstrapMock).toHaveBeenCalledOnce()
     expect(bootstrapMock.mock.calls[0]![0]).toMatchObject({
       deviceId: 'device-1',
-      lastPulledAt: EPOCH_ISO,
+      lastPulledAt: INITIAL_CURSOR,
       pendingOpCount: 1
     })
     expect(order).toEqual(['bootstrap', 'push'])
@@ -662,7 +689,7 @@ describe('reconcile after the 30-day gap', () => {
     })
     pullMock.mockResolvedValueOnce({
       records: [remoteCard('card-boot-2', { updatedAt: 3_000 })],
-      watermark: '2024-07-02T00:00:00.000Z',
+      watermark: '20240702',
       more: false
     })
 
@@ -707,7 +734,7 @@ describe('account isolation', () => {
 
   it("initialSync for user B does not enqueue or push user A's data", async () => {
     seedMeta('migratedUserId', 'user-a')
-    seedMeta('lastPulledAt', '2024-06-01T00:00:00.000Z')
+    seedMeta('lastPulledAt', '20240601')
     const topic = await seedTopic('A topic')
     const card = await seedCard()
     await enqueueSync(STORES.TOPICS, topic.id, 'upsert')
@@ -726,7 +753,7 @@ describe('account isolation', () => {
     expect(pushedRecordIds()).toEqual([])
     expect(metaValue('migratedUserId')).toBe('user-b')
     // Bootstrap started from epoch, not user A's watermark.
-    expect(bootstrapMock.mock.calls[0]![0].lastPulledAt).toBe(EPOCH_ISO)
+    expect(bootstrapMock.mock.calls[0]![0].lastPulledAt).toBe(INITIAL_CURSOR)
     expect(bootstrapMock.mock.calls[0]![0].pendingOpCount).toBe(0)
   })
 
@@ -746,7 +773,7 @@ describe('account isolation', () => {
 
   it('sign-out clears local study data, queue and watermark', async () => {
     setSyncUser('user-a')
-    seedMeta('lastPulledAt', '2024-06-01T00:00:00.000Z')
+    seedMeta('lastPulledAt', '20240601')
     seedMeta('migratedUserId', 'user-a')
     const topic = await seedTopic('A topic')
     const card = await seedCard()
@@ -757,7 +784,7 @@ describe('account isolation', () => {
 
     expect(table(STORES.TOPICS).has(topic.id)).toBe(false)
     expect(table(STORES.SYNC_QUEUE).size).toBe(0)
-    expect(metaValue('lastPulledAt')).toBe(EPOCH_ISO)
+    expect(metaValue('lastPulledAt')).toBe(INITIAL_CURSOR)
     expect(metaValue('migratedUserId')).toBeUndefined()
     expect(metaValue('deviceId')).toBe('device-1')
   })
@@ -772,9 +799,9 @@ describe('account isolation', () => {
   })
 
   it('clearLocalSyncData resets lastPulledAt to epoch', async () => {
-    seedMeta('lastPulledAt', '2024-06-01T00:00:00.000Z')
+    seedMeta('lastPulledAt', '20240601')
     await clearLocalSyncData()
-    expect(metaValue('lastPulledAt')).toBe(EPOCH_ISO)
+    expect(metaValue('lastPulledAt')).toBe(INITIAL_CURSOR)
   })
 })
 

@@ -1,6 +1,9 @@
 import {
+  INITIAL_CURSOR,
   PROTOCOL_VERSION,
+  cursorFromSeq,
   createEnvelopeId,
+  parseCursor,
   type Mutation,
   type PullDelta,
   type PushAck,
@@ -34,6 +37,7 @@ import {
 const RECORD_NOT_OWNED = 'Record not owned by user'
 type Db = Prisma.TransactionClient
 import { publishFanout } from './fanout.service.js'
+import { clampMutationTimes, lockUserSeq, type SeqAllocator } from './seq.js'
 import {
   cardRecordToDb,
   dbCardToRecord,
@@ -47,7 +51,6 @@ import {
   mediaErrorForCardData
 } from './media.service.js'
 
-const EPOCH_ISO = new Date(0).toISOString()
 const PULL_PAGE_SIZE = 500
 
 export async function listSyncDevices(userId: string) {
@@ -88,7 +91,8 @@ export async function revokeSyncDevice(input: {
 export async function reportDevice(input: {
   userId: string
   deviceId: string
-  lastPulledAt?: string
+  /** Pull cursor the device has caught up to. */
+  cursor?: string
   userAgent?: string | null | undefined
 }): Promise<void> {
   await prisma.$transaction(async tx => {
@@ -134,14 +138,12 @@ export async function reportDevice(input: {
       create: {
         id: input.deviceId,
         userId: input.userId,
-        lastPulledAt: new Date(input.lastPulledAt ?? EPOCH_ISO),
+        lastPulledSeq: parseCursor(input.cursor ?? INITIAL_CURSOR),
         lastSeenAt: new Date(),
         userAgent: input.userAgent ?? null
       },
       update: {
-        ...(input.lastPulledAt
-          ? { lastPulledAt: new Date(input.lastPulledAt) }
-          : {}),
+        ...(input.cursor ? { lastPulledSeq: parseCursor(input.cursor) } : {}),
         lastSeenAt: new Date(),
         // Don't clobber a known UA when a caller omits it (e.g. bootstrap before the fix).
         ...(input.userAgent ? { userAgent: input.userAgent } : {})
@@ -155,6 +157,7 @@ async function applyTopicUpsert(input: {
   deviceId: string
   mutation: Mutation
   db: Db
+  seq: SeqAllocator
 }): Promise<{ conflict: TopicConflictResolved | null }> {
   const { db } = input
   const topic = input.mutation.topic
@@ -193,16 +196,19 @@ async function applyTopicUpsert(input: {
     incomingTitle: topic.title,
     incomingUpdatedAt: new Date(topic.updatedAt),
     incomingDeviceId: input.deviceId,
-    db
+    db,
+    seq: input.seq
   })
   const title =
     conflict && conflict.topicId === topic.id ? conflict.newTitle : data.title
 
+  const serverSeq = await input.seq.next()
   await db.topic.upsert({
     where: { id: topic.id },
-    create: { ...data, title },
+    create: { ...data, title, serverSeq },
     update: {
       title,
+      serverSeq,
       pivot: data.pivot,
       week: data.week,
       nextUpdateDate: data.nextUpdateDate,
@@ -220,6 +226,7 @@ async function applyCardUpsert(input: {
   deviceId: string
   mutation: Mutation
   db: Db
+  seq: SeqAllocator
 }): Promise<void> {
   const { db } = input
   const card = input.mutation.card
@@ -255,10 +262,12 @@ async function applyCardUpsert(input: {
   }
 
   const data = cardRecordToDb(card, input.userId)
+  const serverSeq = await input.seq.next()
   await db.card.upsert({
     where: { id: card.id },
-    create: data,
+    create: { ...data, serverSeq },
     update: {
+      serverSeq,
       topicId: data.topicId,
       level: data.level ?? 0,
       data: data.data,
@@ -275,6 +284,7 @@ async function applyDelete(input: {
   mutation: Mutation
   hardDelete: boolean
   db: Db
+  seq: SeqAllocator
 }): Promise<void> {
   const { db } = input
   const { table, recordId, updatedAt } = input.mutation
@@ -292,7 +302,11 @@ async function applyDelete(input: {
     } else {
       await db.topic.update({
         where: { id: recordId },
-        data: { deletedAt: now, updatedAt: now }
+        data: {
+          deletedAt: now,
+          updatedAt: now,
+          serverSeq: await input.seq.next()
+        }
       })
     }
     return
@@ -309,7 +323,11 @@ async function applyDelete(input: {
   } else {
     await db.card.update({
       where: { id: recordId },
-      data: { deletedAt: now, updatedAt: now }
+      data: {
+        deletedAt: now,
+        updatedAt: now,
+        serverSeq: await input.seq.next()
+      }
     })
   }
 }
@@ -340,18 +358,21 @@ async function applyMutationWithMark(input: {
   let conflict: TopicConflictResolved | null = null
 
   await prisma.$transaction(async tx => {
+    // First statement: serializes this user's applies so commit order == seq order.
+    const seq = await lockUserSeq(tx, userId)
     if (mutation.operation === 'delete') {
-      await applyDelete({ userId, deviceId, mutation, hardDelete, db: tx })
+      await applyDelete({ userId, deviceId, mutation, hardDelete, db: tx, seq })
     } else if (mutation.table === 'topics') {
       const result = await applyTopicUpsert({
         userId,
         deviceId,
         mutation,
-        db: tx
+        db: tx,
+        seq
       })
       conflict = result.conflict
     } else {
-      await applyCardUpsert({ userId, deviceId, mutation, db: tx })
+      await applyCardUpsert({ userId, deviceId, mutation, db: tx, seq })
     }
 
     await markOpApplied({ userId, opId: mutation.opId, deviceId, db: tx })
@@ -507,9 +528,9 @@ async function publishPushFanout(input: {
     kind: 'pullDelta',
     pullDelta: {
       records: input.records,
-      watermark: new Date(
-        Math.max(...input.records.map(r => (r.topic ?? r.card)?.updatedAt ?? 0))
-      ).toISOString(),
+      // Fanout carries only this push, so it must not move a client's pull
+      // cursor past rows the client has not pulled. Empty means "no cursor".
+      watermark: '',
       more: false
     }
   }
@@ -546,13 +567,15 @@ export async function applyPushBatch(input: {
   const hardDelete = otherActive === 0
 
   // Upserts before deletes within the batch
-  const upserts = input.mutations.filter(m => m.operation === 'upsert')
-  const deletes = input.mutations.filter(m => m.operation === 'delete')
+  const now = Date.now()
+  const mutations = input.mutations.map(m => clampMutationTimes(m, now))
+  const upserts = mutations.filter(m => m.operation === 'upsert')
+  const deletes = mutations.filter(m => m.operation === 'delete')
   const ordered = [...upserts, ...deletes]
 
   const { batchMediaError, mediaErrorsByHash } = await loadBatchMediaErrors(
     input.userId,
-    input.mutations
+    mutations
   )
   const { acceptedOpIds, rejected, conflicts } = await applyOrderedMutations({
     userId: input.userId,
@@ -593,92 +616,66 @@ export async function applyPushBatch(input: {
 
 export async function pullChanges(input: {
   userId: string
+  /** Opaque cursor from a previous pull (see `parseCursor`). */
   since: string
   limit?: number
 }): Promise<PullDelta> {
-  const since = new Date(input.since || EPOCH_ISO)
+  const since = parseCursor(input.since)
   const limit = input.limit ?? PULL_PAGE_SIZE
+  const where = { userId: input.userId, serverSeq: { gt: since } }
 
+  // One sequence spans topics and cards, so the lowest `limit` rows of each
+  // table contain the lowest `limit` rows overall.
   const [topics, cards] = await Promise.all([
     prisma.topic.findMany({
-      where: { userId: input.userId, updatedAt: { gt: since } },
-      orderBy: { updatedAt: 'asc' },
-      take: limit
+      where,
+      orderBy: { serverSeq: 'asc' },
+      take: limit + 1
     }),
     prisma.card.findMany({
-      where: { userId: input.userId, updatedAt: { gt: since } },
-      orderBy: { updatedAt: 'asc' },
-      take: limit
+      where,
+      orderBy: { serverSeq: 'asc' },
+      take: limit + 1
     })
   ])
 
   const merged = [
     ...topics.map(row => ({ kind: 'topic' as const, row })),
     ...cards.map(row => ({ kind: 'card' as const, row }))
-  ].sort(
-    (x, y) =>
-      x.row.updatedAt.getTime() - y.row.updatedAt.getTime() ||
-      x.row.id.localeCompare(y.row.id)
-  )
-  const cut = merged.slice(0, limit)
-
-  // The cursor is a bare timestamp matched with `gt`, so rows sharing the last
-  // row's updatedAt would be skipped by the next page. Include every tie.
-  const boundary = cut.at(-1)?.row.updatedAt
-  const [tiedTopics, tiedCards] = boundary
-    ? await Promise.all([
-        prisma.topic.findMany({
-          where: { userId: input.userId, updatedAt: boundary }
-        }),
-        prisma.card.findMany({
-          where: { userId: input.userId, updatedAt: boundary }
-        })
-      ])
-    : [[], []]
-  const seen = new Set(cut.map(r => r.row.id))
-  const selected = [
-    ...cut,
-    ...tiedTopics
-      .filter(row => !seen.has(row.id))
-      .map(row => ({ kind: 'topic' as const, row })),
-    ...tiedCards
-      .filter(row => !seen.has(row.id))
-      .map(row => ({ kind: 'card' as const, row }))
-  ]
+  ].sort((x, y) => Number(x.row.serverSeq - y.row.serverSeq))
+  const page = merged.slice(0, limit)
 
   // Topics first for FK ordering on client
   const records: SyncRecord[] = [
-    ...selected.flatMap(r =>
+    ...page.flatMap(r =>
       r.kind === 'topic' ? [{ topic: dbTopicToRecord(r.row) }] : []
     ),
-    ...selected.flatMap(r =>
+    ...page.flatMap(r =>
       r.kind === 'card' ? [{ card: dbCardToRecord(r.row) }] : []
     )
   ]
 
-  const last = selected.at(-1)
-  const more =
-    merged.length > limit || topics.length === limit || cards.length === limit
-
   return {
     records,
-    watermark: (last?.row.updatedAt ?? since).toISOString(),
-    more
+    watermark: cursorFromSeq(page.at(-1)?.row.serverSeq ?? since),
+    more: merged.length > limit
   }
 }
 
 export async function bootstrap(input: {
   userId: string
   deviceId: string
-  lastPulledAt?: string
+  cursor?: string
   userAgent?: string | null | undefined
 }): Promise<PullDelta> {
-  const since = input.lastPulledAt || EPOCH_ISO
+  const since = input.cursor ?? INITIAL_CURSOR
   const delta = await pullChanges({ userId: input.userId, since })
+  // Report what the device sent, not what it is about to receive: it has not
+  // applied this delta yet, and purging on it could strand a pending edit.
   await reportDevice({
     userId: input.userId,
     deviceId: input.deviceId,
-    lastPulledAt: delta.watermark,
+    cursor: since,
     userAgent: input.userAgent
   })
   await purgeSyncedTombstones(input.userId)
@@ -688,13 +685,13 @@ export async function bootstrap(input: {
 export async function finishSyncCycle(input: {
   userId: string
   deviceId: string
-  lastPulledAt: string
+  cursor: string
   userAgent?: string | null | undefined
 }): Promise<void> {
   await reportDevice({
     userId: input.userId,
     deviceId: input.deviceId,
-    lastPulledAt: input.lastPulledAt,
+    cursor: input.cursor,
     userAgent: input.userAgent
   })
   await purgeSyncedTombstones(input.userId)

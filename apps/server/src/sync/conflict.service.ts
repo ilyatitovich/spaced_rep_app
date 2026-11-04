@@ -2,6 +2,7 @@ import { Prisma } from '../generated/prisma/client.js'
 import { prisma } from '../shared/lib/prisma.js'
 import { logger } from '../shared/lib/logger.js'
 import type { TopicConflictResolved } from '@spaced-rep/sync-protocol'
+import type { SeqAllocator } from './seq.js'
 
 const ACTIVE_WINDOW_MS = 30 * 24 * 60 * 60 * 1000
 
@@ -18,6 +19,8 @@ export async function resolveTopicTitleConflict(input: {
   incomingUpdatedAt: Date
   incomingDeviceId: string
   db?: Db
+  /** Allocates the sequence for the renamed loser so peers pull the rename. */
+  seq: SeqAllocator
 }): Promise<TopicConflictResolved | null> {
   const db = input.db ?? prisma
   const existing = await db.topic.findFirst({
@@ -54,7 +57,7 @@ export async function resolveTopicTitleConflict(input: {
   if (loserExists) {
     await db.topic.update({
       where: { id: loserId },
-      data: { title: newTitle, updatedAt }
+      data: { title: newTitle, updatedAt, serverSeq: await input.seq.next() }
     })
   }
 
@@ -92,36 +95,39 @@ export async function countOtherActiveDevices(
   })
 }
 
+/**
+ * Drop tombstones every active device has confirmed. The boundary is the
+ * lowest `lastPulledSeq` across active devices, so a delete that lands late
+ * (old `updatedAt`, fresh `serverSeq`) is kept until each device has seen it.
+ * A device confirms a sequence by sending it as its next `since`, never by
+ * being handed it in a response: a device with a queued edit for the deleted
+ * row could still push after the purge and resurrect it.
+ */
 export async function purgeSyncedTombstones(userId: string): Promise<void> {
   const ttlCutoff = new Date(Date.now() - ACTIVE_WINDOW_MS)
 
   const activeDevices = await prisma.syncDevice.findMany({
     where: { userId, revokedAt: null, lastSeenAt: { gt: ttlCutoff } },
-    select: { lastPulledAt: true }
+    select: { lastPulledSeq: true }
   })
-
-  const minPulled =
-    activeDevices.length > 0
-      ? new Date(Math.min(...activeDevices.map(d => d.lastPulledAt.getTime())))
-      : ttlCutoff
 
   await prisma.syncDevice.deleteMany({
     where: { userId, revokedAt: null, lastSeenAt: { lte: ttlCutoff } }
   })
 
-  await prisma.card.deleteMany({
-    where: {
-      userId,
-      deletedAt: { not: null, lte: minPulled }
-    }
-  })
+  const minPulled = activeDevices.reduce<bigint | null>(
+    (min, d) => (min === null || d.lastPulledSeq < min ? d.lastPulledSeq : min),
+    null
+  )
+  // With no active device nothing can be waiting on a tombstone, but keep the
+  // 30-day grace the old purge had before dropping anything.
+  const purgeable =
+    minPulled === null
+      ? { deletedAt: { not: null, lte: ttlCutoff } }
+      : { deletedAt: { not: null }, serverSeq: { lte: minPulled } }
 
-  await prisma.topic.deleteMany({
-    where: {
-      userId,
-      deletedAt: { not: null, lte: minPulled }
-    }
-  })
+  await prisma.card.deleteMany({ where: { userId, ...purgeable } })
+  await prisma.topic.deleteMany({ where: { userId, ...purgeable } })
 }
 
 export { ACTIVE_WINDOW_MS }

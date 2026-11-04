@@ -78,7 +78,7 @@ describe('applyPullDelta (shared pull/bootstrap/reconcile/WS path)', () => {
 
     await expect(
       applyPullDelta({
-        watermark: '2024-06-01T00:00:00.000Z',
+        watermark: '20240601',
         more: false,
         records: [
           {
@@ -123,7 +123,7 @@ describe('applyPullDelta (shared pull/bootstrap/reconcile/WS path)', () => {
     )
 
     await applyPullDelta({
-      watermark: '2024-06-01T00:00:00.000Z',
+      watermark: '20240601',
       more: false,
       records: [
         {
@@ -155,7 +155,7 @@ describe('applyPullDelta (shared pull/bootstrap/reconcile/WS path)', () => {
     ).toBe(buffer)
     expect(table(STORES.SYNC_META).get('lastPulledAt')).toEqual({
       key: 'lastPulledAt',
-      value: '2024-06-01T00:00:00.000Z'
+      value: '20240601'
     })
   })
 })

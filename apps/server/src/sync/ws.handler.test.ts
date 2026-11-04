@@ -106,7 +106,7 @@ describe('sync websocket entitlement', () => {
         sentAt: Date.now(),
         kind: 'hello',
         hello: {
-          lastPulledAt: new Date(0).toISOString(),
+          lastPulledAt: '0',
           pendingOpCount: 0,
           protocolVersion: PROTOCOL_VERSION
         }
@@ -130,7 +130,7 @@ describe('sync websocket entitlement', () => {
         deviceId: '11111111-1111-4111-8111-111111111111',
         sentAt: Date.now(),
         kind: 'pullRequest',
-        pullRequest: { since: new Date(0).toISOString() }
+        pullRequest: { since: '0' }
       })
     )
 
@@ -170,7 +170,7 @@ describe('sync websocket entitlement', () => {
         sentAt: Date.now(),
         kind: 'hello',
         hello: {
-          lastPulledAt: new Date(0).toISOString(),
+          lastPulledAt: '0',
           pendingOpCount: 0,
           protocolVersion: 2
         }
@@ -214,7 +214,7 @@ describe('sync websocket entitlement', () => {
         sentAt: Date.now(),
         kind: 'hello',
         hello: {
-          lastPulledAt: new Date(0).toISOString(),
+          lastPulledAt: '0',
           pendingOpCount: 0,
           protocolVersion: PROTOCOL_VERSION
         }
@@ -284,7 +284,7 @@ describe('sync websocket entitlement', () => {
         ...base(),
         kind: 'hello',
         hello: {
-          lastPulledAt: new Date(0).toISOString(),
+          lastPulledAt: '0',
           pendingOpCount: 0,
           protocolVersion: PROTOCOL_VERSION
         }

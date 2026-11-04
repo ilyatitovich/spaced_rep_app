@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express'
 import {
+  INITIAL_CURSOR,
   PROTOCOL_VERSION,
   SyncEnvelopeSchema,
   createEnvelopeId,
@@ -119,7 +120,7 @@ export async function pullHandler(
     await finishSyncCycle({
       userId,
       deviceId: envelope.deviceId,
-      lastPulledAt: delta.watermark,
+      cursor: envelope.pullRequest.since,
       userAgent: req.get('user-agent')
     })
 
@@ -148,17 +149,17 @@ export async function bootstrapHandler(
     const envelope = parseBody(SyncEnvelopeSchema, req.body)
     assertProtocolVersion(envelope)
 
-    let lastPulledAt = new Date(0).toISOString()
+    let cursor = INITIAL_CURSOR
     if (envelope.kind === 'hello') {
-      lastPulledAt = envelope.hello.lastPulledAt
+      cursor = envelope.hello.lastPulledAt
     } else if (envelope.kind === 'pullRequest') {
-      lastPulledAt = envelope.pullRequest.since
+      cursor = envelope.pullRequest.since
     }
 
     const delta = await bootstrap({
       userId,
       deviceId: envelope.deviceId,
-      lastPulledAt,
+      cursor,
       userAgent: req.get('user-agent')
     })
 

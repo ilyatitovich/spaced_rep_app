@@ -111,7 +111,7 @@ describe('sync HTTP protocol version', () => {
         deviceId: '11111111-1111-4111-8111-111111111111',
         sentAt: Date.now(),
         kind: 'pullRequest' as const,
-        pullRequest: { since: new Date(0).toISOString() }
+        pullRequest: { since: '0' }
       }
     ],
     [
@@ -124,7 +124,7 @@ describe('sync HTTP protocol version', () => {
         sentAt: Date.now(),
         kind: 'hello' as const,
         hello: {
-          lastPulledAt: new Date(0).toISOString(),
+          lastPulledAt: '0',
           pendingOpCount: 0,
           protocolVersion: 2
         }

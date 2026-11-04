@@ -3,6 +3,7 @@ import type {
   Prisma
 } from '../../apps/server/src/generated/prisma/client.js'
 import { getTestPrisma } from '../db/prisma.js'
+import { nextServerSeq } from './server-seq.js'
 
 export interface CardBuildInput {
   id: string
@@ -13,6 +14,8 @@ export interface CardBuildInput {
   reviewDate: bigint | null
   updatedAt: Date
   deletedAt: Date | null
+  /** Defaults to the next sequence for the user, like a real push would. */
+  serverSeq?: bigint
 }
 
 export const cardFactory = {
@@ -45,7 +48,8 @@ export const cardFactory = {
         data: data.data,
         reviewDate: data.reviewDate,
         updatedAt: data.updatedAt,
-        deletedAt: data.deletedAt
+        deletedAt: data.deletedAt,
+        serverSeq: data.serverSeq ?? (await nextServerSeq(data.userId))
       }
     })
   }

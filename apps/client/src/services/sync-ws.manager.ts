@@ -1,4 +1,5 @@
 import {
+  INITIAL_CURSOR,
   PROTOCOL_VERSION,
   createEnvelopeId,
   decodeEnvelope,
@@ -33,7 +34,7 @@ export class SyncWsManager {
   private ws: WebSocket | null = null
   private state: WsConnectionState = 'disconnected'
   private deviceId = ''
-  private lastPulledAt = new Date(0).toISOString()
+  private lastPulledAt = INITIAL_CURSOR
   private pendingOpCount = 0
   private attempt = 0
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null

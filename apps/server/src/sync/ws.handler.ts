@@ -247,7 +247,7 @@ async function handleMessage(conn: Conn, data: string): Promise<void> {
         await reportDevice({
           userId: conn.userId,
           deviceId: conn.deviceId,
-          lastPulledAt: envelope.hello.lastPulledAt,
+          cursor: envelope.hello.lastPulledAt,
           userAgent: conn.userAgent
         })
       } catch (err) {

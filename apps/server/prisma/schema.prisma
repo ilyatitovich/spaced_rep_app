@@ -81,6 +81,9 @@ model User {
   disabledAt      DateTime? @map("disabled_at") @db.Timestamptz
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  // Last server sequence handed out to this user's synced rows (ADR-1). Locked
+  // by the first statement of every apply transaction, so seq order == commit order.
+  syncSeq         BigInt    @default(0) @map("sync_seq")
 
   topics                Topic[]
   cards                 Card[]
@@ -114,10 +117,12 @@ model Topic {
   // Client-supplied LWW timestamp (do not use @updatedAt)
   updatedAt      DateTime  @map("updated_at") @db.Timestamptz
   deletedAt      DateTime? @map("deleted_at") @db.Timestamptz
+  // Server-assigned per-user sequence: the pull cursor and purge boundary (ADR-1).
+  serverSeq      BigInt    @default(0) @map("server_seq")
   user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   cards          Card[]
 
-  @@index([userId, updatedAt])
+  @@index([userId, serverSeq])
   // Partial unique topics_user_title_unique (user_id, title) WHERE deleted_at IS NULL
   // is enforced in SQL migrations (Prisma cannot express partial uniques).
   @@map("topics")
@@ -133,10 +138,12 @@ model Card {
   // Client-supplied LWW timestamp (do not use @updatedAt)
   updatedAt  DateTime  @map("updated_at") @db.Timestamptz
   deletedAt  DateTime? @map("deleted_at") @db.Timestamptz
+  // Server-assigned per-user sequence: the pull cursor and purge boundary (ADR-1).
+  serverSeq  BigInt    @default(0) @map("server_seq")
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   topic      Topic     @relation(fields: [topicId], references: [id], onDelete: Cascade)
 
-  @@index([userId, updatedAt])
+  @@index([userId, serverSeq])
   @@index([topicId])
   @@map("cards")
 }
@@ -145,7 +152,9 @@ model SyncDevice {
   id           String   @id @db.Uuid
   userId       String   @map("user_id") @db.Uuid
   name         String?
-  lastPulledAt DateTime @default(dbgenerated("'epoch'::timestamptz")) @map("last_pulled_at") @db.Timestamptz
+  // Highest serverSeq this device has pulled; tombstones at or below the minimum
+  // across active devices are safe to purge.
+  lastPulledSeq BigInt   @default(0) @map("last_pulled_seq")
   lastSeenAt   DateTime @default(now()) @map("last_seen_at") @db.Timestamptz
   userAgent    String?  @map("user_agent")
   revokedAt    DateTime? @map("revoked_at") @db.Timestamptz

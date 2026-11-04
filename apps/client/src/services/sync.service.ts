@@ -1,10 +1,12 @@
-import type {
-  Mutation,
-  PullDelta,
-  PushAck,
-  TopicConflictResolved,
-  TopicRecord,
-  CardRecord
+import {
+  INITIAL_CURSOR,
+  isCursorAhead,
+  type Mutation,
+  type PullDelta,
+  type PushAck,
+  type TopicConflictResolved,
+  type TopicRecord,
+  type CardRecord
 } from '@spaced-rep/sync-protocol'
 import { STORES, withTransaction } from '@/lib/db'
 import {
@@ -111,7 +113,6 @@ export interface SyncState {
   failedOps: FailedOp[]
 }
 
-const EPOCH_ISO = new Date(0).toISOString()
 const TRIGGER_DEBOUNCE_MS = 1500
 const ACTIVE_WINDOW_MS = 30 * 24 * 60 * 60 * 1000
 const DEVICE_ID_KEY = 'deviceId'
@@ -783,12 +784,9 @@ async function applyPullDeltaRecords(
     httpSyncMediaApi
   )
 
-  let maxUpdatedAt = 0
-
   for (const record of delta.records) {
     if (record.topic) {
       const remote = record.topic
-      maxUpdatedAt = Math.max(maxUpdatedAt, remote.updatedAt)
 
       const local = await getLocalRecord<Topic>(STORES.TOPICS, remote.id)
 
@@ -822,7 +820,6 @@ async function applyPullDeltaRecords(
 
     if (record.card) {
       const remote = record.card
-      maxUpdatedAt = Math.max(maxUpdatedAt, remote.updatedAt)
 
       const local = await getLocalRecord<Card>(STORES.CARDS, remote.id)
 
@@ -850,19 +847,12 @@ async function applyPullDeltaRecords(
     }
   }
 
-  const nextWatermark = delta.watermark
-    ? delta.watermark
-    : maxUpdatedAt > 0
-      ? new Date(maxUpdatedAt).toISOString()
-      : null
-  if (nextWatermark) {
+  // Fanout deltas carry an empty cursor: they cover one push, not a range.
+  if (delta.watermark) {
     // Forward-only: a stale/out-of-order delta must never rewind the cursor.
     const prev = await getMeta('lastPulledAt')
-    if (
-      prev === undefined ||
-      !(Date.parse(prev) >= Date.parse(nextWatermark))
-    ) {
-      await setMeta('lastPulledAt', nextWatermark)
+    if (prev === undefined || isCursorAhead(delta.watermark, prev)) {
+      await setMeta('lastPulledAt', delta.watermark)
     }
   }
 }
@@ -933,7 +923,7 @@ export async function pushChanges(deviceId: string): Promise<number> {
 
 async function pullChanges(deviceId: string): Promise<void> {
   if (!syncBackend) return
-  let since = (await getMeta('lastPulledAt')) ?? EPOCH_ISO
+  let since = (await getMeta('lastPulledAt')) ?? INITIAL_CURSOR
   for (;;) {
     const delta = await syncBackend.pull({ deviceId, since })
     await applyPullDelta(delta)
@@ -947,7 +937,7 @@ async function reconcile(): Promise<void> {
   const deviceId = await getDeviceId()
   const delta = await syncBackend.bootstrap({
     deviceId,
-    lastPulledAt: EPOCH_ISO,
+    lastPulledAt: INITIAL_CURSOR,
     pendingOpCount: (await getQueue()).length
   })
   await applyPullDelta(delta)
@@ -1003,7 +993,7 @@ async function ensureRealtimeReconnectWithFreshToken(): Promise<void> {
   realtime?.disconnect()
   if (!currentUserId || !syncEntitled || !realtime) return
   const deviceId = await getDeviceId()
-  const lastPulledAt = (await getMeta('lastPulledAt')) ?? EPOCH_ISO
+  const lastPulledAt = (await getMeta('lastPulledAt')) ?? INITIAL_CURSOR
   await realtime.connect({
     deviceId,
     lastPulledAt,
@@ -1024,7 +1014,7 @@ async function flushAfterConnect(): Promise<void> {
 async function connectRealtime(): Promise<void> {
   if (!syncEntitled || !realtime) return
   const deviceId = await getDeviceId()
-  const lastPulledAt = (await getMeta('lastPulledAt')) ?? EPOCH_ISO
+  const lastPulledAt = (await getMeta('lastPulledAt')) ?? INITIAL_CURSOR
   realtime.updateResume?.(lastPulledAt, (await getQueue()).length)
   await realtime.connect({
     deviceId,
@@ -1132,7 +1122,9 @@ export async function clearLocalSyncData(): Promise<void> {
         for (const row of rows) {
           if (row.key !== DEVICE_ID_KEY) await promisify(meta.delete(row.key))
         }
-        await promisify(meta.put({ key: 'lastPulledAt', value: EPOCH_ISO }))
+        await promisify(
+          meta.put({ key: 'lastPulledAt', value: INITIAL_CURSOR })
+        )
       }
     )
   } catch (error) {
@@ -1293,7 +1285,7 @@ export async function initialSync(userId: string): Promise<void> {
 
     try {
       setState({ status: 'syncing' })
-      const lastPulledAt = (await getMeta('lastPulledAt')) ?? EPOCH_ISO
+      const lastPulledAt = (await getMeta('lastPulledAt')) ?? INITIAL_CURSOR
       const delta = await syncBackend!.bootstrap({
         deviceId,
         lastPulledAt,
@@ -1346,7 +1338,7 @@ export async function reconnectRevokedDevice(): Promise<void> {
   return withSyncMutex(async () => {
     wireRealtimeListeners()
     try {
-      const lastPulledAt = (await getMeta('lastPulledAt')) ?? EPOCH_ISO
+      const lastPulledAt = (await getMeta('lastPulledAt')) ?? INITIAL_CURSOR
       const delta = await syncBackend!.bootstrap({
         deviceId,
         lastPulledAt,
@@ -1415,7 +1407,7 @@ export async function getSyncDiagnostics(): Promise<{
     : 'disconnected'
   return {
     deviceId,
-    lastPulledAt: (await getMeta('lastPulledAt')) ?? EPOCH_ISO,
+    lastPulledAt: (await getMeta('lastPulledAt')) ?? INITIAL_CURSOR,
     queueDepth: (await getQueue()).length,
     wsState,
     failedOps: await loadFailedOps()

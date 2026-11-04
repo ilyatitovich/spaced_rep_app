@@ -185,6 +185,40 @@ test.describe('multi-device sync: offline edits and last-write-wins', () => {
     })
   }
 
+  // The pull cursor is a server sequence, not the client timestamp: B has
+  // already pulled past A's old edit time when A's edit finally lands, and B
+  // must still receive it. B is offline while A pushes so the WebSocket fanout
+  // cannot be what delivers it.
+  test('an offline edit with an old timestamp reaches a peer whose cursor is already past it', async ({
+    browser
+  }) => {
+    test.setTimeout(240_000)
+    const stamp = Date.now()
+    const base = `Late ${stamp}`
+    const editedOnA = `${stamp} late edit from A`
+    const newerOnB = `Newer on B ${stamp}`
+    const [a, b] = await twoDevicesSharingTopic(browser, base)
+
+    try {
+      await a.context.setOffline(true)
+      await renameTopicInSettings(a.page, editedOnA)
+
+      // B writes later than A's edit and syncs, moving B's cursor past it.
+      await b.page.goto('/')
+      await createTopicFromHome(b.page, newerOnB)
+      await waitForQueueDrained(b)
+      await b.context.setOffline(true)
+
+      await reconnectAndDrainQueue(a)
+
+      await b.context.setOffline(false)
+      await waitForTopicOnHome(b.page, editedOnA)
+      await waitForTopicGoneFromHome(b.page, base)
+    } finally {
+      await closeDevices([a, b])
+    }
+  })
+
   test('an offline edit older than a remote delete does not resurrect the topic', async ({
     browser
   }) => {

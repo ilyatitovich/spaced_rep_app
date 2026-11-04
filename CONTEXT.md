@@ -86,7 +86,7 @@ _Confidence: High_
 
 **Bootstrap:** `main.tsx` awaits `bootstrapLocalSettings()` and `hydrateStudyMemory()` (IDB → maps) before first paint. If hydration fails the app shows the error screen instead of an empty library; a settings failure falls back to defaults. Memory hands out isolated copies (topics are cloned on read and write, cards are shallow-cloned on write), so callers can edit freely and a failed IndexedDB write rolls back to the true previous value.
 
-**Sync engine** — see [docs/sync.md](docs/sync.md). Summary: outbox coalesce by `` `${table}:${recordId}` ``, LWW on `updatedAt`, tombstones applied only when remote wins, `lastPulledAt` moves forward only, Pro device cap of 3.
+**Sync engine** — see [docs/sync.md](docs/sync.md). Summary: outbox coalesce by `` `${table}:${recordId}` ``, LWW on `updatedAt`, tombstones applied only when remote wins, pull cursor is a server-assigned `serverSeq` (`lastPulledAt` moves forward only), Pro device cap of 3.
 
 **Reactive UI:** Zustand topics store and open screens subscribe to `subscribeSyncData()` / study-memory notifies and refresh from memory-backed getters.
 

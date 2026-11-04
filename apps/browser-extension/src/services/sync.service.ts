@@ -1,5 +1,9 @@
 import { createHttpSyncClient } from '@spaced-rep/sync-client'
-import type { MediaDBRecord, Mutation } from '@spaced-rep/sync-protocol'
+import {
+  INITIAL_CURSOR,
+  type MediaDBRecord,
+  type Mutation
+} from '@spaced-rep/sync-protocol'
 import {
   mergePreparedMedia,
   prepareWireCardData,
@@ -99,8 +103,7 @@ export async function bootstrapTopics(): Promise<Topic[]> {
   if (!(await hasPro())) return []
   const id = await deviceId()
   const stored = await readValue(WATERMARK_KEY)
-  const watermark =
-    typeof stored === 'string' ? stored : new Date(0).toISOString()
+  const watermark = typeof stored === 'string' ? stored : INITIAL_CURSOR
   const response = await syncClient.bootstrap(
     id,
     watermark,

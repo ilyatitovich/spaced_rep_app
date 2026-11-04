@@ -23,7 +23,7 @@ import {
 } from '../../../../testing/helpers/auth/session.js'
 import { createSyncWss } from './ws.handler.js'
 
-const EPOCH = new Date(0).toISOString()
+const EPOCH = '0'
 
 class Client {
   readonly frames: SyncEnvelope[] = []

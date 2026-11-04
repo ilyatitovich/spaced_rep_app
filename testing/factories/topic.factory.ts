@@ -4,6 +4,7 @@ import type {
   Topic
 } from '../../apps/server/src/generated/prisma/client.js'
 import { getTestPrisma } from '../db/prisma.js'
+import { nextServerSeq } from './server-seq.js'
 
 export interface TopicBuildInput {
   id: string
@@ -15,6 +16,8 @@ export interface TopicBuildInput {
   isArchived: boolean
   updatedAt: Date
   deletedAt: Date | null
+  /** Defaults to the next sequence for the user, like a real push would. */
+  serverSeq?: bigint
 }
 
 export const topicFactory = {
@@ -49,7 +52,8 @@ export const topicFactory = {
         nextUpdateDate: data.nextUpdateDate,
         isArchived: data.isArchived,
         updatedAt: data.updatedAt,
-        deletedAt: data.deletedAt
+        deletedAt: data.deletedAt,
+        serverSeq: data.serverSeq ?? (await nextServerSeq(data.userId))
       }
     })
   }

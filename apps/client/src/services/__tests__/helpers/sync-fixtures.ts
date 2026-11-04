@@ -2,7 +2,7 @@ import { STORES } from '@/lib/db'
 import type { PullDelta, PushAck } from '@spaced-rep/sync-protocol'
 import { table } from './fake-idb'
 
-export const EPOCH_ISO = new Date(0).toISOString()
+export { INITIAL_CURSOR } from '@spaced-rep/sync-protocol'
 
 export function seedMeta(key: string, value: string): void {
   table(STORES.SYNC_META).set(key, { key, value })
@@ -13,7 +13,7 @@ export function metaValue(key: string): string | undefined {
     ?.value
 }
 
-export function emptyDelta(watermark = '2024-06-01T00:00:00.000Z'): PullDelta {
+export function emptyDelta(watermark = '20240601'): PullDelta {
   return { records: [], watermark, more: false }
 }
 

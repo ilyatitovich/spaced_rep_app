@@ -167,7 +167,7 @@ describe('hydrateIncomingCardData', () => {
 
     const hydrated = await hydrateIncomingCardData(
       {
-        watermark: '2020-01-01T00:00:00.000Z',
+        watermark: '20200101',
         more: false,
         records: [
           {
@@ -233,7 +233,7 @@ describe('hydrateIncomingCardData', () => {
     await expect(
       hydrateIncomingCardData(
         {
-          watermark: '2020-01-01T00:00:00.000Z',
+          watermark: '20200101',
           more: false,
           records: [
             {
@@ -275,7 +275,7 @@ describe('hydrateIncomingCardData', () => {
     await expect(
       hydrateIncomingCardData(
         {
-          watermark: '2020-01-01T00:00:00.000Z',
+          watermark: '20200101',
           more: false,
           records: [
             {
@@ -330,7 +330,7 @@ describe('hydrateIncomingCardData', () => {
     await expect(
       hydrateIncomingCardData(
         {
-          watermark: '2020-01-01T00:00:00.000Z',
+          watermark: '20200101',
           more: false,
           records: [
             {

@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
-export const PROTOCOL_VERSION = 3
+/** v4: pull cursors are server-assigned sequences (see cursor.ts), not client timestamps. */
+export const PROTOCOL_VERSION = 4
 
 /** Lowercase hex SHA-256 digest. */
 export const SHA256_HEX = /^[0-9a-f]{64}$/

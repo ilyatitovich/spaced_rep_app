@@ -63,7 +63,7 @@ const {
 const { __resetStudyMemoryForTests, hydrateStudyMemory } =
   await import('../study-memory')
 
-const BOOTSTRAP_WATERMARK = '2024-06-01T00:00:00.000Z'
+const BOOTSTRAP_WATERMARK = '20240601'
 
 /** Handlers the engine registered with `connectRealtime`. */
 function handlers(): SyncRealtimeHandlers {
@@ -277,18 +277,14 @@ describe('push over realtime with HTTP fallback', () => {
 describe('onDelta', () => {
   it('applies a pushed delta and advances the watermark', async () => {
     await startRealtime()
-    const delta = topicDelta(
-      'topic-ws',
-      'From peer',
-      '2024-07-01T00:00:00.000Z'
-    )
+    const delta = topicDelta('topic-ws', 'From peer', '20240701')
 
     handlers().onDelta(delta)
 
     await vi.waitFor(() =>
       expect(table(STORES.TOPICS).get('topic-ws')).toBeDefined()
     )
-    expect(metaValue('lastPulledAt')).toBe('2024-07-01T00:00:00.000Z')
+    expect(metaValue('lastPulledAt')).toBe('20240701')
     expect(pullMock).not.toHaveBeenCalled()
   })
 
@@ -298,12 +294,10 @@ describe('onDelta', () => {
       new Error('hydrate failed')
     )
     pullMock.mockResolvedValueOnce(
-      topicDelta('topic-ws', 'From peer', '2024-07-01T00:00:00.000Z')
+      topicDelta('topic-ws', 'From peer', '20240701')
     )
 
-    handlers().onDelta(
-      topicDelta('topic-ws', 'From peer', '2024-08-01T00:00:00.000Z')
-    )
+    handlers().onDelta(topicDelta('topic-ws', 'From peer', '20240801'))
 
     await vi.waitFor(() =>
       expect(table(STORES.TOPICS).get('topic-ws')).toBeDefined()
@@ -313,7 +307,7 @@ describe('onDelta', () => {
       deviceId: 'device-1',
       since: BOOTSTRAP_WATERMARK
     })
-    expect(metaValue('lastPulledAt')).toBe('2024-07-01T00:00:00.000Z')
+    expect(metaValue('lastPulledAt')).toBe('20240701')
     expect(console.error).toHaveBeenCalledWith(
       'WS delta apply failed:',
       expect.any(Error)
@@ -327,9 +321,7 @@ describe('onDelta', () => {
     )
     pullMock.mockRejectedValueOnce(new Error('offline'))
 
-    handlers().onDelta(
-      topicDelta('topic-ws', 'From peer', '2024-08-01T00:00:00.000Z')
-    )
+    handlers().onDelta(topicDelta('topic-ws', 'From peer', '20240801'))
 
     await vi.waitFor(() =>
       expect(console.error).toHaveBeenCalledWith(
@@ -342,7 +334,7 @@ describe('onDelta', () => {
 
     // Next normal sync still works and picks the range up.
     pullMock.mockResolvedValueOnce(
-      topicDelta('topic-ws', 'From peer', '2024-08-01T00:00:00.000Z')
+      topicDelta('topic-ws', 'From peer', '20240801')
     )
     await syncAll('user-a')
     expect(table(STORES.TOPICS).get('topic-ws')).toBeDefined()

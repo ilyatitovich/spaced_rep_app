@@ -115,7 +115,7 @@ function remoteTopicDelta(id: string): PullDelta {
         }
       }
     ],
-    watermark: '2024-06-01T00:00:00.000Z',
+    watermark: '20240601',
     more: false
   }
 }
