@@ -208,6 +208,42 @@ describe('parseApkg + apkgToCards', () => {
     ).toBe(true)
   })
 
+  it('normalizes Anki math delimiters into text blocks', async () => {
+    const apkg = await buildApkg({
+      notes: [
+        [
+          'Area [$]x^2[/$] and [latex]\\sum n[/latex]',
+          'Also <anki-mathjax>a+b</anki-mathjax>'
+        ]
+      ]
+    })
+
+    const parsed = await parseApkg(apkg)
+    const [note] = parsed.notes
+    if (!note) throw new Error('expected one parsed note')
+
+    const data = noteFieldsToCardData(
+      note.fields,
+      parsed.mediaByName,
+      note.fieldNames
+    )
+    const frontText = data.front.blocks
+      .filter(b => b.type === 'text')
+      .map(b => b.html)
+      .join('')
+    const backText = data.back.blocks
+      .filter(b => b.type === 'text')
+      .map(b => b.html)
+      .join('')
+
+    expect(frontText).toContain('\\(x^2\\)')
+    expect(frontText).toContain('\\[\\sum n\\]')
+    expect(frontText).not.toContain('[$]')
+    expect(frontText).not.toContain('[latex]')
+    expect(backText).toContain('\\(a+b\\)')
+    expect(backText).not.toContain('anki-mathjax')
+  })
+
   it('prefers collection.anki21 over a dummy collection.anki2', async () => {
     const SQL = await initSqlJs()
     const real = new SQL.Database()

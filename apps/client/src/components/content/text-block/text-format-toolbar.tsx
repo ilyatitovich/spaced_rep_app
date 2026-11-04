@@ -7,6 +7,7 @@ import {
   Italic,
   List,
   ListOrdered,
+  Sigma,
   Underline
 } from 'lucide-react'
 import Button from '@/components/ui/button'
@@ -51,6 +52,7 @@ interface TextFormatToolbarProps {
   onBulletList: () => void
   onNumberedList: () => void
   onCode: () => void
+  onMath: () => void
 }
 
 export function isToolbarTarget(target: EventTarget | null): boolean {
@@ -162,7 +164,8 @@ export default function TextFormatToolbar({
   onUnderline,
   onBulletList,
   onNumberedList,
-  onCode
+  onCode,
+  onMath
 }: TextFormatToolbarProps) {
   const rangeRef = useRef<{ from: number; to: number } | null>(null)
   const isTouch = isTouchDevice()
@@ -276,6 +279,15 @@ export default function TextFormatToolbar({
           }}
         >
           <CodeXml className="w-4 h-4" strokeWidth={3} />
+        </Button>
+        <Button
+          tabIndex={-1}
+          variant="unstyled"
+          className={toolbarBtnClass(false)}
+          aria-label="Math"
+          onClick={() => apply(onMath)}
+        >
+          <Sigma className="w-4 h-4" strokeWidth={3} />
         </Button>
       </div>
     </div>

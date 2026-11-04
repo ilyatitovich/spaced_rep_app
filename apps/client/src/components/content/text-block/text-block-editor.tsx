@@ -11,6 +11,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 import { LONGTEXT_THRESHOLD } from '@/lib/constants'
 import { getClipboardImage } from '@/lib/image'
 import { sanitizeCardHtml } from '@/lib/sanitize-html'
+import CardRichText from './card-rich-text'
 
 export interface TextBlockEditorHandle {
   getHtml: () => string
@@ -146,15 +147,13 @@ function TextBlockEditorInner(
     const isLongPlaceholder =
       html.replace(/<[^>]*>/g, '').length > LONGTEXT_THRESHOLD
     return (
-      <div
-        className={`w-full min-h-[1.5em] ${
+      <CardRichText
+        html={html || '<p></p>'}
+        className={`w-full min-h-[1.5em] card-rich-text ${
           isLongPlaceholder
             ? 'is-long text-left text-lg'
             : 'text-center text-3xl font-card leading-10'
         }`}
-        dangerouslySetInnerHTML={{
-          __html: sanitizeCardHtml(html || '<p></p>')
-        }}
       />
     )
   }

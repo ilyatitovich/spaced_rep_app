@@ -17,6 +17,7 @@ import { flushSync } from 'react-dom'
 import { toast } from 'react-hot-toast'
 import AudioBlock from './content/audio-block/audio-block'
 import ImageBlock from './content/image-block/image-block'
+import CardRichText from './content/text-block/card-rich-text'
 import TextBlockEditor, {
   type TextBlockEditorHandle
 } from './content/text-block/text-block-editor'
@@ -294,6 +295,20 @@ export default forwardRef(function Side(
     })
   }
 
+  /** Wrap selection in `\(...\)`, or insert empty delimiters with the caret inside. */
+  const wrapSelectionInMath = () => {
+    const editor = activeEditor()
+    if (!editor) return
+    const { from, to, empty } = editor.state.selection
+    const selected = empty ? '' : editor.state.doc.textBetween(from, to)
+    const wrapped = `\\(${selected}\\)`
+    editor.view.dispatch(editor.state.tr.insertText(wrapped, from, to))
+    if (empty) {
+      editor.commands.setTextSelection(from + 2)
+    }
+    editor.commands.focus()
+  }
+
   const removeBlock = (index: number) => {
     emit(readBlocks().filter((_, i) => i !== index))
   }
@@ -401,6 +416,7 @@ export default forwardRef(function Side(
         onBulletList={() => activeEditor()?.chain().toggleBulletList().run()}
         onNumberedList={() => activeEditor()?.chain().toggleOrderedList().run()}
         onCode={convertSelectionToCode}
+        onMath={wrapSelectionInMath}
       />
       <div className="h-full w-full overflow-hidden border-foreground border-6 rounded-4xl bg-card">
         <div
@@ -413,16 +429,14 @@ export default forwardRef(function Side(
                 if (!isEditable) {
                   const plainLen = block.html.replace(/<[^>]*>/g, '').length
                   return (
-                    <div
+                    <CardRichText
                       key={`text-${index}`}
+                      html={block.html}
                       className={`w-full card-rich-text wrap-break-word ${
                         plainLen > LONGTEXT_THRESHOLD
                           ? 'is-long text-left text-lg'
                           : 'text-center text-3xl font-card leading-10'
                       }`}
-                      dangerouslySetInnerHTML={{
-                        __html: sanitizeCardHtml(block.html)
-                      }}
                     />
                   )
                 }

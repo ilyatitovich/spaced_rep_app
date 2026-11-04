@@ -1,6 +1,7 @@
 import { normalizeSide } from '@/lib/normalize-card'
 import { Card } from '@/models/card.model'
 import type { CardData, SideBlock, SideName } from '@/types'
+import { normalizeAnkiMath } from './normalize-anki-math'
 import type { AnkiMediaFile, ParsedAnkiNote, ParsedApkg } from './parse-apkg'
 
 const SOUND_RE = /\[sound:([^\]]+)\]/gi
@@ -97,18 +98,19 @@ export function fieldHtmlToBlocks(
   html: string,
   mediaByName: Map<string, AnkiMediaFile>
 ): SideBlock[] {
-  const hits = collectMediaHits(html)
+  const normalized = normalizeAnkiMath(html)
+  const hits = collectMediaHits(normalized)
   const blocks: SideBlock[] = []
   let cursor = 0
 
   for (const hit of hits) {
     if (hit.index < cursor) continue
-    pushText(blocks, html.slice(cursor, hit.index))
+    pushText(blocks, normalized.slice(cursor, hit.index))
     pushMedia(blocks, hit.kind, hit.name, mediaByName)
     cursor = hit.end
   }
 
-  pushText(blocks, html.slice(cursor))
+  pushText(blocks, normalized.slice(cursor))
   return blocks
 }
 
