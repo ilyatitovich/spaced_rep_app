@@ -1,5 +1,5 @@
 import { Archive, CircleUserRound, List } from 'lucide-react'
-import { useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useSearchParams } from 'react-router'
 import { useDebouncedCallback } from 'use-debounce'
 
@@ -94,6 +94,19 @@ export default function HomePage() {
   const handleSearch = useDebouncedCallback((value: string) => {
     searchTopics(value)
   }, 300)
+
+  const handleCloseTopic = useCallback(() => {
+    setSearchParams(prev => {
+      const params = new URLSearchParams(prev)
+      params.delete('topicId')
+      params.delete('topicSettings')
+      params.delete('test')
+      params.delete('levelId')
+      params.delete('cardId')
+      params.delete('addCard')
+      return params
+    })
+  }, [setSearchParams])
 
   return (
     <main>
@@ -197,14 +210,7 @@ export default function HomePage() {
       <TopicScreen
         isOpen={currentTopic !== null}
         topicId={currentTopic ?? ''}
-        onClose={() =>
-          setSearchParams(prev => {
-            const params = new URLSearchParams(prev)
-            params.delete('topicId')
-            params.delete('topicSettings')
-            return params
-          })
-        }
+        onClose={handleCloseTopic}
       />
 
       <AuthScreen isOpen={isAuthScreenOpen} />

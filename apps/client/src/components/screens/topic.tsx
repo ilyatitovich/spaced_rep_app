@@ -1,5 +1,6 @@
 import { Settings } from 'lucide-react'
 import { useEffect, useState, useRef, useCallback } from 'react'
+import { toast } from 'react-hot-toast'
 import { useSearchParams } from 'react-router'
 
 import {
@@ -64,9 +65,17 @@ export default function TopicScreen({
         }
       } catch (error) {
         console.error('Failed to fetch topic:', error)
+        if (
+          error instanceof Error &&
+          error.message === `Topic with ID ${topicId} not found`
+        ) {
+          setTopic(null)
+          toast.error('This topic was deleted')
+          onClose()
+        }
       }
     },
-    [topicId]
+    [topicId, onClose]
   )
 
   const fetchLevelCards = useCallback(async (): Promise<void> => {
