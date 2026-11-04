@@ -21,7 +21,7 @@
     "@codemirror/lang-sql": "^6.10.0",
     "@sentry/browser": "^10.75.2",
     "@sentry/react": "^10.75.2",
-    "@sentry/replay": "10.75.2",
+    "@sentry/replay": "11.10.0",
     "@simplewebauthn/browser": "^13.3.0",
     "@spaced-rep/sync-client": "workspace:*",
     "@spaced-rep/sync-protocol": "workspace:*",
