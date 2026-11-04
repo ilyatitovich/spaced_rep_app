@@ -36,11 +36,15 @@ import {
 
 const DELETE_CHUNK = 50
 
+function duplicateTitleError(title: string): Error {
+  return new Error(
+    `A topic with the title "${title}" already exists. Topic title must be unique.`
+  )
+}
+
 export async function createTopic(topic: Topic): Promise<void> {
   if (findTopicByTitle(topic.title)) {
-    throw new Error(
-      `A topic with the title "${topic.title}" already exists. Topic title must be unique.`
-    )
+    throw duplicateTitleError(topic.title)
   }
 
   const previous = putTopicInMemory(topic)
@@ -61,9 +65,7 @@ export async function createTopic(topic: Topic): Promise<void> {
     restoreTopicInMemory(topic.id, previous)
     emitStudyData()
     if ((error as Error).name === 'ConstraintError') {
-      throw new Error(
-        `A topic with the title "${topic.title}" already exists. Topic title must be unique.`
-      )
+      throw duplicateTitleError(topic.title)
     }
     console.error('Failed to save topic:', error)
     throw error
@@ -195,6 +197,12 @@ export async function deleteTopic(topicId: string): Promise<void> {
 
 async function persistTopics(topics: Topic[]): Promise<void> {
   const now = Date.now()
+  for (const topic of topics) {
+    const clash = findTopicByTitle(topic.title)
+    if (clash && clash.id !== topic.id) {
+      throw duplicateTitleError(topic.title)
+    }
+  }
   const previous = topics.map(topic => {
     topic.updatedAt = now
     return { id: topic.id, previous: putTopicInMemory(topic) }
@@ -234,6 +242,10 @@ async function persistTopics(topics: Topic[]): Promise<void> {
       restoreTopicInMemory(entry.id, entry.previous)
     }
     emitStudyData()
+    if ((error as Error).name === 'ConstraintError') {
+      const title = topics[0]?.title ?? ''
+      throw duplicateTitleError(title)
+    }
     throw error
   }
 

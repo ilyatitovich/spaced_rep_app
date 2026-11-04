@@ -63,11 +63,13 @@ export default function TopicSettings({
       return
     }
 
+    const previousTitle = topic.title
     try {
       topic.title = title
       await updateTopic(topic)
       toast.success('Title updated!')
     } catch (error) {
+      topic.title = previousTitle
       if (error instanceof Error) {
         setError(error.message)
       }
