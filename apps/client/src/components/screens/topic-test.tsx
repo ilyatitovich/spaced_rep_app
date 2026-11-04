@@ -38,6 +38,7 @@ export default function TestScreen({ isOpen, topic }: TestScreenProps) {
   const [prevCard, setPrevCard] = useState<CardModel | null>(null)
 
   const totalCardsRef = useRef(0)
+  const isGradingRef = useRef(false)
   const hostRef = useRef<HTMLDivElement>(null)
 
   const isDone = cards && cards.length === 0
@@ -70,38 +71,47 @@ export default function TestScreen({ isOpen, topic }: TestScreenProps) {
   useEffect(() => {
     async function setTopic(): Promise<void> {
       try {
-        completeStudyDay(topic.week[getToday()]!)
         await updateTopic(topic)
       } catch (error) {
         console.error(error)
       }
     }
 
-    if (isDone) {
-      setTopic()
-    }
+    if (!isDone) return
+    // updateTopic re-emits study data and the parent hands back a fresh `topic`
+    // that already has the day done; without this guard that re-runs the effect.
+    const today = topic.week[getToday()]
+    if (!today || today.isDone) return
+    completeStudyDay(today)
+    void setTopic()
   }, [isDone, topic])
 
   async function handleAnswer(isCorrect: boolean): Promise<void> {
+    if (isGradingRef.current || !cards) return
+    const [currentCard, ...rest] = cards
+    if (!currentCard) return
+
+    isGradingRef.current = true
     try {
-      if (!cards) return
-      const currentCard = cards.shift()
-      if (!currentCard) return
+      // Grade a copy: `currentCard` is the live store object, and mutating it
+      // would defeat updateCard's rollback if the write fails.
+      const graded = {
+        ...currentCard,
+        ...gradeCard(currentCard.level, isCorrect, Date.now())
+      }
 
-      const graded = gradeCard(currentCard.level, isCorrect, Date.now())
-      currentCard.level = graded.level
-      currentCard.reviewDate = graded.reviewDate
-
-      await updateCard(currentCard)
+      await updateCard(graded)
 
       setIsCorrect(isCorrect)
-      setCards(cards)
+      setCards(rest)
       setIsFlipped(false)
       setIsInitialRender(false)
-      setPrevCard(currentCard)
+      setPrevCard(graded)
       setIsFirstCardActive(prev => !prev)
     } catch (error) {
       console.error('Error updating card:', error)
+    } finally {
+      isGradingRef.current = false
     }
   }
 

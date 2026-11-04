@@ -37,6 +37,8 @@ Push, pull and bootstrap are validated before any work happens; failures are 4xx
 
 When two devices edit the same topic or card, the **entire winning record** replaces the loser. Grades, text blocks, and media on the losing write are discarded — there is no per-field merge and no review log replay.
 
+The Sunday week rebuild (`updateWeek`, run from `getAllTopics`) is the same kind of whole-topic write: if two devices roll the week, or one rolls while another finishes today's study, the later `updatedAt` wins and can overwrite the other's `isDone` flags. Accepted for the beta; a review log (ADR-2) is the fix if users report it.
+
 Duplicate topic titles on import/migrate are renamed on the server to `"{title} ({shortId})"`.
 
 ## Sign-out and account switch
