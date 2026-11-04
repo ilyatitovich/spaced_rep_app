@@ -11,6 +11,7 @@ import { Play, Square } from 'lucide-react'
 import type { MediaDBRecord } from '@/types'
 import MediaToolbar from '@/components/content/media-toolbar'
 import ObjectUrl from '@/components/content/object-url'
+import { attachCardMediaFile } from '@/lib/attach-card-media'
 import { AUDIO_FILE_ACCEPT } from '@/lib/constants'
 import Button from '@/components/ui/button'
 
@@ -105,14 +106,12 @@ export default function AudioBlock({
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
-    const buffer = await file.arrayBuffer()
+    const block = await attachCardMediaFile(file, 'audio')
+    if (block?.type !== 'audio') return
     setIsPlaying(false)
     setCurrentTime(0)
     setDuration(0)
-    onChange?.({
-      buffer,
-      type: file.type || 'audio/mpeg'
-    })
+    onChange?.(block.content)
   }
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0

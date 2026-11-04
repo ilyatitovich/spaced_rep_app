@@ -364,6 +364,18 @@ body {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   font-size: clamp(1rem, 0.75rem + 4vw, 1.25rem);
   line-height: 1.2;
+  background:
+    radial-gradient(
+      ellipse 80% 60% at 20% 20%,
+      color-mix(in srgb, var(--color-background-accent) 55%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 70% 50% at 90% 80%,
+      color-mix(in srgb, var(--color-background-tertiary) 80%, transparent),
+      transparent 55%
+    ),
+    var(--color-background-secondary);
 }
 
 #root {
@@ -381,22 +393,7 @@ body {
   display: none;
 }
 
-@media (min-width: 960px) {
-  body {
-    background:
-      radial-gradient(
-        ellipse 80% 60% at 20% 20%,
-        color-mix(in srgb, var(--color-background-accent) 55%, transparent),
-        transparent 60%
-      ),
-      radial-gradient(
-        ellipse 70% 50% at 90% 80%,
-        color-mix(in srgb, var(--color-background-tertiary) 80%, transparent),
-        transparent 55%
-      ),
-      var(--color-background-secondary);
-  }
-
+@media (min-width: 1200px) {
   #root,
   [data-screen] {
     box-shadow:

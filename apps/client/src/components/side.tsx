@@ -1,4 +1,4 @@
-import type { FocusEvent, FocusEventHandler, Ref } from 'react'
+import type { DragEvent, FocusEvent, FocusEventHandler, Ref } from 'react'
 import type { CardSideData, SideBlock, SideName } from '@/types'
 import type { Editor } from '@tiptap/react'
 import { DOMSerializer } from '@tiptap/pm/model'
@@ -15,7 +15,6 @@ import {
 } from 'react'
 import { flushSync } from 'react-dom'
 import { toast } from 'react-hot-toast'
-
 import AudioBlock from './content/audio-block/audio-block'
 import ImageBlock from './content/image-block/image-block'
 import TextBlockEditor, {
@@ -26,15 +25,21 @@ import TextFormatToolbar, {
 } from './content/text-block/text-format-toolbar'
 import Spinner from './ui/spinner'
 import {
+  appendSideBlocks,
   didAppendSideBlock,
   insertSideBlock,
   isTextHtmlEmpty,
   replaceTextSelectionWithCode
 } from '@/lib/check-content'
 import { LONGTEXT_THRESHOLD } from '@/lib/constants'
-import { blobToRecord, processImage } from '@/lib/image'
+import { attachCardMediaFile } from '@/lib/attach-card-media'
 import { runInTapFocus } from '@/lib/pwa'
 import { sanitizeCardHtml } from '@/lib/sanitize-html'
+import {
+  mediaFilesFromDataTransfer,
+  mediaValidationMessage,
+  validateCardMediaFile
+} from '@/lib/validate-card-media'
 
 const CodeBlockEditor = lazy(
   () => import('./content/code-block/code-block-editor')
@@ -113,6 +118,7 @@ export default forwardRef(function Side(
 ) {
   const [isTextFocused, setIsTextFocused] = useState(false)
   const [focusedTextIndex, setFocusedTextIndex] = useState<number | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
   const textEditors = useRef<Map<number, TextBlockEditorHandle>>(new Map())
   const codeEditors = useRef<Map<number, { focus: () => void }>>(new Map())
   const focusedTextIndexRef = useRef<number | null>(null)
@@ -194,25 +200,58 @@ export default forwardRef(function Side(
 
   const pasteImageAt = (index: number, file: File) => {
     void (async () => {
-      try {
-        const record = await blobToRecord(await processImage(file))
-        const blocks = readBlocks()
-        const at = blocks[index]
-        if (at?.type === 'text' && isTextHtmlEmpty(at.html)) {
-          skipBlurRef.current = true
-          setIsTextFocused(false)
-          setFocusedTextIndex(null)
-        }
-        emit(
-          insertSideBlock(blocks, index, {
-            type: 'image',
-            content: record
-          })
-        )
-      } catch (err) {
-        console.error('Failed to paste image:', err)
-        toast.error('Couldn’t process that image. Try another file.')
+      const block = await attachCardMediaFile(file, 'image')
+      if (!block || block.type !== 'image') return
+      const blocks = readBlocks()
+      const at = blocks[index]
+      if (at?.type === 'text' && isTextHtmlEmpty(at.html)) {
+        skipBlurRef.current = true
+        setIsTextFocused(false)
+        setFocusedTextIndex(null)
       }
+      emit(insertSideBlock(blocks, index, block))
+    })()
+  }
+
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    if (!isEditable) return
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'copy'
+    if (!isDragging) setIsDragging(true)
+  }
+
+  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
+    const next = e.relatedTarget
+    if (next instanceof Node && e.currentTarget.contains(next)) return
+    setIsDragging(false)
+  }
+
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+    if (!isEditable) return
+    e.preventDefault()
+    setIsDragging(false)
+    const files = mediaFilesFromDataTransfer(e.dataTransfer)
+    if (!files.length) return
+
+    let chosen: File | null = null
+    let lastErr: ReturnType<typeof validateCardMediaFile> | null = null
+    for (const f of files) {
+      const result = validateCardMediaFile(f)
+      if (result.ok) {
+        chosen = f
+        break
+      }
+      lastErr = result
+    }
+    if (!chosen) {
+      if (lastErr && !lastErr.ok) toast.error(mediaValidationMessage(lastErr))
+      return
+    }
+
+    void (async () => {
+      const block = await attachCardMediaFile(chosen)
+      if (!block) return
+      emit(appendSideBlocks(readBlocks(), [block]))
     })()
   }
 
@@ -341,7 +380,16 @@ export default forwardRef(function Side(
         isVisible ? '' : 'pointer-events-none'
       } ${isPainted ? '' : 'hidden'} ${
         data.side === 'back' ? 'card-face-back' : ''
-      }`.trim()}
+      } ${isDragging ? 'ring-2 ring-primary' : ''}`.trim()}
+      {...(isEditable
+        ? {
+            'role': 'region' as const,
+            'aria-label': 'Drop image or audio',
+            'onDragOver': handleDragOver,
+            'onDragLeave': handleDragLeave,
+            'onDrop': handleDrop
+          }
+        : {})}
       onClick={focusEmptySide}
     >
       <TextFormatToolbar

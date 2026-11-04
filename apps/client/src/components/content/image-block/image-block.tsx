@@ -1,8 +1,6 @@
 import type { ChangeEvent, MouseEvent, TouchEvent } from 'react'
 import { useEffect, useState } from 'react'
 import { Maximize2 } from 'lucide-react'
-import { toast } from 'react-hot-toast'
-
 import MediaToolbar from '@/components/content/media-toolbar'
 import ObjectUrl from '@/components/content/object-url'
 import ImageFrame from './image-frame'
@@ -11,8 +9,8 @@ import ImageEditorScreen from '@/components/screens/image-editor'
 import Spinner from '@/components/ui/spinner'
 import Button from '@/components/ui/button'
 import { useOnline } from '@/hooks/use-online'
+import { attachCardMediaFile } from '@/lib/attach-card-media'
 import { cacheRemoteImage, toHttpsImageUrl } from '@/lib/cache-remote-image'
-import { blobToRecord, processImage } from '@/lib/image'
 import type { ImageContent, MediaDBRecord } from '@/types'
 
 interface ImageBlockProps {
@@ -72,11 +70,10 @@ export default function ImageBlock({
 
     setIsConverting(true)
     try {
-      const webp = await processImage(file)
-      onChange?.(await blobToRecord(webp))
-    } catch (err) {
-      console.error('Failed to convert image:', err)
-      toast.error('Couldn’t process that image. Try another file.')
+      const block = await attachCardMediaFile(file, 'image')
+      if (block?.type === 'image' && 'buffer' in block.content) {
+        onChange?.(block.content)
+      }
     } finally {
       setIsConverting(false)
     }

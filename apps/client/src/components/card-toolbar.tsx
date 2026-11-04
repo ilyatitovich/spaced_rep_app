@@ -1,13 +1,12 @@
 import { useRef, type ChangeEvent } from 'react'
 import { flushSync } from 'react-dom'
-import { toast } from 'react-hot-toast'
 
 import CardButton from './card-button'
+import { attachCardMediaFile } from '@/lib/attach-card-media'
 import { AUDIO_FILE_ACCEPT } from '@/lib/constants'
-import { blobToRecord, processImage } from '@/lib/image'
 import { runInTapFocus } from '@/lib/pwa'
 import type { CodeLang } from '@/lib/code-lang'
-import type { MediaDBRecord, SideBlock } from '@/types'
+import type { SideBlock } from '@/types'
 
 interface CardToolbarProps {
   isTextDisabled: boolean
@@ -48,27 +47,16 @@ export default function CardToolbar({
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
-    try {
-      const webp = await processImage(file)
-      const record = await blobToRecord(webp)
-      onAddBlocks([{ type: 'image', content: record }])
-    } catch (err) {
-      console.error('Failed to add image:', err)
-      toast.error('Couldn’t process that image. Try another file.')
-    }
+    const block = await attachCardMediaFile(file, 'image')
+    if (block) onAddBlocks([block])
   }
 
   const handlePickAudio = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
-    try {
-      const buffer = await file.arrayBuffer()
-      const content: MediaDBRecord = { buffer, type: file.type || 'audio/mpeg' }
-      onAddBlocks([{ type: 'audio', content }])
-    } catch (err) {
-      console.error('Failed to add audio:', err)
-    }
+    const block = await attachCardMediaFile(file, 'audio')
+    if (block) onAddBlocks([block])
   }
 
   return (
