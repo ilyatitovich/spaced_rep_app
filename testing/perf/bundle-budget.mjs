@@ -3,6 +3,9 @@
  * Fails if client build assets exceed budgets in testing/perf/budgets.json.
  * Run after `pnpm --filter spaced_rep_pwa_client build`.
  *
+ * Counts shipped files only (excludes .map). Hidden sourcemaps dominate dist
+ * and are deleted after Sentry upload when SENTRY_AUTH_TOKEN is set.
+ *
  * Budgets are measured ceilings (not optimization targets). Lower them only
  * after a deliberate size win; never raise without recording why in the PR.
  */
@@ -34,8 +37,11 @@ try {
   process.exit(1)
 }
 
-const totalBytes = files.reduce((sum, f) => sum + statSync(f).size, 0)
-const jsAssets = files.filter(
+// Sourcemaps are not shipped to browsers (hidden) and are stripped on release
+// upload; including them made the total flaky and map-dominated (~16MB).
+const shipped = files.filter(f => !f.endsWith('.map'))
+const totalBytes = shipped.reduce((sum, f) => sum + statSync(f).size, 0)
+const jsAssets = shipped.filter(
   f => f.includes(`${join('dist', 'assets')}`) && f.endsWith('.js')
 )
 const largestJs = Math.max(0, ...jsAssets.map(f => statSync(f).size))

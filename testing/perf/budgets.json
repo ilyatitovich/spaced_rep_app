@@ -1,6 +1,6 @@
 {
-  "_comment": "Measured ceilings from a green client build (2026-11). Raise only with a written reason; lower after size wins. sql-asm dominates largestJsAssetBytes (Anki import).",
-  "distTotalBytes": 18000000,
+  "_comment": "Measured ceilings from a green client build (2026-11). distTotalBytes is shipped files only (no .map). Raise only with a written reason; lower after size wins. sql-asm dominates largestJsAssetBytes (Anki import; currently duplicated in worker + main parse-apkg chunk).",
+  "distTotalBytes": 6500000,
   "largestJsAssetBytes": 1500000,
   "fcpMs": 4000,
   "loadEventMs": 8000
