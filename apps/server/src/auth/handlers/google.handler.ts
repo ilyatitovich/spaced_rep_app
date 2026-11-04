@@ -3,6 +3,7 @@ import { AuthMethod } from '../../generated/prisma/enums.js'
 import { ForbiddenError } from '../../shared/lib/errors.js'
 import { parseBody, sendData } from '../../shared/lib/http.js'
 import { prisma } from '../../shared/lib/prisma.js'
+import { enforceRateLimit } from '../../shared/lib/redis.js'
 import { googleCallbackSchema } from '../schemas/index.js'
 import {
   exchangeGoogleCode,
@@ -124,6 +125,11 @@ export async function googleCallbackHandler(
   next: NextFunction
 ) {
   try {
+    await enforceRateLimit({
+      key: `auth:google:${req.ip ?? 'unknown'}`,
+      limit: 20,
+      windowSeconds: 60
+    })
     const body = parseBody(googleCallbackSchema, req.body)
     const claims = await exchangeGoogleCode(body)
     const user = await resolveGoogleUser({

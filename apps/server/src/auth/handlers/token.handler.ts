@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express'
 import { parseBody, sendData } from '../../shared/lib/http.js'
+import { enforceRateLimit } from '../../shared/lib/redis.js'
 import { refreshTokenSchema } from '../schemas/index.js'
 import { rotateRefreshToken, revokeSession } from '../services/index.js'
 
@@ -9,6 +10,11 @@ export async function refreshTokenHandler(
   next: NextFunction
 ) {
   try {
+    await enforceRateLimit({
+      key: `auth:refresh:${req.ip ?? 'unknown'}`,
+      limit: 60,
+      windowSeconds: 60
+    })
     const body = parseBody(refreshTokenSchema, req.body)
     const tokens = await rotateRefreshToken(body.refreshToken, {
       ipAddress: req.ip,

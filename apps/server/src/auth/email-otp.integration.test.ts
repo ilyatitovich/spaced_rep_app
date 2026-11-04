@@ -270,7 +270,7 @@ describe('request: throttling', () => {
 
 describe('fail closed', () => {
   it('rejects code requests when Redis is down (rate limiter)', async () => {
-    vi.spyOn(getRedis(), 'incr').mockRejectedValue(new Error('redis down'))
+    vi.spyOn(getRedis(), 'eval').mockRejectedValue(new Error('redis down'))
 
     const res = await postRequest(uniqueEmail('redis-down'))
 
@@ -290,7 +290,7 @@ describe('fail closed', () => {
   it('rejects verification when Redis is down', async () => {
     const email = uniqueEmail('redis-down-verify')
     const code = await issueCode(email)
-    vi.spyOn(getRedis(), 'incr').mockRejectedValue(new Error('redis down'))
+    vi.spyOn(getRedis(), 'eval').mockRejectedValue(new Error('redis down'))
 
     const res = await postVerify(email, code)
 

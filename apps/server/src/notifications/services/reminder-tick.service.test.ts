@@ -13,8 +13,10 @@ const redis = {
   set: vi.fn(),
   del: vi.fn()
 }
+const tryAcquireLeaderLock = vi.fn()
 vi.mock('../../shared/lib/redis.js', () => ({
-  getRedis: () => redis
+  getRedis: () => redis,
+  tryAcquireLeaderLock
 }))
 vi.mock('../../shared/lib/logger.js', () => ({
   logger: { info: vi.fn(), error: vi.fn() }
@@ -52,6 +54,7 @@ describe('runReminderTick', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     redis.set.mockResolvedValue('OK')
+    tryAcquireLeaderLock.mockResolvedValue(true)
   })
 
   it('filters entitlement in one query and only delivers eligible reminders', async () => {
@@ -62,11 +65,21 @@ describe('runReminderTick', () => {
 
     await runReminderTick(new Date('2026-09-17T09:00:00.000Z'))
 
+    expect(tryAcquireLeaderLock).toHaveBeenCalledWith('leader:reminder', 90)
     expect(prisma.notificationReminder.findMany).toHaveBeenCalledOnce()
     expect(notifyUser).toHaveBeenCalledOnce()
     expect(notifyUser).toHaveBeenCalledWith(
       expect.objectContaining({ userId: 'user-ACTIVE' }),
       true
     )
+  })
+
+  it('skips the tick when another replica holds the leader lock', async () => {
+    tryAcquireLeaderLock.mockResolvedValue(false)
+
+    await runReminderTick(new Date('2026-09-17T09:00:00.000Z'))
+
+    expect(prisma.notificationReminder.findMany).not.toHaveBeenCalled()
+    expect(notifyUser).not.toHaveBeenCalled()
   })
 })

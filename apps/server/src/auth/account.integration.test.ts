@@ -9,6 +9,7 @@ import {
 } from '../../../../testing/index.js'
 import {
   deleteAccount,
+  setAccountBillingCancelForTests,
   setAccountMediaStorageForTests
 } from './services/account.service.js'
 import type { R2Storage } from '../shared/lib/r2-storage.js'
@@ -16,6 +17,7 @@ import type { R2Storage } from '../shared/lib/r2-storage.js'
 describe('DELETE /auth/account', () => {
   afterEach(() => {
     setAccountMediaStorageForTests(null)
+    setAccountBillingCancelForTests(null)
   })
 
   it('removes the user, topics, cards, sessions, and R2 prefix', async () => {

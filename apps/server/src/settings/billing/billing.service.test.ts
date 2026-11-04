@@ -41,7 +41,8 @@ const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 vi.mock('../../shared/lib/logger.js', () => ({ logger }))
 
 vi.mock('../../shared/lib/redis.js', () => ({
-  enforceRateLimit: vi.fn()
+  enforceRateLimit: vi.fn(),
+  tryAcquireLeaderLock: vi.fn().mockResolvedValue(true)
 }))
 
 vi.mock('../services/ensure.service.js', () => ({

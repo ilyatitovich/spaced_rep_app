@@ -13,7 +13,10 @@ import {
 } from '../../shared/lib/errors.js'
 import { logger } from '../../shared/lib/logger.js'
 import { prisma } from '../../shared/lib/prisma.js'
-import { enforceRateLimit } from '../../shared/lib/redis.js'
+import {
+  enforceRateLimit,
+  tryAcquireLeaderLock
+} from '../../shared/lib/redis.js'
 import { ensureUserSettings } from '../services/ensure.service.js'
 import { isSubscriptionEntitled } from '../services/plan-entitlement.js'
 import type { BillingInterval } from './product.js'
@@ -27,9 +30,18 @@ import {
 const CHECKOUT_TTL_MS = 60 * 60 * 1_000
 export const SUBSCRIPTION_STALE_MS = 24 * 60 * 60 * 1_000
 const RECONCILIATION_INTERVAL_MS = SUBSCRIPTION_STALE_MS
+const LEADER_LOCK_KEY = 'leader:billing'
+const LEADER_LOCK_TTL_SECONDS = 25 * 60 * 60
 
 let reconciliationTimer: ReturnType<typeof setInterval> | null = null
 let reconciliationRunning = false
+let reconciliationIdleWaiters: Array<() => void> = []
+
+function notifyReconciliationIdle(): void {
+  const waiters = reconciliationIdleWaiters
+  reconciliationIdleWaiters = []
+  for (const resolve of waiters) resolve()
+}
 
 const webhookSchema = z.object({
   meta: z.object({
@@ -416,6 +428,9 @@ export async function reconcileStaleSubscriptions(
 
 async function runBillingReconciliation(): Promise<void> {
   if (reconciliationRunning) return
+  if (!(await tryAcquireLeaderLock(LEADER_LOCK_KEY, LEADER_LOCK_TTL_SECONDS))) {
+    return
+  }
   reconciliationRunning = true
   try {
     await reconcileStaleSubscriptions()
@@ -423,6 +438,7 @@ async function runBillingReconciliation(): Promise<void> {
     logger.error({ err }, 'Billing reconciliation scan failed')
   } finally {
     reconciliationRunning = false
+    notifyReconciliationIdle()
   }
 }
 
@@ -440,6 +456,14 @@ export function stopBillingReconciler(): void {
   if (!reconciliationTimer) return
   clearInterval(reconciliationTimer)
   reconciliationTimer = null
+}
+
+/** Resolves once any in-flight reconciliation finishes (for graceful shutdown). */
+export function whenBillingReconcilerIdle(): Promise<void> {
+  if (!reconciliationRunning) return Promise.resolve()
+  return new Promise(resolve => {
+    reconciliationIdleWaiters.push(resolve)
+  })
 }
 
 // oxlint-disable-next-line sonarjs/cognitive-complexity

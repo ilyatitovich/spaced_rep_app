@@ -22,7 +22,15 @@ export async function connectRedis(): Promise<void> {
   }
 }
 
-/** INCR + EXPIRE on first hit. Fail closed if Redis is unavailable. */
+/** Atomic INCR + EXPIRE via Lua. Fail closed if Redis is unavailable. */
+const RATE_LIMIT_SCRIPT = `
+local count = redis.call('INCR', KEYS[1])
+if count == 1 then
+  redis.call('EXPIRE', KEYS[1], ARGV[1])
+end
+return count
+`
+
 export async function enforceRateLimit(input: {
   key: string
   limit: number
@@ -34,10 +42,10 @@ export async function enforceRateLimit(input: {
     const redis = getRedis()
     if (!redis.isOpen) await redis.connect()
 
-    count = await redis.incr(input.key)
-    if (count === 1) {
-      await redis.expire(input.key, input.windowSeconds)
-    }
+    count = (await redis.eval(RATE_LIMIT_SCRIPT, {
+      keys: [input.key],
+      arguments: [String(input.windowSeconds)]
+    })) as number
   } catch (err) {
     logger.error({ err, key: input.key }, 'Rate limit Redis failure')
     throw new TooManyRequestsError(
@@ -78,5 +86,24 @@ export async function enforceCooldown(input: {
     throw new TooManyRequestsError(
       input.message ?? 'Please wait before requesting another code.'
     )
+  }
+}
+
+/**
+ * Soft leader lock for background loops. Returns true if this process should run.
+ * On Redis errors, returns false so replicas do not all stampede.
+ */
+export async function tryAcquireLeaderLock(
+  key: string,
+  ttlSeconds: number
+): Promise<boolean> {
+  try {
+    const redis = getRedis()
+    if (!redis.isOpen) await redis.connect()
+    const result = await redis.set(key, '1', { NX: true, EX: ttlSeconds })
+    return result === 'OK'
+  } catch (err) {
+    logger.error({ err, key }, 'Leader lock Redis failure')
+    return false
   }
 }

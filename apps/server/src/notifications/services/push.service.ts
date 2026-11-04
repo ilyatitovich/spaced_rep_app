@@ -1,7 +1,9 @@
 import webpush from 'web-push'
 import { env } from '../../shared/config/env.js'
+import { BadRequestError } from '../../shared/lib/errors.js'
 import { prisma } from '../../shared/lib/prisma.js'
 import { logger } from '../../shared/lib/logger.js'
+import { isPushEndpointAllowed } from '../lib/push-endpoint.js'
 import type { UpsertSubscriptionBody } from '../schemas/subscription.schemas.js'
 
 webpush.setVapidDetails(
@@ -19,6 +21,9 @@ export async function upsertPushSubscription(
   body: UpsertSubscriptionBody,
   userAgent?: string | null | undefined
 ) {
+  if (!isPushEndpointAllowed(body.endpoint)) {
+    throw new BadRequestError('Push endpoint host is not allowed')
+  }
   return prisma.pushSubscription.upsert({
     where: { endpoint: body.endpoint },
     create: {
@@ -70,6 +75,13 @@ export async function sendPushToUser(
 
   await Promise.all(
     subscriptions.map(async sub => {
+      if (!isPushEndpointAllowed(sub.endpoint)) {
+        logger.warn(
+          { userId, endpoint: sub.endpoint },
+          'Skipping push to disallowed endpoint'
+        )
+        return
+      }
       try {
         await webpush.sendNotification(
           {

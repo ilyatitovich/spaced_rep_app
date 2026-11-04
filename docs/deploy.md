@@ -11,23 +11,23 @@ Single-VM API stack: Postgres, Redis (passworded), migrate-once, API, encrypted 
 
 ## Required Production Env
 
-| Variable                                                             | Notes                                                                                                    |
-| -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `NODE_ENV=production`                                                | Rejects `CORS_ORIGIN=*`, `dev-only` JWT/OTP placeholders, Turnstile test secrets; never loads test stubs |
-| `CORS_ORIGIN`                                                        | Exact web + `chrome-extension://<id>` origins (no `*`)                                                   |
-| `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB`                | Used by the `postgres` and `backup` services                                                             |
-| `DATABASE_URL`                                                       | Compose hostname `postgres`                                                                              |
-| `REDIS_PASSWORD`                                                     | Also embed in `REDIS_URL=redis://:<password>@redis:6379`                                                 |
-| `JWT_SECRET` / `OTP_PEPPER`                                          | ≥32 chars, not the example placeholders                                                                  |
-| `TURNSTILE_SECRET_KEY`                                               | Real Cloudflare secret                                                                                   |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` / `GOOGLE_REDIRECT_URIS` | Google OAuth web client; redirect URIs must match the deployed client                                    |
-| `RESEND_API_KEY` / `EMAIL_FROM`                                      | Email OTP delivery; `EMAIL_FROM` must be a verified sender                                               |
-| `WEBAUTHN_RP_ID` / `WEBAUTHN_RP_NAME` / `WEBAUTHN_ORIGIN`            | Passkeys: RP ID is the client host (no scheme), origin is the exact client origin                        |
-| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT`           | Web Push: `npx web-push generate-vapid-keys`; subject is a real `mailto:` or `https:` URL                |
-| `BACKUP_ENCRYPTION_KEY`                                              | gpg passphrase for dumps. Keep a copy off the VM (see Backups)                                           |
-| `BACKUP_S3_*` / `BACKUP_HEARTBEAT_URL`                               | Offsite copy bucket and failure alert (see Backups)                                                      |
-| `BETA_OPEN_PRO`                                                      | Defaults to `false`. Set `true` explicitly only to grant Pro without Lemon during the unpaid beta        |
-| `LEMONSQUEEZY_API_KEY`                                               | Leave empty; checkout stays closed until paid phase                                                      |
+| Variable                                                             | Notes                                                                                                                                                                     |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NODE_ENV=production`                                                | Rejects `CORS_ORIGIN=*`, `dev-only` JWT/OTP placeholders, Turnstile test secrets; never loads test stubs                                                                  |
+| `CORS_ORIGIN`                                                        | Exact web + `chrome-extension://<id>` origins (no `*`)                                                                                                                    |
+| `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB`                | Used by the `postgres` and `backup` services                                                                                                                              |
+| `DATABASE_URL`                                                       | Compose hostname `postgres`                                                                                                                                               |
+| `REDIS_PASSWORD`                                                     | Also embed in `REDIS_URL=redis://:<password>@redis:6379`. Prod Redis uses `noeviction` so rate-limit and op-dedupe keys are never silently dropped under memory pressure. |
+| `JWT_SECRET` / `OTP_PEPPER`                                          | ≥32 chars, not the example placeholders                                                                                                                                   |
+| `TURNSTILE_SECRET_KEY`                                               | Real Cloudflare secret                                                                                                                                                    |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` / `GOOGLE_REDIRECT_URIS` | Google OAuth web client; redirect URIs must match the deployed client                                                                                                     |
+| `RESEND_API_KEY` / `EMAIL_FROM`                                      | Email OTP delivery; `EMAIL_FROM` must be a verified sender                                                                                                                |
+| `WEBAUTHN_RP_ID` / `WEBAUTHN_RP_NAME` / `WEBAUTHN_ORIGIN`            | Passkeys: RP ID is the client host (no scheme), origin is the exact client origin                                                                                         |
+| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT`           | Web Push: `npx web-push generate-vapid-keys`; subject is a real `mailto:` or `https:` URL                                                                                 |
+| `BACKUP_ENCRYPTION_KEY`                                              | gpg passphrase for dumps. Keep a copy off the VM (see Backups)                                                                                                            |
+| `BACKUP_S3_*` / `BACKUP_HEARTBEAT_URL`                               | Offsite copy bucket and failure alert (see Backups)                                                                                                                       |
+| `BETA_OPEN_PRO`                                                      | Defaults to `false`. Set `true` explicitly only to grant Pro without Lemon during the unpaid beta                                                                         |
+| `LEMONSQUEEZY_API_KEY`                                               | Leave empty; checkout stays closed until paid phase                                                                                                                       |
 
 Media (`R2_*`), `EXTENSION_REDIRECT_URIS`, and `SENTRY_DSN` are optional; see `.env.example`.
 
