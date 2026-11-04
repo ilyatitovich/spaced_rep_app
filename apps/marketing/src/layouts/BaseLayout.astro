@@ -26,7 +26,31 @@ const pageTitle = title === PRODUCT_NAME ? title : `${title} · ${PRODUCT_NAME}`
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
     <meta name="description" content={description} />
+    <meta name="theme-color" content="#f5f5f5" />
     <title>{pageTitle}</title>
+    <script is:inline>
+      ;(() => {
+        const stored = localStorage.getItem('theme')
+        const pref =
+          stored === 'light' || stored === 'dark' || stored === 'system'
+            ? stored
+            : 'system'
+        const resolved =
+          pref === 'system'
+            ? matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : 'light'
+            : pref
+        document.documentElement.dataset.theme = resolved
+        const meta = document.querySelector('meta[name="theme-color"]')
+        if (meta) {
+          meta.setAttribute(
+            'content',
+            resolved === 'dark' ? '#0f0f0f' : '#f5f5f5',
+          )
+        }
+      })()
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

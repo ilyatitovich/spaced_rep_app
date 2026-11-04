@@ -1,6 +1,7 @@
 ---
 import { PRODUCT_NAME } from '@spaced-rep/brand'
 import { APP_URL } from '../lib/site'
+import ThemeToggle from './ThemeToggle.astro'
 
 const path = Astro.url.pathname
 const links = [
@@ -35,6 +36,7 @@ const links = [
           </a>
         ))
       }
+      <ThemeToggle />
       <a
         href={APP_URL}
         class="ml-1 rounded-md bg-primary px-3.5 py-1.5 text-sm font-semibold text-primary-foreground no-underline transition-colors hover:bg-primary-hover"

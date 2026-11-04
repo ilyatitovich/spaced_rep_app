@@ -76,6 +76,76 @@
   --shadow-primary: 0 8px 20px rgb(124 58 237 / 0.35);
 }
 
+/* Brand dark tokens — mirrored from apps/client/src/styles/index.css */
+html[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-background: #0f0f0f;
+  --color-background-secondary: #161616;
+  --color-background-tertiary: #1c1c1c;
+  --color-background-elevated: #222222;
+  --color-background-overlay: rgb(0 0 0 / 0.65);
+  --color-background-accent: #2e1065;
+
+  --color-foreground: #ededed;
+  --color-foreground-muted: #a1a1aa;
+  --color-foreground-subtle: #71717a;
+  --color-foreground-inverse: #18181b;
+  --color-foreground-accent: #c4b5fd;
+
+  --color-border: #2e2e2e;
+  --color-border-muted: #232323;
+  --color-border-strong: #3f3f46;
+  --color-border-focus: #a78bfa;
+
+  --color-primary: #a78bfa;
+  --color-primary-hover: #c4b5fd;
+  --color-primary-active: #8b5cf6;
+  --color-primary-foreground: #1e1035;
+
+  --color-secondary: #27272a;
+  --color-secondary-hover: #3f3f46;
+  --color-secondary-active: #52525b;
+  --color-secondary-foreground: #ededed;
+
+  --color-success: #22c55e;
+  --color-success-hover: #4ade80;
+  --color-success-foreground: #052e16;
+  --color-warning: #f59e0b;
+  --color-warning-hover: #fbbf24;
+  --color-warning-foreground: #422006;
+  --color-danger: #f87171;
+  --color-danger-hover: #fca5a5;
+  --color-danger-foreground: #450a0a;
+  --color-info: #60a5fa;
+  --color-info-foreground: #0c1a2e;
+
+  --color-muted: #1c1c1c;
+  --color-muted-foreground: #a1a1aa;
+  --color-accent: #2e1065;
+  --color-accent-foreground: #c4b5fd;
+  --color-ring: #a78bfa;
+
+  --color-card: #1a1a1a;
+  --color-card-hover: #222222;
+  --color-card-selected: #2e1065;
+  --color-card-foreground: #ededed;
+
+  --color-lvl-1: #f87171;
+  --color-lvl-2: #fb923c;
+  --color-lvl-3: #facc15;
+  --color-lvl-4: #4ade80;
+  --color-lvl-5: #38bdf8;
+  --color-lvl-6: #c084fc;
+  --color-lvl-7: #f472b6;
+
+  --shadow-primary: 0 8px 20px rgb(167 139 250 / 0.3);
+}
+
+html[data-theme='light'] {
+  color-scheme: light;
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;
@@ -104,6 +174,25 @@
         transparent 55%
       );
     background-attachment: fixed;
+  }
+
+  html[data-theme='dark'] body {
+    background-image:
+      radial-gradient(
+        ellipse 90% 55% at 85% -5%,
+        rgb(167 139 250 / 0.18),
+        transparent 55%
+      ),
+      radial-gradient(
+        ellipse 60% 45% at 5% 15%,
+        rgb(46 16 101 / 0.55),
+        transparent 50%
+      ),
+      radial-gradient(
+        ellipse 50% 35% at 50% 100%,
+        rgb(167 139 250 / 0.08),
+        transparent 55%
+      );
   }
 
   a {
