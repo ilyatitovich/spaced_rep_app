@@ -1,0 +1,39 @@
+---
+import { PRODUCT_NAME, PRODUCT_TAGLINE } from '@spaced-rep/brand'
+import OpenAppButton from '../OpenAppButton.astro'
+import PhoneMock from '../PhoneMock.astro'
+---
+
+<section class="relative overflow-hidden">
+  <div
+    class="mx-auto grid max-w-6xl items-center gap-12 px-5 pb-20 pt-14 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16 lg:pb-28 lg:pt-20"
+  >
+    <div class="animate-hero-rise">
+      <p
+        class="font-display text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl lg:text-6xl"
+      >
+        {PRODUCT_NAME}
+      </p>
+      <h1
+        class="mt-5 max-w-xl text-balance text-2xl font-semibold leading-snug text-foreground-muted sm:text-3xl"
+      >
+        Remember what you learn — without cramming.
+      </h1>
+      <p class="mt-4 max-w-lg text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg">
+        {PRODUCT_TAGLINE}
+      </p>
+      <div class="mt-8 flex flex-wrap items-center gap-4">
+        <OpenAppButton size="lg" />
+        <a
+          href="#why-not-anki"
+          class="text-sm text-foreground-muted no-underline hover:text-foreground-accent"
+        >
+          Why not just Anki?
+        </a>
+      </div>
+    </div>
+    <div class="animate-hero-rise-delay lg:justify-self-end">
+      <PhoneMock />
+    </div>
+  </div>
+</section>

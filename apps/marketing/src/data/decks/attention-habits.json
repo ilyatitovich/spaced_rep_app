@@ -1,0 +1,24 @@
+{
+  "slug": "attention-habits",
+  "title": "Attention habits",
+  "description": "Prompts for protecting focus and turning study into a durable habit.",
+  "tags": ["habits", "attention"],
+  "cards": [
+    {
+      "front": "What is the scarce resource when answers are free?",
+      "back": "Your attention — and what you choose to encode into long-term memory."
+    },
+    {
+      "front": "Name one way AI helps flashcard study without replacing practice.",
+      "back": "Drafting candidate cards you still edit, or clarifying a concept so you write a cleaner prompt."
+    },
+    {
+      "front": "Why finish a session before you are exhausted?",
+      "back": "Stopping with a little energy left makes starting tomorrow easier."
+    },
+    {
+      "front": "What breaks encoding even if you “study” for an hour?",
+      "back": "Constant context switches — notifications, tabs, and feeds that never let an idea settle."
+    }
+  ]
+}

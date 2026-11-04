@@ -1,0 +1,21 @@
+---
+import { APP_URL } from '../lib/site'
+
+interface Props {
+  class?: string
+  size?: 'md' | 'lg'
+}
+
+const { class: className = '', size = 'md' } = Astro.props
+---
+
+<a
+  href={APP_URL}
+  class:list={[
+    'inline-flex items-center justify-center rounded-md font-semibold text-primary-foreground no-underline transition-colors bg-primary hover:bg-primary-hover shadow-[var(--shadow-primary)]',
+    size === 'lg' ? 'px-6 py-3 text-base' : 'px-4 py-2 text-sm',
+    className,
+  ]}
+>
+  Open app
+</a>

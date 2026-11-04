@@ -1,0 +1,19 @@
+---
+import { PRODUCT_NAME, PRODUCT_TAGLINE } from '@spaced-rep/brand'
+---
+
+<footer class="mt-auto border-t border-border-muted">
+  <div
+    class="mx-auto flex max-w-6xl flex-col gap-4 px-5 py-10 sm:flex-row sm:items-end sm:justify-between sm:px-8"
+  >
+    <div>
+      <p class="font-display text-lg font-bold text-foreground">{PRODUCT_NAME}</p>
+      <p class="mt-1 max-w-sm text-sm text-foreground-muted">{PRODUCT_TAGLINE}</p>
+    </div>
+    <nav class="flex flex-wrap gap-4 text-sm text-foreground-muted" aria-label="Footer">
+      <a href="/blog" class="no-underline hover:text-foreground">Blog</a>
+      <a href="/decks" class="no-underline hover:text-foreground">Shared cards</a>
+      <a href="/" class="no-underline hover:text-foreground">Home</a>
+    </nav>
+  </div>
+</footer>

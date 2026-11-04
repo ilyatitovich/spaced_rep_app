@@ -1,0 +1,20 @@
+---
+import { PRODUCT_NAME } from '@spaced-rep/brand'
+import BaseLayout from '../layouts/BaseLayout.astro'
+import Hero from '../components/home/Hero.astro'
+import WhyNotAnki from '../components/home/WhyNotAnki.astro'
+import Features from '../components/home/Features.astro'
+import HowItWorks from '../components/home/HowItWorks.astro'
+import ClosingCta from '../components/home/ClosingCta.astro'
+---
+
+<BaseLayout
+  title={PRODUCT_NAME}
+  description="Local-first spaced repetition for everyday study — short sessions, lasting memory."
+>
+  <Hero />
+  <WhyNotAnki />
+  <Features />
+  <HowItWorks />
+  <ClosingCta />
+</BaseLayout>

@@ -1,0 +1,42 @@
+---
+const features = [
+  {
+    title: 'Offline is the source of truth',
+    body: 'Topics and cards stay in IndexedDB on your device. No connection required to study.',
+  },
+  {
+    title: 'Rich cards',
+    body: 'Text, images, code, audio, and math — capture what you actually need to remember.',
+  },
+  {
+    title: 'Optional Pro sync',
+    body: 'Sign in when you want reminders and sync across up to three devices.',
+  },
+  {
+    title: 'Bring your Anki decks',
+    body: 'Import existing cards, then keep building with a calmer daily workflow.',
+  },
+]
+---
+
+<section id="features" class="border-t border-border-muted py-20 sm:py-24">
+  <div class="mx-auto max-w-6xl px-5 sm:px-8">
+    <p class="text-sm font-semibold uppercase tracking-wider text-foreground-accent">Features</p>
+    <h2 class="mt-3 max-w-xl font-display text-3xl font-bold text-foreground sm:text-4xl">
+      What you get
+    </h2>
+    <p class="mt-4 max-w-xl text-foreground-muted">
+      Everything you need for a durable study habit — nothing that fights you while you learn.
+    </p>
+    <ul class="mt-12 grid gap-6 sm:grid-cols-2">
+      {
+        features.map((feature) => (
+          <li class="rounded-2xl bg-card p-6 ring-1 ring-border-muted">
+            <h3 class="font-display text-lg font-bold text-card-foreground">{feature.title}</h3>
+            <p class="mt-2 text-sm leading-relaxed text-foreground-muted">{feature.body}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>

@@ -1,0 +1,44 @@
+---
+import { PRODUCT_NAME } from '@spaced-rep/brand'
+import '../styles/global.css'
+import SiteHeader from '../components/SiteHeader.astro'
+import SiteFooter from '../components/SiteFooter.astro'
+
+interface Props {
+  title?: string
+  description?: string
+}
+
+const {
+  title = PRODUCT_NAME,
+  description = 'Local-first spaced repetition for everyday study — short sessions, lasting memory.',
+} = Astro.props
+
+const pageTitle = title === PRODUCT_NAME ? title : `${title} · ${PRODUCT_NAME}`
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="description" content={description} />
+    <title>{pageTitle}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=Syne:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="flex min-h-screen flex-col antialiased">
+    <SiteHeader />
+    <main class="flex-1">
+      <slot />
+    </main>
+    <SiteFooter />
+  </body>
+</html>

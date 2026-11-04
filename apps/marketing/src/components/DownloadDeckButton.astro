@@ -1,0 +1,43 @@
+---
+import type { Deck } from '../lib/decks'
+
+interface Props {
+  deck: Deck
+}
+
+const { deck } = Astro.props
+const payload = JSON.stringify(deck, null, 2)
+const filename = `${deck.slug}.json`
+---
+
+<button
+  type="button"
+  class="download-deck inline-flex cursor-pointer items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-primary)] transition-colors hover:bg-primary-hover"
+  data-filename={filename}
+  data-payload={payload}
+>
+  Download JSON
+</button>
+
+<script>
+  function bindDownloadButtons() {
+    for (const button of document.querySelectorAll<HTMLButtonElement>('button.download-deck')) {
+      button.addEventListener('click', () => {
+        const filename = button.dataset.filename
+        const payload = button.dataset.payload
+        if (!filename || !payload) return
+
+        const blob = new Blob([payload], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
+        const anchor = document.createElement('a')
+        anchor.href = url
+        anchor.download = filename
+        anchor.click()
+        URL.revokeObjectURL(url)
+      })
+    }
+  }
+
+  bindDownloadButtons()
+  document.addEventListener('astro:page-load', bindDownloadButtons)
+</script>

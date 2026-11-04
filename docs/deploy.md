@@ -100,7 +100,18 @@ Use an external checker (UptimeRobot, Better Stack, healthchecks.io HTTP check, 
 
 ## Client
 
-Deploy the PWA to Vercel with `VITE_API_URL=https://<api-host>`. Keep Lemon checkout UI closed; set `BETA_OPEN_PRO=true` on the API to grant Pro during the beta.
+Deploy the PWA to Vercel with `VITE_API_URL=https://<api-host>`. Keep Lemon checkout UI closed; set `BETA_OPEN_PRO=true` on the API to grant Pro during the beta. The existing Vercel project uses the repo root and root `vercel.json` (Root Directory `.`).
+
+## Marketing site
+
+The Astro marketing app lives in `apps/marketing` and deploys as a **second** Vercel project (same repo, separate project).
+
+1. Vercel → Add New Project → import the same Git repository.
+2. Set **Root Directory** to `apps/marketing` (uses `apps/marketing/vercel.json`).
+3. Set env `PUBLIC_APP_URL` to the production client URL (e.g. `https://spaced-rep-app-beta.vercel.app/`).
+4. Deploy. Custom domains (marketing apex vs `app.` subdomain) can be attached later; leave the client project Root Directory as `.`.
+
+Local: `pnpm --filter spaced_rep_marketing dev` (default port 4321).
 
 ### Security Headers
 

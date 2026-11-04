@@ -1,0 +1,25 @@
+---
+import { PRODUCT_NAME } from '@spaced-rep/brand'
+import OpenAppButton from '../OpenAppButton.astro'
+---
+
+<section class="border-t border-border-muted py-20 sm:py-24">
+  <div class="mx-auto max-w-6xl px-5 text-center sm:px-8">
+    <h2 class="font-display text-3xl font-bold text-foreground sm:text-4xl">
+      Start a short session today
+    </h2>
+    <p class="mx-auto mt-4 max-w-lg text-foreground-muted">
+      Open {PRODUCT_NAME}, add a few cards from what you are learning now, and let spacing
+      carry the rest.
+    </p>
+    <div class="mt-8 flex flex-wrap items-center justify-center gap-4">
+      <OpenAppButton size="lg" />
+      <a href="/blog" class="text-sm text-foreground-muted no-underline hover:text-foreground-accent"
+        >Read the blog</a
+      >
+      <a href="/decks" class="text-sm text-foreground-muted no-underline hover:text-foreground-accent"
+        >Browse shared cards</a
+      >
+    </div>
+  </div>
+</section>

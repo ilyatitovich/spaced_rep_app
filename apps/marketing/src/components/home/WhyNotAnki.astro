@@ -1,0 +1,45 @@
+---
+import { PRODUCT_NAME } from '@spaced-rep/brand'
+
+const points = [
+  {
+    title: 'Built for everyday study',
+    body: 'Short sessions and a clear seven-level ladder — not a maze of decks, note types, and add-on configs.',
+  },
+  {
+    title: 'Local-first by default',
+    body: 'Your cards live on your device. Study offline. Sync only when you want cloud backup across devices.',
+  },
+  {
+    title: 'Less setup, same science',
+    body: 'Spacing works. You should not need a weekend of setup to feel it. Open the app and review.',
+  },
+]
+---
+
+<section id="why-not-anki" class="border-t border-border-muted py-20 sm:py-24">
+  <div class="mx-auto max-w-6xl px-5 sm:px-8">
+    <p class="text-sm font-semibold uppercase tracking-wider text-foreground-accent">
+      Positioning
+    </p>
+    <h2
+      class="mt-3 max-w-2xl font-display text-3xl font-bold text-balance text-foreground sm:text-4xl"
+    >
+      Why {PRODUCT_NAME} — not just another Anki
+    </h2>
+    <p class="mt-4 max-w-2xl text-pretty text-foreground-muted">
+      Anki is powerful. Many people bounce off the complexity before the habit sticks.
+      {PRODUCT_NAME} keeps the spaced-repetition engine and sheds the power-user tax.
+    </p>
+    <ul class="mt-12 grid gap-8 sm:grid-cols-3">
+      {
+        points.map((point) => (
+          <li>
+            <h3 class="font-display text-lg font-bold text-foreground">{point.title}</h3>
+            <p class="mt-2 text-sm leading-relaxed text-foreground-muted">{point.body}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>

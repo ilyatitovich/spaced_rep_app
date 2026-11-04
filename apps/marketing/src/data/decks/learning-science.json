@@ -1,0 +1,32 @@
+{
+  "slug": "learning-science",
+  "title": "Learning science vocab",
+  "description": "Key terms from cognitive science that help you study smarter.",
+  "tags": ["science", "vocab"],
+  "cards": [
+    {
+      "front": "Interleaving",
+      "back": "Mixing related topics or problem types in one session instead of blocking a single type."
+    },
+    {
+      "front": "Desirable difficulty",
+      "back": "A challenge that slows performance now but improves long-term learning."
+    },
+    {
+      "front": "Encoding",
+      "back": "The process of forming a memory when you first engage with material under attention."
+    },
+    {
+      "front": "Consolidation",
+      "back": "Stabilizing a memory after learning, often supported by sleep."
+    },
+    {
+      "front": "Metacognition",
+      "back": "Judging what you know — often overconfident if you only re-read smoothly."
+    },
+    {
+      "front": "Active recall",
+      "back": "Trying to produce an answer from memory before checking the source."
+    }
+  ]
+}

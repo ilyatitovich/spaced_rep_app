@@ -1,0 +1,46 @@
+---
+import { PRODUCT_NAME } from '@spaced-rep/brand'
+import { APP_URL } from '../lib/site'
+
+const path = Astro.url.pathname
+const links = [
+  { href: '/blog', label: 'Blog' },
+  { href: '/decks', label: 'Shared cards' },
+]
+---
+
+<header
+  class="sticky top-0 z-40 border-b border-border-muted bg-background/80 backdrop-blur-md"
+>
+  <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3.5 sm:px-8">
+    <a href="/" class="flex items-center gap-2.5 no-underline">
+      <img src="/logo.png" alt="" width="32" height="32" class="size-8 rounded-lg" />
+      <span class="font-display text-lg font-bold tracking-tight text-foreground"
+        >{PRODUCT_NAME}</span
+      >
+    </a>
+    <nav class="flex items-center gap-1 sm:gap-2" aria-label="Primary">
+      {
+        links.map((link) => (
+          <a
+            href={link.href}
+            class:list={[
+              'rounded-md px-3 py-1.5 text-sm no-underline transition-colors',
+              path.startsWith(link.href)
+                ? 'bg-background-accent text-accent-foreground'
+                : 'text-foreground-muted hover:bg-muted hover:text-foreground',
+            ]}
+          >
+            {link.label}
+          </a>
+        ))
+      }
+      <a
+        href={APP_URL}
+        class="ml-1 rounded-md bg-primary px-3.5 py-1.5 text-sm font-semibold text-primary-foreground no-underline transition-colors hover:bg-primary-hover"
+      >
+        Open app
+      </a>
+    </nav>
+  </div>
+</header>

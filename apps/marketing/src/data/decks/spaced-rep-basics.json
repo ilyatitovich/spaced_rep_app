@@ -1,0 +1,28 @@
+{
+  "slug": "spaced-rep-basics",
+  "title": "Spaced repetition basics",
+  "description": "Core ideas behind spacing, retrieval, and short study sessions.",
+  "tags": ["science", "beginner"],
+  "cards": [
+    {
+      "front": "What is spaced repetition?",
+      "back": "Reviewing material at expanding intervals so you retrieve it just as you would start to forget."
+    },
+    {
+      "front": "Why is retrieval practice better than re-reading?",
+      "back": "Retrieving strengthens the memory trace; re-reading mostly trains recognition and feels easier than it is."
+    },
+    {
+      "front": "What is the forgetting curve?",
+      "back": "Recall drops quickly after learning unless you review; each successful review slows the next drop."
+    },
+    {
+      "front": "Why keep study sessions short?",
+      "back": "Short sessions are easier to repeat daily; consistency beats rare marathon cramming."
+    },
+    {
+      "front": "What should one flashcard usually contain?",
+      "back": "One clear idea — a single prompt and a short, checkable answer."
+    }
+  ]
+}
