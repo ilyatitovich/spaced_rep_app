@@ -1,4 +1,4 @@
-# Auth e2e
+# Auth E2e
 
 - [`email-otp.spec.ts`](email-otp.spec.ts) — OTP sign-in via the UI; reads the code with `testing/helpers/auth/email-otp.ts`.
 - [`session.spec.ts`](session.spec.ts) — session lifecycle in the browser, seeded through `storageState`:

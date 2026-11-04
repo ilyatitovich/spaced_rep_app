@@ -15,7 +15,7 @@ Inspired by [Nicky Case’s explanation of spaced repetition](https://ncase.me/r
 
 Sync model (outbox, last-write-wins, tombstones, 3-device cap): **[docs/sync.md](docs/sync.md)**. Architecture notes: **[CONTEXT.md](CONTEXT.md)**. Unpaid beta API deploy: **[docs/deploy.md](docs/deploy.md)**.
 
-## Tech stack
+## Tech Stack
 
 | Layer  | Stack                                                                       |
 | ------ | --------------------------------------------------------------------------- |
@@ -26,7 +26,7 @@ Sync model (outbox, last-write-wins, tombstones, 3-device cap): **[docs/sync.md]
 
 Requires **Node 24.18** and **pnpm 12.3** (see `.node-version` and `packageManager` in `package.json`).
 
-## Local development
+## Local Development
 
 ```bash
 pnpm install
@@ -35,7 +35,7 @@ pnpm dev
 
 Client: `http://localhost:5173`.
 
-### Docker (Postgres + Redis + server)
+### Docker (Postgres + Redis + Server)
 
 ```bash
 cp .env.example .env

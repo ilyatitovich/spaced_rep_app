@@ -1,4 +1,4 @@
-# Unpaid public beta deploy
+# Unpaid Public Beta Deploy
 
 Single-VM API stack: Postgres, Redis (passworded), migrate-once, API, encrypted backups, Caddy. The Vite client stays on Vercel (`vercel.json`).
 
@@ -9,7 +9,7 @@ Single-VM API stack: Postgres, Redis (passworded), migrate-once, API, encrypted 
 3. Set `GHCR_OWNER` to the GitHub org/user that owns the image (see `.github/workflows/publish-server.yml`).
 4. Point an uptime check at `https://<api-host>/health` — alert if status ≠ 200 or body `status` ≠ `ok` (checks Postgres + Redis).
 
-## Required production env
+## Required Production Env
 
 | Variable                                                             | Notes                                                                                                    |
 | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
@@ -31,7 +31,7 @@ Single-VM API stack: Postgres, Redis (passworded), migrate-once, API, encrypted 
 
 Media (`R2_*`) and `EXTENSION_REDIRECT_URIS` are optional; see `.env.example`.
 
-## Bring up
+## Bring Up
 
 ```bash
 # On the VM, after .env + Caddyfile are filled in:
@@ -72,7 +72,7 @@ docker compose -f docker-compose.prod.yml run --rm --no-deps \
 
 Add `-e SOURCE_DATABASE_URL=postgresql://.../$POSTGRES_DB` to compare per-table row counts with the live database (only meaningful when it is quiet; otherwise expect small differences and read the printed counts).
 
-### Quarterly drill
+### Quarterly Drill
 
 CI runs `infra/smoke/backup-restore.sh` on every change (seed Postgres 17, back up with the real image, restore into a scratch database, compare row counts), which proves the tooling. It cannot prove your VM and bucket, so once a quarter, and after any change to the key or the bucket:
 
@@ -80,7 +80,7 @@ CI runs `infra/smoke/backup-restore.sh` on every change (seed Postgres 17, back 
 2. Confirm the printed table list and row counts look plausible against production, and that `_prisma_migrations` ends at the latest migration.
 3. Drop the scratch database and note the date and the backup file used.
 
-## Log drain
+## Log Drain
 
 Containers log JSON to stdout (`pino` + `pino-http`, Authorization redacted, `x-request-id` on responses). Ship with whatever collector you already run on the host (Vector, Fluent Bit, Datadog agent, etc.) by scraping Docker json-file logs — no in-process drain is required for beta.
 
@@ -88,16 +88,16 @@ Containers log JSON to stdout (`pino` + `pino-http`, Authorization redacted, `x-
 
 Deploy the PWA to Vercel with `VITE_API_URL=https://<api-host>`. Keep Lemon checkout UI closed; set `BETA_OPEN_PRO=true` on the API to grant Pro during the beta.
 
-### Security headers
+### Security Headers
 
 The root `vercel.json` sets the CSP, HSTS, `nosniff`, referrer and permissions policies, and the cache headers (`no-cache` for `sw.js`, `index.html`, the manifest; `immutable` for `/assets/*`). Vercel ignores `public/_headers`, so do not add one. `testing/security/vercel-headers.test.ts` guards the policy.
 
 `script-src` allows only `'self'` and Cloudflare Turnstile. `connect-src` allows any `https:`/`wss:` origin because the API host, Sentry ingest host and presigned R2 URLs are not known at static-config time. Once those hosts are fixed, replace `https: wss:` with the explicit origins to limit where an injected script could send data. After deploying, check the headers on the preview URL: `curl -sI https://<preview-host>/ | grep -i -E 'content-security|strict-transport|x-content-type|referrer|permissions'`, then load the app with the browser console open and confirm there are no CSP violations (sign-in with Turnstile, an image card, Anki import).
 
-### Dependency hygiene
+### Dependency Hygiene
 
 CI runs `pnpm audit:prod` (fails on high or critical advisories in production dependencies) and Dependabot opens weekly update PRs. Transitive floors live under `overrides` in `pnpm-workspace.yaml`; drop an entry once its parent ships a patched range.
 
-## CI smoke test
+## CI Smoke Test
 
 CI builds the production image and boots it against throwaway Postgres and Redis (`infra/smoke/boot-image.sh`): it runs `prisma migrate deploy`, starts the server with `NODE_ENV=production` and asserts `/health` is `ok`. Run it locally with the same script.

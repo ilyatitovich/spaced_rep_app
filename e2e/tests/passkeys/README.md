@@ -1,4 +1,4 @@
-# Passkey e2e
+# Passkey E2e
 
 - [`passkey.spec.ts`](passkey.spec.ts) — registers a passkey from Settings → Passkeys with Playwright's virtual authenticator, signs out, and signs back in with only the passkey; a removed passkey is rejected (401) and no session is created.
 

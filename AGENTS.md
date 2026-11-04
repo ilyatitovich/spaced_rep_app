@@ -1,4 +1,4 @@
-## Anti-slop checks
+## Anti-Slop Checks
 
 - Fix what a check finds; don't silence it. No new `!`, `as any`, `@ts-expect-error`, or disable comments to get a check green.
 - A lint message says what failed, why the rule exists, and what to do instead.

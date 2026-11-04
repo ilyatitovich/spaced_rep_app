@@ -15,7 +15,7 @@ Short reference for how multi-device sync works today. Whole-record **last-write
 - **Devices.** Pro allows **3** active devices (`PRO_DEVICE_LIMIT`). Registration past that returns `DEVICE_LIMIT`. Devices idle past 30 days drop out of the active set.
 - **Auth / entitlement.** Sync and media require a signed-in entitled plan. Free local use does not need the API.
 
-## Engine guarantees (client)
+## Engine Guarantees (client)
 
 - **One run at a time.** HTTP sync, the post-connect flush and WebSocket recovery all go through one single-flight mutex; a request that arrives mid-run makes it loop once more. Incoming deltas (HTTP, bootstrap, WebSocket fanout) apply strictly in order, and the cursor moves forward in a single compare-and-write transaction.
 - **Multi-tab.** Runs also take a Web Lock (`spaced-rep-sync`), so two tabs never push the same outbox or apply the same delta; the second waits, then finds the work done. Decisions to push or overwrite read the durable IndexedDB row, never a tab's in-memory copy (which another tab may have outdated). A tab that applies a pull announces it on a `BroadcastChannel` and other tabs reload memory from IndexedDB.
@@ -23,7 +23,7 @@ Short reference for how multi-device sync works today. Whole-record **last-write
 - **Transient failures.** Network errors, 5xx, 408 and 429 schedule a retry with exponential backoff (2 s, 4 s, ... capped at 5 min). Other errors surface and wait for the user or the next trigger. Offline runs wait for the browser's `online` event.
 - **401.** A 401 on an HTTP sync or media request refreshes the session once (single-flight) and replays the request. A refresh the server rejects signs the user out; a network failure keeps the session.
 
-## Request validation (server)
+## Request Validation (server)
 
 Push, pull and bootstrap are validated before any work happens; failures are 4xx, never 500.
 
@@ -33,7 +33,7 @@ Push, pull and bootstrap are validated before any work happens; failures are 4xx
 - **Malformed ops.** What a schema cannot express (unparseable `dataJson` / `weekJson`, payload id differing from `recordId`, fractional or out-of-range numbers, NUL characters, invalid timestamps) is rejected per op as `VALIDATION_ERROR` with `retryable: false`, before the batch's media checks, so one bad card cannot fail the cards sent with it.
 - **Retryable vs permanent.** A 4xx apply failure (for example `FORBIDDEN`, a topic owned by another user) is permanent. A card whose topic is not on the server yet is `TOPIC_NOT_SYNCED` and stays retryable, because the topic's own op may still be queued. Unexpected errors stay `APPLY_FAILED`, retryable.
 
-## What a conflict drops
+## What a Conflict Drops
 
 When two devices edit the same topic or card, the **entire winning record** replaces the loser. Grades, text blocks, and media on the losing write are discarded — there is no per-field merge and no review log replay.
 
@@ -41,7 +41,7 @@ The Sunday week rebuild (`updateWeek`, run from `getAllTopics`) is the same kind
 
 Duplicate topic titles on import/migrate are renamed on the server to `"{title} ({shortId})"`.
 
-## Sign-out and account switch
+## Sign-Out and Account Switch
 
 Sign-out wipes this device's topics, cards, outbox and pull cursor (the device id survives), so it never loses or leaks data silently:
 
@@ -50,7 +50,7 @@ Sign-out wipes this device's topics, cards, outbox and pull cursor (the device i
 3. Switching directly from account A to B (no sign-out) cannot flush, because A's credentials are gone. A's unsynced edits are dropped, never uploaded as B's. `initialSync(B)` waits for that wipe instead of joining A's run.
 4. `migratedUserId` stays a second line of defence: if a wipe failed, rows owned by another account are cleared on the next sign-in rather than adopted.
 
-## Key files
+## Key Files
 
 | Area                | Path                                                                 |
 | ------------------- | -------------------------------------------------------------------- |

@@ -6,11 +6,11 @@ description: >-
   cards, or JSON to import into SpacedRepApp / this spaced repetition app.
 ---
 
-# Create cards for SpacedRepApp
+# Create Cards for SpacedRepApp
 
 Produce flashcards the user can import into SpacedRepApp.
 
-## When to ask vs when to output JSON
+## When to Ask Vs When to Output JSON
 
 1. If there is no topic or usable source material, ask one short question for it. Do not output JSON yet.
 2. Otherwise, respond with only a valid JSON object. Do not add markdown fences, comments, or commentary.
@@ -37,7 +37,7 @@ Produce flashcards the user can import into SpacedRepApp.
 }
 ```
 
-## Card shape
+## Card Shape
 
 Each item in `cards`:
 
@@ -51,7 +51,7 @@ Omit `id` and `topicId`; the app assigns them during import.
 Each side needs ordered `blocks`. Its `side` value must match `"front"` or
 `"back"`.
 
-### Block types
+### Block Types
 
 **text** — rich HTML only (not Markdown):
 
@@ -84,7 +84,7 @@ MIME type:
 Never invent image URLs or audio data. Do **not** emit remote audio,
 `data:`/`blob:` URLs, or placeholder media buffers.
 
-## Writing rules
+## Writing Rules
 
 1. One fact or concept per card.
 2. Front = question or cue; back = answer or explanation (active recall).

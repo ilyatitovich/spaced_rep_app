@@ -1,4 +1,4 @@
-## TC-1: Guest user imports cards — added to sync queue
+## TC-1: Guest User Imports Cards — Added to Sync Queue
 
 **Preconditions:**
 
@@ -16,14 +16,14 @@
 
 **Priority:** Medium
 
-## TC-2: Sync queue — idle coalesce vs in-flight ack
+## TC-2: Sync Queue — Idle Coalesce Vs in-Flight Ack
 
 **Preconditions:**
 
 - Backend sync is configured (queue writes are enabled)
 - A card (or topic) id is known
 
-### Idle path (fixed)
+### Idle Path (fixed)
 
 **Steps:**
 
@@ -38,7 +38,7 @@
 
 **Coverage:** Unit coalesce (`coalesceQueuedOperation`) and the client idle create-then-delete sync invariant.
 
-### In-flight ack path (under test)
+### In-Flight Ack Path (under Test)
 
 **Steps:**
 

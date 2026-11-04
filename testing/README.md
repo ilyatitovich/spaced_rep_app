@@ -10,7 +10,7 @@ Shared Vitest + Playwright infrastructure for the monorepo.
 | **Integration** | Vitest + Supertest | Express API via `createApp()`           | Yes             |
 | **E2E**         | Playwright         | Full client + server in browsers        | Yes             |
 
-## One-time local setup
+## One-Time Local Setup
 
 ```bash
 # 1. Start Postgres + Redis
@@ -71,7 +71,7 @@ Filter Playwright by browser (CI uses Chromium only):
 pnpm test:e2e --project=chromium
 ```
 
-## Directory layout
+## Directory Layout
 
 ```
 testing/                     # shared helpers, factories, fixtures, setup
@@ -102,7 +102,7 @@ packages/sync-protocol/**/*.test.ts
 packages/sync-client/**/*.test.ts
 ```
 
-## Naming conventions
+## Naming Conventions
 
 | Kind        | Pattern                 | Example                      |
 | ----------- | ----------------------- | ---------------------------- |
@@ -113,7 +113,7 @@ packages/sync-client/**/*.test.ts
 | Builder     | `*.builder.ts`          | `sync-mutation.builder.ts`   |
 | Fixture     | `*.fixture.ts`          | `auth.fixture.ts`            |
 
-## Writing tests
+## Writing Tests
 
 ### Unit
 
@@ -163,7 +163,7 @@ const topic = await topicFactory.create({ userId: saved.id, title: 'Spanish' })
 
 Faker is seeded (`42`) in integration setup for deterministic data.
 
-## Database strategy
+## Database Strategy
 
 - **Isolated DB:** `spaced_rep_test` (never the compose default `spaced_rep` DB).
 - **Migrations:** applied once per Vitest integration / Playwright run via global setup.

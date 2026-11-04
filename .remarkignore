@@ -1,0 +1,7 @@
+LICENSE.md
+**/dist/
+infra/
+CHANGELOG.md
+unreleased-changes/*.md
+!unreleased-changes/README.md
+.cursor/
