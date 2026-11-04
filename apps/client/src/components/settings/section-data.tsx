@@ -69,6 +69,13 @@ function formatCardMedia(stats: StorageUsage | null): string {
   return `${formatBytes(stats.cardMediaBytes)} · ${images} · ${audio}`
 }
 
+function formatPersistence(stats: StorageUsage | null): string {
+  if (!stats) return '…'
+  return stats.persisted
+    ? 'Protected from cleanup'
+    : 'May be cleared if low on space'
+}
+
 // oxlint-disable-next-line sonarjs/cognitive-complexity
 export default function SectionData({ isOpen }: SectionDataProps) {
   const { user } = useAuth()
@@ -213,6 +220,10 @@ export default function SectionData({ isOpen }: SectionDataProps) {
           footer="Approximate. Card media is images and audio stored on cards. Cached images download again when you review online."
         >
           <SettingsInfoRow label="Used" value={formatUsedValue(storage)} />
+          <SettingsInfoRow
+            label="Offline data"
+            value={formatPersistence(storage)}
+          />
           <SettingsInfoRow
             label="Topics & cards"
             value={formatTopicsCards(storage)}

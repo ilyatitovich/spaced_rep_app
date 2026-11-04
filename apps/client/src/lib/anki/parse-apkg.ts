@@ -22,6 +22,38 @@ const FIELD_SEP = '\x1f'
 const DUMMY_NOTE_MARKER =
   'Please update to the latest Anki version, then import the .colpkg/.apkg file again.'
 
+/** Mutable so tests can temporarily tighten caps without DI. */
+export const APKG_LIMITS = {
+  maxCompressedBytes: 100 * 1024 * 1024,
+  maxZipEntries: 20_000,
+  maxUncompressedBytes: 500 * 1024 * 1024
+}
+
+export function assertApkgCompressedSize(byteLength: number): void {
+  if (byteLength > APKG_LIMITS.maxCompressedBytes) {
+    throw new Error(
+      `This .apkg is too large (max ${Math.floor(APKG_LIMITS.maxCompressedBytes / (1024 * 1024))} MB).`
+    )
+  }
+}
+
+export function assertApkgEntryCount(entryCount: number): void {
+  if (entryCount > APKG_LIMITS.maxZipEntries) {
+    throw new Error(
+      `This .apkg has too many files (max ${APKG_LIMITS.maxZipEntries}).`
+    )
+  }
+}
+
+function trackUncompressed(total: { bytes: number }, add: number): void {
+  total.bytes += add
+  if (total.bytes > APKG_LIMITS.maxUncompressedBytes) {
+    throw new Error(
+      `This .apkg expands to more than ${Math.floor(APKG_LIMITS.maxUncompressedBytes / (1024 * 1024))} MB uncompressed.`
+    )
+  }
+}
+
 let sqlReady: Promise<SqlJsStatic> | undefined
 
 function loadSql(): Promise<SqlJsStatic> {
@@ -83,11 +115,15 @@ function nameToZipIndex(raw: Record<string, string>): Map<string, string> {
   return new Map(entries)
 }
 
-async function readMediaMap(zip: JSZip): Promise<Map<string, AnkiMediaFile>> {
+async function readMediaMap(
+  zip: JSZip,
+  uncompressed: { bytes: number }
+): Promise<Map<string, AnkiMediaFile>> {
   const mediaFile = zip.file('media')
   if (!mediaFile) return new Map()
 
   const text = await mediaFile.async('string')
+  trackUncompressed(uncompressed, text.length)
   let raw: unknown
   try {
     raw = JSON.parse(text)
@@ -108,6 +144,7 @@ async function readMediaMap(zip: JSZip): Promise<Map<string, AnkiMediaFile>> {
     const entry = zip.file(index)
     if (!entry) continue
     const buffer = await entry.async('arraybuffer')
+    trackUncompressed(uncompressed, buffer.byteLength)
     mediaByName.set(name, { buffer, type: mimeFromName(name) })
   }
 
@@ -175,8 +212,14 @@ export async function parseApkg(
   data: ArrayBuffer | Blob | File
 ): Promise<ParsedApkg> {
   const buffer = data instanceof ArrayBuffer ? data : await data.arrayBuffer()
+  assertApkgCompressedSize(buffer.byteLength)
+
   const zip = await JSZip.loadAsync(buffer)
-  const names = new Set(Object.keys(zip.files).map(n => n.replace(/^\.\//, '')))
+  const entryNames = Object.keys(zip.files)
+  assertApkgEntryCount(entryNames.length)
+
+  const names = new Set(entryNames.map(n => n.replace(/^\.\//, '')))
+  const uncompressed = { bytes: 0 }
 
   const collectionName = pickCollectionName(names)
   const collection = zip.file(collectionName)
@@ -186,8 +229,11 @@ export async function parseApkg(
 
   const [SQL, dbBytes, mediaByName] = await Promise.all([
     loadSql(),
-    collection.async('uint8array'),
-    readMediaMap(zip)
+    collection.async('uint8array').then(bytes => {
+      trackUncompressed(uncompressed, bytes.byteLength)
+      return bytes
+    }),
+    readMediaMap(zip, uncompressed)
   ])
 
   return {

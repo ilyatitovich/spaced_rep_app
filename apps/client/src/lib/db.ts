@@ -1,5 +1,7 @@
 const DB_NAME = 'spacedRepApp'
 const DB_VERSION = 6
+const IDLE_CLOSE_MS = 30_000
+
 export const STORES = {
   TOPICS: 'topics',
   CARDS: 'cards',
@@ -16,6 +18,37 @@ export const STORES = {
 
 /** Compound index on cards for level-scoped queries */
 export const CARDS_TOPIC_LEVEL_INDEX = 'topicId_level'
+
+export const QUOTA_EXCEEDED_MESSAGE =
+  'This device is out of storage. Export your data, then clear cached images.'
+
+let dbPromise: Promise<IDBDatabase> | null = null
+let idleTimer: ReturnType<typeof setTimeout> | null = null
+let cachedDb: IDBDatabase | null = null
+
+function clearIdleTimer(): void {
+  if (idleTimer !== null) {
+    clearTimeout(idleTimer)
+    idleTimer = null
+  }
+}
+
+function dropCache(): void {
+  clearIdleTimer()
+  dbPromise = null
+  cachedDb = null
+}
+
+function scheduleIdleClose(db: IDBDatabase): void {
+  clearIdleTimer()
+  idleTimer = setTimeout(() => {
+    idleTimer = null
+    if (cachedDb === db) {
+      db.close()
+      dropCache()
+    }
+  }, IDLE_CLOSE_MS)
+}
 
 function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -91,9 +124,54 @@ function openDatabase(): Promise<IDBDatabase> {
       }
     }
 
-    request.onsuccess = () => resolve(request.result)
+    request.onblocked = () => {
+      reject(
+        new Error(
+          'Database upgrade blocked. Close other tabs using this app and try again.'
+        )
+      )
+    }
+
+    request.onsuccess = () => {
+      const db = request.result
+      db.onversionchange = () => {
+        db.close()
+        if (cachedDb === db) dropCache()
+      }
+      cachedDb = db
+      resolve(db)
+    }
     request.onerror = () => reject(request.error)
   })
+}
+
+function getDatabase(): Promise<IDBDatabase> {
+  clearIdleTimer()
+  dbPromise ??= openDatabase().catch(err => {
+    dropCache()
+    throw err
+  })
+  return dbPromise
+}
+
+/** Close the cached connection immediately (tests / teardown). */
+export function closeDatabase(): void {
+  const db = cachedDb
+  dropCache()
+  db?.close()
+}
+
+export function isQuotaExceededError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false
+  const name = 'name' in error ? String(error.name) : ''
+  return name === 'QuotaExceededError'
+}
+
+function mapTransactionError(error: unknown): unknown {
+  if (isQuotaExceededError(error)) {
+    return new Error(QUOTA_EXCEEDED_MESSAGE, { cause: error })
+  }
+  return error
 }
 
 export async function withTransaction<T, const K extends string>(
@@ -101,7 +179,7 @@ export async function withTransaction<T, const K extends string>(
   mode: IDBTransactionMode,
   callback: (stores: { [P in K]: IDBObjectStore }) => Promise<T>
 ): Promise<T> {
-  const db = await openDatabase()
+  const db = await getDatabase()
   const storeList = (
     Array.isArray(storeNames) ? storeNames : [storeNames]
   ) as readonly K[]
@@ -112,28 +190,43 @@ export async function withTransaction<T, const K extends string>(
     stores[name] = transaction.objectStore(name)
   }
 
-  return new Promise((resolve, reject) => {
-    let result: T
-
-    transaction.oncomplete = () => {
-      resolve(result)
-    }
-
+  const txDone = new Promise<void>((resolve, reject) => {
+    transaction.oncomplete = () => resolve()
     transaction.onabort = () => {
       reject(transaction.error || new Error('Transaction aborted'))
     }
-
     transaction.onerror = () => {
       reject(transaction.error || new Error('Unknown transaction error'))
     }
-
-    callback(stores)
-      .then(res => {
-        result = res
-      })
-      .catch(err => {
-        transaction.abort()
-        reject(err)
-      })
   })
+
+  let callbackError: unknown
+  let result!: T
+
+  try {
+    try {
+      result = await callback(stores)
+    } catch (err) {
+      callbackError = err
+      try {
+        transaction.abort()
+      } catch {
+        // already aborting
+      }
+    }
+
+    try {
+      await txDone
+    } catch (txErr) {
+      throw mapTransactionError(callbackError ?? txErr)
+    }
+
+    if (callbackError !== undefined) {
+      throw mapTransactionError(callbackError)
+    }
+
+    return result
+  } finally {
+    scheduleIdleClose(db)
+  }
 }

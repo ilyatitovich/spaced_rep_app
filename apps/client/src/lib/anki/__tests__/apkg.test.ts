@@ -1,6 +1,12 @@
+import { afterEach } from 'vitest'
 import initSqlJs from 'sql.js/dist/sql-asm.js'
 import JSZip from 'jszip'
-import { parseApkg } from '@/lib/anki/parse-apkg'
+import {
+  APKG_LIMITS,
+  assertApkgCompressedSize,
+  assertApkgEntryCount,
+  parseApkg
+} from '@/lib/anki/parse-apkg'
 import {
   apkgToCards,
   fieldHtmlToBlocks,
@@ -234,5 +240,39 @@ describe('parseApkg + apkgToCards', () => {
     expect(parsed.notes).toEqual([
       { fields: ['Real front', 'Real back'], fieldNames: [] }
     ])
+  })
+})
+
+describe('apkg size limits', () => {
+  const original = { ...APKG_LIMITS }
+
+  afterEach(() => {
+    Object.assign(APKG_LIMITS, original)
+  })
+
+  it('rejects oversized compressed buffers', () => {
+    APKG_LIMITS.maxCompressedBytes = 8
+    expect(() => assertApkgCompressedSize(9)).toThrow(/too large/i)
+  })
+
+  it('rejects zips with too many entries', () => {
+    APKG_LIMITS.maxZipEntries = 2
+    expect(() => assertApkgEntryCount(3)).toThrow(/too many files/i)
+  })
+
+  it('rejects parseApkg when the compressed size exceeds the cap', async () => {
+    APKG_LIMITS.maxCompressedBytes = 32
+    const buf = await buildApkg({ notes: [['a', 'b']] })
+    await expect(parseApkg(buf)).rejects.toThrow(/too large/i)
+  })
+
+  it('rejects parseApkg when uncompressed media exceeds the cap', async () => {
+    APKG_LIMITS.maxUncompressedBytes = 64
+    const mediaBytes = new Uint8Array(128)
+    const buf = await buildApkg({
+      notes: [['<img src="big.png">', 'back']],
+      media: { big: { bytes: mediaBytes, name: 'big.png' } }
+    })
+    await expect(parseApkg(buf)).rejects.toThrow(/uncompressed/i)
   })
 })

@@ -435,12 +435,17 @@ export async function importAnkiApkg(
 ): Promise<number> {
   onProgress?.({ phase: 'parsing' })
 
-  const [{ runAnkiImportWorker }, { sanitizeImportedCard }] = await Promise.all(
-    [
-      import('@/lib/anki/run-anki-import-worker'),
-      import('@/lib/anki/sanitize-imported-card')
-    ]
-  )
+  const [
+    { runAnkiImportWorker },
+    { sanitizeImportedCard },
+    { assertApkgCompressedSize }
+  ] = await Promise.all([
+    import('@/lib/anki/run-anki-import-worker'),
+    import('@/lib/anki/sanitize-imported-card'),
+    import('@/lib/anki/parse-apkg')
+  ])
+
+  assertApkgCompressedSize(file.size)
 
   const cards = await runAnkiImportWorker(await file.arrayBuffer(), topicId)
   if (cards.length === 0) {

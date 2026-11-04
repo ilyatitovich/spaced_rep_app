@@ -9,6 +9,7 @@ export interface StorageUsage {
   usage: number
   quota: number
   estimateAvailable: boolean
+  persisted: boolean
   topicCount: number
   cardCount: number
   cardMediaBytes: number
@@ -16,6 +17,17 @@ export interface StorageUsage {
   cardAudioCount: number
   cacheBytes: number
   cacheCount: number
+}
+
+/** Ask the browser to keep origin data out of automatic eviction. */
+export async function requestPersistentStorage(): Promise<boolean> {
+  try {
+    const persist = navigator.storage?.persist
+    if (!persist) return false
+    return await persist.call(navigator.storage)
+  } catch {
+    return false
+  }
 }
 
 function promisifyRequest<T>(request: IDBRequest<T>): Promise<T> {
@@ -47,6 +59,7 @@ export async function getStorageUsage(): Promise<StorageUsage> {
   let usage = 0
   let quota = 0
   let estimateAvailable = false
+  let persisted = false
 
   try {
     const estimate = await navigator.storage?.estimate?.()
@@ -59,6 +72,12 @@ export async function getStorageUsage(): Promise<StorageUsage> {
     // Private mode / blocked storage — leave estimateAvailable false
   }
 
+  try {
+    persisted = (await navigator.storage?.persisted?.()) ?? false
+  } catch {
+    persisted = false
+  }
+
   const [{ topicCount, cardCount }, cardMedia, cache] = await Promise.all([
     countTopicsAndCards(),
     getCardMediaStats(),
@@ -69,6 +88,7 @@ export async function getStorageUsage(): Promise<StorageUsage> {
     usage,
     quota,
     estimateAvailable,
+    persisted,
     topicCount,
     cardCount,
     cardMediaBytes: cardMedia.bytes,

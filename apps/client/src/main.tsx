@@ -7,6 +7,7 @@ import { createRoot } from 'react-dom/client'
 
 import App from './app'
 import { ErrorFallback } from '@/components'
+import { requestPersistentStorage } from '@/lib/storage-usage'
 import { bootstrapLocalSettings } from './services/settings.service'
 import { hydrateStudyMemory } from './services/study-memory'
 
@@ -34,6 +35,8 @@ async function bootstrap(): Promise<void> {
     )
     return
   }
+
+  void requestPersistentStorage()
 
   root.render(
     <StrictMode>

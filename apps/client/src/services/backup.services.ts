@@ -3,6 +3,7 @@ import {
   refreshSyncQueueDepth,
   triggerSync
 } from './sync.service'
+import { BackupFileSchema } from '@/lib/backup-schema'
 import {
   normalizeCardData,
   parseImportJson,
@@ -19,7 +20,7 @@ import {
 } from '@/lib/card-media-stats'
 import { decodeCardData, encodeCardData } from '@/lib/sync-serialize'
 import { Card, Topic } from '@/models'
-import type { ExportedFile } from '@/types'
+import type { CardData, ExportedFile, LegacyCardData } from '@/types'
 import {
   emitStudyData,
   getAllCardsFromMemory,
@@ -68,32 +69,52 @@ export async function exportAppData(): Promise<ExportedFile> {
 }
 
 function parseBackup(text: string): { topics: Topic[]; cards: Card[] } {
-  let data: { topics?: Topic[]; cards?: Card[] }
+  let raw: unknown
 
   try {
-    data = parseImportJson(text) as { topics?: Topic[]; cards?: Card[] }
+    raw = parseImportJson(text)
   } catch {
     throw new Error('Invalid JSON in backup file')
   }
 
-  if (!Array.isArray(data.topics) || !Array.isArray(data.cards)) {
+  const parsed = BackupFileSchema.safeParse(raw)
+  if (!parsed.success) {
     throw new Error('Invalid backup file: missing topics[] or cards[]')
   }
 
+  const data = parsed.data
+
   // Old nanoid IDs are remapped to UUIDs so sync can upsert into Postgres.
   const topicIdMap = new Map<string, string>()
-  const topics = data.topics.map(topic => {
+  const topics: Topic[] = data.topics.map(topic => {
     const id = ensureUuid(topic.id)
     if (id !== topic.id) topicIdMap.set(topic.id, id)
-    return id === topic.id ? topic : { ...topic, id }
+    const next: Topic = {
+      id,
+      title: topic.title,
+      pivot: topic.pivot,
+      week: topic.week as Topic['week'],
+      nextUpdateDate: topic.nextUpdateDate,
+      updatedAt: topic.updatedAt,
+      deletedAt: topic.deletedAt
+    }
+    if (topic.isArchived !== undefined) next.isArchived = topic.isArchived
+    return next
   })
 
-  const cards = data.cards.map(card => ({
-    ...card,
-    id: ensureUuid(card.id),
-    topicId: topicIdMap.get(card.topicId) ?? card.topicId,
-    data: normalizeCardData(decodeCardData(card.data))
-  }))
+  const cards: Card[] = data.cards.map(card => {
+    const next: Card = {
+      id: ensureUuid(card.id),
+      topicId: topicIdMap.get(card.topicId) ?? card.topicId,
+      level: card.level,
+      updatedAt: card.updatedAt,
+      data: normalizeCardData(
+        decodeCardData(card.data as CardData | LegacyCardData)
+      )
+    }
+    if (card.reviewDate !== undefined) next.reviewDate = card.reviewDate
+    return next
+  })
 
   return { topics, cards }
 }
