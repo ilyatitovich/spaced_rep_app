@@ -16,6 +16,29 @@ env:
   NODE_ENV: test
 
 jobs:
+  changes:
+    name: Changed files
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    outputs:
+      unit: ${{ steps.filter.outputs.unit }}
+      integration: ${{ steps.filter.outputs.integration }}
+      e2e: ${{ steps.filter.outputs.e2e }}
+      image: ${{ steps.filter.outputs.image }}
+      backup: ${{ steps.filter.outputs.backup }}
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Decide which test suites to run
+        id: filter
+        env:
+          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: .github/scripts/changed-suites.sh
+
   typecheck:
     name: Typecheck
     permissions:
@@ -66,6 +89,8 @@ jobs:
 
   image-smoke:
     name: Server image boots
+    needs: changes
+    if: needs.changes.outputs.image == 'true'
     permissions:
       contents: read
     runs-on: ubuntu-latest
@@ -79,6 +104,8 @@ jobs:
 
   backup-drill:
     name: Backup restore drill
+    needs: changes
+    if: needs.changes.outputs.backup == 'true'
     permissions:
       contents: read
     runs-on: ubuntu-latest
@@ -137,6 +164,8 @@ jobs:
 
   unit:
     name: Unit
+    needs: changes
+    if: needs.changes.outputs.unit == 'true'
     permissions:
       contents: read
     runs-on: ubuntu-latest
@@ -161,6 +190,8 @@ jobs:
 
   integration:
     name: Integration
+    needs: changes
+    if: needs.changes.outputs.integration == 'true'
     permissions:
       contents: read
     runs-on: ubuntu-latest
@@ -214,6 +245,8 @@ jobs:
 
   e2e:
     name: E2E
+    needs: changes
+    if: needs.changes.outputs.e2e == 'true'
     permissions:
       contents: read
     runs-on: ubuntu-latest

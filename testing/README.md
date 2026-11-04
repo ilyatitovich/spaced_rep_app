@@ -181,7 +181,7 @@ Faker is seeded (`42`) in integration setup for deterministic data.
 
 ## CI
 
-`[.github/workflows/tests.yml](../.github/workflows/tests.yml)` runs parallel jobs on push to `main` and on PRs:
+`[.github/workflows/tests.yml](../.github/workflows/tests.yml)` runs parallel jobs on push to `main` and on PRs. Unit, integration, e2e, the server image boot, and the backup restore drill run only when a file that suite covers has changed. The other jobs run every time.
 
 1. **Typecheck** — `pnpm prisma:generate` then `pnpm typecheck`
 2. **Lint** — `pnpm lint` (oxlint)

@@ -71,11 +71,23 @@ docker run -d --name "${RUN_ID}-redis" --network "$NETWORK" \
   redis:7-alpine redis-server --requirepass "$REDIS_PASSWORD" >/dev/null
 
 echo "Waiting for Postgres..."
+# pg_isready is true while initdb's temporary server is up. That server then
+# exits and deletes the socket. Wait until init has finished and the real
+# server accepts connections.
+ready=0
 for _ in $(seq 1 60); do
-  docker exec "${RUN_ID}-postgres" pg_isready -U smoke -d smoke >/dev/null 2>&1 && break
+  if docker logs "${RUN_ID}-postgres" 2>&1 | grep -F "PostgreSQL init process complete" >/dev/null \
+    && docker exec "${RUN_ID}-postgres" pg_isready -U smoke -d smoke >/dev/null 2>&1; then
+    ready=1
+    break
+  fi
   sleep 1
 done
-docker exec "${RUN_ID}-postgres" pg_isready -U smoke -d smoke >/dev/null
+if [ "$ready" -ne 1 ]; then
+  echo "Postgres did not become ready" >&2
+  docker logs "${RUN_ID}-postgres" >&2 || true
+  exit 1
+fi
 
 echo "Running migrations..."
 docker run --rm --network "$NETWORK" --env-file "$ENV_FILE" "$IMAGE" \

@@ -35,11 +35,23 @@ docker run -d --name "$PG" --network "$NETWORK" \
   postgres:17-alpine >/dev/null
 
 echo "Waiting for Postgres..."
+# pg_isready is true while initdb's temporary server is up. That server then
+# exits and deletes the socket, so the next psql fails. Wait until init has
+# finished and the real server accepts connections.
+ready=0
 for _ in $(seq 1 60); do
-  docker exec "$PG" pg_isready -U drill -d source >/dev/null 2>&1 && break
+  if docker logs "$PG" 2>&1 | grep -F "PostgreSQL init process complete" >/dev/null \
+    && docker exec "$PG" pg_isready -U drill -d source >/dev/null 2>&1; then
+    ready=1
+    break
+  fi
   sleep 1
 done
-docker exec "$PG" pg_isready -U drill -d source >/dev/null
+if [ "$ready" -ne 1 ]; then
+  echo "Postgres did not become ready" >&2
+  docker logs "$PG" >&2 || true
+  exit 1
+fi
 
 psql_in() { docker exec -i "$PG" psql -U drill -v ON_ERROR_STOP=1 -q "$@"; }
 

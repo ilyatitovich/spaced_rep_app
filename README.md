@@ -74,7 +74,7 @@ pnpm knip
 pnpm jscpd
 ```
 
-CI (`.github/workflows/tests.yml`) runs typecheck, lint, knip, unit tests with a V8 coverage artifact, integration tests, Chromium e2e, and jscpd on push to `main` and on pull requests. Coverage is uploaded; there is no percentage gate.
+CI (`.github/workflows/tests.yml`) runs typecheck, lint, knip, unit tests with a V8 coverage artifact, integration tests, Chromium e2e, and jscpd on push to `main` and on pull requests. Unit, integration, and e2e run only when a file that suite covers has changed. Coverage is uploaded; there is no percentage gate.
 
 ## License
 
