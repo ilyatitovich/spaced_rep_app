@@ -25,6 +25,7 @@
     "@aws-sdk/s3-request-presigner": "^3.1134.0",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
+    "@sentry/node": "^10.78.0",
     "@simplewebauthn/server": "^13.3.2",
     "@spaced-rep/sync-protocol": "workspace:*",
     "compression": "^1.8.2",

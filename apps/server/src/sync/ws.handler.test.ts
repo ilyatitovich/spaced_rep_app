@@ -298,6 +298,52 @@ describe('sync websocket entitlement', () => {
         pushBatch: { mutations: [] }
       })
 
+    it('correlates the post-hello pullDelta with the hello messageId', async () => {
+      pullChanges.mockResolvedValueOnce({
+        records: [
+          {
+            topic: {
+              id: '11111111-1111-4111-8111-111111111111',
+              title: 't',
+              pivot: 0,
+              weekJson: '[]',
+              nextUpdateDate: 0,
+              updatedAt: 0
+            }
+          }
+        ],
+        watermark: '1',
+        more: false
+      })
+      const { wss, port } = await listen()
+      const { ws, received } = await open(port)
+      const messageId = createEnvelopeId()
+
+      ws.send(
+        encodeEnvelope({
+          ...base(),
+          messageId,
+          kind: 'hello',
+          hello: {
+            lastPulledAt: '0',
+            pendingOpCount: 0,
+            protocolVersion: PROTOCOL_VERSION
+          }
+        })
+      )
+
+      await vi.waitFor(() => expect(received.length).toBeGreaterThanOrEqual(2))
+      expect(received[0]).toMatchObject({
+        kind: 'helloAck',
+        correlationId: messageId
+      })
+      expect(received[1]).toMatchObject({
+        kind: 'pullDelta',
+        correlationId: messageId
+      })
+      wss.close()
+    })
+
     it('rejects a push from a socket that never said hello', async () => {
       const { wss, port } = await listen()
       const { ws, received } = await open(port)

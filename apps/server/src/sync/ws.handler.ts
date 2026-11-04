@@ -13,6 +13,11 @@ import { prisma } from '../shared/lib/prisma.js'
 import { TooManyRequestsError } from '../shared/lib/errors.js'
 import { logger } from '../shared/lib/logger.js'
 import {
+  recordPullPageSize,
+  recordPushLatencyMs,
+  setWsConnectionCount
+} from '../shared/lib/metrics.js'
+import {
   assertPlan,
   isPlanEntitled
 } from '../settings/services/plan.service.js'
@@ -39,6 +44,11 @@ const connections = new Map<string, Conn>() // key: `${userId}:${deviceId}`
 function forget(conn: Conn): void {
   const key = connKey(conn.userId, conn.deviceId)
   if (connections.get(key) === conn) connections.delete(key)
+  setWsConnectionCount(connections.size)
+}
+
+function trackConnections(): void {
+  setWsConnectionCount(connections.size)
 }
 
 function connKey(userId: string, deviceId: string): string {
@@ -273,6 +283,7 @@ async function handleMessage(conn: Conn, data: string): Promise<void> {
         existing.ws.close(1000, 'replaced')
       }
       connections.set(key, conn)
+      trackConnections()
 
       send(conn.ws, {
         version: PROTOCOL_VERSION,
@@ -292,10 +303,12 @@ async function handleMessage(conn: Conn, data: string): Promise<void> {
         userId: conn.userId,
         since: envelope.hello.lastPulledAt
       })
+      recordPullPageSize(delta.records.length)
       if (delta.records.length > 0) {
         send(conn.ws, {
           version: PROTOCOL_VERSION,
           messageId: createEnvelopeId(),
+          correlationId: envelope.messageId,
           deviceId: conn.deviceId,
           sentAt: Date.now(),
           kind: 'pullDelta',
@@ -334,11 +347,13 @@ async function handleMessage(conn: Conn, data: string): Promise<void> {
         if (denyIfDeviceError(conn, err)) return
         throw err
       }
+      const started = Date.now()
       const ack = await applyPushBatch({
         userId: conn.userId,
         deviceId: conn.deviceId,
         mutations: envelope.pushBatch.mutations
       })
+      recordPushLatencyMs(Date.now() - started)
       send(conn.ws, {
         version: PROTOCOL_VERSION,
         messageId: createEnvelopeId(),
@@ -355,6 +370,7 @@ async function handleMessage(conn: Conn, data: string): Promise<void> {
         userId: conn.userId,
         since: envelope.pullRequest.since
       })
+      recordPullPageSize(delta.records.length)
       send(conn.ws, {
         version: PROTOCOL_VERSION,
         messageId: createEnvelopeId(),
@@ -473,16 +489,19 @@ export function createSyncWss(server: HttpServer): WebSocketServer {
         if (!liveSessionIds.has(conn.sessionId)) {
           denySession(conn)
           connections.delete(key)
+          trackConnections()
           continue
         }
         if (!entitledUsers.has(conn.userId)) {
           denyPlan(conn)
           connections.delete(key)
+          trackConnections()
           continue
         }
         if (now.getTime() - conn.lastPongAt > 70_000) {
           conn.ws.close(1001, 'heartbeat timeout')
           connections.delete(key)
+          trackConnections()
           continue
         }
         send(conn.ws, {
@@ -515,7 +534,13 @@ export function createSyncWss(server: HttpServer): WebSocketServer {
       void authorized
         .then(conn => (conn ? handleMessage(conn, text) : undefined))
         .catch(err => {
-          logger.error({ err }, 'ws.message handler error')
+          let correlationId: string | undefined
+          try {
+            correlationId = decodeEnvelope(text).messageId
+          } catch {
+            // decode already failed inside handleMessage
+          }
+          logger.error({ err, correlationId }, 'ws.message handler error')
         })
     })
 
@@ -523,6 +548,7 @@ export function createSyncWss(server: HttpServer): WebSocketServer {
       void authorized.then(conn => {
         if (!conn) return
         if (conn.deviceId) forget(conn)
+        else trackConnections()
         logger.info(
           { userId: conn.userId, deviceId: conn.deviceId },
           'ws.disconnect'
@@ -553,6 +579,7 @@ export function broadcastGracefulShutdown(reason: string): void {
     conn.ws.close(1001, reason)
   }
   connections.clear()
+  trackConnections()
 }
 
 export function disconnectSyncDevice(userId: string, deviceId: string): void {
@@ -561,4 +588,5 @@ export function disconnectSyncDevice(userId: string, deviceId: string): void {
   if (!conn) return
   denyDevice(conn, 'DEVICE_REVOKED', 'Device has been revoked')
   connections.delete(key)
+  trackConnections()
 }

@@ -8,12 +8,15 @@ import { env } from './shared/config/env.js'
 import { logger } from './shared/lib/logger.js'
 import { disconnectPrisma } from './shared/lib/prisma.js'
 import { connectRedis, getRedis } from './shared/lib/redis.js'
+import { captureServerException, initSentry } from './shared/lib/sentry.js'
 import {
   startBillingReconciler,
   stopBillingReconciler
 } from './settings/billing/billing.service.js'
 import { stopFanoutSubscriber } from './sync/fanout.service.js'
 import { broadcastGracefulShutdown, createSyncWss } from './sync/ws.handler.js'
+
+initSentry()
 
 const app = createApp()
 let server: Server | null = null
@@ -66,8 +69,10 @@ process.on('SIGINT', () => shutdown('SIGINT'))
 
 process.on('unhandledRejection', reason => {
   logger.error({ reason }, 'Unhandled rejection')
+  captureServerException(reason)
 })
 process.on('uncaughtException', err => {
   logger.fatal({ err }, 'Uncaught exception — exiting')
+  captureServerException(err)
   process.exit(1)
 })

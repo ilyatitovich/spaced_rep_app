@@ -2,6 +2,7 @@ import type { ErrorRequestHandler } from 'express'
 import { AppError } from '../lib/errors.js'
 import { statusToErrorCode } from '../lib/http.js'
 import { logger } from '../lib/logger.js'
+import { captureServerException } from '../lib/sentry.js'
 import { env } from '../config/env.js'
 
 /**
@@ -48,6 +49,7 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   }
 
   logger.error({ err, requestId: req.id }, 'Unhandled error')
+  captureServerException(err, { requestId: req.id })
   res.status(500).json({
     error: {
       code: 'INTERNAL_ERROR',

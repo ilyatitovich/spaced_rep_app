@@ -7,7 +7,7 @@ Single-VM API stack: Postgres, Redis (passworded), migrate-once, API, encrypted 
 1. A VM with Docker + Compose, DNS for the API host, and an `.env` copied from `.env.example` with **production** secrets.
 2. Replace `api.example.com` in `Caddyfile` with the real API hostname.
 3. Set `GHCR_OWNER` to the GitHub org/user that owns the image (see `.github/workflows/publish-server.yml`).
-4. Point an uptime check at `https://<api-host>/health` — alert if status ≠ 200 or body `status` ≠ `ok` (checks Postgres + Redis).
+4. Point an uptime check at `https://<api-host>/ready` — alert if status ≠ 200 or body `status` ≠ `ok` (checks Postgres + Redis). `/health` is the same probe (kept for older scripts); `/live` only asserts the process is up and should not be your external uptime signal.
 
 ## Required Production Env
 
@@ -29,7 +29,7 @@ Single-VM API stack: Postgres, Redis (passworded), migrate-once, API, encrypted 
 | `BETA_OPEN_PRO`                                                      | Defaults to `false`. Set `true` explicitly only to grant Pro without Lemon during the unpaid beta        |
 | `LEMONSQUEEZY_API_KEY`                                               | Leave empty; checkout stays closed until paid phase                                                      |
 
-Media (`R2_*`) and `EXTENSION_REDIRECT_URIS` are optional; see `.env.example`.
+Media (`R2_*`), `EXTENSION_REDIRECT_URIS`, and `SENTRY_DSN` are optional; see `.env.example`.
 
 ## Bring Up
 
@@ -80,9 +80,23 @@ CI runs `infra/smoke/backup-restore.sh` on every change (seed Postgres 17, back 
 2. Confirm the printed table list and row counts look plausible against production, and that `_prisma_migrations` ends at the latest migration.
 3. Drop the scratch database and note the date and the backup file used.
 
-## Log Drain
+## Observability
 
-Containers log JSON to stdout (`pino` + `pino-http`, Authorization redacted, `x-request-id` on responses). Ship with whatever collector you already run on the host (Vector, Fluent Bit, Datadog agent, etc.) by scraping Docker json-file logs — no in-process drain is required for beta.
+### Log Drain
+
+Containers log JSON to stdout (`pino` + `pino-http`, Authorization/cookies/emails/billing fields redacted, `x-request-id` on responses). Ship with whatever collector you already run on the host (Vector, Fluent Bit, Datadog agent, etc.) by scraping Docker json-file logs — no in-process drain is required for beta.
+
+### Sentry
+
+Set `SENTRY_DSN` on the API (same project as the client is fine). Unhandled 500s and process-level exceptions are reported; emails and billing payloads are scrubbed in `beforeSend`. Leave it empty to disable.
+
+### Metrics
+
+`GET /metrics` exposes Prometheus text: push latency, pull page size, and open sync WebSocket connections. Scrape from the host or a sidecar; the endpoint is unauthenticated — keep the API host private or put basic auth in Caddy if you expose it.
+
+### Uptime Alert
+
+Use an external checker (UptimeRobot, Better Stack, healthchecks.io HTTP check, etc.) against `https://<api-host>/ready` every 1–5 minutes. Alert on non-200 or body `status` ≠ `ok`. Pair this with the backup dead-man's-switch (`BACKUP_HEARTBEAT_URL`) so a quiet VM still pages you.
 
 ## Client
 

@@ -6,6 +6,9 @@ vi.mock('../lib/logger.js', () => ({
   logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn() }
 }))
 
+const captureServerException = vi.fn()
+vi.mock('../lib/sentry.js', () => ({ captureServerException }))
+
 const { errorHandler } = await import('./error-handler.js')
 const { BadRequestError } = await import('../lib/errors.js')
 
@@ -89,5 +92,12 @@ describe('errorHandler other errors', () => {
     const res = await request(appWithParser()).get('/boom')
     expect(res.status).toBe(500)
     expect(res.body.error.code).toBe('INTERNAL_ERROR')
+    expect(captureServerException).toHaveBeenCalled()
+  })
+
+  it('does not report AppError (4xx) to Sentry', async () => {
+    captureServerException.mockClear()
+    await request(appWithParser()).get('/app-error')
+    expect(captureServerException).not.toHaveBeenCalled()
   })
 })

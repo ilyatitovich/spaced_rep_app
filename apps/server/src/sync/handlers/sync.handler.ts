@@ -9,6 +9,10 @@ import {
 } from '@spaced-rep/sync-protocol'
 import { BadRequestError } from '../../shared/lib/errors.js'
 import { parseBody, sendData } from '../../shared/lib/http.js'
+import {
+  recordPullPageSize,
+  recordPushLatencyMs
+} from '../../shared/lib/metrics.js'
 import { assertPlan } from '../../settings/services/plan.service.js'
 import { revokeDeviceSchema } from '../schemas/sync.schemas.js'
 import {
@@ -84,11 +88,13 @@ export async function pushHandler(
       deviceId: envelope.deviceId,
       userAgent: req.get('user-agent')
     })
+    const started = Date.now()
     const ack = await applyPushBatch({
       userId,
       deviceId: envelope.deviceId,
       mutations: envelope.pushBatch.mutations
     })
+    recordPushLatencyMs(Date.now() - started)
 
     sendEnvelope(res, {
       version: PROTOCOL_VERSION,
@@ -125,6 +131,7 @@ export async function pullHandler(
       userId,
       since: envelope.pullRequest.since
     })
+    recordPullPageSize(delta.records.length)
 
     await finishSyncCycle({
       userId,
@@ -171,6 +178,7 @@ export async function bootstrapHandler(
       cursor,
       userAgent: req.get('user-agent')
     })
+    recordPullPageSize(delta.records.length)
 
     sendEnvelope(res, {
       version: PROTOCOL_VERSION,
