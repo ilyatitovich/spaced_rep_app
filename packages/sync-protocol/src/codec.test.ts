@@ -6,6 +6,9 @@ import {
   type SyncEnvelope
 } from './index.js'
 
+const DEVICE_ID = '11111111-1111-4111-8111-111111111111'
+const TOPIC_ID = '22222222-2222-4222-8222-222222222222'
+
 describe('sync-protocol codec', () => {
   it('round-trips a hello envelope', () => {
     const envelope: SyncEnvelope = {
@@ -34,20 +37,20 @@ describe('sync-protocol codec', () => {
     const envelope: SyncEnvelope = {
       version: PROTOCOL_VERSION,
       messageId: createEnvelopeId(),
-      deviceId: 'device-1',
+      deviceId: DEVICE_ID,
       sentAt: 1_700_000_000_000,
       kind: 'pushBatch',
       pushBatch: {
         mutations: [
           {
-            opId: 'op-1',
-            deviceId: 'device-1',
+            opId: '33333333-3333-4333-8333-333333333333',
+            deviceId: DEVICE_ID,
             table: 'topics',
-            recordId: 'topic-1',
+            recordId: TOPIC_ID,
             operation: 'upsert',
             updatedAt: 1_700_000_000_000,
             topic: {
-              id: 'topic-1',
+              id: TOPIC_ID,
               title: 'English',
               pivot: 1_700_000_000_000,
               weekJson: '[]',

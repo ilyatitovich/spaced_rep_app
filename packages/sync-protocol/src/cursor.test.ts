@@ -22,6 +22,12 @@ describe('sync cursor', () => {
     expect(parseCursor(value)).toBe(0n)
   })
 
+  it('keeps the largest bigint sequence and reads anything bigger as "from the start"', () => {
+    expect(parseCursor('9223372036854775807')).toBe(9_223_372_036_854_775_807n)
+    expect(parseCursor('9223372036854775808')).toBe(0n)
+    expect(parseCursor('9'.repeat(5000))).toBe(0n)
+  })
+
   it('compares numerically, not as strings', () => {
     expect(isCursorAhead('10', '9')).toBe(true)
     expect(isCursorAhead('9', '10')).toBe(false)

@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express'
 import {
+  ClientIdSchema,
   INITIAL_CURSOR,
   PROTOCOL_VERSION,
   SyncEnvelopeSchema,
@@ -33,7 +34,12 @@ function sendEnvelope(res: Response, envelope: SyncEnvelope): void {
   res.status(200).json(envelope)
 }
 
-function assertProtocolVersion(envelope: SyncEnvelope): void {
+/**
+ * Version gate, then the request-only checks the shared envelope cannot make
+ * (server frames may carry an empty `deviceId`): the sender's device id lands
+ * in a Postgres `uuid` column, so a malformed one must be a 400, not a 500.
+ */
+function assertValidRequest(envelope: SyncEnvelope): void {
   if (envelope.version !== PROTOCOL_VERSION) {
     throw new BadRequestError(
       `Unsupported protocol version ${envelope.version}`,
@@ -48,6 +54,9 @@ function assertProtocolVersion(envelope: SyncEnvelope): void {
       `Unsupported protocol version ${envelope.hello.protocolVersion}`,
       'PROTOCOL_MISMATCH'
     )
+  }
+  if (!ClientIdSchema.safeParse(envelope.deviceId).success) {
+    throw new BadRequestError('deviceId must be a UUID', 'VALIDATION_ERROR')
   }
 }
 
@@ -68,7 +77,7 @@ export async function pushHandler(
         'VALIDATION_ERROR'
       )
     }
-    assertProtocolVersion(envelope)
+    assertValidRequest(envelope)
 
     await reportDevice({
       userId,
@@ -110,7 +119,7 @@ export async function pullHandler(
         'VALIDATION_ERROR'
       )
     }
-    assertProtocolVersion(envelope)
+    assertValidRequest(envelope)
 
     const delta = await pullChanges({
       userId,
@@ -147,7 +156,7 @@ export async function bootstrapHandler(
     const { userId } = requireAuthUser(req)
     await assertPlan(userId, 'PRO')
     const envelope = parseBody(SyncEnvelopeSchema, req.body)
-    assertProtocolVersion(envelope)
+    assertValidRequest(envelope)
 
     let cursor = INITIAL_CURSOR
     if (envelope.kind === 'hello') {

@@ -43,15 +43,39 @@ export const CardRecordSchema = z.object({
   deletedAt: z.number().nullish()
 })
 
+/**
+ * Most mutations one push may carry. The client sends at most 50; this bounds
+ * the work a single request can force (each mutation is its own transaction).
+ */
+export const MAX_PUSH_MUTATIONS = 100
+
+/**
+ * Longest cursor the server will parse. A v4 cursor is a decimal int64 (at most
+ * 19 digits); the margin leaves room for legacy ISO-8601 watermarks that are
+ * still tolerated as "from the start".
+ */
+export const MAX_CURSOR_LENGTH = 64
+
+/**
+ * Ids a client mints and the server stores in Postgres `uuid` columns. Request
+ * schemas only: records the server sends back (a delete tombstone has an empty
+ * `topicId`) and envelope ids (an error frame can carry an empty `deviceId`)
+ * stay lenient so a stricter client never fails to decode a server frame.
+ */
+export const ClientIdSchema = z.uuid()
+
 export const MutationSchema = z.object({
-  opId: z.string(),
-  deviceId: z.string(),
+  opId: ClientIdSchema,
+  deviceId: ClientIdSchema,
   table: SyncTableSchema,
-  recordId: z.string(),
+  recordId: ClientIdSchema,
   operation: SyncOperationSchema,
   updatedAt: z.number(),
-  topic: TopicRecordSchema.optional(),
-  card: CardRecordSchema.optional()
+  topic: TopicRecordSchema.extend({ id: ClientIdSchema }).optional(),
+  card: CardRecordSchema.extend({
+    id: ClientIdSchema,
+    topicId: ClientIdSchema
+  }).optional()
 })
 
 export const SyncRecordSchema = z.object({
@@ -60,7 +84,7 @@ export const SyncRecordSchema = z.object({
 })
 
 export const HelloSchema = z.object({
-  lastPulledAt: z.string(),
+  lastPulledAt: z.string().max(MAX_CURSOR_LENGTH),
   pendingOpCount: z.number().int(),
   protocolVersion: z.number().int()
 })
@@ -72,7 +96,7 @@ export const HelloAckSchema = z.object({
 })
 
 export const PushBatchSchema = z.object({
-  mutations: z.array(MutationSchema)
+  mutations: z.array(MutationSchema).max(MAX_PUSH_MUTATIONS)
 })
 
 export const RejectedOpSchema = z.object({
@@ -103,7 +127,7 @@ export const PullDeltaSchema = z.object({
 })
 
 export const PullRequestSchema = z.object({
-  since: z.string()
+  since: z.string().max(MAX_CURSOR_LENGTH)
 })
 
 export const PingSchema = z.object({ timestamp: z.number() })

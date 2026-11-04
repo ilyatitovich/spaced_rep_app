@@ -1,6 +1,7 @@
 import type { Server as HttpServer, IncomingMessage } from 'node:http'
 import { WebSocketServer, WebSocket } from 'ws'
 import {
+  ClientIdSchema,
   PROTOCOL_VERSION,
   createEnvelopeId,
   decodeEnvelope,
@@ -239,6 +240,17 @@ async function handleMessage(conn: Conn, data: string): Promise<void> {
           }
         })
         conn.ws.close(4002, 'protocol mismatch')
+        return
+      }
+
+      // The id is stored in a Postgres `uuid` column; reject anything else
+      // before it can fail inside reportDevice with no reply to the client.
+      if (!ClientIdSchema.safeParse(envelope.deviceId).success) {
+        replyError(conn, envelope.messageId, {
+          code: 'VALIDATION_ERROR',
+          message: 'deviceId must be a UUID',
+          retryable: false
+        })
         return
       }
 

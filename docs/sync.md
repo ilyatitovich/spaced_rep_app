@@ -23,6 +23,16 @@ Short reference for how multi-device sync works today. Whole-record **last-write
 - **Transient failures.** Network errors, 5xx, 408 and 429 schedule a retry with exponential backoff (2 s, 4 s, ... capped at 5 min). Other errors surface and wait for the user or the next trigger. Offline runs wait for the browser's `online` event.
 - **401.** A 401 on an HTTP sync or media request refreshes the session once (single-flight) and replays the request. A refresh the server rejects signs the user out; a network failure keeps the session.
 
+## Request validation (server)
+
+Push, pull and bootstrap are validated before any work happens; failures are 4xx, never 500.
+
+- **Shape.** Client ids (`opId`, `recordId`, mutation `deviceId`, record `id`, card `topicId`, envelope `deviceId`) must be UUIDs, because they land in Postgres `uuid` columns. The check lives on request schemas only: records the server sends back stay lenient (a fanout card tombstone has an empty `topicId`). A bad envelope is `400 VALIDATION_ERROR` and applies nothing.
+- **Limits.** At most `MAX_PUSH_MUTATIONS` (100) per push, `since` / `lastPulledAt` at most `MAX_CURSOR_LENGTH` (64) characters, JSON bodies at most 1 MB. A cursor that does not fit a bigint reads as "from the start" rather than overflowing the query.
+- **Body-parser errors.** Oversized body is `413 PAYLOAD_TOO_LARGE`, malformed JSON is `400 INVALID_JSON`, an unsupported encoding is `415`. The parser message and body are never echoed.
+- **Malformed ops.** What a schema cannot express (unparseable `dataJson` / `weekJson`, payload id differing from `recordId`, fractional or out-of-range numbers, NUL characters, invalid timestamps) is rejected per op as `VALIDATION_ERROR` with `retryable: false`, before the batch's media checks, so one bad card cannot fail the cards sent with it.
+- **Retryable vs permanent.** A 4xx apply failure (for example `FORBIDDEN`, a topic owned by another user) is permanent. A card whose topic is not on the server yet is `TOPIC_NOT_SYNCED` and stays retryable, because the topic's own op may still be queued. Unexpected errors stay `APPLY_FAILED`, retryable.
+
 ## What a conflict drops
 
 When two devices edit the same topic or card, the **entire winning record** replaces the loser. Grades, text blocks, and media on the losing write are discarded — there is no per-field merge and no review log replay.
@@ -50,5 +60,6 @@ Sign-out wipes this device's topics, cards, outbox and pull cursor (the device i
 | Server apply / pull | `apps/server/src/sync/sync.service.ts`                               |
 | Sequence + clamp    | `apps/server/src/sync/seq.ts`                                        |
 | Cursor helpers      | `packages/sync-protocol/src/cursor.ts`                               |
+| Op validation       | `apps/server/src/sync/mutation-validation.ts`                        |
 | Tombstone purge     | `apps/server/src/sync/conflict.service.ts`                           |
 | Protocol packages   | `packages/sync-protocol`, `packages/sync-client`                     |

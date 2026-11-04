@@ -16,10 +16,12 @@ import { Prisma } from '../generated/prisma/client.js'
 import { prisma } from '../shared/lib/prisma.js'
 import { logger } from '../shared/lib/logger.js'
 import {
+  AppError,
   BadRequestError,
   ForbiddenError,
   MediaRefError
 } from '../shared/lib/errors.js'
+import { statusToErrorCode } from '../shared/lib/http.js'
 import { PRO_DEVICE_LIMIT } from '../settings/billing/product.js'
 import {
   ACTIVE_WINDOW_MS,
@@ -35,9 +37,18 @@ import {
 } from './idempotency.service.js'
 
 const RECORD_NOT_OWNED = 'Record not owned by user'
+
+/** A card arrived before its topic. Retryable: the topic op may land first next time. */
+class TopicNotSyncedError extends Error {
+  readonly code = 'TOPIC_NOT_SYNCED'
+  constructor() {
+    super('Topic has not been synced yet')
+  }
+}
 type Db = Prisma.TransactionClient
 import { publishFanout } from './fanout.service.js'
 import { clampMutationTimes, lockUserSeq, type SeqAllocator } from './seq.js'
+import { partitionMalformed } from './mutation-validation.js'
 import {
   cardRecordToDb,
   dbCardToRecord,
@@ -238,7 +249,10 @@ async function applyCardUpsert(input: {
     where: { id: card.topicId },
     select: { userId: true }
   })
-  if (!topic || topic.userId !== input.userId) {
+  // Missing is transient: the topic's own op may still be queued behind this
+  // one. Another user's topic is a permanent refusal.
+  if (!topic) throw new TopicNotSyncedError()
+  if (topic.userId !== input.userId) {
     throw new BadRequestError('Topic not owned by user', 'FORBIDDEN')
   }
 
@@ -389,6 +403,19 @@ function rejectedOpFromError(opId: string, err: unknown): RejectedOp {
       code: err.code,
       message,
       retryable: err.retryable
+    }
+  }
+  if (err instanceof TopicNotSyncedError) {
+    return { opId, code: err.code, message, retryable: true }
+  }
+  // A 4xx AppError is a verdict on the op itself (not owned, bad payload):
+  // replaying the same bytes can only fail the same way.
+  if (err instanceof AppError && err.statusCode < 500) {
+    return {
+      opId,
+      code: err.code ?? statusToErrorCode(err.statusCode),
+      message,
+      retryable: false
     }
   }
   return { opId, code: 'APPLY_FAILED', message, retryable: true }
@@ -568,7 +595,12 @@ export async function applyPushBatch(input: {
 
   // Upserts before deletes within the batch
   const now = Date.now()
-  const mutations = input.mutations.map(m => clampMutationTimes(m, now))
+  // Malformed ops are rejected permanently and kept out of the batch: one bad
+  // card must not fail media validation for the cards sent with it.
+  const { valid, rejected: malformed } = partitionMalformed(
+    input.mutations.map(m => clampMutationTimes(m, now))
+  )
+  const mutations = valid
   const upserts = mutations.filter(m => m.operation === 'upsert')
   const deletes = mutations.filter(m => m.operation === 'delete')
   const ordered = [...upserts, ...deletes]
@@ -577,7 +609,7 @@ export async function applyPushBatch(input: {
     input.userId,
     mutations
   )
-  const { acceptedOpIds, rejected, conflicts } = await applyOrderedMutations({
+  const applied = await applyOrderedMutations({
     userId: input.userId,
     deviceId: input.deviceId,
     ordered,
@@ -585,6 +617,8 @@ export async function applyPushBatch(input: {
     batchMediaError,
     mediaErrorsByHash
   })
+  const { acceptedOpIds, conflicts } = applied
+  const rejected = [...malformed, ...applied.rejected]
 
   await pruneAppliedOps(input.userId)
 
