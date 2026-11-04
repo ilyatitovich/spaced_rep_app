@@ -191,8 +191,14 @@ vi.mock('@/lib/anki/run-anki-import-worker', () => ({
 
 const { createTopic, deleteTopic, getAllTopics, getTopicById, updateTopic } =
   await import('../topic.services')
-const { getCardsByTopicAndLevel, importAnkiApkg, importCards } =
-  await import('../card.services')
+const {
+  createCard,
+  getCardsByTopicAndLevel,
+  importAnkiApkg,
+  importCards,
+  updateCard,
+  updateCardsLevelBulk
+} = await import('../card.services')
 const { importAppData } = await import('../backup.services')
 const { __resetStudyMemoryForTests, getTopicFromMemory, hydrateStudyMemory } =
   await import('../study-memory')
@@ -239,6 +245,149 @@ describe('local data services', () => {
     putSyncQueueOpsMock.mockReset()
     triggerSyncMock.mockReset()
     runAnkiImportWorkerMock.mockReset()
+    vi.mocked(withTransaction).mockClear()
+  })
+
+  /** Store lists of every transaction opened so far. */
+  function openedTransactions(): string[][] {
+    return vi
+      .mocked(withTransaction)
+      .mock.calls.map(([names]) =>
+        Array.isArray(names) ? [...names] : [names]
+      )
+  }
+
+  /**
+   * A local write and its outbox op must commit or abort together: a crash
+   * between two transactions would leave an edit that never syncs.
+   */
+  function expectWriteAndOutboxShareATransaction(dataStore: string): void {
+    expect(
+      openedTransactions().some(
+        names => names.includes(dataStore) && names.includes(STORES.SYNC_QUEUE)
+      )
+    ).toBe(true)
+    expect(putSyncQueueOpsMock).toHaveBeenCalled()
+    expect(enqueueSyncMock).not.toHaveBeenCalled()
+    expect(enqueueSyncBulkMock).not.toHaveBeenCalled()
+  }
+
+  describe('local write and outbox op are atomic', () => {
+    it('createTopic', async () => {
+      const topic = buildTopic('Atomic topic')
+      await createTopic(topic)
+
+      expectWriteAndOutboxShareATransaction(STORES.TOPICS)
+      expect(putSyncQueueOpsMock).toHaveBeenCalledWith(expect.anything(), [
+        { table: STORES.TOPICS, recordId: topic.id, operation: 'upsert' }
+      ])
+    })
+
+    it('updateTopic', async () => {
+      const seeded = await seedTopic('Atomic edit')
+      const editable = (await getAllTopics()).find(t => t.id === seeded.id)
+      if (!editable) throw new Error('expected seeded topic')
+      editable.title = 'Atomic edited'
+      await updateTopic(editable)
+
+      expectWriteAndOutboxShareATransaction(STORES.TOPICS)
+      expect(putSyncQueueOpsMock).toHaveBeenCalledWith(expect.anything(), [
+        { table: STORES.TOPICS, recordId: seeded.id, operation: 'upsert' }
+      ])
+    })
+
+    it('createCard', async () => {
+      const topic = await seedTopic('Cards')
+      const card = new Card(textCardData('Q', 'A'), topic.id, 0)
+      await createCard(card)
+
+      expectWriteAndOutboxShareATransaction(STORES.CARDS)
+      expect(putSyncQueueOpsMock).toHaveBeenCalledWith(expect.anything(), [
+        { table: STORES.CARDS, recordId: card.id, operation: 'upsert' }
+      ])
+    })
+
+    it('updateCard', async () => {
+      const topic = await seedTopic('Cards')
+      const card = await seedCard(topic.id, 1)
+      await updateCard(card)
+
+      expectWriteAndOutboxShareATransaction(STORES.CARDS)
+      expect(putSyncQueueOpsMock).toHaveBeenCalledWith(expect.anything(), [
+        { table: STORES.CARDS, recordId: card.id, operation: 'upsert' }
+      ])
+    })
+
+    it('updateCardsLevelBulk', async () => {
+      const topic = await seedTopic('Cards')
+      const a = await seedCard(topic.id, 1)
+      const b = await seedCard(topic.id, 1)
+      await updateCardsLevelBulk([a, b], 2)
+
+      expectWriteAndOutboxShareATransaction(STORES.CARDS)
+      expect(putSyncQueueOpsMock).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.arrayContaining([
+          { table: STORES.CARDS, recordId: a.id, operation: 'upsert' },
+          { table: STORES.CARDS, recordId: b.id, operation: 'upsert' }
+        ])
+      )
+    })
+
+    it('importCards', async () => {
+      const topic = await seedTopic('Import')
+      const id = crypto.randomUUID()
+      await importCards(
+        JSON.stringify({
+          cards: [{ id, level: 1, data: textCardData('Q', 'A'), updatedAt: 1 }]
+        }),
+        topic.id
+      )
+
+      expectWriteAndOutboxShareATransaction(STORES.CARDS)
+      expect(putSyncQueueOpsMock).toHaveBeenCalledWith(expect.anything(), [
+        { table: STORES.CARDS, recordId: id, operation: 'upsert' }
+      ])
+    })
+
+    it('importAppData', async () => {
+      const topicId = crypto.randomUUID()
+      const cardId = crypto.randomUUID()
+      await importAppData(
+        JSON.stringify({
+          version: 1,
+          topics: [
+            {
+              id: topicId,
+              title: 'Backup',
+              pivot: 1_700_000_000_000,
+              week: [],
+              nextUpdateDate: 1_700_000_100_000,
+              updatedAt: 1_700_000_000_000,
+              deletedAt: null
+            }
+          ],
+          cards: [
+            {
+              id: cardId,
+              topicId,
+              level: 1,
+              data: textCardData('Q', 'A'),
+              updatedAt: 1_700_000_000_000
+            }
+          ]
+        })
+      )
+
+      expectWriteAndOutboxShareATransaction(STORES.CARDS)
+      expect(putSyncQueueOpsMock).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.arrayContaining([
+          { table: STORES.TOPICS, recordId: topicId, operation: 'upsert' },
+          { table: STORES.CARDS, recordId: cardId, operation: 'upsert' }
+        ])
+      )
+    })
   })
 
   describe('createTopic', () => {

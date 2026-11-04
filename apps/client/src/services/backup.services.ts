@@ -1,4 +1,8 @@
-import { enqueueSync, triggerSync } from './sync.service'
+import {
+  putSyncQueueOps,
+  refreshSyncQueueDepth,
+  triggerSync
+} from './sync.service'
 import {
   normalizeCardData,
   parseImportJson,
@@ -136,7 +140,7 @@ export async function importAppData(
 
   try {
     await withTransaction(
-      [STORES.TOPICS, STORES.CARDS],
+      [STORES.TOPICS, STORES.CARDS, STORES.SYNC_QUEUE],
       'readwrite',
       async stores => {
         for (const topic of topics) {
@@ -158,6 +162,20 @@ export async function importAppData(
             )
           )
         }
+
+        // Same transaction as the rows: an imported record always has its op.
+        await putSyncQueueOps(stores[STORES.SYNC_QUEUE], [
+          ...importedTopicIds.map(recordId => ({
+            table: STORES.TOPICS,
+            recordId,
+            operation: 'upsert' as const
+          })),
+          ...importedCardIds.map(recordId => ({
+            table: STORES.CARDS,
+            recordId,
+            operation: 'upsert' as const
+          }))
+        ])
       }
     )
   } catch (error) {
@@ -173,12 +191,7 @@ export async function importAppData(
 
   await adjustCardMediaStats(mediaDelta)
 
-  for (const id of importedTopicIds) {
-    await enqueueSync(STORES.TOPICS, id, 'upsert')
-  }
-  for (const id of importedCardIds) {
-    await enqueueSync(STORES.CARDS, id, 'upsert')
-  }
+  await refreshSyncQueueDepth()
   triggerSync()
 
   return { topics: importedTopicIds.length, cards: importedCardIds.length }

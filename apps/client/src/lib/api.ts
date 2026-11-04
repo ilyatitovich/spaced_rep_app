@@ -180,6 +180,25 @@ export async function fetchMe(
   return getJson('/auth/me', accessToken)
 }
 
+/**
+ * Refreshes `current`. Only an explicit rejection means the refresh token is
+ * dead (sign out). Offline, 5xx and gateway errors say nothing about it: keep
+ * the session so the user is not signed out by a flaky network.
+ */
+async function refreshOrKeep(
+  current: AuthSession
+): Promise<AuthSession | null> {
+  try {
+    return await refreshAuthSession(current.refreshToken)
+  } catch (err) {
+    if (isAuthRejection(err)) {
+      clearAuthSession()
+      return null
+    }
+    return current
+  }
+}
+
 /** Single-flight refresh used on cold start / near-expiry. */
 export function ensureFreshSession(): Promise<AuthSession | null> {
   if (refreshInFlight) return refreshInFlight
@@ -193,23 +212,34 @@ export function ensureFreshSession(): Promise<AuthSession | null> {
       return current
     }
 
-    try {
-      return await refreshAuthSession(current.refreshToken)
-    } catch (err) {
-      // Only an explicit rejection means the refresh token is dead. Offline,
-      // 5xx and gateway errors say nothing about it: keep the session so the
-      // user is not signed out by a flaky network.
-      if (isAuthRejection(err)) {
-        clearAuthSession()
-        return null
-      }
-      return current
-    }
+    return refreshOrKeep(current)
   })().finally(() => {
     refreshInFlight = null
   })
 
   return refreshInFlight
+}
+
+/**
+ * The server rejected `rejectedToken` although the clock said it was valid
+ * (revoked session, rotated key, skewed device clock). Refreshes regardless of
+ * expiry, sharing one request between concurrent rejections. Returns a session
+ * holding a different access token, or null when none could be obtained.
+ */
+export async function refreshSessionAfterRejection(
+  rejectedToken: string
+): Promise<AuthSession | null> {
+  await refreshInFlight
+  const current = getAuthSession()
+  if (!current) return null
+  // Another caller already replaced the rejected token.
+  if (current.accessToken !== rejectedToken) return current
+
+  refreshInFlight ??= refreshOrKeep(current).finally(() => {
+    refreshInFlight = null
+  })
+  const session = await refreshInFlight
+  return session && session.accessToken !== rejectedToken ? session : null
 }
 
 export async function requestEmailOtp(input: {

@@ -5,7 +5,7 @@ Short reference for how multi-device sync works today. Whole-record **last-write
 ## Model
 
 - **Local-first.** In-memory maps are the runtime lookup for topics and cards. IndexedDB (`spacedRepApp` v6) is the durable cache (hydrated on bootstrap). The Express API is optional (`VITE_API_URL`).
-- **Outbox.** Mutating services update memory, then IndexedDB, then enqueue into `sync_queue` (key `` `${table}:${recordId}` `` so edits coalesce), then debounce-trigger `syncAll`.
+- **Outbox.** Mutating services update memory, then write the row **and** its `sync_queue` op in one IndexedDB transaction (key `` `${table}:${recordId}` `` so edits coalesce), then debounce-trigger `syncAll`. A row without its op, or the reverse, cannot exist.
 - **Push then pull.** `syncAll` pushes up to 50 ops / ~700 KB, then pulls deltas since `lastPulledAt`. A WebSocket can deliver fanout; HTTP pull remains the fallback.
 - **Cursor (`serverSeq`).** Every synced row carries a server-assigned, per-user, monotonic `serverSeq` (ADR-1). Pull returns a `watermark` that is the highest `serverSeq` delivered, as an opaque decimal string; protocol v4. The client advances `lastPulledAt` forward only, comparing numerically (never rewinds), and keeps requesting while `more` is true. A pre-v4 ISO cursor parses as "from the start", which is a safe idempotent full re-pull. WebSocket fanout deltas carry an empty watermark and never move the cursor. `updatedAt` is no longer a cursor; it only decides LWW.
 - **Why a counter on the user row.** The sequence comes from `users.sync_seq`, locked (`FOR NO KEY UPDATE`) as the first statement of every apply transaction. That serializes a user's applies, so commit order equals sequence order and a pulling client can never skip a lower sequence that commits late. A late edit with an old `updatedAt` gets a fresh `serverSeq`, so peers already past that timestamp still receive it. A push that loses LWW writes nothing and takes no sequence.
@@ -14,6 +14,14 @@ Short reference for how multi-device sync works today. Whole-record **last-write
 - **LWW.** Apply remote if there is no local row or `remote.updatedAt > local.updatedAt`. An older delete does not beat a newer local write; a newer tombstone removes the row; a later upsert newer than the tombstone restores it.
 - **Devices.** Pro allows **3** active devices (`PRO_DEVICE_LIMIT`). Registration past that returns `DEVICE_LIMIT`. Devices idle past 30 days drop out of the active set.
 - **Auth / entitlement.** Sync and media require a signed-in entitled plan. Free local use does not need the API.
+
+## Engine guarantees (client)
+
+- **One run at a time.** HTTP sync, the post-connect flush and WebSocket recovery all go through one single-flight mutex; a request that arrives mid-run makes it loop once more. Incoming deltas (HTTP, bootstrap, WebSocket fanout) apply strictly in order, and the cursor moves forward in a single compare-and-write transaction.
+- **Multi-tab.** Runs also take a Web Lock (`spaced-rep-sync`), so two tabs never push the same outbox or apply the same delta; the second waits, then finds the work done. Decisions to push or overwrite read the durable IndexedDB row, never a tab's in-memory copy (which another tab may have outdated). A tab that applies a pull announces it on a `BroadcastChannel` and other tabs reload memory from IndexedDB.
+- **Poison records.** A pulled record the client can never apply (undecodable, unreadable card data) is quarantined into `failedOps` with code `POISON_RECORD`, once per record; the rest of the delta applies and the cursor advances. Environmental failures (quota, media download) still fail the delta and retry, because skipping them would lose data.
+- **Transient failures.** Network errors, 5xx, 408 and 429 schedule a retry with exponential backoff (2 s, 4 s, ... capped at 5 min). Other errors surface and wait for the user or the next trigger. Offline runs wait for the browser's `online` event.
+- **401.** A 401 on an HTTP sync or media request refreshes the session once (single-flight) and replays the request. A refresh the server rejects signs the user out; a network failure keeps the session.
 
 ## What a conflict drops
 
@@ -34,7 +42,9 @@ Sign-out wipes this device's topics, cards, outbox and pull cursor (the device i
 
 | Area                | Path                                                                 |
 | ------------------- | -------------------------------------------------------------------- |
-| Client engine       | `apps/client/src/services/sync.service.ts`                           |
+| Client engine       | `apps/client/src/services/sync.service.ts` (lifecycle, retry)        |
+| Client engine parts | `sync-queue.ts`, `sync-push.ts`, `sync-pull.ts`, `sync-local.ts`     |
+|                     | `sync-meta.ts`, `sync-state.ts`, `sync-records.ts`, `sync-tabs.ts`   |
 | HTTP / WS           | `apps/client/src/services/sync-http.client.ts`, `sync-ws.manager.ts` |
 | LWW helpers         | `apps/client/src/lib/sync-serialize.ts`                              |
 | Server apply / pull | `apps/server/src/sync/sync.service.ts`                               |

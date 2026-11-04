@@ -314,7 +314,7 @@ describe('onDelta', () => {
     )
   })
 
-  it('a failing recovery pull is logged, keeps the watermark and does not break the engine', async () => {
+  it('a failing recovery sync is logged, keeps the watermark and does not break the engine', async () => {
     await startRealtime()
     hydrateIncomingCardDataMock.mockRejectedValueOnce(
       new Error('hydrate failed')
@@ -325,10 +325,11 @@ describe('onDelta', () => {
 
     await vi.waitFor(() =>
       expect(console.error).toHaveBeenCalledWith(
-        'WS delta retry pull failed:',
+        'Sync failed:',
         expect.any(Error)
       )
     )
+    expect(getSyncState().status).toBe('error')
     expect(metaValue('lastPulledAt')).toBe(BOOTSTRAP_WATERMARK)
     expect(table(STORES.TOPICS).size).toBe(0)
 

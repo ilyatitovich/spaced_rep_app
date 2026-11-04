@@ -1,5 +1,4 @@
 import {
-  enqueueSync,
   putSyncQueueOps,
   refreshSyncQueueDepth,
   triggerSync
@@ -47,13 +46,17 @@ export async function createTopic(topic: Topic): Promise<void> {
   const previous = putTopicInMemory(topic)
   emitStudyData()
   try {
-    await withTransaction(STORES.TOPICS, 'readwrite', async stores => {
-      await new Promise((resolve, reject) => {
-        const request = stores[STORES.TOPICS].add(topic)
-        request.onsuccess = () => resolve(undefined)
-        request.onerror = () => reject(request.error)
-      })
-    })
+    // Row + outbox op in one transaction: never an edit that cannot sync.
+    await withTransaction(
+      [STORES.TOPICS, STORES.SYNC_QUEUE],
+      'readwrite',
+      async stores => {
+        await promisifyRequest(stores[STORES.TOPICS].add(topic))
+        await putSyncQueueOps(stores[STORES.SYNC_QUEUE], [
+          { table: STORES.TOPICS, recordId: topic.id, operation: 'upsert' }
+        ])
+      }
+    )
   } catch (error) {
     restoreTopicInMemory(topic.id, previous)
     emitStudyData()
@@ -66,7 +69,7 @@ export async function createTopic(topic: Topic): Promise<void> {
     throw error
   }
 
-  await enqueueSync(STORES.TOPICS, topic.id, 'upsert')
+  await refreshSyncQueueDepth()
   triggerSync()
 }
 
@@ -199,21 +202,33 @@ async function persistTopics(topics: Topic[]): Promise<void> {
   emitStudyData()
 
   try {
-    await withTransaction([STORES.TOPICS], 'readwrite', async stores => {
-      const store = stores[STORES.TOPICS]
+    await withTransaction(
+      [STORES.TOPICS, STORES.SYNC_QUEUE],
+      'readwrite',
+      async stores => {
+        const store = stores[STORES.TOPICS]
 
-      await Promise.all(
-        topics.map(
-          topic =>
-            new Promise<void>((resolve, reject) => {
-              const request = store.put(topic)
-              request.onsuccess = () => resolve()
-              request.onerror = () =>
-                reject(request.error ?? new Error('Failed to update topic'))
-            })
+        await Promise.all(
+          topics.map(
+            topic =>
+              new Promise<void>((resolve, reject) => {
+                const request = store.put(topic)
+                request.onsuccess = () => resolve()
+                request.onerror = () =>
+                  reject(request.error ?? new Error('Failed to update topic'))
+              })
+          )
         )
-      )
-    })
+        await putSyncQueueOps(
+          stores[STORES.SYNC_QUEUE],
+          topics.map(topic => ({
+            table: STORES.TOPICS,
+            recordId: topic.id,
+            operation: 'upsert' as const
+          }))
+        )
+      }
+    )
   } catch (error) {
     for (const entry of previous) {
       restoreTopicInMemory(entry.id, entry.previous)
@@ -222,9 +237,7 @@ async function persistTopics(topics: Topic[]): Promise<void> {
     throw error
   }
 
-  for (const topic of topics) {
-    await enqueueSync(STORES.TOPICS, topic.id, 'upsert')
-  }
+  await refreshSyncQueueDepth()
   triggerSync()
 }
 

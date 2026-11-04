@@ -1,7 +1,5 @@
 import { promisifyRequest, yieldToMain } from '@/lib'
 import {
-  enqueueSync,
-  enqueueSyncBulk,
   putSyncQueueOps,
   refreshSyncQueueDepth,
   triggerSync
@@ -55,13 +53,17 @@ export async function createCard(card: Card): Promise<void> {
   const previous = putCardInMemory(card)
   emitStudyData()
   try {
-    await withTransaction(STORES.CARDS, 'readwrite', async stores => {
-      await new Promise((resolve, reject) => {
-        const request = stores[STORES.CARDS].add(card)
-        request.onsuccess = () => resolve(undefined)
-        request.onerror = () => reject(request.error)
-      })
-    })
+    // Row + outbox op in one transaction: never an edit that cannot sync.
+    await withTransaction(
+      [STORES.CARDS, STORES.SYNC_QUEUE],
+      'readwrite',
+      async stores => {
+        await promisifyRequest(stores[STORES.CARDS].add(card))
+        await putSyncQueueOps(stores[STORES.SYNC_QUEUE], [
+          { table: STORES.CARDS, recordId: card.id, operation: 'upsert' }
+        ])
+      }
+    )
   } catch (error) {
     restoreCardInMemory(card.id, previous)
     emitStudyData()
@@ -70,7 +72,7 @@ export async function createCard(card: Card): Promise<void> {
   }
 
   await recordCardMediaUpsert(undefined, card)
-  await enqueueSync(STORES.CARDS, card.id, 'upsert')
+  await refreshSyncQueueDepth()
   triggerSync()
 }
 
@@ -80,20 +82,23 @@ export async function updateCard(card: Card): Promise<void> {
     const previous = putCardInMemory(card)
     emitStudyData()
     try {
-      await withTransaction([STORES.CARDS], 'readwrite', async stores => {
-        await new Promise<void>((resolve, reject) => {
-          const request = stores[STORES.CARDS].put(card)
-          request.onsuccess = () => resolve()
-          request.onerror = () => reject(request.error)
-        })
-      })
+      await withTransaction(
+        [STORES.CARDS, STORES.SYNC_QUEUE],
+        'readwrite',
+        async stores => {
+          await promisifyRequest(stores[STORES.CARDS].put(card))
+          await putSyncQueueOps(stores[STORES.SYNC_QUEUE], [
+            { table: STORES.CARDS, recordId: card.id, operation: 'upsert' }
+          ])
+        }
+      )
     } catch (error) {
       restoreCardInMemory(card.id, previous)
       emitStudyData()
       throw error
     }
     await recordCardMediaUpsert(previous, card)
-    await enqueueSync(STORES.CARDS, card.id, 'upsert')
+    await refreshSyncQueueDepth()
     triggerSync()
   } catch (error) {
     console.error('Failed to update card:', error)
@@ -195,13 +200,29 @@ export async function deleteCardsBulk(cardIds: string[]): Promise<void> {
   triggerSync()
 }
 
-/** Puts every card in one transaction; rejects on the first failed write. */
-function putAllCards(cards: Card[]): Promise<void> {
-  return withTransaction([STORES.CARDS], 'readwrite', async stores => {
-    for (const card of cards) {
-      await promisifyRequest(stores[STORES.CARDS].put(card))
+/**
+ * Puts every card in one transaction; rejects on the first failed write. With
+ * `enqueue`, the upsert ops commit in the same transaction as the rows.
+ */
+function putAllCards(cards: Card[], enqueue = false): Promise<void> {
+  return withTransaction(
+    [STORES.CARDS, STORES.SYNC_QUEUE],
+    'readwrite',
+    async stores => {
+      for (const card of cards) {
+        await promisifyRequest(stores[STORES.CARDS].put(card))
+      }
+      if (!enqueue) return
+      await putSyncQueueOps(
+        stores[STORES.SYNC_QUEUE],
+        cards.map(card => ({
+          table: STORES.CARDS,
+          recordId: card.id,
+          operation: 'upsert' as const
+        }))
+      )
     }
-  })
+  )
 }
 
 export async function updateCardsLevelBulk(
@@ -219,7 +240,7 @@ export async function updateCardsLevelBulk(
   emitStudyData()
 
   try {
-    await putAllCards(cards)
+    await putAllCards(cards, true)
   } catch (error) {
     for (const entry of previous) {
       restoreCardInMemory(entry.id, entry.previous)
@@ -228,13 +249,7 @@ export async function updateCardsLevelBulk(
     throw error
   }
 
-  await enqueueSyncBulk(
-    cards.map(card => ({
-      table: STORES.CARDS,
-      recordId: card.id,
-      operation: 'upsert' as const
-    }))
-  )
+  await refreshSyncQueueDepth()
   triggerSync()
 }
 
@@ -301,26 +316,39 @@ async function putCardsChunk(
   let mediaDelta = NO_MEDIA
 
   try {
-    await withTransaction([STORES.CARDS], 'readwrite', async stores => {
-      for (const card of slice) {
-        try {
-          await promisifyRequest(stores[STORES.CARDS].put(card))
-        } catch (reason) {
-          console.warn('Failed to import card:', card.id, reason)
-          restoreCardInMemory(card.id, previousById.get(card.id))
-          continue
-        }
-        importedIds.push(card.id)
-        const previous = previousById.get(card.id)
-        mediaDelta = addEmbeddedMedia(
-          mediaDelta,
-          subEmbeddedMedia(
-            sumEmbeddedCardMedia(card),
-            previous ? sumEmbeddedCardMedia(previous) : NO_MEDIA
+    await withTransaction(
+      [STORES.CARDS, STORES.SYNC_QUEUE],
+      'readwrite',
+      async stores => {
+        for (const card of slice) {
+          try {
+            await promisifyRequest(stores[STORES.CARDS].put(card))
+          } catch (reason) {
+            console.warn('Failed to import card:', card.id, reason)
+            restoreCardInMemory(card.id, previousById.get(card.id))
+            continue
+          }
+          importedIds.push(card.id)
+          const previous = previousById.get(card.id)
+          mediaDelta = addEmbeddedMedia(
+            mediaDelta,
+            subEmbeddedMedia(
+              sumEmbeddedCardMedia(card),
+              previous ? sumEmbeddedCardMedia(previous) : NO_MEDIA
+            )
           )
+        }
+        // Same transaction as the rows: an imported card always has its op.
+        await putSyncQueueOps(
+          stores[STORES.SYNC_QUEUE],
+          importedIds.map(recordId => ({
+            table: STORES.CARDS,
+            recordId,
+            operation: 'upsert' as const
+          }))
         )
       }
-    })
+    )
   } catch (error) {
     for (const [id, previous] of previousById) {
       restoreCardInMemory(id, previous)
@@ -336,7 +364,7 @@ interface ChunkHooks {
   onProgress?: ((done: number, total: number) => void) | undefined
 }
 
-/** Persists cards in chunks, notifies the UI once at the end, enqueues sync. */
+/** Persists cards in chunks (rows + outbox ops per transaction), notifies the UI once at the end. */
 async function persistCardsInChunks(
   cards: Card[],
   { prepare, onProgress }: ChunkHooks = {}
@@ -362,14 +390,7 @@ async function persistCardsInChunks(
   }
 
   await adjustCardMediaStats(mediaDelta)
-
-  await enqueueSyncBulk(
-    importedIds.map(id => ({
-      table: STORES.CARDS,
-      recordId: id,
-      operation: 'upsert' as const
-    }))
-  )
+  await refreshSyncQueueDepth()
   triggerSync()
 
   return importedIds.length

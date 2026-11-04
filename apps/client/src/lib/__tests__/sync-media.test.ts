@@ -211,6 +211,36 @@ describe('hydrateIncomingCardData', () => {
     expect(data.front.blocks[0]!.content.type).toBe('image/png')
   })
 
+  it('leaves out a card whose data is not valid JSON instead of failing the whole delta', async () => {
+    const api: SyncMediaApi = { planUploads: vi.fn(), planDownloads: vi.fn() }
+    const card = (id: string, dataJson: string) => ({
+      card: {
+        id,
+        topicId: 'topic-1',
+        level: 0,
+        dataJson,
+        reviewDate: null,
+        updatedAt: 1,
+        deletedAt: null
+      }
+    })
+
+    const hydrated = await hydrateIncomingCardData(
+      {
+        watermark: '20200101',
+        more: false,
+        records: [
+          card('broken', '{not json'),
+          card('fine', JSON.stringify({ front: {}, back: {} }))
+        ]
+      },
+      api
+    )
+
+    expect(hydrated.has('broken')).toBe(false)
+    expect(hydrated.has('fine')).toBe(true)
+  })
+
   it('does not return hydrated data when integrity verification fails', async () => {
     const hash = 'a'.repeat(64)
     const get = vi

@@ -247,7 +247,14 @@ export async function hydrateIncomingCardData(
 
   for (const record of delta.records) {
     if (!record.card || record.card.deletedAt) continue
-    const data = JSON.parse(record.card.dataJson) as unknown
+    let data: unknown
+    try {
+      data = JSON.parse(record.card.dataJson)
+    } catch {
+      // Unreadable on every pull: leave it out so the caller can quarantine
+      // this card instead of the whole delta failing forever.
+      continue
+    }
     parsedByCardId.set(record.card.id, data)
     refs.push(...(await collectWireMediaRefs(data)))
   }

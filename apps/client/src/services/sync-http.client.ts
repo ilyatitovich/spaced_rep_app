@@ -1,6 +1,10 @@
 import { createHttpSyncClient, SyncHttpError } from '@spaced-rep/sync-client'
 import type { Mutation, PullDelta, PushAck } from '@spaced-rep/sync-protocol'
-import { ensureFreshSession, ApiError } from '@/lib/api'
+import {
+  ApiError,
+  ensureFreshSession,
+  refreshSessionAfterRejection
+} from '@/lib/api'
 import { getAuthSession } from '@/lib/auth-storage'
 import type {
   MediaDownloadPlanItem,
@@ -14,7 +18,9 @@ const client = createHttpSyncClient({
   getAccessToken: async () =>
     (await ensureFreshSession())?.accessToken ??
     getAuthSession()?.accessToken ??
-    null
+    null,
+  onUnauthorized: async rejectedToken =>
+    (await refreshSessionAfterRejection(rejectedToken))?.accessToken ?? null
 })
 
 async function mapError<T>(operation: () => Promise<T>): Promise<T> {
@@ -39,12 +45,12 @@ async function getAccessToken(): Promise<string> {
   return accessToken
 }
 
-async function postMediaJson<T>(path: string, body: unknown): Promise<T> {
-  if (!apiUrl) {
-    throw new ApiError(0, 'VITE_API_URL is not configured')
-  }
-  const accessToken = await getAccessToken()
-  const response = await fetch(`${apiUrl}${path}`, {
+function sendMediaJson(
+  path: string,
+  accessToken: string,
+  body: unknown
+): Promise<Response> {
+  return fetch(`${apiUrl}${path}`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${accessToken}`,
@@ -53,6 +59,19 @@ async function postMediaJson<T>(path: string, body: unknown): Promise<T> {
     },
     body: JSON.stringify(body)
   })
+}
+
+async function postMediaJson<T>(path: string, body: unknown): Promise<T> {
+  if (!apiUrl) {
+    throw new ApiError(0, 'VITE_API_URL is not configured')
+  }
+  const accessToken = await getAccessToken()
+  let response = await sendMediaJson(path, accessToken, body)
+  if (response.status === 401) {
+    // Rejected despite a clock-valid token: refresh once and replay.
+    const fresh = await refreshSessionAfterRejection(accessToken)
+    if (fresh) response = await sendMediaJson(path, fresh.accessToken, body)
+  }
   const json = (await response.json().catch(() => null)) as {
     data?: T
     error?: { message?: string; code?: string }

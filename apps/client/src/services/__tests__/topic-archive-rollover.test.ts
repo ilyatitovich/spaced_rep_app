@@ -4,7 +4,7 @@ import { STORES } from '@/lib/db'
 import { createTopic, setStartWeek, type Topic } from '@/models'
 import { memory, table } from './helpers/fake-idb'
 
-const enqueueSyncMock = vi.fn()
+const putSyncQueueOpsMock = vi.fn()
 const triggerSyncMock = vi.fn()
 
 vi.mock('@/lib/db', async () =>
@@ -15,9 +15,8 @@ vi.mock('@/services/sync.service', async importOriginal => {
   const actual = await importOriginal<typeof import('../sync.service')>()
   return {
     ...actual,
-    enqueueSync: (...args: unknown[]) => enqueueSyncMock(...args),
+    putSyncQueueOps: (...args: unknown[]) => putSyncQueueOpsMock(...args),
     triggerSync: (...args: unknown[]) => triggerSyncMock(...args),
-    putSyncQueueOps: vi.fn(),
     refreshSyncQueueDepth: vi.fn()
   }
 })
@@ -30,7 +29,7 @@ describe('getAllTopics archive rollover', () => {
   beforeEach(() => {
     memory.clear()
     __resetStudyMemoryForTests()
-    enqueueSyncMock.mockReset()
+    putSyncQueueOpsMock.mockReset()
     triggerSyncMock.mockReset()
   })
 
@@ -56,7 +55,7 @@ describe('getAllTopics archive rollover', () => {
     expect(result.pivot).toBe(pivotBefore)
     expect(result.week).toEqual(weekBefore)
     expect(result.updatedAt).toBe(1_700_000_000_000)
-    expect(enqueueSyncMock).not.toHaveBeenCalled()
+    expect(putSyncQueueOpsMock).not.toHaveBeenCalled()
     expect(triggerSyncMock).not.toHaveBeenCalled()
   })
 
@@ -85,12 +84,10 @@ describe('getAllTopics archive rollover', () => {
     expect(result.nextUpdateDate).toBe(
       new Date(2026, 10, 15, 0, 0, 0, 0).getTime()
     )
-    expect(enqueueSyncMock).toHaveBeenCalledTimes(1)
-    expect(enqueueSyncMock).toHaveBeenCalledWith(
-      STORES.TOPICS,
-      active.id,
-      'upsert'
-    )
+    expect(putSyncQueueOpsMock).toHaveBeenCalledTimes(1)
+    expect(putSyncQueueOpsMock).toHaveBeenCalledWith(expect.anything(), [
+      { table: STORES.TOPICS, recordId: active.id, operation: 'upsert' }
+    ])
     expect(triggerSyncMock).toHaveBeenCalled()
   })
 })
