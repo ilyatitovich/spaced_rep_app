@@ -1,7 +1,2 @@
-pnpm typecheck
 pnpm lint
 pnpm format:check
-pnpm test:doc:check
-pnpm test
-pnpm knip
-pnpm exec jscpd --reporters threshold

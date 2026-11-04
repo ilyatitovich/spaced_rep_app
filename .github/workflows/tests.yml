@@ -169,12 +169,35 @@ jobs:
     permissions:
       contents: read
     runs-on: ubuntu-latest
+    env:
+      R2_ACCESS_KEY_ID: minioadmin
+      R2_SECRET_ACCESS_KEY: minioadmin
+      R2_ENDPOINT: http://127.0.0.1:9000
+      R2_PRESIGN_ENDPOINT: http://127.0.0.1:9000
+      R2_BUCKET: spaced-rep-media
+      R2_REGION: us-east-1
+      R2_FORCE_PATH_STYLE: 'true'
     steps:
       - name: Checkout the repository
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
       - name: Initialize Node.js & dependencies
         uses: ./.github/actions/init-node
+
+      - name: Start MinIO and create the media bucket
+        run: |
+          docker run -d --name minio \
+            -p 9000:9000 \
+            -e MINIO_ROOT_USER=minioadmin \
+            -e MINIO_ROOT_PASSWORD=minioadmin \
+            quay.io/minio/minio:latest server /data
+          for _ in $(seq 1 30); do
+            curl -sf http://127.0.0.1:9000/minio/health/live && break
+            sleep 1
+          done
+          curl -sf http://127.0.0.1:9000/minio/health/live
+          docker run --rm --network host quay.io/minio/mc:latest \
+            /bin/sh -c "mc alias set local http://127.0.0.1:9000 minioadmin minioadmin && mc mb --ignore-existing local/spaced-rep-media"
 
       - name: Run unit tests with coverage
         run: pnpm test:unit --coverage

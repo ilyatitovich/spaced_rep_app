@@ -18,9 +18,14 @@ async function minioReachable(): Promise<boolean> {
   }
 }
 
-describe('r2-storage MinIO (optional live check)', () => {
+describe('r2-storage MinIO live check', () => {
   it('presigned PUT with checksum round-trips through HEAD and GET', async context => {
     if (!(await minioReachable())) {
+      if (process.env.CI) {
+        throw new Error(
+          `MinIO not reachable at ${ENDPOINT}; unit CI must start MinIO`
+        )
+      }
       context.skip()
       return
     }

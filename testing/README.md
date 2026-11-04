@@ -65,10 +65,11 @@ pnpm exec vitest run --project browser-extension
 pnpm exec vitest run --project testing
 ```
 
-Filter Playwright by browser (CI uses Chromium only):
+Filter Playwright by browser (PR CI uses Chromium; nightly runs Firefox/WebKit smoke):
 
 ```bash
 pnpm test:e2e --project=chromium
+pnpm test:e2e --project=firefox --project=webkit e2e/tests/smoke
 ```
 
 ## Directory Layout
@@ -188,10 +189,14 @@ Faker is seeded (`42`) in integration setup for deterministic data.
 3. **Knip** — unused files and dependencies
 4. **Unit** — `pnpm test:unit --coverage` (client, server, sync-protocol, sync-client, browser-extension, testing). Uploads the V8 HTML/LCOV report as an artifact. No coverage percentage gate.
 5. **Integration** — Postgres 17 + Redis 7 service containers; `pnpm test:integration`
-6. **E2E** — same services + Chromium only (`pnpm test:e2e --project=chromium`); Playwright report artifacts. Firefox and WebKit stay in `playwright.config.ts` for local runs.
+6. **E2E** — same services + Chromium only (`pnpm test:e2e --project=chromium`); Playwright report artifacts. Firefox and WebKit smoke runs nightly via [`.github/workflows/nightly-e2e.yml`](../.github/workflows/nightly-e2e.yml).
 7. **Duplication** — `pnpm jscpd` (fails above 5% duplicated lines)
 
+The unit job starts MinIO so [`r2-storage.minio.test.ts`](../apps/server/src/shared/lib/r2-storage.minio.test.ts) runs (fails in CI if MinIO is down; skips locally when absent).
+
 CI remaps compose ports (`5433→5432`, `6380→6379`) to the Actions service host ports.
+
+Pre-commit is slim: `pnpm lint` and `pnpm format:check` only. Typecheck, tests, knip, and jscpd stay in CI.
 
 ## Debugging
 
