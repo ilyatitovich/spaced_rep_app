@@ -5,3 +5,4 @@ CHANGELOG.md
 unreleased-changes/*.md
 !unreleased-changes/README.md
 .cursor/
+SKILL.md
