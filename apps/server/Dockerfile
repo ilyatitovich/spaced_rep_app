@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM node:24-alpine AS base
+FROM node:26-alpine AS base
 # Keep the prepared pnpm where the non-root runtime user finds it, so starting
 # the container never re-downloads pnpm.
 ENV COREPACK_HOME=/opt/corepack
