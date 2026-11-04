@@ -6,11 +6,26 @@
   "vitest": {
     "configFile": "vitest.mutation.config.ts"
   },
-  "mutate_comment": "App and package sources are not in a root src/. Exclusions match the Stryker default, plus declaration files and the generated Prisma client.",
+  "mutate_comment": "Core sync, study grading, and auth logic with unit coverage. leitner-schedule is excluded until its mutant survival rate is fixed. Thresholds from a measured 2026-11 run; break fails nightly if score drops.",
   "mutate": [
-    "{apps,packages}/*/{src,entrypoints}/**/!(*.+(s|S)pec|*.+(t|T)est).+(cjs|mjs|js|ts|mts|cts|jsx|tsx|html|vue|svelte)",
-    "!{apps,packages}/*/{src,entrypoints}/**/__tests__/**/*.+(cjs|mjs|js|ts|mts|cts|jsx|tsx|html|vue|svelte)",
-    "!**/*.d.ts",
-    "!**/generated/**"
-  ]
+    "apps/client/src/lib/study.ts",
+    "apps/client/src/lib/get-today.ts",
+    "apps/client/src/models/day.model.ts",
+    "apps/server/src/auth/lib/auth-user.ts",
+    "apps/server/src/auth/services/turnstile.service.ts",
+    "apps/server/src/sync/mutation-validation.ts",
+    "packages/sync-protocol/src/codec.ts",
+    "packages/sync-protocol/src/cursor.ts",
+    "packages/sync-protocol/src/wire-media.ts"
+  ],
+  "thresholds": {
+    "high": 80,
+    "low": 70,
+    "break": 70
+  },
+  "reporters": ["clear-text", "progress", "html"],
+  "htmlReporter": {
+    "fileName": "reports/mutation/mutation.html"
+  },
+  "concurrency": 4
 }

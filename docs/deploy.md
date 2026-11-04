@@ -112,6 +112,10 @@ The root `vercel.json` sets the CSP, HSTS, `nosniff`, referrer and permissions p
 
 CI runs `pnpm audit:prod` (fails on high or critical advisories in production dependencies) and Dependabot opens weekly update PRs. Transitive floors live under `overrides` in `pnpm-workspace.yaml`; drop an entry once its parent ships a patched range.
 
+## Server Image
+
+The production image compiles TypeScript to `dist/` (`node dist/server.js`) and installs only production dependencies (no `tsx`). `prisma` stays a runtime dependency so the migrate container can run `prisma migrate deploy`. Sync-protocol is compiled into `packages/sync-protocol/dist` and its package exports are rewritten for Node inside the image build.
+
 ## CI Smoke Test
 
 CI builds the production image and boots it against throwaway Postgres and Redis (`infra/smoke/boot-image.sh`): it runs `prisma migrate deploy`, starts the server with `NODE_ENV=production` and asserts `/health` is `ok`. Run it locally with the same script.

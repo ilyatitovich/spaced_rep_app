@@ -87,6 +87,9 @@ jobs:
       - name: Build client
         run: pnpm --filter spaced_rep_pwa_client build
 
+      - name: Enforce bundle size budgets
+        run: node testing/perf/bundle-budget.mjs
+
   image-smoke:
     name: Server image boots
     needs: changes

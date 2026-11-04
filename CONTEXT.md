@@ -201,7 +201,8 @@ _Confidence: High_
 - **E2E:** Playwright under `e2e/tests/` (smoke, study, auth OTP, two-device sync). CI runs **Chromium** only.
 - Shared helpers: `testing/` (factories, OTP, Supertest agent, DB truncate). See [testing/README.md](testing/README.md).
 - Coverage: V8 report uploaded in CI; **no** repo-wide percentage gate.
-- Mutation: Stryker (`pnpm test:mutation`) for unit projects.
+- Mutation: Stryker (`pnpm test:mutation`) scoped to sync / scheduling / auth core with thresholds; nightly via `.github/workflows/nightly-excellence.yml`.
+- Perf budgets: `pnpm test:perf` (heap, sync-latency proxy, client bundle); first-load paint on nightly (`pnpm test:perf:lighthouse`).
 
 _Confidence: High_
 
@@ -209,11 +210,12 @@ _Confidence: High_
 
 1. Local-first IndexedDB; Express sync is optional and entitlement-gated.
 2. Outbox + debounced push/pull; shared protocol packages.
-3. Whole-record LWW on `updatedAt`; soft tombstones for cross-device deletes.
+3. Whole-record LWW on `updatedAt`; soft tombstones for cross-device deletes. Pull cursor is server-assigned `serverSeq` (ADR-1). Review log deferred (ADR-2).
 4. Observer bridge → Zustand refresh for the topics list.
 5. Single-route, search-param screen stack.
 6. Phone-column layout on all viewports (no desktop IA for beta).
 7. Tailwind v4 `@theme` tokens as the styling source.
+8. Extension never trusts `Origin` for bot protection (ADR-3). See `docs/adr/`.
 
 _Confidence: High_
 

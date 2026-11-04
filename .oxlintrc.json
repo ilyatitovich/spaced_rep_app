@@ -184,10 +184,9 @@
       }
     ],
     "typescript/no-explicit-any": "error",
-    // 175 exports are missing a return type, and 76 `!` assertions are already
-    // in the tree. These stay off until that backlog is annotated; flipping
-    // them to "error" fails the pre-commit hook.
-    "typescript/no-non-null-assertion": "off",
+    // Warn + scripts/ratchet-non-null.mjs (baseline .non-null-baseline): count
+    // may only drop. Promote to "error" when the baseline reaches 0.
+    "typescript/no-non-null-assertion": "warn",
     "typescript/explicit-module-boundary-types": "off",
     "typescript/consistent-type-definitions": ["error", "interface"],
     "vitest/expect-expect": "error",

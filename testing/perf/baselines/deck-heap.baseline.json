@@ -1,0 +1,9 @@
+{
+  "measuredAt": "2026-11-04T14:17:42.502Z",
+  "cardCount": 5000,
+  "checksum": 637775,
+  "heapUsedBytes": 10817600,
+  "heapDeltaBytes": 6575152,
+  "budgetHeapUsedBytes": 67108864,
+  "note": "In-memory card records only; browser IDB heap is a separate measurement."
+}

@@ -185,12 +185,14 @@ Faker is seeded (`42`) in integration setup for deterministic data.
 `[.github/workflows/tests.yml](../.github/workflows/tests.yml)` runs parallel jobs on push to `main` and on PRs. Unit, integration, e2e, the server image boot, and the backup restore drill run only when a file that suite covers has changed. The other jobs run every time.
 
 1. **Typecheck** — `pnpm prisma:generate` then `pnpm typecheck`
-2. **Lint** — `pnpm lint` (oxlint)
+2. **Lint** — `pnpm lint` (oxlint + non-null assertion ratchet)
 3. **Knip** — unused files and dependencies
 4. **Unit** — `pnpm test:unit --coverage` (client, server, sync-protocol, sync-client, browser-extension, testing). Uploads the V8 HTML/LCOV report as an artifact. No coverage percentage gate.
 5. **Integration** — Postgres 17 + Redis 7 service containers; `pnpm test:integration`
 6. **E2E** — same services + Chromium only (`pnpm test:e2e --project=chromium`); Playwright report artifacts. Firefox and WebKit smoke runs nightly via [`.github/workflows/nightly-e2e.yml`](../.github/workflows/nightly-e2e.yml).
 7. **Duplication** — `pnpm jscpd` (fails above 5% duplicated lines)
+8. **Build** — client build + `testing/perf/bundle-budget.mjs`
+9. **Nightly excellence** — [`.github/workflows/nightly-excellence.yml`](../.github/workflows/nightly-excellence.yml): Stryker thresholds on core sync/schedule/auth, heap + sync-latency baselines, first-load paint budgets (`pnpm test:perf` / `test:perf:lighthouse`)
 
 The unit job starts MinIO so [`r2-storage.minio.test.ts`](../apps/server/src/shared/lib/r2-storage.minio.test.ts) runs (fails in CI if MinIO is down; skips locally when absent).
 

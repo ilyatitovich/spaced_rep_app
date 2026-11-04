@@ -1,0 +1,102 @@
+name: Nightly Excellence
+
+on:
+  schedule:
+    # 07:00 UTC — after nightly e2e; mutation + measured perf baselines.
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: nightly-excellence
+  cancel-in-progress: true
+
+env:
+  CI: true
+  FORCE_COLOR: 1
+  NODE_ENV: test
+
+jobs:
+  mutation:
+    name: Stryker (core sync / schedule / auth)
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Initialize Node.js & dependencies
+        uses: ./.github/actions/init-node
+
+      - name: Generate Prisma client
+        run: pnpm prisma:generate
+
+      - name: Run mutation tests with thresholds
+        run: pnpm test:mutation
+
+      - name: Upload mutation report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: mutation-report
+          path: reports/mutation/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  perf:
+    name: Measured performance baselines
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Initialize Node.js & dependencies
+        uses: ./.github/actions/init-node
+
+      - name: Build client
+        run: pnpm --filter spaced_rep_pwa_client build
+
+      - name: Heap and sync-latency baselines plus bundle budget
+        run: pnpm test:perf
+
+      - name: Cache Playwright Chromium
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install Playwright Chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Install Playwright OS dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pnpm exec playwright install-deps chromium
+
+      - name: Start client preview
+        run: |
+          pnpm --filter spaced_rep_pwa_client preview --host 127.0.0.1 --port 4173 &
+          for _ in $(seq 1 30); do
+            curl -sf http://127.0.0.1:4173 >/dev/null && break
+            sleep 1
+          done
+          curl -sf http://127.0.0.1:4173 >/dev/null
+
+      - name: First-load paint budgets
+        run: pnpm test:perf:lighthouse
+        env:
+          PERF_CLIENT_URL: http://127.0.0.1:4173
+
+      - name: Upload perf baselines
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: perf-baselines
+          path: testing/perf/baselines/
+          if-no-files-found: ignore
+          retention-days: 30

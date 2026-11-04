@@ -32,6 +32,8 @@ vite.svg
 coverage/
 .stryker-tmp/
 reports/
+testing/perf/baselines/*
+!testing/perf/baselines/deck-heap.baseline.json
 testing/.auth/
 playwright-report/
 test-results/

@@ -1,0 +1,7 @@
+{
+  "_comment": "Measured ceilings from a green client build (2026-11). Raise only with a written reason; lower after size wins. sql-asm dominates largestJsAssetBytes (Anki import).",
+  "distTotalBytes": 18000000,
+  "largestJsAssetBytes": 1500000,
+  "fcpMs": 4000,
+  "loadEventMs": 8000
+}

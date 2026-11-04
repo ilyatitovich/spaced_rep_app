@@ -29,18 +29,42 @@ EXPOSE 3000
 # Migrations are run separately (never on container start)
 CMD ["pnpm", "dev"]
 
+FROM deps AS build
+COPY tsconfig.base.json ./
+COPY packages/sync-protocol ./packages/sync-protocol
+COPY apps/server ./apps/server
+WORKDIR /app/apps/server
+RUN pnpm prisma:generate \
+  && REWRITE_PROTOCOL_EXPORTS=1 pnpm build
+
+# Production dependencies only (no tsx / vitest / @types). Prisma stays a
+# dependency so migrate works; postinstall generates the client and fetches engines.
+FROM base AS prod-deps
+COPY --chmod=0644 package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/server/package.json ./apps/server/
+COPY apps/server/prisma ./apps/server/prisma
+COPY apps/server/prisma.config.ts ./apps/server/prisma.config.ts
+COPY packages/sync-protocol/package.json ./packages/sync-protocol/
+# --ignore-scripts skips root `prepare: husky` (not in the prod graph). Prisma
+# engines + client are fetched explicitly next.
+RUN pnpm install --frozen-lockfile --filter spaced_rep_pwa_server... --prod --ignore-scripts \
+  && pnpm --filter spaced_rep_pwa_server exec prisma generate
+
 FROM base AS production
 ENV NODE_ENV=production
 # The image installs only the server's workspace slice. Without this, pnpm 12
 # sees a stale node_modules at start and tries to reinstall as the non-root user.
 ENV pnpm_config_verify_deps_before_run=false
-COPY --from=deps /app ./
-COPY tsconfig.base.json ./
-COPY packages/sync-protocol ./packages/sync-protocol
-COPY apps/server ./apps/server
+COPY --from=prod-deps /app ./
+COPY --from=build /app/packages/sync-protocol/package.json ./packages/sync-protocol/package.json
+COPY --from=build /app/packages/sync-protocol/dist ./packages/sync-protocol/dist
+COPY --from=build /app/apps/server/dist ./apps/server/dist
+COPY --from=build /app/apps/server/prisma ./apps/server/prisma
+COPY --from=build /app/apps/server/package.json ./apps/server/package.json
+# Engines and generated client were written as root; the runtime user must own them.
+RUN chown -R node:node /app
 WORKDIR /app/apps/server
-RUN pnpm prisma:generate
 USER node
 EXPOSE 3000
 # Migrations are run separately (never on container start)
-CMD ["pnpm", "start"]
+CMD ["node", "dist/server.js"]
