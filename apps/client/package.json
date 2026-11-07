@@ -20,7 +20,7 @@
     "@codemirror/lang-python": "^6.2.1",
     "@codemirror/lang-sql": "^6.10.0",
     "@sentry/browser": "^10.75.2",
-    "@sentry/react": "^10.75.2",
+    "@sentry/react": "^11.10.0",
     "@sentry/replay": "10.75.2",
     "@simplewebauthn/browser": "^13.3.0",
     "@spaced-rep/sync-client": "workspace:*",
