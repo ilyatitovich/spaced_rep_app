@@ -1,5 +1,3 @@
-import renderMathInElement from 'katex/contrib/auto-render'
-
 /** Delimiters KaTeX auto-render understands (Anki MathJax + $ / $$). */
 export const CARD_MATH_DELIMITERS = [
   { left: '$$', right: '$$', display: true },
@@ -9,7 +7,9 @@ export const CARD_MATH_DELIMITERS = [
 ]
 
 /** Typeset LaTeX delimiters already present in `el`'s text nodes. */
-export function renderCardMath(el: HTMLElement): void {
+export async function renderCardMath(el: HTMLElement): Promise<void> {
+  const { default: renderMathInElement } =
+    await import('katex/contrib/auto-render')
   renderMathInElement(el, {
     delimiters: CARD_MATH_DELIMITERS,
     throwOnError: false,

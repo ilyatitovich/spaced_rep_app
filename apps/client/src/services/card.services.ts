@@ -442,7 +442,7 @@ export async function importAnkiApkg(
   ] = await Promise.all([
     import('@/lib/anki/run-anki-import-worker'),
     import('@/lib/anki/sanitize-imported-card'),
-    import('@/lib/anki/parse-apkg')
+    import('@/lib/anki/apkg-limits')
   ])
 
   assertApkgCompressedSize(file.size)

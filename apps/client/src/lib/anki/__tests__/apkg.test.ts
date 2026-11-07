@@ -4,9 +4,9 @@ import JSZip from 'jszip'
 import {
   APKG_LIMITS,
   assertApkgCompressedSize,
-  assertApkgEntryCount,
-  parseApkg
-} from '@/lib/anki/parse-apkg'
+  assertApkgEntryCount
+} from '@/lib/anki/apkg-limits'
+import { parseApkg } from '@/lib/anki/parse-apkg'
 import {
   apkgToCards,
   fieldHtmlToBlocks,

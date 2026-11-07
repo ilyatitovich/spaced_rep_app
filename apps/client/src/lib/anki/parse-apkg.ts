@@ -1,6 +1,12 @@
 import JSZip from 'jszip'
 import type { Database, SqlJsStatic } from 'sql.js'
 
+import {
+  assertApkgCompressedSize,
+  assertApkgEntryCount,
+  trackUncompressed
+} from './apkg-limits'
+
 export interface AnkiMediaFile {
   buffer: ArrayBuffer
   type: string
@@ -21,38 +27,6 @@ export interface ParsedApkg {
 const FIELD_SEP = '\x1f'
 const DUMMY_NOTE_MARKER =
   'Please update to the latest Anki version, then import the .colpkg/.apkg file again.'
-
-/** Mutable so tests can temporarily tighten caps without DI. */
-export const APKG_LIMITS = {
-  maxCompressedBytes: 100 * 1024 * 1024,
-  maxZipEntries: 20_000,
-  maxUncompressedBytes: 500 * 1024 * 1024
-}
-
-export function assertApkgCompressedSize(byteLength: number): void {
-  if (byteLength > APKG_LIMITS.maxCompressedBytes) {
-    throw new Error(
-      `This .apkg is too large (max ${Math.floor(APKG_LIMITS.maxCompressedBytes / (1024 * 1024))} MB).`
-    )
-  }
-}
-
-export function assertApkgEntryCount(entryCount: number): void {
-  if (entryCount > APKG_LIMITS.maxZipEntries) {
-    throw new Error(
-      `This .apkg has too many files (max ${APKG_LIMITS.maxZipEntries}).`
-    )
-  }
-}
-
-function trackUncompressed(total: { bytes: number }, add: number): void {
-  total.bytes += add
-  if (total.bytes > APKG_LIMITS.maxUncompressedBytes) {
-    throw new Error(
-      `This .apkg expands to more than ${Math.floor(APKG_LIMITS.maxUncompressedBytes / (1024 * 1024))} MB uncompressed.`
-    )
-  }
-}
 
 let sqlReady: Promise<SqlJsStatic> | undefined
 

@@ -16,7 +16,7 @@ export default function CardRichText({ html, className }: CardRichTextProps) {
     const el = ref.current
     if (!el) return
     el.innerHTML = sanitizeCardHtml(html || '<p></p>')
-    renderCardMath(el)
+    void renderCardMath(el)
   }, [html])
 
   return <div ref={ref} className={className} />
